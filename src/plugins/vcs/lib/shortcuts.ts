@@ -1,0 +1,92 @@
+import {
+  NAV,
+  PAGED_NAV,
+  bindingMatches,
+  hints,
+  matchShortcut,
+  navShortcuts,
+  type Kbd,
+  type KeyMods,
+  type Shortcut,
+} from "adwaita-gpuix/shortcuts";
+
+export type { KeyMods, Shortcut };
+export { hints, matchShortcut, PAGED_NAV };
+
+const CONFIRM: Kbd[] = [["ctrl", "enter"]];
+
+const FOCUS_RIGHT: Shortcut = {
+  id: "focus-right",
+  kbds: ["tab"],
+  desc: "files",
+  hidden: true,
+};
+const FOCUS_LEFT: Shortcut = {
+  id: "focus-left",
+  kbds: ["tab"],
+  desc: "stack",
+  hidden: true,
+};
+
+export const STACK_SHORTCUTS: Shortcut[] = [
+  ...PAGED_NAV,
+  FOCUS_RIGHT,
+  { id: "new", kbds: ["n"], desc: "new" },
+  { id: "edit", kbds: ["e"], desc: "edit" },
+  { id: "split", kbds: ["s"], desc: "split" },
+  { id: "squash", kbds: ["f"], desc: "squash" },
+  { id: "revert", kbds: ["r"], desc: "revert" },
+  { id: "drop", kbds: ["delete"], desc: "drop" },
+  { id: "describe", kbds: ["d"], desc: "describe" },
+  { id: "select", kbds: ["space"], desc: "select" },
+  { id: "bookmark", kbds: ["b"], desc: "bookmark" },
+  { id: "push", kbds: [["ctrl", "p"]], desc: "push" },
+  { id: "revset", kbds: ["/"], desc: "revset", hidden: true },
+  { id: "move", kbds: ["enter"], desc: "move" },
+];
+
+export const FILES_SHORTCUTS: Shortcut[] = [
+  ...PAGED_NAV,
+  FOCUS_LEFT,
+  { id: "pick", kbds: ["enter"], desc: "insert" },
+  { id: "open", kbds: ["e"], desc: "editor" },
+  {
+    id: "scroll-up",
+    kbds: [["shift", "pageup"]],
+    desc: "scroll",
+    hidden: true,
+  },
+  {
+    id: "scroll-down",
+    kbds: [["shift", "pagedown"]],
+    desc: "scroll",
+    hidden: true,
+  },
+  { id: "split-file", kbds: ["s"], desc: "split file" },
+  { id: "discard", kbds: ["d"], desc: "discard" },
+];
+
+export const MOVE_SHORTCUTS: Shortcut[] = [
+  { id: "move-up", kbds: ["up"], desc: "move", hidden: true },
+  { id: "move-down", kbds: ["down"], desc: "move", hidden: true },
+  { id: "apply", kbds: ["enter"], desc: "apply" },
+  { id: "cancel", kbds: ["escape"], desc: "cancel" },
+];
+
+export const STACK_HINTS = hints(STACK_SHORTCUTS);
+export const FILES_HINTS = hints(FILES_SHORTCUTS);
+export const MOVE_HINTS = hints(MOVE_SHORTCUTS);
+
+export const DESCRIBE_SHORTCUTS: Shortcut[] = [
+  { id: "describe", kbds: CONFIRM, desc: "describe" },
+  { id: "cancel", kbds: ["escape"], desc: "cancel" },
+];
+
+export const PICKER_SHORTCUTS: Shortcut[] = [
+  { id: "type", kbds: ["type"], desc: "filter", hidden: true },
+  { id: "nav-up", kbds: ["up"], desc: "nav", hidden: true },
+  { id: "nav-down", kbds: ["down"], desc: "nav", hidden: true },
+  { id: "apply", kbds: ["enter"], desc: "apply" },
+  { id: "cancel", kbds: ["escape"], desc: "cancel" },
+  { id: "forget", kbds: ["delete"], desc: "forget" },
+];

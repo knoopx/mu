@@ -1,0 +1,581 @@
+import { execFile, execSync, spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { promisify } from "node:util";
+import {
+  runCli,
+  sanitizeDescription,
+  type CliMock,
+  type CliResult,
+} from "adwaita-gpuix";
+import type { Bookmark, Change, FileChange } from "../types";
+
+const pExecFile = promisify(execFile);
+
+const VCS = "jj";
+const HUNK = "jj-hunk";
+
+export const DEFAULT_CHANGE_REVSET = "ancestors(@, 50) ~ root()";
+
+export type { CliResult, CliMock as VcsMock };
+
+let workspaceRoot: string | null = null;
+
+export function findWorkspaceRoot(cwd?: string): string {
+  if (workspaceRoot !== null) return workspaceRoot;
+  const start = cwd ?? process.cwd();
+  let dir = start;
+  for (;;) {
+    if (existsSync(join(dir, ".jj"))) {
+      workspaceRoot = dir;
+      return workspaceRoot;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      workspaceRoot = start;
+      return workspaceRoot;
+    }
+    dir = parent;
+  }
+}
+
+let mock: CliMock | null = null;
+
+function setVcsMock(next: CliMock | null): void {
+  mock = next;
+  workspaceRoot = null;
+}
+
+function hasVcsMock(): boolean {
+  return mock !== null;
+}
+
+export async function run(
+  binary: string,
+  args: string[],
+  cwd?: string,
+): Promise<CliResult> {
+  return runCli(binary, args, cwd ?? findWorkspaceRoot(), mock ?? undefined);
+}
+
+export async function vcs(args: string[], cwd?: string): Promise<CliResult> {
+  return run(VCS, args, cwd);
+}
+
+export async function vcsHunk(
+  args: string[],
+  cwd?: string,
+): Promise<CliResult> {
+  return run(HUNK, args, cwd);
+}
+
+async function vcsOk(args: string[], cwd?: string): Promise<string> {
+  const res = await vcs(args, cwd);
+  if (res.code !== 0)
+    throw new Error(res.stderr.trim() || `${VCS} ${args.join(" ")} failed`);
+  return res.stdout;
+}
+
+async function vcsQuiet(args: string[], cwd?: string): Promise<string | null> {
+  const res = await vcs(args, cwd);
+  return res.code !== 0 ? null : res.stdout;
+}
+
+export function failMessage(e: unknown): string {
+  const text = e instanceof Error ? e.message : String(e);
+  const first =
+    text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0)
+      .pop() ?? "";
+  return first.length > 0 ? first : "Operation failed";
+}
+
+const CHANGES_TEMPLATE =
+  'change_id ++ "\\t" ++ commit_id ++ "\\t" ++ author.name() ++ "\\t" ++ ' +
+  'author.timestamp().format("%Y-%m-%d %H:%M") ++ "\\t" ++ ' +
+  'coalesce(immutable, false) ++ "\\t" ++ description.first_line() ++ ' +
+  '"\\t" ++ empty ++ "\\t" ++ conflict ++ "\\t" ++ ' +
+  'parents.map(|p| p.commit_id()).join(",") ++ "\\n"';
+
+export async function loadChanges(revsetStr: string): Promise<Change[]> {
+  const revset =
+    revsetStr.trim().length > 0 ? revsetStr : DEFAULT_CHANGE_REVSET;
+  const out = await vcsOk([
+    "log",
+    "-r",
+    revset,
+    "--no-graph",
+    "--color",
+    "never",
+    "-T",
+    CHANGES_TEMPLATE,
+  ]);
+  const changes: Change[] = [];
+  for (const line of out.split("\n")) {
+    if (line.trim().length === 0) continue;
+    const parts = line.split("\t");
+    if (parts.length < 9) continue;
+    const [
+      change_id,
+      commit_id,
+      author,
+      timestamp,
+      immutable,
+      desc,
+      empty,
+      has_conflicts,
+      parentsRaw,
+    ] = parts;
+    changes.push({
+      change_id: change_id ?? "",
+      commit_id: commit_id ?? "",
+      description: sanitizeDescription(desc ?? ""),
+      author: (author ?? "").trim(),
+      timestamp: timestamp ?? "",
+      immutable: immutable === "true",
+      empty: empty === "true",
+      has_conflicts: has_conflicts === "true",
+      parents: (parentsRaw ?? "")
+        .split(",")
+        .filter((p) => p.length > 0 && !/^0+$/.test(p)),
+    });
+  }
+  return changes;
+}
+
+export async function getCurrentChangeId(): Promise<string | null> {
+  const out = await vcsQuiet([
+    "log",
+    "-r",
+    "@",
+    "--no-graph",
+    "--color",
+    "never",
+    "-T",
+    'change_id ++ coalesce(if(divergent, "/" ++ stringify(change_offset)), "")',
+  ]);
+  const id = out?.trim() ?? "";
+  return id.length > 0 ? id : null;
+}
+
+const BOOKMARKS_TEMPLATE =
+  'name ++ "\\t" ++ if(normal_target, normal_target.change_id(), "") ++ "\\t" ++ remote ++ "\\t" ++ ' +
+  'if(normal_target, normal_target.description(), "") ++ "\\t" ++ ' +
+  'if(normal_target, normal_target.author().name(), "") ++ "\\n"';
+
+const IMPLICIT_GIT_REMOTE = "git";
+
+export async function listBookmarks(): Promise<Bookmark[]> {
+  const out = await vcsOk([
+    "bookmark",
+    "list",
+    "--all-remotes",
+    "--color",
+    "never",
+    "-T",
+    BOOKMARKS_TEMPLATE,
+  ]);
+  const seen = new Set<string>();
+  const bookmarks: Bookmark[] = [];
+  for (const line of out.split("\n")) {
+    if (line.trim().length === 0) continue;
+    const [name, change_id, remote, description, author] = line.split("\t");
+    if (!name) continue;
+    if (remote === IMPLICIT_GIT_REMOTE) continue;
+    const reference = remote ? `${remote}/${name}` : name;
+    if (seen.has(reference)) continue;
+    seen.add(reference);
+    bookmarks.push({
+      name,
+      change_id: change_id ?? "",
+      description: description ?? "",
+      author: author ?? "",
+      remote: remote ?? "",
+      reference,
+    });
+  }
+  return bookmarks;
+}
+
+export function bookmarksByChange(
+  bookmarks: Bookmark[],
+): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const b of bookmarks) {
+    if (!b.change_id) continue;
+    const arr = map.get(b.change_id) ?? [];
+    arr.push(b.remote ? b.reference : b.name);
+    map.set(b.change_id, arr);
+  }
+  return map;
+}
+
+export function bookmarkNamesFor(
+  bookmarks: Bookmark[],
+  changeId: string,
+): string[] {
+  return Array.from(
+    new Set(
+      bookmarks.filter((b) => b.change_id === changeId).map((b) => b.name),
+    ),
+  );
+}
+
+const filesCache = new Map<string, FileChange[]>();
+const patchCache = new Map<string, string>();
+
+function clearPatchCaches(): void {
+  filesCache.clear();
+  patchCache.clear();
+}
+
+async function cacheKey(changeId: string): Promise<string> {
+  const head =
+    (await vcsQuiet([
+      "operation",
+      "log",
+      "-n",
+      "1",
+      "--no-graph",
+      "--color",
+      "never",
+      "-T",
+      'id ++ "\\n"',
+    ])) ?? "";
+  return `${changeId}:${head.trim()}`;
+}
+
+export function extractDiffFiles(
+  patch: string,
+): Array<Pick<FileChange, "path" | "status">> {
+  const lines = patch.split("\n");
+  const out: Array<Pick<FileChange, "path" | "status">> = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? "";
+    if (!line.startsWith("diff --git")) continue;
+    const token = line.split(" ")[3] ?? "";
+    const path =
+      token.startsWith("a/") || token.startsWith("b/") ? token.slice(2) : token;
+    if (!path) continue;
+    let fromDevNull = false;
+    let toDevNull = false;
+    for (let j = i + 1; j < lines.length; j++) {
+      const l = lines[j] ?? "";
+      if (l.startsWith("diff --git")) break;
+      if (l.startsWith("--- ") && l.slice(4) === "/dev/null")
+        fromDevNull = true;
+      else if (l.startsWith("+++ ") && l.slice(4) === "/dev/null")
+        toDevNull = true;
+    }
+    out.push({ path, status: fromDevNull ? "A" : toDevNull ? "D" : "M" });
+  }
+  return out;
+}
+
+export interface FileStat {
+  status: FileChange["status"];
+  insertions: number;
+  deletions: number;
+}
+
+export function filePatchStats(patch: string): FileStat {
+  let insertions = 0;
+  let deletions = 0;
+  let fromDevNull = false;
+  let toDevNull = false;
+  for (const line of patch.split("\n")) {
+    if (line.startsWith("--- ")) {
+      if (line.slice(4) === "/dev/null") fromDevNull = true;
+    } else if (line.startsWith("+++ ")) {
+      if (line.slice(4) === "/dev/null") toDevNull = true;
+    } else if (line.startsWith("+")) insertions++;
+    else if (line.startsWith("-")) deletions++;
+  }
+  return {
+    status: fromDevNull ? "A" : toDevNull ? "D" : "M",
+    insertions,
+    deletions,
+  };
+}
+
+export async function mapConcurrent<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= items.length) break;
+        results[i] = await fn(items[i]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
+
+export async function loadChangedFiles(
+  changeId: string,
+): Promise<FileChange[]> {
+  const key = await cacheKey(changeId);
+  const cached = filesCache.get(key);
+  if (cached !== undefined) return cached;
+
+  const whole = (await vcs(["diff", "--git", "-r", changeId])).stdout;
+  const entries = extractDiffFiles(whole);
+  const rows = await mapConcurrent(entries, 8, async (entry) => {
+    const out = (await vcs(["diff", "--git", "-r", changeId, entry.path]))
+      .stdout;
+    const stat = filePatchStats(out);
+    return {
+      path: entry.path,
+      status: entry.status,
+      insertions: stat.insertions,
+      deletions: stat.deletions,
+    };
+  });
+  const files = rows.sort((a, b) => a.path.localeCompare(b.path));
+  filesCache.set(key, files);
+  return files;
+}
+
+export async function getRawDiff(
+  changeId: string,
+  filePath?: string,
+): Promise<string> {
+  const key = `${await cacheKey(changeId)}${filePath === undefined ? "" : `:${filePath}`}`;
+  const cached = patchCache.get(key);
+  if (cached !== undefined) return cached;
+  const args = ["diff", "--git", "-r", changeId];
+  if (filePath !== undefined) args.push(filePath);
+  const out = (await vcs(args)).stdout;
+  patchCache.set(key, out);
+  return out;
+}
+
+function hunkToolAvailable(): boolean {
+  if (mock !== null) return true;
+  try {
+    execSync(`command -v ${HUNK}`, { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export interface HunkRange {
+  start: number;
+  lines: number;
+}
+
+export interface HunkBlock {
+  index: number;
+  id: string;
+  type: string;
+  removed: string;
+  added: string;
+  before: HunkRange;
+  after: HunkRange;
+}
+
+export interface FileHunks {
+  path: string;
+  status: string;
+  hunks: HunkBlock[];
+}
+
+export interface HunkListResult {
+  files: FileHunks[];
+}
+
+async function loadHunks(changeId: string): Promise<HunkListResult> {
+  const res = await vcsHunk(["list", "--format", "json", "-r", changeId]);
+  if (res.code !== 0)
+    throw new Error(res.stderr.trim() || "jj-hunk list failed");
+  return JSON.parse(res.stdout) as HunkListResult;
+}
+
+async function runHunkSpec(
+  changeId: string,
+  selections: Array<{ file_path: string; hunk_id: string }>,
+  defaultAction: "keep" | "reset",
+  message: string,
+): Promise<void> {
+  const { tmpdir } = await import("node:os");
+  const { writeFileSync, rmSync } = await import("node:fs");
+  const files: Record<string, { ids: string[] }> = {};
+  for (const sel of selections)
+    (files[sel.file_path] ??= { ids: [] }).ids.push(sel.hunk_id);
+  const specPath = join(tmpdir(), `mu-hunk-spec-${process.pid}.json`);
+  writeFileSync(specPath, JSON.stringify({ files, default: defaultAction }));
+  try {
+    const res = await vcsHunk([
+      "split",
+      "-r",
+      changeId,
+      "-f",
+      specPath,
+      message,
+    ]);
+    if (res.code !== 0) throw new Error(res.stderr.trim());
+  } finally {
+    rmSync(specPath, { force: true });
+  }
+}
+
+async function splitSelectedHunks(
+  changeId: string,
+  selections: Array<{ file_path: string; hunk_id: string }>,
+): Promise<string> {
+  await runHunkSpec(
+    changeId,
+    selections,
+    "keep",
+    `Split selected hunks from change ${changeId.slice(0, 8)}`,
+  );
+  return `Split ${selections.length} hunk(s) from ${changeId.slice(0, 8)}`;
+}
+
+async function discardSelectedHunks(
+  changeId: string,
+  selections: Array<{ file_path: string; hunk_id: string }>,
+): Promise<string> {
+  await runHunkSpec(changeId, selections, "reset", "Discard selected hunks");
+  return `Discarded ${selections.length} hunk(s)`;
+}
+
+export async function newChange(changeId: string): Promise<string> {
+  await vcsOk(["new", changeId]);
+  return `Created new change on ${changeId.slice(0, 8)}`;
+}
+
+export async function editChange(changeId: string): Promise<string> {
+  await vcsOk(["edit", changeId]);
+  return `Set working copy to ${changeId.slice(0, 8)}`;
+}
+
+export async function abandonChange(changeId: string): Promise<string> {
+  await vcsOk(["abandon", changeId]);
+  return `Abandoned change ${changeId.slice(0, 8)}`;
+}
+
+export async function splitChange(changeId: string): Promise<string> {
+  await vcsOk(["new", changeId]);
+  return `Split change ${changeId.slice(0, 8)}`;
+}
+
+export async function splitFileChange(
+  changeId: string,
+  filePath: string,
+): Promise<string> {
+  const msg = `Moved ${filePath} from change ${changeId.slice(0, 8)} to a new change`;
+  await vcsOk([
+    "split",
+    "-m",
+    msg,
+    "-r",
+    changeId,
+    "--insert-after",
+    changeId,
+    filePath,
+  ]);
+  return msg;
+}
+
+async function parentChangeId(changeId: string): Promise<string | null> {
+  const out = await vcsQuiet([
+    "log",
+    "-r",
+    changeId,
+    "--no-graph",
+    "--color",
+    "never",
+    "-T",
+    'parents.map(|p| p.change_id()).join(",")',
+  ]);
+  const first = out?.split(",")[0]?.trim();
+  return first !== undefined && first.length > 0 ? first : null;
+}
+
+export async function squashChange(changeId: string): Promise<string> {
+  const parent = await parentChangeId(changeId);
+  if (parent === null) throw new Error("Cannot squash root change (no parent)");
+  await vcsOk(["squash", "-u", "-r", changeId]);
+  return "Squashed change into parent";
+}
+
+export async function revertChange(changeId: string): Promise<string> {
+  await vcsOk(["revert", changeId]);
+  return `Reverted change ${changeId.slice(0, 8)}`;
+}
+
+export async function restoreFile(
+  changeId: string,
+  filePath: string,
+): Promise<string> {
+  await vcsOk(["restore", "--changes-in", changeId, filePath]);
+  return `Discarded changes in '${filePath}'`;
+}
+
+export async function setBookmarkToChange(
+  bookmarkName: string,
+  changeId: string,
+): Promise<string> {
+  const name = bookmarkName.split("@")[0]?.trim() ?? "";
+  if (name.length === 0) throw new Error("Bookmark name is required");
+  await vcsOk(["bookmark", "set", "--allow-backwards", name, "-r", changeId]);
+  return `Set bookmark '${name}' to ${changeId.slice(0, 8)}`;
+}
+
+export async function forgetBookmark(bookmarkRef: string): Promise<string> {
+  const name = bookmarkRef.split("@")[0]?.trim() ?? "";
+  if (name.length === 0) return "";
+  await vcsOk(["bookmark", "forget", "--include-remotes", name]);
+  return `Forgot bookmark '${name}'`;
+}
+
+export async function pushBookmarks(names: string[]): Promise<string> {
+  for (const name of names) await vcsOk(["git", "push", "-b", name]);
+  return `Pushed ${names.length} bookmark(s)`;
+}
+
+export async function describeChange(
+  changeId: string,
+  message: string,
+): Promise<string> {
+  await vcsOk(["describe", "-r", changeId, "-m", message]);
+  return `Described change ${changeId.slice(0, 8)}`;
+}
+
+export async function rebaseChange(
+  changeId: string,
+  targetChangeId: string,
+  after: boolean,
+): Promise<string> {
+  let onto = targetChangeId;
+  if (!after) {
+    const parent = await parentChangeId(targetChangeId);
+    if (parent === null) throw new Error("Target change has no parent");
+    onto = parent;
+  }
+  await vcsOk(["rebase", "-r", changeId, "-o", onto]);
+  return `Rebased change ${changeId.slice(0, 8)}`;
+}
+
+export function spawnDetached(cmd: string, args: string[]): void {
+  const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
+  child.unref();
+}
+
+export function openFileInEditor(filePath: string): void {
+  spawnDetached(process.env.EDITOR ?? "vi", [
+    join(findWorkspaceRoot(), filePath),
+  ]);
+}

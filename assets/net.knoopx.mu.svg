@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 120 120" role="img" aria-label="mu">
+  <title>mu</title>
+  <rect x="12" y="32" width="16" height="72" fill="#4F8EB3"/>
+  <rect x="28" y="72" width="20" height="16" fill="#E48A7A"/>
+  <rect x="48" y="32" width="16" height="40" fill="#E48A7A"/>
+  <rect x="84" y="32" width="16" height="56" fill="#EAB65D"/>
+  <rect x="72" y="32" width="12" height="16" fill="#EAB65D"/>
+  <rect x="100" y="72" width="12" height="16" fill="#EAB65D"/>
+</svg>

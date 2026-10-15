@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    ".storybook/main.tsx",
+    ".storybook/story-helpers.tsx",
+    "stories/**/*.stories.tsx",
+    ".storybook/fixtures/data.tsx"
+  ],
+  "project": [".storybook/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"],
+  "ignoreBinaries": ["trash", "jj"],
+  "ignoreExportsUsedInFile": true
+}
