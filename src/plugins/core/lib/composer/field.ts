@@ -38,9 +38,6 @@ export function composerFieldStyle(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-
-
-
 export function composerFieldLineStyle(t: AdwaitaTheme): StyleDesc {
   const height = composerFieldLineHeight(t);
   return {

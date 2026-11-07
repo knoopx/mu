@@ -1,5 +1,3 @@
-
-
 export interface FuzzyMatchResult {
   matches: boolean;
   score: number;
@@ -16,7 +14,8 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatchResult {
 
   const matchQuery = (normalizedQuery: string): FuzzyMatchResult => {
     if (normalizedQuery.length === 0) return { matches: true, score: 0 };
-    if (normalizedQuery.length > textLower.length) return { matches: false, score: 0 };
+    if (normalizedQuery.length > textLower.length)
+      return { matches: false, score: 0 };
 
     let queryIndex = 0;
     let score = 0;
@@ -24,10 +23,14 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatchResult {
     let consecutiveMatches = 0;
 
     while (queryIndex < normalizedQuery.length) {
-      const i = textLower.indexOf(normalizedQuery[queryIndex], lastMatchIndex + 1);
+      const i = textLower.indexOf(
+        normalizedQuery[queryIndex],
+        lastMatchIndex + 1,
+      );
       if (i === -1) break;
 
-      const isWordBoundary = i === 0 || WORD_BOUNDARY.test(textLower[i - 1] ?? "");
+      const isWordBoundary =
+        i === 0 || WORD_BOUNDARY.test(textLower[i - 1] ?? "");
       if (lastMatchIndex === i - 1) {
         consecutiveMatches++;
         score -= consecutiveMatches * 5;
@@ -42,7 +45,8 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatchResult {
       queryIndex++;
     }
 
-    if (queryIndex < normalizedQuery.length) return { matches: false, score: 0 };
+    if (queryIndex < normalizedQuery.length)
+      return { matches: false, score: 0 };
     if (normalizedQuery === textLower) score -= 100;
     return { matches: true, score };
   };
@@ -50,7 +54,6 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatchResult {
   const primaryMatch = matchQuery(queryLower);
   if (primaryMatch.matches) return primaryMatch;
 
-  
   const lettersThenDigits = queryLower.match(LETTERS_THEN_DIGITS);
   const digitsThenLetters = queryLower.match(DIGITS_THEN_LETTERS);
   const swappedQuery = lettersThenDigits
@@ -61,9 +64,10 @@ export function fuzzyMatch(query: string, text: string): FuzzyMatchResult {
 
   if (swappedQuery === "") return primaryMatch;
   const swappedMatch = matchQuery(swappedQuery);
-  return swappedMatch.matches ? { matches: true, score: swappedMatch.score + 5 } : primaryMatch;
+  return swappedMatch.matches
+    ? { matches: true, score: swappedMatch.score + 5 }
+    : primaryMatch;
 }
-
 
 export function fuzzyFilter<T>(
   items: T[],
@@ -71,7 +75,10 @@ export function fuzzyFilter<T>(
   getText: (item: T) => string,
 ): T[] {
   if (!query.trim()) return items;
-  const tokens = query.trim().split(/[\s/]+/).filter((token) => token.length > 0);
+  const tokens = query
+    .trim()
+    .split(/[\s/]+/)
+    .filter((token) => token.length > 0);
   if (tokens.length === 0) return items;
 
   const results: { item: T; totalScore: number }[] = [];

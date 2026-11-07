@@ -8,17 +8,21 @@ export type { Shortcut } from "adwaita-gpuix/shortcuts";
 
 export const DELETE_SESSION_KEY = "composer.deleteSession";
 
+export const AUTOCOMPLETE_KEY = "editor.autocomplete";
+
 const PANEL_LABEL: Record<string, string> = {
   commands: "commands",
   model: "models",
   thinking: "thinking",
   session: "sessions",
   file: "files",
+  path: "paths",
   changes: "changes",
   tree: "history",
   theme: "theme",
   accent: "accent",
   userMessageHistory: "messages",
+  guardrails: "guardrails",
 };
 
 const PANEL_OPEN_KEY: Record<string, string> = {
@@ -32,6 +36,7 @@ const PANEL_OPEN_KEY: Record<string, string> = {
   theme: "composer.theme",
   accent: "composer.accent",
   userMessageHistory: "composer.userMessageHistory",
+  guardrails: "composer.guardrails",
 };
 
 const PANEL_CHOOSE: Record<string, string> = {
@@ -40,11 +45,13 @@ const PANEL_CHOOSE: Record<string, string> = {
   thinking: "set",
   session: "resume",
   file: "insert",
+  path: "use",
   changes: "open",
   tree: "jump",
   theme: "apply",
   accent: "apply",
   userMessageHistory: "use",
+  guardrails: "arm",
 };
 
 export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
@@ -64,6 +71,28 @@ export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
 
 export function panelHints(panel: ComposerTarget | "commands"): Shortcut[] {
   return hints(panelShortcuts(panel));
+}
+
+/**
+ * The completion panel is opened by Tab, not by a hotkey, so its first hint is
+ * the key that opened it: Tab completes the path being typed, and Tab again
+ * takes the highlighted one.
+ */
+export function pathCompletionShortcuts(): Shortcut[] {
+  return [
+    {
+      id: "complete",
+      kbds: [getKeybindings().get(AUTOCOMPLETE_KEY)],
+      desc: "complete",
+    },
+    ...navShortcuts({ select: "move" }),
+    { id: "choose", kbds: ["enter"], desc: PANEL_CHOOSE.path },
+    { id: "close", kbds: ["escape"], desc: "close" },
+  ];
+}
+
+export function pathCompletionHints(): Shortcut[] {
+  return hints(pathCompletionShortcuts());
 }
 
 export function isDeleteSessionKey(event: EventPayload): boolean {

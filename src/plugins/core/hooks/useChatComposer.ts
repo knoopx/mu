@@ -17,6 +17,7 @@ import {
   submitThemeCommand,
   type ComposerActionContext,
 } from "../lib/composer/panelActions";
+import { pathTokenOf, stripTrailingTab } from "../lib/composer/pathCompletion";
 import type { ToolImage } from "../lib/agent/content";
 import type { SessionDeleteResult } from "../lib/agent/agentService";
 import type { ChatSession } from "../lib/session/chatSession";
@@ -24,6 +25,7 @@ import { useClipboardPaste } from "./useClipboardPaste";
 import type { ComposerState } from "./useComposerState";
 import type { ChatSessionState } from "./useChatSession";
 import type { ThemePanelState } from "./useThemePanel";
+import type { GuardrailsPanelApi } from "../../guardrails/types";
 
 export interface ChatComposerOptions {
   toast: ToastFn;
@@ -35,6 +37,8 @@ export interface ChatComposerOptions {
   session: ChatSession | null;
 
   removeSession(path: string): SessionDeleteResult;
+
+  guardrails: GuardrailsPanelApi;
 
   composer: ComposerState;
 }
@@ -48,6 +52,9 @@ export interface ChatComposerActions {
 
   pickChangesPath(path: string): void;
 
+  /** Tab: open the path completion panel over the path the draft is typing. */
+  completePath(): void;
+
   removeSessionRow(row: ComposerPanelRow): void;
 
   runCommand(name: string): void;
@@ -55,6 +62,12 @@ export interface ChatComposerActions {
   startNewSession(): void;
 
   seedPrompt(text: string): void;
+
+  /**
+   * Sends text straight to the agent and follows the tail — what the changes
+   * panel hands an instruction it asked for, without touching the composer.
+   */
+  sendInstruction(text: string): void;
 
   onHistory(): void;
 
@@ -68,9 +81,20 @@ export interface ChatComposerActions {
 const commandName = (text: string): string =>
   text.replace(/^\/+/, "").split(/\s+/)[0] ?? "";
 
-export function useChatComposer(opts: ChatComposerOptions): ChatComposerActions {
-  const { toast, chat, themePanel, session, removeSession, composer } = opts;
+export function useChatComposer(
+  opts: ChatComposerOptions,
+): ChatComposerActions {
   const {
+    toast,
+    chat,
+    themePanel,
+    session,
+    removeSession,
+    guardrails,
+    composer,
+  } = opts;
+  const {
+    input,
     setInput,
     attachments,
     setAttachments,
@@ -107,11 +131,21 @@ export function useChatComposer(opts: ChatComposerOptions): ChatComposerActions 
     setModel: chat.setModel,
     setThinking: chat.setThinking,
     resumeSession: chat.resume,
+    toggleGuardrail: (key) => guardrails.toggle(key),
   };
 
   const pickChangesPath = (path: string): void => {
     appendPath(path);
     setMode(draftMode());
+  };
+
+  // Tab is inert unless the draft ends with something that reads like a path,
+  // so completing in prose does nothing at all — the way a shell behaves.
+  const completePath = (): void => {
+    const draft = stripTrailingTab(input);
+    if (draft !== input) setInput(draft);
+    if (pathTokenOf(draft) === null) return;
+    setMode(pickMode("path", draft));
   };
 
   const onSubmit = (value: string): void => {
@@ -134,7 +168,8 @@ export function useChatComposer(opts: ChatComposerOptions): ChatComposerActions 
     chat.send(text, images, userImages);
   };
 
-  const pickRow = (row: ComposerPanelRow): void => pickComposerRow(row, actions);
+  const pickRow = (row: ComposerPanelRow): void =>
+    pickComposerRow(row, actions);
 
   const removeSessionRow = (row: ComposerPanelRow): void =>
     deleteSessionRow(row, {
@@ -149,13 +184,16 @@ export function useChatComposer(opts: ChatComposerOptions): ChatComposerActions 
     toast("Prompt added to the composer");
   };
 
+  const sendInstruction = (text: string): void => {
+    if (text.trim().length === 0) return;
+    setFollowTail(true);
+    chat.send(text);
+  };
+
   const onHistory = (): void => setMode(pickMode("tree"));
 
-  const onHover = (
-    hover: ComposerMode,
-    index: number,
-    count: number,
-  ): void => setMode(transition(hover, { type: "hover", index, count }));
+  const onHover = (hover: ComposerMode, index: number, count: number): void =>
+    setMode(transition(hover, { type: "hover", index, count }));
 
   const { paste, pasting } = useClipboardPaste({
     attach: (attachment: ComposerAttachment) =>
@@ -176,10 +214,12 @@ export function useChatComposer(opts: ChatComposerOptions): ChatComposerActions 
     onSubmit,
     pickRow,
     pickChangesPath,
+    completePath,
     removeSessionRow,
     runCommand,
     startNewSession,
     seedPrompt,
+    sendInstruction,
     onHistory,
     onHover,
     paste,

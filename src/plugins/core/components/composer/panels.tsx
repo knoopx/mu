@@ -1,4 +1,4 @@
-import type { AdwaitaTheme } from "adwaita-gpuix";
+import type { AdwaitaTheme, IconName } from "adwaita-gpuix";
 import type { SlashCommand } from "../../../../autocomplete";
 import { ChangesPanel } from "../../../vcs/components/ChangesPanel";
 import {
@@ -18,9 +18,10 @@ import {
   type ComposerPanelSpec,
   type ComposerPanelStatusSpec,
   type ComposerPreviewSpec,
+  type ComposerRowFigure,
 } from "./Composer";
 import { composerFieldExtraHeight } from "../../lib/composer/fieldRows";
-import { composerPanelRowHeight } from "./rows";
+import { composerFigureColumnWidth, composerPanelRowHeight } from "./rows";
 import {
   composerPanelChrome,
   composerPanelFitHeight,
@@ -34,6 +35,7 @@ import {
 } from "../../lib/composer/panelHeight";
 import {
   panelHints,
+  pathCompletionHints,
   sessionPanelHints,
   userMessageHistoryHints,
 } from "../../lib/composer/shortcuts";
@@ -56,7 +58,14 @@ import {
   userMessageHistoryStatusText,
   type UserMessage,
 } from "../../lib/composer/userMessageHistory";
+import {
+  completionPathOf,
+  directorySummary,
+  pathCompletionRows,
+  pathStatusText,
+} from "../../lib/composer/pathCompletion";
 import { SESSION_ROWS_CAP } from "../../lib/session/sessionList";
+import type { GuardrailsPanelApi } from "../../../guardrails/types";
 import { TREE_ROW_HEIGHT } from "../../hooks/useSessionTree";
 import { FILES_ROWS } from "../../../vcs/components/ChangesPanel";
 
@@ -75,6 +84,37 @@ export function sessionStatusText(
   );
 }
 
+interface SessionFigure {
+  icon: IconName;
+  pick: (row: SessionListRow) => string;
+}
+
+const SESSION_FIGURES: readonly SessionFigure[] = [
+  { icon: "schedule", pick: (row) => row.duration },
+  { icon: "history", pick: (row) => row.age },
+];
+
+const sessionFigureWidths = (
+  t: AdwaitaTheme,
+  rows: readonly SessionListRow[],
+): number[] =>
+  SESSION_FIGURES.map((figure) =>
+    composerFigureColumnWidth(
+      t,
+      rows.reduce((max, row) => Math.max(max, figure.pick(row).length), 0),
+    ),
+  );
+
+const sessionFigures = (
+  row: SessionListRow,
+  widths: readonly number[],
+): ComposerRowFigure[] =>
+  SESSION_FIGURES.map((figure, off) => ({
+    icon: figure.icon,
+    text: figure.pick(row),
+    width: widths[off],
+  }));
+
 export interface ComposerPanelData {
   cwd: string;
   theme: AdwaitaTheme;
@@ -91,6 +131,7 @@ export interface ComposerPanelData {
   userMessagesError: string | null;
   changes: ChangesPanelState;
   tree: SessionTreeApi;
+  guardrails: GuardrailsPanelApi;
   previewFor(path: string): ComposerPreviewSpec;
   windowHeight: number | undefined;
   onPick: (row: ComposerPanelRow) => void;
@@ -103,17 +144,17 @@ export function composerPanelRows(data: ComposerPanelData): ComposerPanelRow[] {
   if (mode.kind === "commands") return commandRows(data.commands, query);
   const target = mode.kind === "pick" ? mode.target : null;
   switch (target) {
-    case "session":
+    case "session": {
+      const widths = sessionFigureWidths(data.theme, data.sessionRows);
       return data.sessionRows
         .filter((s) => matchesQuery(query, s.label, s.age))
         .map((s) => ({
           kind: "option" as const,
           key: s.path,
           label: s.label,
-          ...(s.caption === undefined ? {} : { caption: s.caption }),
-          description: s.age,
-          tabular: true,
+          figures: sessionFigures(s, widths),
         }));
+    }
     case "userMessageHistory":
       return userMessageHistoryRows(data.userMessages, query);
     case "theme":
@@ -121,10 +162,14 @@ export function composerPanelRows(data: ComposerPanelData): ComposerPanelRow[] {
       return themePanel.rows;
     case "file":
       return fileRows(cwd, query);
+    case "path":
+      return pathCompletionRows(query, cwd);
     case "model":
       return data.session?.modelRows(query) ?? [];
     case "thinking":
       return data.session?.thinkingRows(query) ?? [];
+    case "guardrails":
+      return [...data.guardrails.rows];
     default:
       return [];
   }
@@ -132,7 +177,7 @@ export function composerPanelRows(data: ComposerPanelData): ComposerPanelRow[] {
 
 type ListSource = ComposerTarget | "commands";
 
-const TALL_SOURCES: ListSource[] = ["session", "userMessageHistory"];
+const TALL_SOURCES: ListSource[] = ["session", "userMessageHistory", "path"];
 
 const BUSY_TEXT: Partial<Record<ListSource, string>> = {
   session: "Reading sessions…",
@@ -142,6 +187,8 @@ const BUSY_TEXT: Partial<Record<ListSource, string>> = {
 const EMPTY_TEXT: Partial<Record<ListSource, string>> = {
   session: "No sessions for this folder",
   userMessageHistory: "No user messages in this folder’s sessions",
+  guardrails: "No rules — guarded calls are read and released",
+  path: "No path matches",
 };
 
 function listSourceOf(mode: ComposerMode): ListSource {
@@ -154,7 +201,8 @@ const listBusy = (
   source: ListSource,
   rowsEmpty: boolean,
 ): boolean => {
-  if (source === "userMessageHistory") return data.userMessagesLoading && rowsEmpty;
+  if (source === "userMessageHistory")
+    return data.userMessagesLoading && rowsEmpty;
   if (source === "session") return data.sessionsLoading;
   return false;
 };
@@ -163,7 +211,8 @@ const listError = (
   data: ComposerPanelData,
   source: ListSource,
 ): string | undefined => {
-  if (source === "userMessageHistory") return data.userMessagesError ?? undefined;
+  if (source === "userMessageHistory")
+    return data.userMessagesError ?? undefined;
   if (source === "session") return data.sessionsError ?? undefined;
   return undefined;
 };
@@ -208,6 +257,16 @@ function listStatus(
       ),
       hints: userMessageHistoryHints(),
     };
+  if (source === "guardrails")
+    return {
+      message: data.guardrails.statusText,
+      hints: panelHints("guardrails"),
+    };
+  if (source === "path")
+    return {
+      message: pathStatusText(query, rows.length),
+      hints: pathCompletionHints(),
+    };
   return {
     message:
       rows.length === 0
@@ -222,11 +281,15 @@ const previewOf = (
   mode: ComposerMode,
   rows: readonly ComposerPanelRow[],
 ): ComposerPreviewSpec | undefined => {
-  if (mode.kind !== "pick" || mode.target !== "file") return undefined;
+  if (mode.kind !== "pick") return undefined;
+  if (mode.target !== "file" && mode.target !== "path") return undefined;
   const active = rows[panelIndex(mode, rows.length)];
-  return active !== undefined && active.kind === "option"
-    ? data.previewFor(active.key)
-    : undefined;
+  if (active === undefined || active.kind !== "option") return undefined;
+  if (mode.target !== "path") return data.previewFor(active.key);
+
+  const spec = data.previewFor(completionPathOf(active.key, data.cwd));
+  const note = directorySummary(active.key, data.cwd);
+  return note === undefined ? spec : { ...spec, note };
 };
 
 function changesStatus(changes: ChangesPanelState): ComposerPanelStatusSpec {
@@ -256,10 +319,7 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   hints: TREE_HINTS,
 });
 
-function wideFitHeight(
-  data: ComposerPanelData,
-  isChanges: boolean,
-): number {
+function wideFitHeight(data: ComposerPanelData, isChanges: boolean): number {
   const { theme: t, changes, tree, windowHeight } = data;
   if (!isChanges)
     return composerPanelFitHeight(
@@ -269,14 +329,17 @@ function wideFitHeight(
       true,
     );
   const rowHeight = t.control.rowHeight;
-  const stackHeight = Math.max(PANEL_FIT_MIN_ROWS, changes.rows.length) * rowHeight;
+  const stackHeight =
+    Math.max(PANEL_FIT_MIN_ROWS, changes.rows.length) * rowHeight;
   const filesHeight =
     Math.max(PANEL_FIT_MIN_ROWS, Math.min(changes.files.length, FILES_ROWS)) *
     rowHeight;
   const filesBlock =
     changes.files.length === 0
       ? filesHeight
-      : filesHeight + diffRuleHeight(t) + diffLines(changes.patch) * CODE_LINE_HEIGHT;
+      : filesHeight +
+        diffRuleHeight(t) +
+        diffLines(changes.patch) * CODE_LINE_HEIGHT;
   return composerPanelFitHeight(
     t,
     windowHeight,

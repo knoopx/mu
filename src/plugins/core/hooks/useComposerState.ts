@@ -18,7 +18,9 @@ export interface ComposerState {
   attachments: ComposerAttachment[];
 
   setAttachments(
-    value: ComposerAttachment[] | ((prev: ComposerAttachment[]) => ComposerAttachment[]),
+    value:
+      | ComposerAttachment[]
+      | ((prev: ComposerAttachment[]) => ComposerAttachment[]),
   ): void;
 
   mode: ComposerMode;
@@ -41,7 +43,9 @@ export interface ComposerState {
 const appendTo = (prev: string, text: string): string =>
   `${prev}${prev.length > 0 && !prev.endsWith(" ") ? " " : ""}${text} `;
 
-export function useComposerState(opts: ComposerStateOptions = {}): ComposerState {
+export function useComposerState(
+  opts: ComposerStateOptions = {},
+): ComposerState {
   const [input, setInput] = useState(opts.initialInput ?? "");
   const [attachments, setAttachments] = useState<ComposerAttachment[]>(
     opts.initialAttachments ?? [],

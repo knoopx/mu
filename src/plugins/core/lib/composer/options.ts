@@ -68,12 +68,14 @@ export const PANEL_PLACEHOLDER: Record<
   thinking: "Type a thinking level",
   session: "Type to filter the project session history",
   file: "Type to filter files in this folder",
+  path: "Type a path, Tab completes it",
   changes: undefined,
   tree: "Type to filter this session history",
   theme: "Type a theme name",
   accent: "Type an accent colour name",
   userMessageHistory:
     "Type to search the user messages of every session in this folder",
+  guardrails: "Type to filter rules and hits",
 };
 
 export const panelPlaceholder = (
@@ -86,11 +88,13 @@ const PANEL_NOUNS: Record<string, [string, string]> = {
   thinking: ["level", "levels"],
   session: ["session", "sessions"],
   file: ["file", "files"],
+  path: ["path", "paths"],
   changes: ["change", "changes"],
   tree: ["point", "points"],
   theme: ["theme", "themes"],
   accent: ["accent colour", "accent colours"],
   userMessageHistory: ["user message", "user messages"],
+  guardrails: ["guardrail row", "guardrail rows"],
 };
 
 const panelNoun = (

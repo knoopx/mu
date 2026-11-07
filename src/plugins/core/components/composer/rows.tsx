@@ -11,10 +11,27 @@ import {
 import type { StyleDesc } from "@gpuix/react";
 import { centerRow } from "../../lib/ui/layout";
 import { mutedText } from "../../lib/ui/theme";
-import type { ComposerPanelRow, ComposerSwatchSpec } from "./Composer";
+import type {
+  ComposerPanelRow,
+  ComposerRowFigure,
+  ComposerSwatchSpec,
+} from "./Composer";
 
 const NAME_COLUMN = 150;
 const ARGS_COLUMN = 190;
+
+const MONO_ADVANCE = 0.6;
+
+const figureGlyph = (t: AdwaitaTheme): number =>
+  Math.round(t.type.caption * 0.92);
+
+export const composerFigureColumnWidth = (
+  t: AdwaitaTheme,
+  chars: number,
+): number =>
+  figureGlyph(t) +
+  t.space.xs +
+  Math.round(chars * t.type.caption * MONO_ADVANCE);
 
 function panelRowStyle(
   t: AdwaitaTheme,
@@ -38,9 +55,6 @@ function panelRowStyle(
 function rowStyle(t: AdwaitaTheme, active: boolean, focused = true): StyleDesc {
   return panelRowStyle(t, active, focused, t.control.rowHeight);
 }
-
-
-
 
 const label = (t: AdwaitaTheme, active: boolean): StyleDesc => ({
   fontSize: t.type.caption,
@@ -160,8 +174,63 @@ const rowLine = (t: AdwaitaTheme, size: number, lines: number): StyleDesc => ({
   textOverflow: "ellipsis",
 });
 
-const AGE_COLUMN_WIDTH = (t: AdwaitaTheme): number =>
-  t.control.rowHeight;
+const figureGroup = (t: AdwaitaTheme): StyleDesc => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  gap: t.space.sm,
+  flexShrink: 0,
+  pointerEvents: "none",
+});
+
+const figureCell = (t: AdwaitaTheme, width: number | undefined): StyleDesc => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: t.space.xs,
+  flexShrink: 0,
+  ...(width === undefined ? {} : { width }),
+});
+
+const figureText = (t: AdwaitaTheme): StyleDesc => ({
+  fontSize: t.type.caption,
+  fontFamily: t.type.fontFamilyMono,
+  color: mutedText(t),
+  whiteSpace: "nowrap",
+  userSelect: "none",
+  flexShrink: 0,
+});
+
+function RowFigures({
+  t,
+  figures,
+}: {
+  t: AdwaitaTheme;
+  figures: readonly ComposerRowFigure[];
+}): JSX.Element {
+  const glyph = figureGlyph(t);
+  const ink = mutedText(t);
+  return (
+    <div style={figureGroup(t)}>
+      {figures.map((figure, off) => (
+        <div key={`figure-${off}`} style={figureCell(t, figure.width)}>
+          {figure.icon === undefined ? null : (
+            <Icon
+              name={figure.icon}
+              size={glyph}
+              color={ink}
+              style={{ flexShrink: 0, userSelect: "none" }}
+            />
+          )}
+          <text style={figureText(t)}>{figure.text}</text>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const AGE_COLUMN_WIDTH = (t: AdwaitaTheme): number => t.control.rowHeight;
 
 const ageColumn = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
@@ -217,6 +286,8 @@ export interface ComposerOptionRowProps {
 
   caption?: string;
   description?: string;
+
+  figures?: ComposerRowFigure[];
 
   trailing?: ReactNode;
   icon?: IconName;
@@ -277,6 +348,9 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
           </text>
         )}
       </div>
+      {props.figures !== undefined && props.figures.length > 0 ? (
+        <RowFigures t={t} figures={props.figures} />
+      ) : null}
       {props.trailing !== undefined
         ? props.trailing
         : showMeta &&

@@ -3,6 +3,7 @@ import type { EventPayload } from "@gpuix/native";
 import { useGpuixRequired, type PublicInstance } from "@gpuix/react";
 import { addInputListener } from "../../../window/window";
 import {
+  isCompletionMode,
   panelIndex,
   transition,
   type ComposerEvent,
@@ -39,6 +40,7 @@ export interface ComposerKeyOptions {
   onHistory?(): void;
   onClear?(): void;
   onPaste?(): void;
+  onComplete?(): void;
 }
 
 export interface ComposerKeyHandlers {
@@ -53,21 +55,29 @@ export interface ComposerKeyHandlers {
 const rowUnderCursor = (
   panel: ComposerPanelSpec,
   mode: ComposerMode,
-): ComposerPanelRow | undefined => panel.rows[panelIndex(mode, panel.rows.length)];
+): ComposerPanelRow | undefined =>
+  panel.rows[panelIndex(mode, panel.rows.length)];
 
 export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
   const renderer = useGpuixRequired();
   const { mode, panel, panelOpen, wideOpen } = opts;
   const count = panel?.rows.length ?? 0;
   const maxVisible = panel?.maxVisible ?? DEFAULT_MAX_VISIBLE;
+  // The completion panel's query is the draft, so every keystroke in it writes
+  // the draft too: closing the panel keeps what was typed.
+  const draftIsQuery = isCompletionMode(mode);
 
   const send = (event: ComposerEvent): void => {
     opts.onMode(transition(mode, event));
   };
 
   const onText = (next: string): void => {
-    if (mode.kind === "draft") opts.onChange(next);
-    else send({ type: "setQuery", query: next });
+    if (mode.kind === "draft") {
+      opts.onChange(next);
+      return;
+    }
+    if (draftIsQuery) opts.onChange(next);
+    send({ type: "setQuery", query: next });
   };
 
   const pickActive = (): void => {
@@ -110,6 +120,8 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
     maxVisible,
     send,
     pickActive,
+    onComplete: opts.onComplete,
+    onDraft: draftIsQuery ? opts.onChange : undefined,
     onDelete: panel?.onDelete === undefined ? undefined : deleteActive,
     onClear: opts.onClear,
     onPaste: opts.onPaste,

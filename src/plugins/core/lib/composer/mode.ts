@@ -6,11 +6,13 @@ export type ComposerTarget =
   | "thinking"
   | "session"
   | "file"
+  | "path"
   | "changes"
   | "tree"
   | "theme"
   | "accent"
-  | "userMessageHistory";
+  | "userMessageHistory"
+  | "guardrails";
 
 const CYCLE_TARGETS: ComposerTarget[] = ["userMessageHistory"];
 
@@ -66,7 +68,6 @@ type IndexEvent = Extract<
   { type: "move" | "page" | "first" | "last" | "hover" }
 >;
 
-
 function retainedQuery(mode: ComposerMode, target: ComposerTarget): string {
   return mode.kind === "pick" && mode.target === target ? mode.query : "";
 }
@@ -84,7 +85,6 @@ function openPick(
   }
   return pickMode(target, alreadyOpen ? mode.query : "");
 }
-
 
 function nextIndex(mode: { index: number }, event: IndexEvent): number {
   switch (event.type) {
@@ -106,7 +106,6 @@ function nextIndex(mode: { index: number }, event: IndexEvent): number {
       return clamp(event.index, event.count - 1);
   }
 }
-
 
 function navigate(mode: ComposerMode, event: IndexEvent): ComposerMode {
   if (mode.kind === "draft" || event.count === 0) return mode;
@@ -141,6 +140,15 @@ export function transition(
 
 export function isPanelMode(mode: ComposerMode): boolean {
   return mode.kind !== "draft";
+}
+
+/**
+ * The completion panel is the draft in another shape: its query is the whole
+ * draft, so typing keeps editing the draft and Tab completes the path token the
+ * draft ends with. Every other panel owns a query of its own.
+ */
+export function isCompletionMode(mode: ComposerMode): boolean {
+  return mode.kind === "pick" && mode.target === "path";
 }
 
 export function panelQuery(mode: ComposerMode): string {

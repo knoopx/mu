@@ -78,6 +78,7 @@ export type ComposerPanelRow =
       label: string;
       caption?: string;
       description?: string;
+      figures?: ComposerRowFigure[];
       tabular?: boolean;
       picked?: boolean;
       icon?: IconName;
@@ -89,6 +90,13 @@ export type ComposerPanelRow =
       swatch: ComposerSwatchSpec;
     };
 
+export interface ComposerRowFigure {
+  icon?: IconName;
+  text: string;
+
+  width?: number;
+}
+
 export interface ComposerSwatchSpec {
   window: string;
   surface: string;
@@ -98,6 +106,9 @@ export interface ComposerSwatchSpec {
 export interface ComposerPreviewSpec {
   path: string;
   lines: string[];
+
+  /** What to say when there is nothing to paint: a folder, an empty file, a binary. */
+  note?: string;
 }
 
 export interface ComposerPanelStatusSpec {
@@ -163,6 +174,9 @@ export interface ComposerProps {
   onClear?: () => void;
 
   onHistory?: () => void;
+
+  /** Tab: complete the path the draft is typing. */
+  onComplete?: () => void;
 
   tone?: ComposerTone;
 
@@ -454,6 +468,7 @@ function PanelRow({
       label={row.label}
       caption={row.caption}
       description={row.description}
+      figures={row.figures}
       icon={row.icon}
       tabular={row.tabular === true}
       picked={row.picked === true}
@@ -532,11 +547,12 @@ function PanelPreview({
   const src = imageSourceOf(preview.path);
   if (src !== undefined)
     return <PanelImagePreview path={preview.path} src={src} styles={styles} />;
-  if (preview.lines.length === 0)
+  // `lines` is what fits the pane: empty for a folder, an empty file, a binary.
+  if (lines.length === 0)
     return (
       <div style={styles.previewPane}>
         <T size="caption" color={mutedText(t)}>
-          No preview
+          {preview.note ?? "No preview"}
         </T>
       </div>
     );
@@ -659,7 +675,9 @@ function contextRingOf(
   context: ComposerContextSpec | null,
 ): number | null {
   if (panelOpen === true || context === null) return null;
-  return context.total > 0 ? contextFraction(context.used, context.total) : null;
+  return context.total > 0
+    ? contextFraction(context.used, context.total)
+    : null;
 }
 
 function panelStateOf(
@@ -847,6 +865,7 @@ export function Composer(props: ComposerProps): JSX.Element {
     onHistory: props.onHistory,
     onClear: props.onClear,
     onPaste: props.onPaste,
+    onComplete: props.onComplete,
   });
 
   return (
@@ -858,7 +877,13 @@ export function Composer(props: ComposerProps): JSX.Element {
       active={active}
       previewMaxPx={maxVisible * t.control.rowHeight}
       styles={styles}
-      statusBar={<ComposerStatusBar panel={panel} panelOpen={panelOpen} styles={styles} />}
+      statusBar={
+        <ComposerStatusBar
+          panel={panel}
+          panelOpen={panelOpen}
+          styles={styles}
+        />
+      }
       field={
         <ComposerField
           t={t}

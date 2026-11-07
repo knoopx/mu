@@ -2,8 +2,18 @@ import { resolve } from "node:path";
 import type { ToastFn } from "adwaita-gpuix";
 import { truncateToWidth } from "../../../../utils/truncate";
 import { coreCommands } from "../commands/coreCommands";
-import { accentOfThemeRow, parseInvocation, schemeOfThemeRow } from "../theme/themeRows";
-import { draftMode, pickMode, type ComposerMode, type ComposerTarget } from "./mode";
+import {
+  accentOfThemeRow,
+  parseInvocation,
+  schemeOfThemeRow,
+} from "../theme/themeRows";
+import {
+  draftMode,
+  pickMode,
+  type ComposerMode,
+  type ComposerTarget,
+} from "./mode";
+import { applyCompletion } from "./pathCompletion";
 import { asThinkingLevel } from "./options";
 import type { ComposerPanelRow } from "../../components/composer/Composer";
 import type { ThemePanelState } from "../../hooks/useThemePanel";
@@ -13,6 +23,7 @@ const COMMAND_TARGETS: Record<string, ComposerTarget> = {
   model: "model",
   thinking: "thinking",
   changes: "changes",
+  guardrails: "guardrails",
 };
 
 const COMMAND_MODES: Record<string, ComposerTarget> = {
@@ -35,6 +46,9 @@ export interface ComposerActionContext {
   setModel(ref: string): void;
   setThinking(level: ThinkingLevel): void;
   resumeSession(path: string, done: () => void): void;
+
+  /** Arms or disarms a guardrail row; the text it returns is the toast. */
+  toggleGuardrail(key: string): string;
 }
 
 function pickThemeRow(row: ComposerPanelRow, a: ComposerActionContext): void {
@@ -81,9 +95,22 @@ function pickPanelRow(row: ComposerPanelRow, a: ComposerActionContext): void {
       a.appendInput(row.label);
       a.setMode(draftMode());
       break;
+    case "path": {
+      // The query is the draft: the completion is written over the path token,
+      // and a directory keeps the panel open so the path can keep growing.
+      const done = applyCompletion(a.mode.query, row.key);
+      a.setInput(done.text);
+      a.setMode(done.isDirectory ? pickMode("path", done.query) : draftMode());
+      break;
+    }
     case "userMessageHistory":
       a.setInput(row.key);
       a.setMode(draftMode());
+      break;
+    case "guardrails":
+      // Arming is a switch, not a choice: the panel stays open and the cursor
+      // stays put, so the row can be flipped and read again.
+      a.toast(a.toggleGuardrail(row.key));
       break;
   }
 }
@@ -113,7 +140,9 @@ export interface ChatCommandContext {
 export function runChatCommand(name: string, a: ChatCommandContext): void {
   const plugin = coreCommands.find((c) => c.name === name);
   if (plugin !== undefined) {
-    a.setMode(plugin.target !== undefined ? pickMode(plugin.target) : draftMode());
+    a.setMode(
+      plugin.target !== undefined ? pickMode(plugin.target) : draftMode(),
+    );
     return;
   }
   const target = COMMAND_MODES[name];

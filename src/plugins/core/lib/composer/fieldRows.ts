@@ -5,9 +5,6 @@ const MAX_ONE_ROW_CHARS = 120;
 export const FIELD_MIN_ROWS = 3;
 export const FIELD_MAX_ROWS = 6;
 
-
-
-
 export function composerFieldSize(t: AdwaitaTheme): number {
   return t.type.caption;
 }

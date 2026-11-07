@@ -114,10 +114,12 @@ export class FileCompletionProvider implements AutocompleteProvider {
     const prefixMatch = context.match(/^(@|~\/|\.\.\/|\.\/)/);
     const prefix = prefixMatch ? prefixMatch[0] : "";
     const query = context.slice(prefix.length);
-    return fuzzyFilter(this.loadEntries(), query, (entry) => entry).map((entry) => ({
-      value: prefix + entry,
-      label: entry,
-    }));
+    return fuzzyFilter(this.loadEntries(), query, (entry) => entry).map(
+      (entry) => ({
+        value: prefix + entry,
+        label: entry,
+      }),
+    );
   }
 }
 

@@ -3,11 +3,17 @@ import type { NativeRenderer } from "@gpuix/react";
 import { getKeybindings } from "../../../../keybindings/manager";
 import { keyEventOf } from "../../../../keys";
 import { handleListKey } from "../ui/listNav";
-import { isCycleTarget, type ComposerEvent, type ComposerMode } from "./mode";
+import {
+  isCompletionMode,
+  isCycleTarget,
+  type ComposerEvent,
+  type ComposerMode,
+} from "./mode";
 import { isDeleteSessionKey } from "./shortcuts";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
+const AUTOCOMPLETE_KEY_ID = "editor.autocomplete";
 
 const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
   { id: "composer.commands", event: { type: "openCommands" } },
@@ -20,6 +26,10 @@ const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
     event: { type: "openPick", target: "userMessageHistory" },
   },
   { id: "composer.changes", event: { type: "openChanges" } },
+  {
+    id: "composer.guardrails",
+    event: { type: "openPick", target: "guardrails" },
+  },
   { id: "composer.tree", event: { type: "openPick", target: "tree" } },
   { id: "composer.theme", event: { type: "openPick", target: "theme" } },
   { id: "composer.accent", event: { type: "openPick", target: "accent" } },
@@ -59,6 +69,13 @@ export interface ComposerKeyContext {
 
   send: (event: ComposerEvent) => void;
   pickActive: () => void;
+
+  /** Tab in a draft: complete the path the draft is typing. */
+  onComplete?: () => void;
+
+  /** A keystroke in a panel whose query is the draft, so the draft follows it. */
+  onDraft?: (text: string) => void;
+
   onDelete?: () => void;
   onClear?: () => void;
   onPaste?: () => void;
@@ -78,7 +95,10 @@ export function panelOwner(mode: ComposerMode, panelOpen: boolean): string {
   return mode.kind === "pick" ? mode.target : "";
 }
 
-export function ownsFocus(node: number | null, renderer: NativeRenderer): boolean {
+export function ownsFocus(
+  node: number | null,
+  renderer: NativeRenderer,
+): boolean {
   if (node === null) return false;
   if (typeof renderer.getFocusedElementId !== "function") return false;
   return (renderer.getFocusedElementId() ?? null) === node;
@@ -97,6 +117,11 @@ function isClearKey(event: EventPayload): boolean {
   return getKeybindings().matches(keyEventOf(event), CLEAR_KEY_ID);
 }
 
+function isAutocompleteKey(event: EventPayload): boolean {
+  if (event.isHeld === true) return false;
+  return getKeybindings().matches(keyEventOf(event), AUTOCOMPLETE_KEY_ID);
+}
+
 const hasTextSelection = (renderer: NativeRenderer): boolean =>
   (renderer.getSelectedText?.() ?? "").length > 0;
 
@@ -106,7 +131,7 @@ function isBare(event: EventPayload): boolean {
 }
 
 function typedCharacter(event: EventPayload, key: string): string | undefined {
-  if (key === "enter") return undefined;
+  if (key === "enter" || key === "tab") return undefined;
   const chars = event.keyChar;
   if (chars === undefined || chars.length !== 1) return undefined;
   return chars === "\n" || chars === "\r" ? undefined : chars;
@@ -168,6 +193,31 @@ function pasteKey(event: EventPayload, ctx: ComposerKeyContext): boolean {
   if (ctx.onPaste === undefined || ctx.mode.kind !== "draft") return false;
   if (!isPasteKey(event)) return false;
   ctx.onPaste();
+  return true;
+}
+
+/**
+ * Tab completes a path: in a draft it opens the completion panel over the path
+ * the draft ends with, and in that panel it takes the highlighted completion.
+ *
+ * `cycle` says which listener runs the key: the field and the panel each get
+ * their own key event and the window listener sees the same press, so taking a
+ * completion — which moves the draft — is left to the element that has focus.
+ * Opening the panel is idempotent and runs everywhere.
+ */
+function completionKey(
+  event: EventPayload,
+  ctx: ComposerKeyContext,
+  cycle: boolean,
+): boolean {
+  if (!isAutocompleteKey(event)) return false;
+  if (ctx.panelOpen === true) {
+    if (isCompletionMode(ctx.mode) === false || cycle === true) return false;
+    ctx.pickActive();
+    return true;
+  }
+  if (ctx.mode.kind !== "draft" || ctx.onComplete === undefined) return false;
+  ctx.onComplete();
   return true;
 }
 
@@ -233,14 +283,19 @@ function handlePanelKey(
   const key = lowerKey(event);
   const bare = isBare(event);
 
+  const setQuery = (query: string): void => {
+    ctx.onDraft?.(query);
+    ctx.send({ type: "setQuery", query });
+  };
+
   if (bare && key === "backspace") {
-    ctx.send({ type: "setQuery", query: mode.query.slice(0, -1) });
+    setQuery(mode.query.slice(0, -1));
     return;
   }
 
   const char = typedCharacter(event, key);
   if (bare && char !== undefined) {
-    ctx.send({ type: "setQuery", query: mode.query + char });
+    setQuery(mode.query + char);
     return;
   }
 
@@ -263,6 +318,7 @@ export function composerFieldKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (completionKey(event, ctx, false)) return;
   if (pasteKey(event, ctx)) return;
   if (clearKey(event, ctx)) return;
   if (composerKey(event, ctx, false)) return;
@@ -274,6 +330,7 @@ export function composerListKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (completionKey(event, ctx, false)) return;
   if (composerKey(event, ctx, false)) return;
   handlePanelKey(event, ctx, true);
 }
@@ -284,6 +341,7 @@ export function composerGlobalKey(
 ): boolean {
   if (ctx.wideKey?.(event) === true) return true;
   if (pasteKey(event, ctx)) return true;
+  if (completionKey(event, ctx, true)) return true;
   if (composerKey(event, ctx, true)) return true;
   return (
     ctx.listOwnsFocus() === false &&
