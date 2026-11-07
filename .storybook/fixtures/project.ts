@@ -1,13 +1,11 @@
 import type { PromptTemplate } from "@earendil-works/pi-coding-agent";
+import { buildActivityModel, weeklyBuckets } from "adwaita-gpuix";
 import {
-  buildActivityModel,
-  weeklyBuckets,
-} from "../../src/plugins/core/lib/project/activity";
-import {
+  projectActivity,
   SPARKLINE_WEEKS,
   type ProjectSummaryModel,
 } from "../../src/plugins/core/lib/project/projectSummary";
-import type { Change } from "../../src/plugins/vcs/types";
+import { type Change } from "adwaita-gpuix";
 import {
   pillsFromTemplates,
   type PromptPill,
@@ -261,7 +259,7 @@ function project(
       trackedFiles: 155,
     },
     activity: {
-      ...buildActivityModel(changes, bookmarks, NOW),
+      ...projectActivity(buildActivityModel(changes, { now: NOW }), bookmarks),
       recent,
     },
     weekly: weeklyBuckets(changes, SPARKLINE_WEEKS, NOW.getTime()),
@@ -302,7 +300,10 @@ export const PROJECT_SPARSE: ProjectSummaryModel = {
     scripts: ["dev", "typecheck"],
     trackedFiles: 18,
   },
-  activity: buildActivityModel(SINGLE, new Map<string, string[]>(), NOW),
+  activity: projectActivity(
+    buildActivityModel(SINGLE, { now: NOW }),
+    new Map(),
+  ),
   weekly: weeklyBuckets(SINGLE, SPARKLINE_WEEKS, NOW.getTime()),
 };
 
