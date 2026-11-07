@@ -1,11 +1,13 @@
-import type { AssistantUsage, TranscriptAction } from "./transcriptState";
+import {
+  nextItemId,
+  type AssistantUsage,
+  type TranscriptAction,
+} from "./transcriptState";
 import type { ToolImage } from "./content";
 import { resultParts } from "./toolOutput";
 
 export interface MapEventContext {
   lastAssistantId?: string;
-
-  assistantSeq?: number;
 
   toolText?: Map<string, string>;
 
@@ -105,8 +107,10 @@ function argsShape(args: Record<string, unknown>): string {
 
 function messageStart(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
   if (asRecord(e.message).role !== "assistant") return [];
-  ctx.assistantSeq = (ctx.assistantSeq ?? 0) + 1;
-  const id = `assistant-${ctx.assistantSeq}`;
+  // Every row of the log — a live one and one restored from the session file —
+  // takes its id from the same counter, so a resumed session's rows and the
+  // rows of the run that continues it can never share a key.
+  const id = nextItemId("assistant");
   ctx.lastAssistantId = id;
   return [{ type: "assistant_start", id }];
 }
