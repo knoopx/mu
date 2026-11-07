@@ -5,15 +5,12 @@ import {
   hints,
   matchShortcut,
   navShortcuts,
-  type Kbd,
   type KeyMods,
   type Shortcut,
 } from "adwaita-gpuix/shortcuts";
 
 export type { KeyMods, Shortcut };
 export { hints, matchShortcut, PAGED_NAV };
-
-const CONFIRM: Kbd[] = [["ctrl", "enter"]];
 
 const FOCUS_RIGHT: Shortcut = {
   id: "focus-right",
@@ -63,6 +60,7 @@ export const FILES_SHORTCUTS: Shortcut[] = [
     hidden: true,
   },
   { id: "split-file", kbds: ["s"], desc: "split file" },
+  { id: "split-hunk", kbds: ["h"], desc: "split hunks" },
   { id: "discard", kbds: ["d"], desc: "discard" },
 ];
 
@@ -76,11 +74,6 @@ export const MOVE_SHORTCUTS: Shortcut[] = [
 export const STACK_HINTS = hints(STACK_SHORTCUTS);
 export const FILES_HINTS = hints(FILES_SHORTCUTS);
 export const MOVE_HINTS = hints(MOVE_SHORTCUTS);
-
-export const DESCRIBE_SHORTCUTS: Shortcut[] = [
-  { id: "describe", kbds: CONFIRM, desc: "describe" },
-  { id: "cancel", kbds: ["escape"], desc: "cancel" },
-];
 
 export const PICKER_SHORTCUTS: Shortcut[] = [
   { id: "type", kbds: ["type"], desc: "filter", hidden: true },

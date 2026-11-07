@@ -7,6 +7,7 @@ import {
   fileRowStats,
   useAdwaita,
   useListFollow,
+  useListWindow,
   VirtualListPanel,
 } from "adwaita-gpuix";
 import { buildNativeTheme, mutedText } from "../../core/lib/ui/theme";
@@ -14,7 +15,6 @@ import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { iconForFile } from "../../core/lib/composer/options";
 import { relativeAge } from "../../core/lib/utils/time";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
-import { useListWindow } from "../../core/lib/ui/listWindow";
 import type { ChangesPanelState } from "../hooks/useChangesPanel";
 
 const LIST_CAP = 200;

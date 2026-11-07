@@ -11,7 +11,6 @@ import {
   Icon,
   OverlayInput,
   T,
-  Textarea,
   candidateListHeight,
   candidateRowStyle,
   groupHints,
@@ -19,18 +18,12 @@ import {
   windowCandidates,
   type IconName,
 } from "adwaita-gpuix";
-import type { EventPayload } from "@gpuix/native";
 import type { StyleDesc } from "@gpuix/react";
-import {
-  DESCRIBE_SHORTCUTS,
-  PICKER_SHORTCUTS,
-  hints,
-  matchShortcut,
-} from "../lib/shortcuts";
+import { PICKER_SHORTCUTS, hints, matchShortcut } from "../lib/shortcuts";
 import { REVSETS } from "../constants";
 import type { RevsetDef } from "../types";
 import { listBookmarks } from "../lib/repo";
-import { bareKeyArgs, keyArgsOf } from "../../core/lib/ui/keyEvents";
+import { bareKeyArgs } from "../../core/lib/ui/keyEvents";
 
 const ROW_H = 24;
 const MAX_ROWS = 6;
@@ -104,48 +97,6 @@ function candidateListStyle(visible: number): StyleDesc {
     gap: 2,
     height: candidateListHeight(visible, ROW_H),
   };
-}
-
-export function DescribeDialog({
-  targets,
-  onSubmit,
-  onCancel,
-}: {
-  targets: string[];
-  onSubmit: (message: string) => void;
-  onCancel: () => void;
-}): JSX.Element {
-  const t = useAdwaita();
-  const [value, setValue] = useState("");
-  const label = `Describe (${targets.length} change${targets.length === 1 ? "" : "s"})`;
-
-  const submit = (): void => {
-    const message = value.trim();
-    if (message.length === 0) onCancel();
-    else onSubmit(message);
-  };
-
-  return (
-    <DialogFrame width={520} dim>
-      <DialogHeading icon="article" title={label} />
-      <Textarea
-        autoFocus
-        value={value}
-        placeholder="change description"
-        rows={3}
-        onChange={(next: string) => setValue(next)}
-        style={{ flexGrow: 1 }}
-        onKeyDown={(event: EventPayload) => {
-          const { key, mods } = keyArgsOf(event);
-          const m = matchShortcut(DESCRIBE_SHORTCUTS, key, mods);
-          if (m === null) return;
-          if (m.id === "describe") submit();
-          if (m.id === "cancel") onCancel();
-        }}
-      />
-      <DialogHintBar groups={groupHints(hints(DESCRIBE_SHORTCUTS))} />
-    </DialogFrame>
-  );
 }
 
 export function RevsetDialog({

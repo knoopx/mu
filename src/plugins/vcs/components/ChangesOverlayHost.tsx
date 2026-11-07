@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import { BookmarkDialog, DescribeDialog, RevsetDialog } from "./Dialogs";
+import { BookmarkDialog, RevsetDialog } from "./Dialogs";
 import type { ChangesPanelState } from "../hooks/useChangesPanel";
 
 export function ChangesOverlayHost({
@@ -21,21 +21,6 @@ export function ChangesOverlayHost({
       <BookmarkDialog
         changeId={panel.overlayChangeId ?? ""}
         onSet={panel.applyBookmark}
-        onCancel={panel.closeOverlay}
-      />
-    );
-
-  if (panel.overlay === "describe")
-    return (
-      <DescribeDialog
-        targets={
-          panel.checked.size > 0
-            ? Array.from(panel.checked)
-            : panel.overlayChangeId !== null
-              ? [panel.overlayChangeId]
-              : []
-        }
-        onSubmit={panel.applyDescribe}
         onCancel={panel.closeOverlay}
       />
     );

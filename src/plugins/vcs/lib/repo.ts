@@ -3,12 +3,15 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 import {
+  BOOKMARK_LIST_ARGS,
+  changedFiles,
+  parseBookmarkList,
   runCli,
   sanitizeDescription,
   type CliMock,
   type CliResult,
 } from "adwaita-gpuix";
-import type { Bookmark, Change, FileChange } from "../types";
+import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
 
 const pExecFile = promisify(execFile);
 
@@ -160,56 +163,8 @@ export async function getCurrentChangeId(): Promise<string | null> {
   return id.length > 0 ? id : null;
 }
 
-const BOOKMARKS_TEMPLATE =
-  'name ++ "\\t" ++ if(normal_target, normal_target.change_id(), "") ++ "\\t" ++ remote ++ "\\t" ++ ' +
-  'if(normal_target, normal_target.description(), "") ++ "\\t" ++ ' +
-  'if(normal_target, normal_target.author().name(), "") ++ "\\n"';
-
-const IMPLICIT_GIT_REMOTE = "git";
-
 export async function listBookmarks(): Promise<Bookmark[]> {
-  const out = await vcsOk([
-    "bookmark",
-    "list",
-    "--all-remotes",
-    "--color",
-    "never",
-    "-T",
-    BOOKMARKS_TEMPLATE,
-  ]);
-  const seen = new Set<string>();
-  const bookmarks: Bookmark[] = [];
-  for (const line of out.split("\n")) {
-    if (line.trim().length === 0) continue;
-    const [name, change_id, remote, description, author] = line.split("\t");
-    if (!name) continue;
-    if (remote === IMPLICIT_GIT_REMOTE) continue;
-    const reference = remote ? `${remote}/${name}` : name;
-    if (seen.has(reference)) continue;
-    seen.add(reference);
-    bookmarks.push({
-      name,
-      change_id: change_id ?? "",
-      description: description ?? "",
-      author: author ?? "",
-      remote: remote ?? "",
-      reference,
-    });
-  }
-  return bookmarks;
-}
-
-export function bookmarksByChange(
-  bookmarks: Bookmark[],
-): Map<string, string[]> {
-  const map = new Map<string, string[]>();
-  for (const b of bookmarks) {
-    if (!b.change_id) continue;
-    const arr = map.get(b.change_id) ?? [];
-    arr.push(b.remote ? b.reference : b.name);
-    map.set(b.change_id, arr);
-  }
-  return map;
+  return parseBookmarkList(await vcsOk([...BOOKMARK_LIST_ARGS]));
 }
 
 export function bookmarkNamesFor(
@@ -247,80 +202,6 @@ async function cacheKey(changeId: string): Promise<string> {
   return `${changeId}:${head.trim()}`;
 }
 
-export function extractDiffFiles(
-  patch: string,
-): Array<Pick<FileChange, "path" | "status">> {
-  const lines = patch.split("\n");
-  const out: Array<Pick<FileChange, "path" | "status">> = [];
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i] ?? "";
-    if (!line.startsWith("diff --git")) continue;
-    const token = line.split(" ")[3] ?? "";
-    const path =
-      token.startsWith("a/") || token.startsWith("b/") ? token.slice(2) : token;
-    if (!path) continue;
-    let fromDevNull = false;
-    let toDevNull = false;
-    for (let j = i + 1; j < lines.length; j++) {
-      const l = lines[j] ?? "";
-      if (l.startsWith("diff --git")) break;
-      if (l.startsWith("--- ") && l.slice(4) === "/dev/null")
-        fromDevNull = true;
-      else if (l.startsWith("+++ ") && l.slice(4) === "/dev/null")
-        toDevNull = true;
-    }
-    out.push({ path, status: fromDevNull ? "A" : toDevNull ? "D" : "M" });
-  }
-  return out;
-}
-
-export interface FileStat {
-  status: FileChange["status"];
-  insertions: number;
-  deletions: number;
-}
-
-export function filePatchStats(patch: string): FileStat {
-  let insertions = 0;
-  let deletions = 0;
-  let fromDevNull = false;
-  let toDevNull = false;
-  for (const line of patch.split("\n")) {
-    if (line.startsWith("--- ")) {
-      if (line.slice(4) === "/dev/null") fromDevNull = true;
-    } else if (line.startsWith("+++ ")) {
-      if (line.slice(4) === "/dev/null") toDevNull = true;
-    } else if (line.startsWith("+")) insertions++;
-    else if (line.startsWith("-")) deletions++;
-  }
-  return {
-    status: fromDevNull ? "A" : toDevNull ? "D" : "M",
-    insertions,
-    deletions,
-  };
-}
-
-export async function mapConcurrent<T, R>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    async () => {
-      for (;;) {
-        const i = next++;
-        if (i >= items.length) break;
-        results[i] = await fn(items[i]);
-      }
-    },
-  );
-  await Promise.all(workers);
-  return results;
-}
-
 export async function loadChangedFiles(
   changeId: string,
 ): Promise<FileChange[]> {
@@ -328,20 +209,10 @@ export async function loadChangedFiles(
   const cached = filesCache.get(key);
   if (cached !== undefined) return cached;
 
-  const whole = (await vcs(["diff", "--git", "-r", changeId])).stdout;
-  const entries = extractDiffFiles(whole);
-  const rows = await mapConcurrent(entries, 8, async (entry) => {
-    const out = (await vcs(["diff", "--git", "-r", changeId, entry.path]))
-      .stdout;
-    const stat = filePatchStats(out);
-    return {
-      path: entry.path,
-      status: entry.status,
-      insertions: stat.insertions,
-      deletions: stat.deletions,
-    };
-  });
-  const files = rows.sort((a, b) => a.path.localeCompare(b.path));
+  const files = await changedFiles(
+    changeId,
+    async (args) => (await vcs(["diff", "--git", ...args])).stdout,
+  );
   filesCache.set(key, files);
   return files;
 }
@@ -466,29 +337,6 @@ export async function abandonChange(changeId: string): Promise<string> {
   return `Abandoned change ${changeId.slice(0, 8)}`;
 }
 
-export async function splitChange(changeId: string): Promise<string> {
-  await vcsOk(["new", changeId]);
-  return `Split change ${changeId.slice(0, 8)}`;
-}
-
-export async function splitFileChange(
-  changeId: string,
-  filePath: string,
-): Promise<string> {
-  const msg = `Moved ${filePath} from change ${changeId.slice(0, 8)} to a new change`;
-  await vcsOk([
-    "split",
-    "-m",
-    msg,
-    "-r",
-    changeId,
-    "--insert-after",
-    changeId,
-    filePath,
-  ]);
-  return msg;
-}
-
 async function parentChangeId(changeId: string): Promise<string | null> {
   const out = await vcsQuiet([
     "log",
@@ -544,14 +392,6 @@ export async function forgetBookmark(bookmarkRef: string): Promise<string> {
 export async function pushBookmarks(names: string[]): Promise<string> {
   for (const name of names) await vcsOk(["git", "push", "-b", name]);
   return `Pushed ${names.length} bookmark(s)`;
-}
-
-export async function describeChange(
-  changeId: string,
-  message: string,
-): Promise<string> {
-  await vcsOk(["describe", "-r", changeId, "-m", message]);
-  return `Described change ${changeId.slice(0, 8)}`;
 }
 
 export async function rebaseChange(

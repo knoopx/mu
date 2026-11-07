@@ -4,7 +4,6 @@ import {
   newChange,
   revertChange,
   squashChange,
-  splitChange,
 } from "./repo";
 import { navDirectionOf } from "./nav";
 import {
@@ -31,8 +30,12 @@ export const STACK_ACTION_IDS = new Set([
   "move",
 ]);
 
-export const FILES_ACTION_IDS = new Set(["open", "split-file", "discard"]);
-
+export const FILES_ACTION_IDS = new Set([
+  "open",
+  "split-file",
+  "split-hunk",
+  "discard",
+]);
 
 export const STACK_MUTATIONS: Record<
   string,
@@ -40,12 +43,10 @@ export const STACK_MUTATIONS: Record<
 > = {
   new: newChange,
   edit: editChange,
-  split: splitChange,
   squash: squashChange,
   revert: revertChange,
   drop: abandonChange,
 };
-
 
 export const isBareKey = (mods: KeyMods): boolean =>
   mods.ctrl !== true && mods.alt !== true && mods.cmd !== true;
