@@ -53,6 +53,26 @@ function panelShell(t: AdwaitaTheme): StyleDesc {
   };
 }
 
+/** The block a tool shows its own output in: lines read, lines written, a patch. */
+export function toolPreviewWrap(
+  t: AdwaitaTheme,
+  style?: Partial<StyleDesc>,
+): StyleDesc {
+  return {
+    display: "flex",
+    flexDirection: "column",
+    gap: t.space.xs,
+    paddingLeft: 0,
+    minWidth: 0,
+    flexShrink: 0,
+    ...style,
+  };
+}
+
+/** One line of a text preview, at the caption rhythm every preview keeps. */
+export const previewLineHeight = (t: AdwaitaTheme): number =>
+  Math.round(t.type.caption * 1.6);
+
 export function outputPanel(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",

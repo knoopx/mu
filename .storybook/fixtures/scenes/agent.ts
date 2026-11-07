@@ -1,6 +1,7 @@
 import type { TranscriptItem } from "../../../src/plugins/core/lib/agent/transcriptState";
 import {
   CAPTURE_ALL,
+  CROP_POSITION_MODULE,
   GREP_OBJECT_FIT,
   IDENTIFY_PICTURES,
   LS_PICTURES,
@@ -8,6 +9,7 @@ import {
   READ_THUMB_STYLES,
   TILE_DIFF,
   TILE_PATCH,
+  THUMB_LAYOUT_MODULE,
   TYPECHECK_CLEAN,
   TYPECHECK_NO_OBJECT_POSITION,
 } from "../output";
@@ -68,6 +70,22 @@ export const AGENT_ROWS: TranscriptItem[] = [
     READ_THUMB_STRIP,
     29_000,
   ),
+  ran(
+    "r-write-crop",
+    "write",
+    {
+      path: "src/plugins/core/lib/ui/cropPosition.ts",
+      content: CROP_POSITION_MODULE,
+    },
+    "Successfully wrote to src/plugins/core/lib/ui/cropPosition.ts",
+    31_000,
+  ),
+  // The call is open and its arguments are still arriving: the row shows the
+  // file as far as the model has written it.
+  running("r-write-thumbs", "write", {
+    path: "src/plugins/core/lib/ui/thumbs.ts",
+    content: THUMB_LAYOUT_MODULE,
+  }),
   ran(
     "r-edit",
     "edit",

@@ -10,11 +10,7 @@ import {
 } from "adwaita-gpuix";
 import { matchShortcut } from "adwaita-gpuix/shortcuts";
 import type { EventPayload } from "@gpuix/native";
-import {
-  type GpuixTheme,
-  type StyleDesc,
-  useWindowSize,
-} from "@gpuix/react";
+import { type GpuixTheme, type StyleDesc, useWindowSize } from "@gpuix/react";
 
 import {
   buildNativeTheme,
@@ -508,7 +504,9 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
   const checkedTitles = checkedCount > 0 ? titlesOf(checked) : [];
   const activate = (): void => {
     if (allowMultiple) {
-      submitTitles(checkedTitles.length > 0 ? checkedTitles : activeOptionTitles);
+      submitTitles(
+        checkedTitles.length > 0 ? checkedTitles : activeOptionTitles,
+      );
       return;
     }
     acceptAt(activeIndex);
@@ -544,7 +542,10 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     onCancel();
   };
 
-  const runShortcut = (event: EventPayload, source: ShortcutSource): boolean => {
+  const runShortcut = (
+    event: EventPayload,
+    source: ShortcutSource,
+  ): boolean => {
     if (event.isHeld === true) return false;
     const mods = modsOf(event);
     const match = matchShortcut(

@@ -1,18 +1,14 @@
 import type { KeyMods } from "adwaita-gpuix/shortcuts";
 import type { AskMode } from "../types";
 
-
 export type ShortcutSource = "field" | "window";
 
-
 const FIELD_OWNED_IDS = new Set(["up", "down", "toggle", "cancel", "back"]);
-
 
 const COMBO_IDS = new Set(["submit"]);
 
 export const isCombo = (mods: KeyMods): boolean =>
   mods.ctrl === true || mods.alt === true || mods.cmd === true;
-
 
 export function claimShortcut(
   source: ShortcutSource,
@@ -23,7 +19,6 @@ export function claimShortcut(
   if (source === "field") return FIELD_OWNED_IDS.has(id);
   return !fieldFocused || isCombo(mods) || COMBO_IDS.has(id);
 }
-
 
 export interface AskShortcutContext {
   id: string;
@@ -44,7 +39,6 @@ export interface AskShortcutContext {
 }
 
 type AskShortcutHandler = (ctx: AskShortcutContext) => boolean;
-
 
 const HANDLERS: Record<string, AskShortcutHandler> = {
   up: (ctx) => {
@@ -95,7 +89,6 @@ const HANDLERS: Record<string, AskShortcutHandler> = {
     return true;
   },
 };
-
 
 export function runAskShortcut(ctx: AskShortcutContext): boolean {
   const handler = HANDLERS[ctx.id];

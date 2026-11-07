@@ -37,8 +37,10 @@ export const ASK_TEXT_SHORTCUTS: Shortcut[] = [
   { id: "cancel", kbds: [["shift", "escape"]], desc: "cancel" },
 ];
 
-
-export const askShortcutSet = (mode: AskMode, allowMultiple: boolean): Shortcut[] =>
+export const askShortcutSet = (
+  mode: AskMode,
+  allowMultiple: boolean,
+): Shortcut[] =>
   mode === "select"
     ? allowMultiple
       ? ASK_MULTI_SHORTCUTS

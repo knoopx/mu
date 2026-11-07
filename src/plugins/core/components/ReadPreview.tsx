@@ -6,11 +6,13 @@ import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
 import { buildNativeTheme } from "../lib/ui/theme";
-import { outputPanel } from "../lib/ui/transcriptLayout";
+import {
+  outputPanel,
+  previewLineHeight,
+  toolPreviewWrap,
+} from "../lib/ui/transcriptLayout";
 
-import type { TranscriptItem } from "../lib/agent/transcriptState";
-
-type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
+import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
 export const READ_TOOL_NAMES = new Set(["read"]);
 
@@ -174,18 +176,8 @@ export function ReadPreview({
   style,
 }: ReadPreviewProps): JSX.Element | null {
   const t = useAdwaita();
-  const lineHeight = Math.round(t.type.caption * 1.6);
-
-  const wrap: StyleDesc = {
-    display: "flex",
-    flexDirection: "column",
-    gap: t.space.xs,
-    paddingLeft: 0,
-    minWidth: 0,
-    flexShrink: 0,
-    ...style,
-  };
-
+  const lineHeight = previewLineHeight(t);
+  const wrap = toolPreviewWrap(t, style);
   const card: StyleDesc = { ...outputPanel(t), flexShrink: 0 };
 
   const tile: StyleDesc = {

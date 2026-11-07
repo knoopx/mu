@@ -3,11 +3,14 @@ import { Icon, T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "../../core/lib/ui/theme";
-import type { TranscriptItem } from "../../core/lib/agent/transcriptState";
+import {
+  toolGapColumn,
+  toolGrow,
+  toolLineFlush,
+} from "../../core/lib/ui/toolRows";
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ASK_TOOL_NAME } from "../constants";
 import type { AskUserDetails } from "../types";
-
-type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
 
 export function isAskTool(name: string): boolean {
   return name.toLowerCase() === ASK_TOOL_NAME;
@@ -30,20 +33,10 @@ export function AskResultRows({
   const t = useAdwaita();
   const details = askDetailsOf(item);
 
-  const column: StyleDesc = {
-    display: "flex",
-    flexDirection: "column",
-    gap: t.space.xs,
-    paddingLeft: t.space.sm,
-    paddingRight: t.space.sm,
-    flexShrink: 1,
-    minWidth: 0,
-  };
-
   if (item.status === "error") {
     return (
-      <div style={column}>
-        <div style={line(t)}>
+      <div style={toolGapColumn(t)}>
+        <div style={toolLineFlush(t)}>
           <Icon
             name="cancel"
             size={t.control.navIconSize}
@@ -53,7 +46,7 @@ export function AskResultRows({
           <T
             size="caption"
             color={t.color.functional.destructive}
-            style={{ flexShrink: 1, minWidth: 0 }}
+            style={toolGrow}
           >
             {item.output.trim() === ""
               ? "Ask was rejected"
@@ -70,8 +63,8 @@ export function AskResultRows({
     (running && (details.answers ?? []).length === 0)
   ) {
     return (
-      <div style={column}>
-        <div style={line(t)}>
+      <div style={toolGapColumn(t)}>
+        <div style={toolLineFlush(t)}>
           <Icon
             name="schedule"
             size={t.control.navIconSize}
@@ -93,8 +86,8 @@ export function AskResultRows({
         ? ` · answered ${answers.length} before cancelling`
         : "";
     return (
-      <div style={column}>
-        <div style={line(t)}>
+      <div style={toolGapColumn(t)}>
+        <div style={toolLineFlush(t)}>
           <Icon
             name="block"
             size={t.control.navIconSize}
@@ -110,7 +103,7 @@ export function AskResultRows({
   }
 
   return (
-    <div style={column}>
+    <div style={toolGapColumn(t)}>
       {answers.map((answer, i) => {
         const chosen =
           answer.selected.length > 0
@@ -119,36 +112,22 @@ export function AskResultRows({
         const prefix =
           answers.length > 1 ? `${i + 1}. [${answer.id}] ` : `[${answer.id}] `;
         return (
-          <div key={`${answer.id}-${i}`} style={answerColumn(t)}>
-            <div style={line(t)}>
+          <div key={`${answer.id}-${i}`} style={answerColumn}>
+            <div style={toolLineFlush(t)}>
               <Icon
                 name={answer.selected.length > 0 ? "checkCircle" : "edit"}
                 size={t.control.navIconSize}
                 color={t.color.functional.success}
                 style={{ flexShrink: 0 }}
               />
-              <T
-                size="caption"
-                color={t.color.text.primary}
-                style={{ flexShrink: 1, minWidth: 0 }}
-              >
+              <T size="caption" color={t.color.text.primary} style={toolGrow}>
                 {`${prefix}${chosen}`}
               </T>
             </div>
             {answer.custom !== undefined && (
-              <div style={line(t)}>
-                <div
-                  style={{
-                    width: t.control.navIconSize,
-                    flexShrink: 0,
-                    pointerEvents: "none",
-                  }}
-                />
-                <T
-                  size="caption"
-                  color={mutedText(t)}
-                  style={{ flexShrink: 1, minWidth: 0 }}
-                >
+              <div style={toolLineFlush(t)}>
+                <div style={indent(t)} aria-hidden />
+                <T size="caption" color={mutedText(t)} style={toolGrow}>
                   {answer.custom}
                 </T>
               </div>
@@ -160,23 +139,19 @@ export function AskResultRows({
   );
 }
 
-function answerColumn(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-    minWidth: 0,
-    flexShrink: 1,
-  };
-}
+const answerColumn: StyleDesc = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+  minWidth: 0,
+  flexShrink: 1,
+};
 
-function line(t: AdwaitaTheme): StyleDesc {
+/** The spacer that holds an answer's typed text under the chosen options. */
+function indent(t: AdwaitaTheme): StyleDesc {
   return {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: t.space.sm,
-    minWidth: 0,
+    width: t.control.navIconSize,
     flexShrink: 0,
+    pointerEvents: "none",
   };
 }

@@ -1,0 +1,132 @@
+import { T, useAdwaita } from "adwaita-gpuix";
+import type { JSX } from "react";
+import type { StyleDesc } from "@gpuix/react";
+
+import { buildNativeTheme, mutedText } from "../lib/ui/theme";
+import {
+  outputPanel,
+  previewLineHeight,
+  toolPreviewWrap,
+} from "../lib/ui/transcriptLayout";
+
+import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
+
+export const WRITE_TOOL_NAMES = new Set(["write"]);
+
+export const MAX_WRITE_PREVIEW_LINES = 12;
+
+const PATH_KEYS = ["path", "file_path", "filePath", "file", "notebook_path"];
+
+export function isWriteTool(name: string): boolean {
+  return WRITE_TOOL_NAMES.has(name.toLowerCase());
+}
+
+function pathOf(args: Record<string, unknown>): string {
+  for (const key of PATH_KEYS) {
+    const value = args[key];
+    if (typeof value === "string" && value.trim() !== "") return value.trim();
+  }
+  return "";
+}
+
+/** The file as it is displayed: tabs widened, trailing blank lines dropped. */
+function contentLines(content: string): string[] {
+  const lines = content.split("\n").map((line) => line.replace(/\t/g, "  "));
+  while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+  return lines;
+}
+
+function lineCount(total: number): string {
+  return `${total} ${total === 1 ? "line" : "lines"}`;
+}
+
+export interface WritePreviewData {
+  path: string;
+  lines: string[];
+  total: number;
+  truncated: boolean;
+  streaming: boolean;
+  caption: string;
+}
+
+/**
+ * The file a write is making, read out of the call's own arguments: they are
+ * in the log from the moment the model opens the call, so the text of the file
+ * is on screen while it is still being written.
+ */
+export function writePreviewOf(
+  item: ToolTranscriptItem,
+): WritePreviewData | undefined {
+  if (!isWriteTool(item.name)) return undefined;
+  const args = item.args ?? {};
+  const lines = contentLines(
+    typeof args.content === "string" ? args.content : "",
+  );
+  if (lines.length === 0) return undefined;
+
+  const streaming = item.status === "running";
+  const total = lines.length;
+  const kept = lines.slice(0, MAX_WRITE_PREVIEW_LINES);
+  const truncated = total > kept.length;
+  const hidden = total - kept.length;
+
+  // While the call streams the count is the point: the file is that long and
+  // growing. Only once it is written does the panel say what it cannot show.
+  const caption = streaming
+    ? `writing · ${lineCount(total)} so far`
+    : truncated
+      ? `${lineCount(total)} · ${hidden} not shown`
+      : lineCount(total);
+
+  return {
+    path: pathOf(args),
+    lines: kept,
+    total,
+    truncated,
+    streaming,
+    caption,
+  };
+}
+
+export interface WritePreviewProps {
+  preview: WritePreviewData;
+  style?: Partial<StyleDesc>;
+}
+
+export function WritePreview({
+  preview,
+  style,
+}: WritePreviewProps): JSX.Element {
+  const t = useAdwaita();
+  const lineHeight = previewLineHeight(t);
+  const wrap = toolPreviewWrap(t, style);
+  const card: StyleDesc = { ...outputPanel(t), flexShrink: 0 };
+
+  return (
+    <div style={wrap}>
+      <div style={card}>
+        <code
+          code={preview.lines.join("\n")}
+          path={preview.path === "" ? undefined : preview.path}
+          theme={buildNativeTheme(t)}
+          style={{
+            maxHeight: MAX_WRITE_PREVIEW_LINES * lineHeight,
+            overflow: "hidden",
+            flexShrink: 0,
+            fontSize: t.type.caption,
+            lineHeight,
+            fontFamily: t.type.fontFamilyMono,
+            color: t.color.text.primary,
+          }}
+        />
+      </div>
+      <T
+        size="caption"
+        color={mutedText(t)}
+        style={{ flexShrink: 0, pointerEvents: "none" }}
+      >
+        {preview.caption}
+      </T>
+    </div>
+  );
+}

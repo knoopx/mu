@@ -21,6 +21,7 @@ import {
   PREVIEW_COMPARE,
   PREVIEW_FIX_ANSWER,
   PREVIEW_REASONING,
+  PREVIEW_RELEASE_ANSWER,
   PREVIEW_RELEASE_NOTES,
   PREVIEW_STREAM,
 } from "../prose";
@@ -244,8 +245,17 @@ export const RELEASE_TURN: TranscriptItem[] = [
     "the portrait doesn't belong in a 16:9 sheet, it's the only 3:4 in the folder. write the release note for the strip and the preview, in the README's voice — one behaviour, the three places a photo lands, and what it costs",
     27,
   ),
+  // The note as a file: the row paints the file the model wrote, and the tool's
+  // own "Successfully wrote to …" line is never painted.
+  ran(
+    "c-write-release",
+    "write",
+    { path: "RELEASE_NOTES.md", content: PREVIEW_RELEASE_NOTES },
+    "Successfully wrote to RELEASE_NOTES.md",
+    76_000,
+  ),
   {
-    ...answer("a-release", PREVIEW_RELEASE_NOTES),
+    ...answer("a-release", PREVIEW_RELEASE_ANSWER),
     usage: usage(15_400, 5_820, 0, 28, 31),
   },
 ];

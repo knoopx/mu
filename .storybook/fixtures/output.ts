@@ -116,6 +116,47 @@ export const TILE_DIFF = [
   "+}",
 ].join("\n");
 
+export const CROP_POSITION_MODULE = [
+  'import { useAdwaita } from "adwaita-gpuix";',
+  'import type { CropPosition } from "./crop";',
+  "",
+  "export function cropPosition(",
+  "  width: number,",
+  "  height: number,",
+  "): CropPosition {",
+  '  if (width <= 0 || height <= 0) return "centre";',
+  '  if (height > width) return "top";',
+  '  if (width > height * 1.4) return "centre";',
+  '  return "centre";',
+  "}",
+  "",
+  "export function thumbSize(size: number, border: number): number {",
+  "  return Math.max(0, size - 2 * border);",
+  "}",
+  "",
+  "export function useThumbCrop(size: number): CropPosition {",
+  "  const t = useAdwaita();",
+  "  return cropPosition(size * t.scaleFactor, size);",
+  "}",
+].join("\n");
+
+/** A second module, caught mid-write: the call is open and the text is arriving. */
+export const THUMB_LAYOUT_MODULE = [
+  'import { useAdwaita } from "adwaita-gpuix";',
+  'import type { StyleDesc, AdwaitaTheme } from "@gpuix/react";',
+  "",
+  "export const ATTACHMENT_THUMB = 48;",
+  "",
+  "export function thumbBox(t: AdwaitaTheme, size: number): StyleDesc {",
+  "  return {",
+  "    width: size,",
+  "    height: size,",
+  "    flexShrink: 0,",
+  "    borderRadius: t.radius.sm,",
+  "  };",
+  "}",
+].join("\n");
+
 export const CAPTURE_ALL = [
   "  ✓ stories/AgentActions/work.png (198402 bytes)",
   "  ✓ stories/Changes/panel.png (161208 bytes)",

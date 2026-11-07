@@ -1,29 +1,36 @@
 import {
-  Icon,
   Skeleton,
   Spinner,
   T,
   rowHoverBg,
   useAdwaita,
   type AdwaitaTheme,
-  type IconName,
 } from "adwaita-gpuix";
 import { useState, type JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
+import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
+import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
+import {
+  toolBodyColumn,
+  toolCell,
+  toolColumn,
+  toolGrow,
+  toolLine,
+} from "../../core/lib/ui/toolRows";
 import { openExternal } from "../../../window/openLink";
 import { SEARCH_TOOL_NAME } from "../constants";
 import { type WebSearchDetails, WebSearchResult } from "../types";
 
-import type { TranscriptItem } from "../../core/lib/agent/transcriptState";
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 
 export function isSearchTool(name: string): boolean {
   return name.toLowerCase() === SEARCH_TOOL_NAME;
 }
 
 export function searchDetailsOf(
-  item: Extract<TranscriptItem, { kind: "tool" }>,
+  item: ToolTranscriptItem,
 ): WebSearchDetails | undefined {
   const details = item.details as WebSearchDetails | undefined;
   if (details === undefined || details === null || typeof details !== "object")
@@ -31,15 +38,13 @@ export function searchDetailsOf(
   return Array.isArray(details.results) ? details : undefined;
 }
 
-function queryOf(item: Extract<TranscriptItem, { kind: "tool" }>): string {
+function queryOf(item: ToolTranscriptItem): string {
   const args = item.args as { query?: unknown } | undefined;
   if (typeof args?.query === "string") return args.query.trim();
   return searchDetailsOf(item)?.query ?? "";
 }
 
-export function searchPreviewOf(
-  item: Extract<TranscriptItem, { kind: "tool" }>,
-): string {
+export function searchPreviewOf(item: ToolTranscriptItem): string {
   const query = queryOf(item);
   const details = searchDetailsOf(item);
   const count = details?.count ?? details?.results.length ?? 0;
@@ -52,42 +57,6 @@ export function searchPreviewOf(
   if (details.status === "no-results" || count === 0)
     return `${query} · no results`;
   return `${query} · ${count} ${count === 1 ? "result" : "results"}`;
-}
-
-function listColumn(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-    paddingLeft: t.space.sm,
-    paddingRight: t.space.sm,
-    minWidth: 0,
-    flexShrink: 1,
-  };
-}
-
-function textRow(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: t.space.sm,
-    paddingTop: t.space.xs,
-    paddingBottom: t.space.xs,
-    minWidth: 0,
-    flexShrink: 0,
-  };
-}
-
-function cellColumn(t: AdwaitaTheme, first: boolean): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    borderTopWidth: first ? 0 : t.control.dividerThickness,
-    borderColor: t.color.divider.faint,
-    minWidth: 0,
-    flexShrink: 0,
-  };
 }
 
 function rowShell(t: AdwaitaTheme): StyleDesc {
@@ -130,20 +99,8 @@ function rankColumn(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-function bodyColumn(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-    flexGrow: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    pointerEvents: "none",
-  };
-}
-
 function lineText(color: string): StyleDesc {
-  return { flexShrink: 1, minWidth: 0, color };
+  return { ...toolGrow, color };
 }
 
 function metaText(row: WebSearchResult): string {
@@ -168,7 +125,7 @@ function ResultRow({
     );
 
   return (
-    <div style={cellColumn(t, first)}>
+    <div style={toolCell(t, first)}>
       <div style={resultRow(t)} onClick={open}>
         <T
           size="caption"
@@ -178,7 +135,7 @@ function ResultRow({
         >
           {String(row.rank).padStart(2, "0")}
         </T>
-        <div style={bodyColumn(t)}>
+        <div style={toolBodyColumn}>
           <T size="list" weight={600} style={lineText(t.color.text.primary)}>
             {title}
           </T>
@@ -193,11 +150,11 @@ function ResultRow({
         </div>
       </div>
       {failure === undefined ? null : (
-        <div style={textRow(t)}>
+        <div style={toolLine(t)}>
           <T
             size="caption"
             color={t.color.functional.destructive}
-            style={{ flexShrink: 1, minWidth: 0 }}
+            style={toolGrow}
           >
             {failure}
           </T>
@@ -207,55 +164,15 @@ function ResultRow({
   );
 }
 
-function StateLine({
-  icon,
-  text,
-  color,
-}: {
-  icon: IconName;
-  text: string;
-  color: string;
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div style={textRow(t)}>
-      <Icon
-        name={icon}
-        size={t.control.navIconSize}
-        color={color}
-        style={{ flexShrink: 0 }}
-      />
-      <T size="caption" color={color} style={{ minWidth: 0 }}>
-        {text}
-      </T>
-    </div>
-  );
-}
-
-function SummaryLine({ text }: { text: string }): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div style={textRow(t)}>
-      <T
-        size="caption"
-        color={mutedText(t)}
-        style={{ flexShrink: 1, minWidth: 0 }}
-      >
-        {text}
-      </T>
-    </div>
-  );
-}
-
 function SearchSkeleton(): JSX.Element {
   const t = useAdwaita();
   return (
-    <div style={{ ...listColumn(t), paddingLeft: 0, paddingTop: t.space.xs }}>
+    <div style={{ ...toolColumn(t), paddingLeft: 0, paddingTop: t.space.xs }}>
       {[0, 1, 2].map((i) => (
-        <div key={i} style={cellColumn(t, i === 0)}>
+        <div key={i} style={toolCell(t, i === 0)}>
           <div style={skeletonRow(t)}>
             <Skeleton width={t.space.lg} height={t.type.caption} />
-            <div style={bodyColumn(t)}>
+            <div style={toolBodyColumn}>
               <Skeleton
                 width={
                   i === 1
@@ -277,7 +194,7 @@ function SearchSkeleton(): JSX.Element {
 }
 
 export interface SearchResultsProps {
-  item: Extract<TranscriptItem, { kind: "tool" }>;
+  item: ToolTranscriptItem;
 }
 
 export function SearchResults({ item }: SearchResultsProps): JSX.Element {
@@ -288,7 +205,7 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
   if (item.status === "error") {
     const message = item.output.trim();
     return (
-      <StateLine
+      <ToolStateLine
         icon="cancel"
         color={t.color.functional.destructive}
         text={message === "" ? "Search failed" : message}
@@ -298,8 +215,8 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
 
   if (item.status === "running" && details === undefined) {
     return (
-      <div style={listColumn(t)}>
-        <div style={textRow(t)}>
+      <div style={toolColumn(t)}>
+        <div style={toolLine(t)}>
           <Spinner size={16} color="accent" />
           <T size="caption" color={mutedText(t)} style={{ minWidth: 0 }}>
             {query === ""
@@ -315,15 +232,17 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
   const results = details?.results ?? [];
   if (results.length === 0) {
     return (
-      <SummaryLine
+      <ToolCaptionLine
+        color={mutedText(t)}
         text={query === "" ? "No results" : `No results for “${query}”`}
       />
     );
   }
 
   return (
-    <div style={listColumn(t)}>
-      <SummaryLine
+    <div style={toolColumn(t)}>
+      <ToolCaptionLine
+        color={mutedText(t)}
         text={`${results.length} ${results.length === 1 ? "result" : "results"} for “${query}”`}
       />
       {results.map((row, i) => (

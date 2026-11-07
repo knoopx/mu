@@ -7,6 +7,19 @@ export const TOOL_ICONS: Record<string, IconName> = {
   write: "noteAdd",
   "ask-user": "help",
   "search-duckduckgo": "search",
+  "guardrails-test": "rule",
+  "guardrails-fixture-update": "ruleSettings",
+  "guardrails-coverage": "queryStats",
+  "vcs-log": "list",
+  "vcs-file-diff": "difference",
+  "vcs-file-history": "history",
+  "vcs-file-history-show": "description",
+  "vcs-conflicts": "merge",
+  "vcs-oplog": "changeHistory",
+  "vcs-describe": "article",
+  "vcs-file-split": "verticalSplit",
+  "vcs-hunk-list": "layers",
+  "vcs-hunk-split": "callSplit",
 };
 
 export function toolIconOf(name: string): IconName {
