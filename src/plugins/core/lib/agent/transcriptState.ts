@@ -58,6 +58,9 @@ export type TranscriptItem =
     }
   | { kind: "system"; id: string; text: string };
 
+/** The one tool row of the transcript: what every tool view is drawn from. */
+export type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
+
 export type TranscriptAction =
   | { type: "user"; text: string; ts?: number; images?: ToolImage[] }
   | { type: "assistant_start"; id: string }
@@ -71,6 +74,17 @@ export type TranscriptAction =
     }
   | {
       type: "tool_start";
+      toolCallId: string;
+      name: string;
+      args: Record<string, unknown>;
+      startTs?: number;
+    }
+  | {
+      /**
+       * The model has opened a call and its arguments are still arriving, so a
+       * row exists — and grows — before the tool runs.
+       */
+      type: "tool_call";
       toolCallId: string;
       name: string;
       args: Record<string, unknown>;
@@ -104,6 +118,30 @@ export interface TranscriptStateApi extends TranscriptState {
 
 let seq = 0;
 
+/**
+ * A tool row opened before its arguments land: keyed by the call, running, and
+ * empty of output. Both the streaming call and the start of execution open it,
+ * so the row the model grows and the row the tool completes are one shape.
+ */
+function runningToolItem(action: {
+  toolCallId: string;
+  name: string;
+  args: Record<string, unknown>;
+  startTs?: number;
+}): ToolTranscriptItem {
+  return {
+    kind: "tool",
+    id: action.toolCallId,
+    toolCallId: action.toolCallId,
+    name: action.name,
+    args: action.args,
+    status: "running",
+    output: "",
+    details: undefined,
+    ...(action.startTs === undefined ? {} : { startTs: action.startTs }),
+  };
+}
+
 export function nextItemId(
   kind: "user" | "assistant" | "system" | "tool",
 ): string {
@@ -117,150 +155,259 @@ export function createTranscriptState(
   return { items, isStreaming, queue: { steering: [], followUp: [] } };
 }
 
-function transcriptReducer(
+function findToolIndex(items: TranscriptItem[], toolCallId: string): number {
+  return items.findIndex(
+    (it) => it.kind === "tool" && it.toolCallId === toolCallId,
+  );
+}
+
+type ActionOf<T extends TranscriptAction["type"]> = Extract<
+  TranscriptAction,
+  { type: T }
+>;
+
+type AssistantItem = Extract<TranscriptItem, { kind: "assistant" }>;
+
+/** Rewrite the one assistant row of a turn; every other row is passed through. */
+function rewriteAssistant(
+  state: TranscriptState,
+  id: string,
+  rewrite: (item: AssistantItem) => AssistantItem,
+): TranscriptState {
+  return {
+    ...state,
+    items: state.items.map((item) =>
+      item.kind === "assistant" && item.id === id ? rewrite(item) : item,
+    ),
+  };
+}
+
+/** Rewrite the tool rows a selector names; every other row is passed through. */
+function rewriteTool(
+  state: TranscriptState,
+  selected: (item: ToolTranscriptItem) => boolean,
+  rewrite: (item: ToolTranscriptItem) => ToolTranscriptItem,
+): TranscriptState {
+  return {
+    ...state,
+    items: state.items.map((item) =>
+      item.kind === "tool" && selected(item) ? rewrite(item) : item,
+    ),
+  };
+}
+
+const appendRow = (
+  state: TranscriptState,
+  item: TranscriptItem,
+): TranscriptState => ({ ...state, items: [...state.items, item] });
+
+const appendUser = (
+  state: TranscriptState,
+  action: ActionOf<"user">,
+): TranscriptState =>
+  appendRow(state, {
+    kind: "user",
+    id: nextItemId("user"),
+    text: action.text,
+    ...(action.ts === undefined ? {} : { ts: action.ts }),
+    ...(action.images === undefined || action.images.length === 0
+      ? {}
+      : { images: action.images }),
+  });
+
+const appendSystem = (
+  state: TranscriptState,
+  action: ActionOf<"system">,
+): TranscriptState =>
+  appendRow(state, {
+    kind: "system",
+    id: nextItemId("system"),
+    text: action.text,
+  });
+
+const startAssistant = (
+  state: TranscriptState,
+  action: ActionOf<"assistant_start">,
+): TranscriptState => ({
+  ...state,
+  isStreaming: true,
+  items: [
+    ...state.items,
+    { kind: "assistant", id: action.id, text: "", streaming: true },
+  ],
+});
+
+const assistantDelta = (
+  state: TranscriptState,
+  action: ActionOf<"assistant_delta">,
+): TranscriptState =>
+  rewriteAssistant(state, action.id, (item) => ({
+    ...item,
+    text: item.text + action.delta,
+    streaming: true,
+  }));
+
+const assistantThinking = (
+  state: TranscriptState,
+  action: ActionOf<"assistant_thinking">,
+): TranscriptState =>
+  rewriteAssistant(state, action.id, (item) => ({
+    ...item,
+    reasoning: (item.reasoning ?? "") + action.delta,
+    streaming: true,
+  }));
+
+const assistantEnd = (
+  state: TranscriptState,
+  action: ActionOf<"assistant_end">,
+): TranscriptState =>
+  rewriteAssistant(state, action.id, (item) => ({
+    ...item,
+    streaming: false,
+    stopReason: action.stopReason,
+    usage: action.usage !== undefined ? action.usage : item.usage,
+  }));
+
+/**
+ * A call is still being written: the first delta opens the row, the next ones
+ * fill in the arguments as they land. A row that already finished running is
+ * never reopened.
+ */
+function openToolCall(
+  state: TranscriptState,
+  action: ActionOf<"tool_call">,
+): TranscriptState {
+  const at = findToolIndex(state.items, action.toolCallId);
+  if (at < 0)
+    return {
+      ...state,
+      isStreaming: true,
+      items: [...state.items, runningToolItem(action)],
+    };
+  const opened = state.items[at] as ToolTranscriptItem;
+  if (opened.status !== "running") return state;
+  const items = state.items.slice();
+  items[at] = {
+    ...opened,
+    name: action.name === "" ? opened.name : action.name,
+    args: action.args,
+  };
+  return { ...state, items };
+}
+
+function startTool(
+  state: TranscriptState,
+  action: ActionOf<"tool_start">,
+): TranscriptState {
+  const at = findToolIndex(state.items, action.toolCallId);
+  // The row is already there when the call streamed in, so execution
+  // completes it with the full arguments instead of opening a second row.
+  if (at < 0)
+    return {
+      ...state,
+      isStreaming: true,
+      items: [...state.items, runningToolItem(action)],
+    };
+  const started = state.items[at] as ToolTranscriptItem;
+  const items = state.items.slice();
+  items[at] = {
+    ...started,
+    name: action.name === "" ? started.name : action.name,
+    args: action.args,
+    ...(action.startTs === undefined ? {} : { startTs: action.startTs }),
+  };
+  return { ...state, isStreaming: true, items };
+}
+
+const toolUpdate = (
+  state: TranscriptState,
+  action: ActionOf<"tool_update">,
+): TranscriptState =>
+  rewriteTool(
+    state,
+    (item) =>
+      item.toolCallId === action.toolCallId && item.status === "running",
+    (item) => ({ ...item, output: item.output + action.delta }),
+  );
+
+const toolEnd = (
+  state: TranscriptState,
+  action: ActionOf<"tool_end">,
+): TranscriptState =>
+  rewriteTool(
+    state,
+    (item) => item.toolCallId === action.toolCallId,
+    (item) => ({
+      ...item,
+      status: action.ok ? "ok" : "error",
+      output: action.output || item.output,
+      details: action.details !== undefined ? action.details : item.details,
+      image: action.image !== undefined ? action.image : item.image,
+    }),
+  );
+
+const toolUsage = (
+  state: TranscriptState,
+  action: ActionOf<"tool_usage">,
+): TranscriptState =>
+  rewriteTool(
+    state,
+    (item) => item.toolCallId === action.toolCallId && item.usage === undefined,
+    (item) => ({ ...item, usage: action.usage }),
+  );
+
+/** The run is over: a streaming turn and a running row are both cut short. */
+function settleItem(item: TranscriptItem, aborted: boolean): TranscriptItem {
+  if (item.kind === "assistant" && item.streaming)
+    return { ...item, streaming: false, stopReason: "aborted" };
+  if (item.kind !== "tool" || item.status !== "running") return item;
+  if (item.output !== "") return { ...item, status: "error" };
+  // A row opened by a call that never ran has nothing to show but why it stopped.
+  return {
+    ...item,
+    status: "error",
+    output: aborted ? "Interrupted before it ran" : "Never ran",
+  };
+}
+
+const settleRun = (
+  state: TranscriptState,
+  action: ActionOf<"settled">,
+): TranscriptState => ({
+  ...state,
+  isStreaming: false,
+  items: state.items.map((item) => settleItem(item, action.aborted)),
+});
+
+export function transcriptReducer(
   state: TranscriptState,
   action: TranscriptAction,
 ): TranscriptState {
   switch (action.type) {
     case "user":
-      return {
-        ...state,
-        items: [
-          ...state.items,
-          {
-            kind: "user",
-            id: nextItemId("user"),
-            text: action.text,
-            ...(action.ts === undefined ? {} : { ts: action.ts }),
-            ...(action.images === undefined || action.images.length === 0
-              ? {}
-              : { images: action.images }),
-          },
-        ],
-      };
+      return appendUser(state, action);
     case "assistant_start":
-      return {
-        ...state,
-        isStreaming: true,
-        items: [
-          ...state.items,
-          { kind: "assistant", id: action.id, text: "", streaming: true },
-        ],
-      };
+      return startAssistant(state, action);
     case "assistant_delta":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "assistant" && it.id === action.id
-            ? { ...it, text: it.text + action.delta, streaming: true }
-            : it,
-        ),
-      };
+      return assistantDelta(state, action);
     case "assistant_thinking":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "assistant" && it.id === action.id
-            ? {
-                ...it,
-                reasoning: (it.reasoning ?? "") + action.delta,
-                streaming: true,
-              }
-            : it,
-        ),
-      };
+      return assistantThinking(state, action);
     case "assistant_end":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "assistant" && it.id === action.id
-            ? {
-                ...it,
-                streaming: false,
-                stopReason: action.stopReason,
-                usage: action.usage !== undefined ? action.usage : it.usage,
-              }
-            : it,
-        ),
-      };
+      return assistantEnd(state, action);
+    case "tool_call":
+      return openToolCall(state, action);
     case "tool_start":
-      return {
-        ...state,
-        isStreaming: true,
-        items: [
-          ...state.items,
-          {
-            kind: "tool",
-            id: action.toolCallId,
-            toolCallId: action.toolCallId,
-            name: action.name,
-            args: action.args,
-            status: "running",
-            output: "",
-            details: undefined,
-            ...(action.startTs === undefined
-              ? {}
-              : { startTs: action.startTs }),
-          },
-        ],
-      };
+      return startTool(state, action);
     case "tool_update":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "tool" &&
-          it.toolCallId === action.toolCallId &&
-          it.status === "running"
-            ? { ...it, output: it.output + action.delta }
-            : it,
-        ),
-      };
+      return toolUpdate(state, action);
     case "tool_end":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "tool" && it.toolCallId === action.toolCallId
-            ? {
-                ...it,
-                status: action.ok ? "ok" : "error",
-                output: action.output || it.output,
-                details:
-                  action.details !== undefined ? action.details : it.details,
-                image: action.image !== undefined ? action.image : it.image,
-              }
-            : it,
-        ),
-      };
+      return toolEnd(state, action);
     case "tool_usage":
-      return {
-        ...state,
-        items: state.items.map((it) =>
-          it.kind === "tool" &&
-          it.toolCallId === action.toolCallId &&
-          it.usage === undefined
-            ? { ...it, usage: action.usage }
-            : it,
-        ),
-      };
+      return toolUsage(state, action);
     case "system":
-      return {
-        ...state,
-        items: [
-          ...state.items,
-          { kind: "system", id: nextItemId("system"), text: action.text },
-        ],
-      };
+      return appendSystem(state, action);
     case "settled":
-      return {
-        ...state,
-        isStreaming: false,
-
-        items: state.items.map((it) =>
-          it.kind === "assistant" && it.streaming
-            ? { ...it, streaming: false, stopReason: "aborted" }
-            : it,
-        ),
-      };
+      return settleRun(state, action);
     case "queue":
       return {
         ...state,
@@ -385,8 +532,6 @@ function assistantItem(m: SessionMessage): TranscriptItem | undefined {
     ...(usage === undefined ? {} : { usage }),
   };
 }
-
-type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
 
 function toolItems(
   m: SessionMessage,

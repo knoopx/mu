@@ -153,11 +153,13 @@ export const sessionRow = (
   label: string,
   age: string,
   caption?: string,
+  duration = "32m",
 ): SessionListRow => ({
   path,
   label,
   age,
   ...(caption === undefined ? {} : { caption }),
+  duration,
 });
 
 export type StubSessionInfo = SessionInfo;

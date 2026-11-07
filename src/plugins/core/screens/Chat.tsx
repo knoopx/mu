@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type JSX } from "react";
+import { useRef, type JSX } from "react";
 import {
   Icon,
   Message,
@@ -21,14 +21,9 @@ import { mutedText, paneFill, userBandFill } from "../lib/ui/theme";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { AgentSnapshot } from "../lib/agent/agentService";
 import type { ToolImage } from "../lib/agent/content";
-import {
-  conversationStats,
-  turnStatsById,
-  type TurnStats,
-} from "../lib/agent/turnStats";
+import { type TurnStats } from "../lib/agent/turnStats";
 import { ChatTranscript } from "../components/ChatTranscript";
 import { ChatComposerSlot } from "../components/ChatComposerSlot";
-import { useListJump } from "../lib/ui/listJump";
 import type { CancellableLoaderHandle } from "../components/CancellableLoader";
 import { AssistantMessage } from "../components/AssistantMessage";
 import { ToolExecution } from "../components/ToolExecution";
@@ -40,12 +35,10 @@ import {
 import {
   type ComposerPanelRow,
   type ComposerPanelSpec,
-  type ComposerProps,
 } from "../components/composer/Composer";
 import { composerPlaceholder } from "../lib/composer/options";
 import {
   panelIndex,
-  panelQuery,
   panelTarget,
   type ComposerMode,
 } from "../lib/composer/mode";
@@ -58,44 +51,35 @@ import { SessionStatus } from "../components/SessionStatus";
 import { useAskSnapshot, useAskUiHost } from "../../interaction/hooks/useAsk";
 import { askProgressLabel } from "../../interaction/lib/progress";
 import { askStore } from "../../interaction/lib/store";
-import type { AskResponse } from "../../interaction/types";
+import type { AskResponse, AskRequest } from "../../interaction/types";
 import { projectSummaryRows } from "../components/ProjectSummary";
-import { useProjectSummary } from "../hooks/useProjectSummary";
-import { pillsFromTemplates } from "../lib/project/promptTemplates";
-import { useSessionTree } from "../hooks/useSessionTree";
+import {
+  useProjectSummary,
+  type ProjectSummaryState,
+} from "../hooks/useProjectSummary";
+import type { PromptPill } from "../lib/project/promptTemplates";
 import { ChangesOverlayHost } from "../../vcs/components/ChangesOverlayHost";
-import { useChangesPanel } from "../../vcs/hooks/useChangesPanel";
 import { builtinCommands } from "../lib/commands/builtins";
 import { coreCommands } from "../lib/commands/coreCommands";
 import type { SlashCommand } from "../../../autocomplete";
+import { openChatSession, type ChatSession } from "../lib/session/chatSession";
 import {
-  openChatSession,
-  type ChatSession,
-  type TreeSnapshot,
-} from "../lib/session/chatSession";
-import {
-  liveSessionList,
   type SessionList,
   type SessionListRow,
   type SessionPreviewData,
 } from "../lib/session/sessionList";
-import {
-  useChatSession,
-  type ChatSessionEffects,
-} from "../hooks/useChatSession";
+import type { SessionListState } from "../hooks/useSessionList";
+import { useChatSession } from "../hooks/useChatSession";
+import type { ChatSessionEffects } from "../lib/session/sessionCommands";
 import {
   useComposerState,
   type ComposerState,
 } from "../hooks/useComposerState";
-import { useChatComposer } from "../hooks/useChatComposer";
-import { useSessionList } from "../hooks/useSessionList";
-import { useUserMessages } from "../hooks/useUserMessages";
-import { useWorkspaceStatus } from "../hooks/useWorkspaceStatus";
-import { useFilePreview } from "../hooks/useFilePreview";
 import { useNewWindow } from "../hooks/useNewWindow";
 import { useWindowHandlers } from "../hooks/useWindowHandlers";
-import { useTreePreview } from "../hooks/useTreePreview";
-import { useThemePanel } from "../hooks/useThemePanel";
+import { useTranscriptView } from "../hooks/useTranscriptView";
+import { useChatPanels, type ChatPanels } from "../hooks/useChatPanels";
+import { useReloadAll } from "../hooks/useReloadAll";
 
 const SLASH_COMMANDS: SlashCommand[] = [...builtinCommands, ...coreCommands];
 
@@ -112,8 +96,17 @@ function conversationLog(
   );
 }
 
-function composerMetaOf(snapshot: AgentSnapshot | null) {
-  if (snapshot === null || snapshot.model == null) return null;
+/** What the composer shows beside the draft: who is answering and how full the context is. */
+interface ComposerMeta {
+  model: string | null;
+  thinking: AgentSnapshot["thinking"] | null;
+  context: { used: number; total: number } | null;
+}
+
+const NO_META: ComposerMeta = { model: null, thinking: null, context: null };
+
+function composerMetaOf(snapshot: AgentSnapshot | null): ComposerMeta {
+  if (snapshot === null || snapshot.model == null) return NO_META;
   return {
     model: snapshot.model,
     thinking: snapshot.thinking,
@@ -127,13 +120,96 @@ const emptyTranscript = (
   isStreaming: boolean,
 ): boolean => preview === null && items.length === 0 && !isStreaming;
 
-const previewStatsOf = (preview: SessionPreviewData | null): Map<string, TurnStats> =>
-  preview === null ? new Map<string, TurnStats>() : turnStatsById(preview.items);
+/** The folder the app was opened in is the folder the session works in. */
+const cwdOf = (props: ChatAppProps): string => props.cwd ?? process.cwd();
 
-const treeSnapshotOf = (
-  treeOpen: boolean,
+/** A story hands the window a session of its own; the app opens a live one. */
+const openSessionOf = (
+  props: ChatAppProps,
+  cwd: string,
+): (() => Promise<ChatSession>) =>
+  props.openSession ?? (() => openChatSession(cwd));
+
+const snapshotOf = (session: ChatSession | null): AgentSnapshot | null =>
+  session?.snapshot() ?? null;
+
+/** How far a question waiting in the composer slot has got, in words. */
+const progressOf = (request: AskRequest | null): string | null =>
+  request === null ? null : askProgressLabel(request);
+
+/**
+ * Whether the log keeps its own tail in view. A run the reader is not watching
+ * — a preview, or a scroll back up the conversation — stays at the top instead.
+ */
+const followTopOf = (
+  showProjectSummary: boolean,
+  followTail: boolean,
+): boolean => showProjectSummary || !followTail;
+
+/** A running session with nothing on screen yet is waiting, not empty. */
+const loaderShowsOf = (
+  isStreaming: boolean,
+  preview: SessionPreviewData | null,
+): boolean => isStreaming && preview === null;
+
+/** Either the tree node or the session row the log is showing instead of the run. */
+const previewOf = (
+  treePreview: SessionPreviewData | null,
+  sessions: SessionListState,
+  activeSessionRow: SessionListRow | undefined,
+): SessionPreviewData | null =>
+  treePreview ?? sessions.preview(activeSessionRow);
+
+/** The project header the log opens with, and only while the log is empty. */
+function summaryRowsOf(
+  open: boolean,
+  project: ProjectSummaryState,
+  onPrompt: (text: string) => void,
+  pills: PromptPill[],
+): JSX.Element[] {
+  if (!open) return [];
+  return projectSummaryRows({
+    model: project.summary,
+    error: project.error,
+    onPrompt,
+    onReload: project.reload,
+    pills,
+  });
+}
+
+/** Everything every composer panel reads, from the panels that hold it. */
+function panelDataOf(
+  panels: ChatPanels,
+  theme: AdwaitaTheme,
+  cwd: string,
+  mode: ComposerMode,
   session: ChatSession | null,
-): TreeSnapshot | null => (treeOpen ? (session?.treeSnapshot() ?? null) : null);
+): ComposerPanelData {
+  const { sessions, userMessages, composerActions } = panels;
+  return {
+    cwd,
+    theme,
+    mode,
+    query: panels.query,
+    commands: SLASH_COMMANDS,
+    session,
+    themePanel: panels.themePanel,
+    sessionRows: sessions.rows,
+    sessionsLoading: sessions.loading,
+    sessionsError: sessions.error,
+    userMessages: userMessages.messages,
+    userMessagesLoading: userMessages.loading,
+    userMessagesError: userMessages.error,
+    changes: panels.changesPanel,
+    tree: panels.tree,
+    guardrails: panels.guardrails,
+    previewFor: panels.previewFor,
+    windowHeight: panels.windowHeight,
+    onPick: composerActions.pickRow,
+    onDelete: composerActions.removeSessionRow,
+    onHover: composerActions.onHover,
+  };
+}
 
 function chatEffectsOf(
   toast: ToastFn,
@@ -148,7 +224,6 @@ function chatEffectsOf(
     sessionsChanged,
   };
 }
-
 
 function sessionRowUnderCursor(
   rows: readonly SessionListRow[],
@@ -166,20 +241,28 @@ export function transcriptRowGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
 
-export const TRANSCRIPT_ROW_STRIDE = 2;
-
-export function isConversationPoint(item: TranscriptItem): boolean {
-  return item.kind === "user" || item.kind === "assistant";
+/**
+ * The composer's panel in one pass: the rows the open panel shows, the slot it
+ * fills, and the session row the cursor is on — which is the session whose
+ * preview the log shows.
+ */
+interface ComposerPanelView {
+  rows: ComposerPanelRow[];
+  panel: ComposerPanelSpec | undefined;
+  activeSessionRow: SessionListRow | undefined;
 }
 
-export function transcriptPointRows(
-  items: readonly TranscriptItem[],
-): number[] {
-  const rows = new Set<number>();
-  items.forEach((item, index) => {
-    if (isConversationPoint(item)) rows.add(index * TRANSCRIPT_ROW_STRIDE);
-  });
-  return [...rows].sort((a, b) => a - b);
+function composerPanelViewOf(data: ComposerPanelData): ComposerPanelView {
+  const rows = composerPanelRows(data);
+  const underCursor =
+    panelTarget(data.mode) === "session"
+      ? sessionRowUnderCursor(data.sessionRows, rows, data.mode)
+      : undefined;
+  return {
+    rows,
+    panel: composerPanelSpec(data, rows),
+    activeSessionRow: underCursor,
+  };
 }
 
 export function withRowSpacers(
@@ -393,7 +476,7 @@ export function ChatApp(props: ChatAppProps): JSX.Element {
 function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
   const t = useAdwaita();
   const toast = props.toast;
-  const cwd = props.cwd ?? process.cwd();
+  const cwd = cwdOf(props);
   useAskUiHost();
   const ask = useAskSnapshot();
 
@@ -404,75 +487,33 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
   });
   const { input, attachments, mode, setMode, followTail } = composer;
 
-  const windowSize = useWindowSize();
-  const target = panelTarget(mode);
-  const query = panelQuery(mode);
-  const changesOpen = target === "changes";
-  const treeOpen = target === "tree";
-  const sessionsOpen = target === "session";
-  const userMessagesOpen = target === "userMessageHistory";
-
-  const workspace = useWorkspaceStatus(cwd);
-
-  const reloadAllRef = useRef<() => void>(() => {});
-  const sessionsChanged = useCallback((): void => reloadAllRef.current(), []);
-
+  const reloadAll = useReloadAll();
   const chat = useChatSession(
     cwd,
-    props.openSession ?? (() => openChatSession(cwd)),
-    chatEffectsOf(toast, composer, sessionsChanged),
+    openSessionOf(props, cwd),
+    chatEffectsOf(toast, composer, reloadAll.changed),
   );
   const { items, isStreaming, session, sessionStart } = chat;
 
-  const sessions = useSessionList(
-    props.sessionList ?? liveSessionList,
+  const panels = useChatPanels({
     cwd,
-    sessionsOpen,
-  );
-  const userMessages = useUserMessages(
-    cwd,
-    userMessagesOpen,
-    items,
-    session?.sessionName() ?? "this session",
-  );
-  reloadAllRef.current = (): void => {
-    sessions.reload();
-    userMessages.reload();
-  };
-
-  const themePanel = useThemePanel(mode);
-  const previewFor = useFilePreview(cwd);
-
-  const composerActions = useChatComposer({
     toast,
     chat,
-    themePanel,
-    session,
-    removeSession: sessions.remove,
     composer,
+    sessionList: props.sessionList,
+    noteReloadAll: reloadAll.note,
   });
-
-  const changesPanel = useChangesPanel({
-    cwd,
-    toast,
-    enabled: changesOpen,
-    onPickPath: composerActions.pickChangesPath,
-  });
+  const {
+    workspace,
+    sessions,
+    composerActions,
+    changesPanel,
+    treePreview,
+    promptPills,
+  } = panels;
 
   const loaderRef = useRef<CancellableLoaderHandle | null>(null);
   const transcriptListRef = useRef<PublicInstance | null>(null);
-
-  const treeSnapshot = useMemo<TreeSnapshot | null>(
-    () => treeSnapshotOf(treeOpen, session),
-    [treeOpen, session, items.length],
-  );
-  const tree = useSessionTree({
-    data: treeSnapshot,
-    enabled: treeOpen,
-    query,
-    onNavigate: chat.navigateTree,
-  });
-  const treePreview = useTreePreview(treeSnapshot, tree.selected);
 
   const newWindow = useNewWindow(
     (message: string) => toast(message),
@@ -483,6 +524,39 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     newWindow,
   });
 
+  const panelView = composerPanelViewOf(
+    panelDataOf(panels, t, cwd, mode, session),
+  );
+  const preview = previewOf(treePreview, sessions, panelView.activeSessionRow);
+
+  const showProjectSummary = emptyTranscript(preview, items, isStreaming);
+  const project = useProjectSummary(cwd, {
+    active: showProjectSummary,
+  });
+
+  const transcript = useTranscriptView({
+    items,
+    preview,
+    sessionStart,
+    mode,
+    askOpen: ask.request !== null,
+    listRef: transcriptListRef,
+    followTail: composer.setFollowTail,
+  });
+
+  const transcriptRows: JSX.Element[] = conversationLog(
+    t,
+    transcript.source,
+    transcript.stats,
+  );
+  const summaryRows: JSX.Element[] = summaryRowsOf(
+    showProjectSummary,
+    project,
+    composerActions.seedPrompt,
+    promptPills,
+  );
+  const composerMeta = composerMetaOf(snapshotOf(session));
+
   const onAskAnswer = (response: AskResponse): void => {
     askStore.answer(response);
   };
@@ -491,95 +565,6 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     askStore.cancel();
     toast("Ask cancelled — the agent was told the run was cancelled");
   };
-
-  const panelData: ComposerPanelData = {
-    cwd,
-    theme: t,
-    mode,
-    query,
-    commands: SLASH_COMMANDS,
-    session,
-    themePanel,
-    sessionRows: sessions.rows,
-    sessionsLoading: sessions.loading,
-    sessionsError: sessions.error,
-    userMessages: userMessages.messages,
-    userMessagesLoading: userMessages.loading,
-    userMessagesError: userMessages.error,
-    changes: changesPanel,
-    tree,
-    previewFor,
-    windowHeight: windowSize?.height,
-    onPick: composerActions.pickRow,
-    onDelete: composerActions.removeSessionRow,
-    onHover: composerActions.onHover,
-  };
-
-  const panelRows: ComposerPanelRow[] = composerPanelRows(panelData);
-
-  const panel: ComposerPanelSpec | undefined = composerPanelSpec(
-    panelData,
-    panelRows,
-  );
-
-  const activeSessionRow: SessionListRow | undefined = sessionsOpen
-    ? sessionRowUnderCursor(sessions.rows, panelRows, mode)
-    : undefined;
-
-  const preview: SessionPreviewData | null =
-    treePreview ?? sessions.preview(activeSessionRow);
-
-  const turnStats = useMemo(() => turnStatsById(items), [items]);
-
-  const previewTurnStats = useMemo(() => previewStatsOf(preview), [preview]);
-
-  const showProjectSummary = emptyTranscript(preview, items, isStreaming);
-  const project = useProjectSummary(cwd, {
-    active: showProjectSummary,
-  });
-  const transcriptSource: readonly TranscriptItem[] =
-    preview === null ? items : preview.items;
-
-  const sessionStats = conversationStats(
-    transcriptSource,
-    preview?.startTs ?? sessionStart,
-  );
-
-  const transcriptRows: JSX.Element[] = conversationLog(
-    t,
-    transcriptSource,
-    preview === null ? turnStats : previewTurnStats,
-  );
-
-  const pointRows = transcriptPointRows(transcriptSource);
-
-  const transcriptJump = useListJump({
-    listRef: transcriptListRef,
-    targets: pointRows,
-    enabled:
-      mode.kind === "draft" && ask.request === null && pointRows.length > 1,
-    bindings: {
-      prev: "transcript.prevPoint",
-      next: "transcript.nextPoint",
-    },
-    onJump: (_target, isEnd) => composer.setFollowTail(isEnd),
-  });
-
-  const promptPills = pillsFromTemplates(session?.promptTemplates() ?? []);
-
-  const summaryRows: JSX.Element[] = showProjectSummary
-    ? projectSummaryRows({
-        model: project.summary,
-        error: project.error,
-        onPrompt: composerActions.seedPrompt,
-        onReload: project.reload,
-        pills: promptPills,
-      })
-    : [];
-
-  const snapshot = session?.snapshot() ?? null;
-
-  const composerMeta = composerMetaOf(snapshot);
 
   const root: StyleDesc = {
     display: "flex",
@@ -610,11 +595,11 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
       <div style={content}>
         <ChatTranscript
           listRef={transcriptListRef}
-          onVisibleRange={transcriptJump.onVisibleRange}
-          followTop={showProjectSummary || !followTail}
+          onVisibleRange={transcript.onVisibleRange}
+          followTop={followTopOf(showProjectSummary, followTail)}
           summaryRows={summaryRows}
           transcriptRows={transcriptRows}
-          showLoader={isStreaming && preview === null}
+          showLoader={loaderShowsOf(isStreaming, preview)}
           loaderRef={loaderRef}
           onAbort={chat.abort}
         />
@@ -634,23 +619,24 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
             onSubmit: composerActions.onSubmit,
             mode,
             onMode: setMode,
-            panel,
+            panel: panelView.panel,
             isStreaming,
             onAbort: chat.abort,
             onPaste: composerActions.paste,
             onClear: composer.clearComposer,
             onHistory: composerActions.onHistory,
+            onComplete: composerActions.completePath,
             placeholder: composerPlaceholder(),
-            model: composerMeta?.model ?? null,
-            thinking: composerMeta?.thinking ?? null,
-            context: composerMeta?.context ?? null,
+            model: composerMeta.model,
+            thinking: composerMeta.thinking,
+            context: composerMeta.context,
           }}
         />
         <SessionStatus
           projectPath={workspace.projectPath}
           bookmark={workspace.bookmark}
-          stats={sessionStats}
-          progress={ask.request === null ? null : askProgressLabel(ask.request)}
+          stats={transcript.conversation}
+          progress={progressOf(ask.request)}
         />
         <ChangesOverlayHost panel={changesPanel} />
       </div>

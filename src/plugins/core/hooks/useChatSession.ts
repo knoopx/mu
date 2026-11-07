@@ -1,3 +1,12 @@
+/**
+ * The session the window is reading.
+ *
+ * One session is open at a time and it is opened once, for the life of the
+ * window: its events are mapped onto transcript actions, its probe is wired to
+ * the app, and its teardown is the cleanup of the effect that opened it. The
+ * commands that ask it for something live in useChatSessionCommands; this hook
+ * owns the session and the state around it.
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AgentSessionEvent } from "@earendil-works/pi-coding-agent";
 import { openChatSession, type ChatSession } from "../lib/session/chatSession";
@@ -12,21 +21,13 @@ import type { ToolImage } from "../lib/agent/content";
 import type { PromptImages } from "../components/composer/attachments";
 import type { ThinkingLevel } from "../lib/agent/agentService";
 import { setChatProbe } from "../lib/agent/chatProbe";
+import { probeOf } from "../lib/agent/sessionProbe";
 import { errMsg } from "../lib/utils/errMsg";
-
-export interface TreeTarget {
-  id: string;
-  leaf?: boolean;
-  role?: string;
-}
-
-export interface ChatSessionEffects {
-  notify(message: string): void;
-  composerText?(text: string): void;
-  clearAttachments?(): void;
-  followTail?(follow: boolean): void;
-  sessionsChanged?(): void;
-}
+import type {
+  ChatSessionEffects,
+  TreeTarget,
+} from "../lib/session/sessionCommands";
+import { useChatSessionCommands } from "./useChatSessionCommands";
 
 export interface ChatSessionState {
   items: TranscriptItem[];
@@ -60,7 +61,6 @@ export function useChatSession(
   );
 
   const sessionRef = useRef<ChatSession | null>(null);
-  const mapCtxRef = useRef<MapEventContext>({});
   const effectsRef = useRef(effects);
   effectsRef.current = effects;
   const itemsRef = useRef(items.length);
@@ -68,42 +68,47 @@ export function useChatSession(
   const streamingRef = useRef(isStreaming);
   streamingRef.current = isStreaming;
 
-  const system = useCallback((text: string): void => {
-    dispatch({ type: "system", text });
-  }, []);
+  const system = useCallback(
+    (text: string): void => {
+      dispatch({ type: "system", text });
+    },
+    [dispatch],
+  );
 
   const restore = useCallback((): void => {
     const current = sessionRef.current;
     if (current === null) return;
     dispatch({ type: "restore", items: current.transcript() });
     dispatch({ type: "settled", aborted: false });
-  }, []);
+  }, [dispatch]);
 
-  const resume = useCallback(
-    async (path: string, onDone?: () => void): Promise<void> => {
-      const current = sessionRef.current;
-      if (current === null) {
-        system("Agent not ready — try again in a moment");
-        return;
-      }
-      try {
-        await current.resume(path);
-        restore();
-        effectsRef.current.clearAttachments?.();
-        setSessionStart(current.sessionStartTs(path) ?? Date.now());
-        effectsRef.current.followTail?.(true);
-        effectsRef.current.sessionsChanged?.();
-        onDone?.();
-      } catch (err: unknown) {
-        system(`Resume error: ${errMsg(err)}`);
-      }
+  const commands = useChatSessionCommands({
+    session: () => sessionRef.current,
+    system,
+    restore,
+    clearLog: () => {
+      dispatch({ type: "clear" });
+      dispatch({ type: "settled", aborted: false });
     },
-    [restore, system],
-  );
+    effects: () => effectsRef.current,
+    recordPrompt: (text, images) =>
+      dispatch({
+        type: "user",
+        text,
+        ts: Date.now(),
+        ...(images === undefined || images.length === 0 ? {} : { images }),
+      }),
+    sessionStartedAt: setSessionStart,
+  });
+
+  /** The probe is wired once, so it reads the commands through a reference. */
+  const commandsRef = useRef(commands);
+  commandsRef.current = commands;
 
   useEffect(() => {
     let cancelled = false;
     let unsubscribe: (() => void) | undefined;
+    const mapCtx: MapEventContext = {};
     open()
       .then((next) => {
         if (cancelled) {
@@ -114,45 +119,22 @@ export function useChatSession(
         dispatch({ type: "restore", items: next.transcript() });
         setSessionStreaming(next.streaming());
         unsubscribe = next.subscribe((event: AgentSessionEvent) => {
-          for (const action of mapEvent(event, mapCtxRef.current))
-            dispatch(action);
+          for (const action of mapEvent(event, mapCtx)) dispatch(action);
         });
-        setChatProbe({
-          submit(text: string): void {
-            const current = sessionRef.current;
-            if (current === null) return;
-            dispatch({ type: "user", text, ts: Date.now() });
-            void current
-              .send(
-                text,
-                undefined,
-                current.streaming() ? "followUp" : undefined,
-              )
-              .catch((err: unknown) => system(`Prompt error: ${errMsg(err)}`));
-          },
-          resume(path: string): void {
-            void resume(path);
-          },
-          interrupt(): void {
-            void sessionRef.current?.interrupt().catch(() => {});
-          },
-          snapshot() {
-            const current = sessionRef.current;
-            return {
-              model: "",
-              thinking: "off",
-              tokensIn: 0,
-              tokensOut: 0,
-              cost: 0,
-              contextUsed: null,
-              contextTotal: 0,
-              contextPercent: null,
-              ...(current?.snapshot() ?? {}),
+        setChatProbe(
+          probeOf({
+            session: () => sessionRef.current,
+            dispatch,
+            system,
+            resume: (path) => {
+              void commandsRef.current.resume(path);
+            },
+            live: () => ({
               streaming: streamingRef.current,
               items: itemsRef.current,
-            };
-          },
-        });
+            }),
+          }),
+        );
         setSession(next);
         setSessionStart(Date.now());
         setReady(true);
@@ -172,117 +154,6 @@ export function useChatSession(
     };
   }, []);
 
-  const send = useCallback(
-    (text: string, images?: PromptImages, userImages?: ToolImage[]): void => {
-      dispatch({
-        type: "user",
-        text,
-        ts: Date.now(),
-        ...(userImages === undefined || userImages.length === 0
-          ? {}
-          : { images: userImages }),
-      });
-      const current = sessionRef.current;
-      if (current === null) {
-        system("Agent not ready — try again in a moment");
-        return;
-      }
-      void current
-        .send(text, images, current.streaming() ? "followUp" : undefined)
-        .catch((err: unknown) => system(`Prompt error: ${errMsg(err)}`));
-    },
-    [system],
-  );
-
-  const abort = useCallback((): void => {
-    void sessionRef.current?.interrupt().catch(() => {});
-  }, []);
-
-  const newSession = useCallback((): void => {
-    const current = sessionRef.current;
-    if (current === null) {
-      system("Agent not ready — try again in a moment");
-      return;
-    }
-    void current
-      .newSession()
-      .then(() => {
-        dispatch({ type: "clear" });
-        dispatch({ type: "settled", aborted: false });
-        setSessionStart(Date.now());
-        effectsRef.current.followTail?.(true);
-        effectsRef.current.sessionsChanged?.();
-        const model = current.snapshot()?.model ?? "";
-        effectsRef.current.notify(
-          model.length > 0
-            ? `New session started · ${model}`
-            : "New session started",
-        );
-      })
-      .catch((err: unknown) => system(`New session error: ${errMsg(err)}`));
-  }, [system]);
-
-  const setModel = useCallback(
-    (ref: string): void => {
-      const current = sessionRef.current;
-      if (current === null) return;
-      void current
-        .setModel(ref)
-        .catch((err: unknown) => system(`Model error: ${errMsg(err)}`));
-    },
-    [system],
-  );
-
-  const setThinking = useCallback((level: ThinkingLevel): void => {
-    sessionRef.current?.setThinking(level);
-  }, []);
-
-  const compact = useCallback((): void => {
-    const current = sessionRef.current;
-    if (current === null) return;
-    void current
-      .compact()
-      .catch((err: unknown) => system(`Compact error: ${errMsg(err)}`));
-  }, [system]);
-
-  const navigateTree = useCallback(
-    (target: TreeTarget): void => {
-      const current = sessionRef.current;
-      if (current === null) {
-        system("Agent not ready — try again in a moment");
-        return;
-      }
-      if (target.leaf === true) {
-        effectsRef.current.notify("Already at this point in the session");
-        return;
-      }
-      void (async () => {
-        try {
-          if (current.streaming()) await current.interrupt().catch(() => {});
-          const result = await current.navigateTree(target.id);
-          if (result.cancelled) {
-            effectsRef.current.notify("Navigation cancelled");
-            return;
-          }
-          restore();
-          if (
-            typeof result.editorText === "string" &&
-            result.editorText.trim().length > 0
-          )
-            effectsRef.current.composerText?.(result.editorText);
-          effectsRef.current.notify(
-            target.role === "user"
-              ? "Jumped back — the message is back in the composer"
-              : "Jumped back to that point",
-          );
-        } catch (err: unknown) {
-          system(`History navigation error: ${errMsg(err)}`);
-        }
-      })();
-    },
-    [restore, system],
-  );
-
   return {
     items,
     isStreaming: isStreaming || sessionStreaming,
@@ -291,13 +162,6 @@ export function useChatSession(
     sessionStart,
     dispatch,
     system,
-    send,
-    abort,
-    newSession,
-    resume,
-    setModel,
-    setThinking,
-    compact,
-    navigateTree,
+    ...commands,
   };
 }

@@ -39,6 +39,7 @@ export const PREVIEW_REASONING = [
   "So the anchor is the only knob, and it has to be computed per frame: portrait frames put their subject high, wide frames put theirs in the middle. That is a function of the two dimensions I already have from `identify`, not a guess.",
 ].join("\n");
 
+/** The note as it lands in `RELEASE_NOTES.md` — the file the write paints. */
 export const PREVIEW_RELEASE_NOTES = [
   "## The photo strip crops; the preview does not",
   "",
@@ -71,6 +72,10 @@ export const PREVIEW_RELEASE_NOTES = [
   "A portrait photo costs one scroll in the preview. That is the whole price of showing a photo honestly, and it is paid by the preview, not by the photo.",
 ].join("\n");
 
+/** What the agent says after writing it: the report, not the note again. */
+export const PREVIEW_RELEASE_ANSWER =
+  "`RELEASE_NOTES.md` is written, and the table in it is the part worth arguing with: the strip crops on purpose, the transcript and the preview show the whole frame, and a portrait costs one scroll in the preview and nothing in the strip.";
+
 export const PREVIEW_COMPARE = [
   "Neither of them is cropped in the preview — the preview is `contain`, so both frames are whole. What you get of each:",
   "",
@@ -100,4 +105,8 @@ export const CAPTURE_ALL_ANSWER = [
   "- the heaviest shot is `Models/model.png` at 244 190 bytes — a full model list is a lot of text",
   "- `Chat/session.png` is second at 205 771, and that is the three photos in the transcript",
   "- `Sessions/list.png` is the lightest at 58 017, which is a list of labels and nothing else",
+].join("\n");
+
+export const CHANGES_ANSWER = [
+  "Named and split, both from the panel: `6d1c4b0a` now reads `feat(changes): send describe and split to the agent`, and `stories/Changes/panel.png` is its own change, `1c7f9a44`, with the source files left in `8b2d63e0`.",
 ].join("\n");

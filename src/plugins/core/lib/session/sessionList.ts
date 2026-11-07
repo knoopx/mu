@@ -5,15 +5,16 @@ import {
 } from "../agent/agentService";
 import { transcriptItemsFromMessages } from "../agent/transcriptState";
 import type { TranscriptItem } from "../agent/transcriptState";
-import { relativeAge } from "../utils/time";
+import { formatSpan, relativeAge } from "../utils/time";
 
 export const SESSION_ROWS_CAP = 25;
 
 export interface SessionListRow {
   path: string;
   label: string;
-  caption?: string;
   age: string;
+
+  duration: string;
 }
 
 export interface SessionPreviewData {
@@ -30,23 +31,22 @@ export interface SessionList {
   remove(path: string): SessionDeleteResult;
 }
 
-const linesOf = (text: string): string[] =>
+const firstLineOf = (text: string): string =>
   text
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line !== "");
+    .find((line) => line !== "") ?? "";
 
 export function sessionRows(
   sessions: readonly SessionInfo[],
 ): SessionListRow[] {
   return sessions.map((s) => {
-    const lines = linesOf((s.name ?? s.firstMessage).trim());
-    const caption = lines.slice(1).join(" · ");
+    const spanMs = s.modified.getTime() - s.created.getTime();
     return {
       path: s.path,
-      label: lines[0] ?? "(no message)",
-      ...(caption === "" ? {} : { caption }),
+      label: firstLineOf((s.name ?? s.firstMessage).trim()) || "(no message)",
       age: relativeAge(s.modified),
+      duration: formatSpan(spanMs / 1000),
     };
   });
 }

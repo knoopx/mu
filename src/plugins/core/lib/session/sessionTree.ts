@@ -115,11 +115,9 @@ interface EntryDescription {
   meta: string;
 }
 
-
 type EntryRow = { role: TreeRole; text: string };
 
 type EntryKind = Exclude<SessionEntry["type"], "message">;
-
 
 const ENTRY_ROWS: {
   [K in EntryKind]?: (entry: Extract<SessionEntry, { type: K }>) => EntryRow;
@@ -175,7 +173,9 @@ function describeMessage(msg: MessageLike, age: string): EntryDescription {
     };
   if (msg.role === "assistant") {
     const stopped =
-      !!msg.stopReason && msg.stopReason !== "stop" && msg.stopReason !== "toolUse";
+      !!msg.stopReason &&
+      msg.stopReason !== "stop" &&
+      msg.stopReason !== "toolUse";
     return {
       role: "assistant",
       text: text || (stopped ? `(${msg.stopReason})` : "(tool calls)"),
@@ -190,9 +190,11 @@ export function describeEntry(entry: SessionEntry): EntryDescription {
   if (entry.type === "message")
     return describeMessage(entry.message as unknown as MessageLike, age);
   const row = ENTRY_ROWS[entry.type as EntryKind] as
-    | ((entry: SessionEntry) => EntryRow)
-    | undefined;
-  return { ...(row?.(entry) ?? { role: "system", text: entry.type }), meta: age };
+    ((entry: SessionEntry) => EntryRow) | undefined;
+  return {
+    ...(row?.(entry) ?? { role: "system", text: entry.type }),
+    meta: age,
+  };
 }
 
 function isBookkeeping(entry: SessionEntry): boolean {
@@ -346,7 +348,6 @@ export function pathStartTs(
   return oldest;
 }
 
-
 function activePathOf(
   parentOf: ReadonlyMap<string, string | null>,
   leafId: string | null,
@@ -359,7 +360,6 @@ function activePathOf(
   }
   return path;
 }
-
 
 function nearestVisibleAncestor(
   id: string,
@@ -395,7 +395,6 @@ const rowIcon = (described: EntryDescription, entry: SessionEntry): IconName =>
   described.role === "tool"
     ? toolIconOf(messageOf(entry).toolName ?? "")
     : ROLE_ICON[described.role];
-
 
 function leafIndexOf(
   rows: readonly TreeRow[],

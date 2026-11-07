@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -16,7 +17,7 @@ export type JumpDirection = -1 | 1;
 
 const SETTLE_PASSES = 2;
 
-export function jumpTargetRow(
+function jumpTargetRow(
   targets: readonly number[],
   topRow: number,
   direction: JumpDirection,
@@ -62,20 +63,93 @@ export interface ListJump {
   onVisibleRange: (event: EventPayload) => void;
 }
 
+/** The row a visible-range event reports, when the list reports one. */
+function rangeStart(event: EventPayload): number | null {
+  return typeof event.startIndex === "number" ? event.startIndex : null;
+}
+
+/**
+ * What the list's latest report means for the jump still in flight: nothing is
+ * jumping, the jump has landed, the list needs another push, or the jump gives
+ * up rather than fight a row the list refuses to show.
+ */
+type JumpSettlement = "idle" | "arrived" | "nudge" | "give-up";
+
+function settleJump(
+  pending: number,
+  start: number,
+  passes: number,
+): JumpSettlement {
+  if (start === pending) return "arrived";
+  return passes < SETTLE_PASSES ? "nudge" : "give-up";
+}
+
+/**
+ * The row a jump asked the list to show, and how many times the list has been
+ * asked. A list reports what it is showing after every scroll, and a jump is
+ * only settled when the report agrees with the request.
+ */
+function useJumpTracker() {
+  const topRow = useRef<number | null>(null);
+  const pending = useRef<number | null>(null);
+  const passes = useRef(0);
+
+  const arm = useCallback((target: number): void => {
+    pending.current = target;
+    passes.current = 0;
+  }, []);
+
+  const settle = useCallback((): void => {
+    pending.current = null;
+  }, []);
+
+  const report = useCallback((start: number): JumpSettlement => {
+    topRow.current = start;
+    const wanted = pending.current;
+    if (wanted === null) return "idle";
+    return settleJump(wanted, start, passes.current);
+  }, []);
+
+  /** Another push for the row still in flight, and how many it has had. */
+  const nudge = useCallback((): number | null => {
+    passes.current += 1;
+    return pending.current;
+  }, []);
+
+  /** The row a new jump counts from: the one in flight, else the one shown. */
+  const base = useCallback(
+    (): number | null => pending.current ?? topRow.current,
+    [],
+  );
+
+  return useMemo(
+    () => ({ arm, settle, report, nudge, base }),
+    [arm, settle, report, nudge, base],
+  );
+}
+
+/** Whether the jump landed on the last stop, which is the end of the log. */
+const isLastStop = (stops: readonly number[], target: number): boolean =>
+  target >= (stops[stops.length - 1] as number);
+
+/** Which way a key asks to jump, when it is one of the two jump bindings. */
+function jumpDirectionOf(
+  event: EventPayload,
+  bindings: { prev: string; next: string },
+): JumpDirection | null {
+  if (matchesBinding(event, bindings.prev)) return -1;
+  if (matchesBinding(event, bindings.next)) return 1;
+  return null;
+}
+
 export function useListJump(options: ListJumpOptions): ListJump {
   const { listRef, targets, enabled, bindings, onJump } = options;
   const renderer = useGpuixRequired();
 
-  const targetsRef = useRef(targets);
-  targetsRef.current = targets;
-  const enabledRef = useRef(enabled);
-  enabledRef.current = enabled;
-  const onJumpRef = useRef(onJump);
-  onJumpRef.current = onJump;
+  const live = useRef({ targets, enabled, onJump });
+  live.current = { targets, enabled, onJump };
 
-  const topRowRef = useRef<number | null>(null);
-  const pendingRef = useRef<number | null>(null);
-  const passesRef = useRef(0);
+  const tracker = useJumpTracker();
   const [request, setRequest] = useState<{
     target: number;
     seq: number;
@@ -101,24 +175,19 @@ export function useListJump(options: ListJumpOptions): ListJump {
 
   const jump = useCallback(
     (direction: JumpDirection): boolean => {
-      if (enabledRef.current === false) return false;
-      const stops = targetsRef.current;
+      if (live.current.enabled === false) return false;
+      const stops = live.current.targets;
       if (stops.length < 2) return false;
-      const pending = pendingRef.current;
-      const base = pending ?? topRowRef.current ?? anchorRow();
-      const target = jumpTargetRow(stops, base, direction);
+      const from = tracker.base() ?? anchorRow();
+      const target = jumpTargetRow(stops, from, direction);
       if (target === null) return false;
-      pendingRef.current = target;
-      passesRef.current = 0;
-      onJumpRef.current?.(
-        target,
-        target >= (stops[stops.length - 1] as number),
-      );
+      tracker.arm(target);
+      live.current.onJump?.(target, isLastStop(stops, target));
       seqRef.current += 1;
       setRequest({ target, seq: seqRef.current });
       return true;
     },
-    [anchorRow],
+    [anchorRow, tracker],
   );
 
   const jumpRef = useRef(jump);
@@ -131,28 +200,29 @@ export function useListJump(options: ListJumpOptions): ListJump {
 
   const onVisibleRange = useCallback(
     (event: EventPayload): void => {
-      const start = event.startIndex;
-      if (typeof start !== "number") return;
-      topRowRef.current = start;
-      const pending = pendingRef.current;
-      if (pending === null) return;
-      if (start === pending) {
-        pendingRef.current = null;
-        return;
+      const start = rangeStart(event);
+      if (start === null) return;
+      switch (tracker.report(start)) {
+        case "idle":
+        case "arrived":
+        case "give-up":
+          tracker.settle();
+          return;
+        case "nudge": {
+          const wanted = tracker.nudge();
+          if (wanted !== null) scrollTo(wanted);
+          return;
+        }
       }
-      if (passesRef.current < SETTLE_PASSES) {
-        passesRef.current += 1;
-        scrollTo(pending);
-      } else pendingRef.current = null;
     },
-    [scrollTo],
+    [scrollTo, tracker],
   );
 
   useEffect(
     () =>
       addInputListener((event) => {
-        if (matchesBinding(event, bindings.prev)) jumpRef.current(-1);
-        else if (matchesBinding(event, bindings.next)) jumpRef.current(1);
+        const direction = jumpDirectionOf(event, bindings);
+        if (direction !== null) jumpRef.current(direction);
       }),
     [bindings.prev, bindings.next],
   );

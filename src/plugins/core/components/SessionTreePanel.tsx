@@ -8,12 +8,12 @@ import {
   T,
   VirtualListPanel,
   useAdwaita,
+  useListWindow,
   type GraphNode,
 } from "adwaita-gpuix";
 import type { PublicInstance } from "@gpuix/react";
 import { ellipsisFill } from "../lib/ui/layout";
 import { usePanelChrome } from "../lib/composer/chrome";
-import { useListWindow } from "../lib/ui/listWindow";
 import { TREE_ROW_HEIGHT } from "../hooks/useSessionTree";
 import type {
   TreeFilter,

@@ -9,6 +9,9 @@ export interface MapEventContext {
 
   toolText?: Map<string, string>;
 
+  /** Shape of the arguments seen so far for each call that is streaming in. */
+  toolCallArgs?: Map<string, string>;
+
   thinkingBlocks?: Map<string, number>;
 }
 
@@ -17,6 +20,13 @@ type AnyEvent = { type: string } & Record<string, unknown>;
 interface AssistantMessageEventShape {
   type?: string;
   delta?: string;
+  contentIndex?: number;
+}
+
+interface PartialToolCall {
+  id: string;
+  name: string;
+  args: Record<string, unknown>;
 }
 
 const asString = (v: unknown): string => (typeof v === "string" ? v : "");
@@ -50,6 +60,49 @@ function toolTextOf(ctx: MapEventContext): Map<string, string> {
   return (ctx.toolText ??= new Map());
 }
 
+function toolCallArgsOf(ctx: MapEventContext): Map<string, string> {
+  return (ctx.toolCallArgs ??= new Map());
+}
+
+/**
+ * The tool call block being streamed: the same block pi is parsing the
+ * arguments of, read out of the partial assistant message the event carries.
+ */
+function partialToolCallOf(
+  e: AnyEvent,
+  am: AssistantMessageEventShape,
+): PartialToolCall | undefined {
+  const content = asRecord(e.message).content;
+  const blocks = Array.isArray(content)
+    ? (content as Record<string, unknown>[])
+    : [];
+  const index = am.contentIndex ?? -1;
+  let block = index >= 0 && index < blocks.length ? blocks[index] : undefined;
+  if (block === undefined)
+    for (let i = blocks.length - 1; i >= 0; i--)
+      if (blocks[i]?.type === "toolCall") {
+        block = blocks[i];
+        break;
+      }
+  if (!block || block.type !== "toolCall") return undefined;
+  const id = asString(block.id);
+  if (id === "") return undefined;
+  return { id, name: asString(block.name), args: asRecord(block.arguments) };
+}
+
+/**
+ * A fingerprint of the arguments — key names and the length of every string —
+ * so a row is redrawn when a call grows and not on each of its deltas' bytes.
+ */
+function argsShape(args: Record<string, unknown>): string {
+  return Object.entries(args)
+    .map(
+      ([key, value]) =>
+        `${key}:${typeof value === "string" ? value.length : typeof value}`,
+    )
+    .join("|");
+}
+
 function messageStart(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
   if (asRecord(e.message).role !== "assistant") return [];
   ctx.assistantSeq = (ctx.assistantSeq ?? 0) + 1;
@@ -64,6 +117,32 @@ function thinkingStart(id: string, ctx: MapEventContext): TranscriptAction[] {
   blocks.set(id, seen + 1);
 
   return seen > 0 ? [{ type: "assistant_thinking", id, delta: "\n\n" }] : [];
+}
+
+function toolCallStreaming(
+  e: AnyEvent,
+  am: AssistantMessageEventShape,
+  ctx: MapEventContext,
+): TranscriptAction[] {
+  const call = partialToolCallOf(e, am);
+  if (call === undefined) return [];
+  const ledger = toolCallArgsOf(ctx);
+  const shape = `${call.name}|${argsShape(call.args)}`;
+  const seen = ledger.get(call.id);
+  if (seen === shape) return [];
+  // Some providers name the call only in its first delta, so the row opens
+  // when there is a tool to name it after.
+  if (seen === undefined && call.name === "") return [];
+  ledger.set(call.id, shape);
+  return [
+    {
+      type: "tool_call",
+      toolCallId: call.id,
+      name: call.name,
+      args: call.args,
+      ...(seen === undefined ? { startTs: Date.now() } : {}),
+    },
+  ];
 }
 
 function assistantSubEvent(
@@ -81,18 +160,20 @@ function assistantSubEvent(
 }
 
 function messageUpdate(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
+  const am = asRecord(e.assistantMessageEvent) as AssistantMessageEventShape;
+  // Arguments arrive before the tool runs: the row opens and grows with them.
+  if (am.type === "toolcall_start" || am.type === "toolcall_delta")
+    return toolCallStreaming(e, am, ctx);
   const id = ctx.lastAssistantId;
   if (id === undefined) return [];
-  return assistantSubEvent(
-    asRecord(e.assistantMessageEvent) as AssistantMessageEventShape,
-    id,
-    ctx,
-  );
+  return assistantSubEvent(am, id, ctx);
 }
 
 function messageEnd(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
   const msg = asRecord(e.message);
-  if (msg.role !== "assistant" || !ctx.lastAssistantId) return [];
+  if (msg.role !== "assistant") return [];
+  ctx.toolCallArgs?.clear();
+  if (!ctx.lastAssistantId) return [];
   const id = ctx.lastAssistantId;
   ctx.lastAssistantId = undefined;
   const usage = assistantUsageOf(msg, Date.now());
@@ -138,6 +219,7 @@ function toolEnd(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
   const toolCallId = asString(e.toolCallId);
   const { output, details, image } = resultParts(e.result);
   toolTextOf(ctx).set(toolCallId, output);
+  ctx.toolCallArgs?.delete(toolCallId);
   return [
     {
       type: "tool_end",
