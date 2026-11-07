@@ -60,7 +60,7 @@ Nothing runs while it waits on you, and the bar at the bottom of the window says
 
 ## Composer
 
-The composer is how you talk to the agent and how you drive the app. The card grows with the draft, keeps the attachments you pasted above it, and carries the active model, the thinking level, and how full the conversation is as pills.
+The composer is how you talk to the agent and how you drive the app. The card grows with the draft, keeps the attachments you pasted above it, and while the draft is still blank it carries the active model, the thinking level, and how full the conversation is as pills. Start typing and the pills step out — the question is asked, and the row is yours.
 
 A keystroke opens a panel above it: every command (`Ctrl+Shift+P`), the files of the project (`Ctrl+P`), your own past prompts (`Ctrl+R`), the model (`Ctrl+L`), the thinking level (`Ctrl+T`), the sessions (`Ctrl+H`), the conversation tree (`Ctrl+Shift+T`), the project's changes (`Ctrl+K`). You type to narrow the list, Enter applies, Esc closes, and the keys that do it are printed under the panel. Tab is the keystroke that completes a path you are typing in the draft, and [Paths](#paths) is that story.
 

@@ -27,6 +27,7 @@ import { CODE_LINE_HEIGHT } from "../../lib/composer/panelHeight";
 import {
   composerFieldRows,
   composerFieldSize,
+  draftIsBlank,
   fieldLineBox,
   fieldPadY,
   FIELD_MAX_ROWS,
@@ -756,6 +757,7 @@ function ComposerField(props: {
   const { styles, t } = props;
   const oneRow = fitsOneRow(props.fieldText);
   const geometry = fieldGeometry(t, oneRow, props.fieldText, styles);
+  const showMeta = props.panelOpen === false && draftIsBlank(props.fieldText);
   return (
     <div style={styles.fieldRow}>
       <textarea
@@ -778,7 +780,7 @@ function ComposerField(props: {
         onKeyDown={(event) => void props.onFieldKey(event)}
         style={geometry.style}
       />
-      {props.panelOpen === false && (
+      {showMeta && (
         <ComposerMeta
           model={props.model}
           thinking={props.thinking}

@@ -17,6 +17,15 @@ export function fieldPadY(t: AdwaitaTheme): number {
   return Math.max(0, Math.round((t.control.rowHeight - fieldLineBox(t)) / 2));
 }
 
+/**
+ * The meta pills beside the field answer "what am I talking to" before there is
+ * a draft. Once a draft exists the question is asked and the row is yours: the
+ * field takes the whole width and the pills step out.
+ */
+export function draftIsBlank(value: string): boolean {
+  return value.trim().length === 0;
+}
+
 export function fitsOneRow(value: string): boolean {
   const trimmed = value.trim();
   if (trimmed.includes("\n")) return false;
