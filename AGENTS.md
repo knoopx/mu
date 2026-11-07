@@ -6,6 +6,7 @@ A GPU-rendered desktop client for the pi coding agent: `@gpuix/react` + `adwaita
 
 - `bun run dev` — the app, hot (`bun --hot app.tsx`)
 - `bun run typecheck` — `tsc --noEmit`; the tree is expected to stay clean
+- `bun run guardrails:check` — boots the guardrails extension and runs the app's own `guardrails-test` and `guardrails-coverage` tools over the user's rule files; exits non-zero when a fixture fails
 - `bun storybook .` — renders every scene in `README.md` to `stories/<Feature>/<story>.png`
 
 ## Layout
@@ -20,11 +21,12 @@ src/plugins/
 │   ├── hooks/       useChatSession, useSessionTree, useThemePanel, useWorkspaceStatus, ...
 │   └── screens/     Chat.tsx
 ├── interaction/     lib/ components/ hooks/ tools/askUser.ts types.ts constants.ts
-├── vcs/             lib/ components/ hooks/ types.ts constants.ts
+├── guardrails/      lib/ (treeSitter/ rules/ rulesFile/ engine/ store/ panelRows/ coverage/ report/) components/ hooks/ tools/ README.md types.ts constants.ts
+├── vcs/             lib/ components/ hooks/ tools/ types.ts constants.ts
 └── web-search/      lib/duckduckgo/ components/ tools/webSearch.ts types.ts constants.ts
 ```
 
-A namespace is a folder inside a kind: the agent bridge is `core/lib/agent`, the composer's layout and mode logic is `core/lib/composer`, the DuckDuckGo engine is `web-search/lib/duckduckgo`. A tool is one file per tool, named after the tool: `interaction/tools/askUser.ts`, `web-search/tools/webSearch.ts`. A plugin that registers no agent tool has no `tools/` — `vcs` is a panel and a data layer, not a tool.
+A namespace is a folder inside a kind: the agent bridge is `core/lib/agent`, the composer's layout and mode logic is `core/lib/composer`, the DuckDuckGo engine is `web-search/lib/duckduckgo`. A tool is one file per tool, named after the tool: `interaction/tools/askUser.ts` is `ask-user`, `web-search/tools/webSearch.ts` is `search-duckduckgo`, `guardrails/tools/guardrailsTest.ts` is `guardrails-test`, `vcs/tools/vcsLog.ts` is `vcs-log` — the file is camelCase, the tool name it registers is kebab. A plugin that registers no agent tool has no `tools/`.
 
 ### Imports: no barrels
 
@@ -51,25 +53,33 @@ One feature, one story, one scene. Each story in `stories/` renders the app — 
 
 A story id is the meta `title` over the exported scene, so `stories/Chat.stories.tsx` with `title: "Chat"` and `export const session` is the `Chat/session` scene, and it writes `stories/Chat/session.png`.
 
-| README feature | Scene |
-| --- | --- |
-| Chat | `Chat/session` |
-| Agent actions | `AgentActions/work` |
-| Questions | `Questions/asked` |
-| Composer | `Composer/drafting` |
-| Models | `Models/model`, `Models/thinking` |
-| Sessions | `Sessions/list` |
-| History | `History/tree` |
-| Changes | `Changes/panel` |
-| Web search | `WebSearch/results` |
-| Project header | `ProjectHeader/opens` |
-| Looks | `Looks/light`, `Looks/dark`, `Looks/nightsky`, `Looks/accents` |
+| README feature                    | Scene                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| Chat                              | `Chat/session`                                                                |
+| Agent actions                     | `AgentActions/work`                                                           |
+| Questions                         | `Questions/asked`                                                             |
+| Composer                          | `Composer/drafting`                                                           |
+| Paths                             | `Paths/completing`                                                            |
+| Models                            | `Models/model`, `Models/thinking`                                             |
+| Sessions                          | `Sessions/list`                                                               |
+| History                           | `History/tree`                                                                |
+| Changes                           | `Changes/panel`, `Changes/instructed`                                         |
+| Web search                        | `WebSearch/results`                                                           |
+| Guardrails                        | `Guardrails/triggered`, `Guardrails/tended`                                   |
+| Project header                    | `ProjectHeader/opens`                                                         |
+| Looks                             | `Looks/light`, `Looks/dark`, `Looks/nightsky`, `Looks/accents`                |
 | (design sweep, not in the README) | the rest of `Looks/*` — the composer's panels in every state, at every accent |
 
 Every PNG under `stories/` is shown by the README, and every image the README shows exists — keep that true when adding a story (`grep -c 'stories/' README.md` against `find stories -name '*.png'`). The one gap is the status bar: the README describes it in words and has no picture, because there is no `stories/StatusBar.stories.tsx` — the bar is only ever seen inside `Chat/*` and the other scenes. Adding that story closes the gap.
 
 ## Notes
 
+- Path completion lives in `core/lib/composer/pathCompletion.ts`: the draft's trailing path token (`~`, `~/x`, `/x`, `./x`, `../x`, `@x`, anything with a `/`) is listed as a shell lists it, and the completion panel's query **is** the draft — `isCompletionMode` — so typing keeps editing the draft and Tab takes the highlighted path, a directory keeping the panel open. Tab is `editor.autocomplete`, handled in `composer/keyRouter.ts` with the `cycle` flag so the window listener never takes a completion twice. `bun run completion:check` drives the path logic and the key router against a fixture tree in a temp directory.
 - There is no DOM. Style objects are `StyleDesc` values and layout is flex; `adwaita-gpuix` owns theme tokens, and colour helpers live in `core/lib/ui/theme.ts` so a component never hand-mixes a hex.
 - The transcript page inset (`PAGE_INSET` in `core/lib/ui/transcriptLayout.ts`) is one constant imported everywhere; the adwaita tool-header glyph hangs 24px into it, so the inset stays at 56.
+- Images reach the model whole. `core/lib/agent/settings.ts` builds the `SettingsManager` mu passes to `createAgentSessionServices` and overrides `images.autoResize` to false in memory (`applyOverrides` never writes the user's file). pi resizes every image before sending it, and no resize path exists inside a `bun build --compile` binary — no worker from an embedded bundle, and no `photon_rs_bg.wasm` for the in-process fallback — so `resizeImage` returns null and pi drops every image with "Image omitted: could not be resized below the inline image size limit", at any size. Auto-resize off, the pipeline is `normalizeImage`, which passes PNG/JPEG/GIF/WebP through with no wasm. `bun run image:check` asserts the override, that the settings file is untouched, and that whole images stay under pi's inline base64 limit. The same thing is a settings switch (`Auto-resize images` → false) for one-off debugging.
+- Guardrails are driven by three agent tools in `guardrails/tools/`, named after the pi tools they port: `guardrails-test` runs a fixture suite against the live engine, `guardrails-fixture-update` writes the suites, `guardrails-coverage` reads saved session transcripts for observed blocks. There is no manage tool: arming is the panel's — `guardrailsStore` switches, driven by `/guardrails` and the composer keybinding, and the agent never arms, disarms, clears the log or dry-runs. **Guardrails are the user's files, never the project's and never pi's**: rules are `$XDG_CONFIG_HOME/mu/guardrails/<domain>.json`, the suite that proves a domain sits beside it as `<domain>.fixtures.json`, and the arming the app remembers is `$XDG_STATE_HOME/mu/guardrails.json`. `lib/rulesFile.ts` is the one that knows those paths (`rulesDir`/`fixturesDir`/`stateFilePath`, with `MU_GUARDRAILS_RULES` and `MU_GUARDRAILS_FIXTURES` as overrides, `saveGuardrailRule`/`deleteGuardrailRule` as the writers); `startGuardrails()` reads the rule files into the registry at boot and `reloadGuardrails()` reads them again. A domain is the filename, so a rule and its file can never disagree, and one unreadable file loses only its own rules. The format, the validation each record passes, and why a rule needs a `block-*` and an `ok-*` case are in `guardrails/README.md`. mu writes no rules: `lib/rules.ts` is the registry and the validator, and no tool authors a rule.
+- A guarded call is a list of **sources**, and a source is one key's text in one grammar: the `command`/`cmd` of a command tool is bash, and the `content`/`newText`/`oldText`/`text` a file tool writes is parsed in the grammar its `path` names, so an `edit` of a `.py` file is checked against python rules and a `write` of a `.json` file is released unread. All sixteen grammars `@vscode/tree-sitter-wasm` ships are registered — bash, cpp, csharp, css, go, ini, java, javascript, php, powershell, python, regex, ruby, rust, tsx, typescript — imported by name in `treeSitter/grammar.ts` so `bun build --compile` embeds them, and booted only for the languages the registry names. A rule that reads file text says so with `tools` and `fields`; a rule naming neither reads command text only, which is what every rule written before file sources did. The format, the source table and the fixture shape are in `guardrails/README.md`.
+- Guardrails parse in-process with web-tree-sitter, on the app's JS thread. A rule is a tree-sitter query plus JS regex filters: a `#match?` written on a bare `(program) @root` has its predicate ignored by the query engine, so whole-command tests live in `filters` where they are checked. Grammars come from `@vscode/tree-sitter-wasm` — a `dylink.0` custom section is required, and the prebuilt `tree-sitter-wasms` set is refused by every web-tree-sitter since 0.20. `Parser.init()` must be handed `wasmBinary` bytes read from an embedded `with { type: "file" }` asset, because its own resolver finds no `.wasm` inside a `bun build --compile` binary, and Bun cannot start an embedded worker there, so a parse is budgeted (`PARSE_BUDGET_MS`) and always fail-open.
+- vcs is a panel and ten agent tools in `vcs/tools/`: `vcs-log`, `vcs-file-diff`, `vcs-file-history`, `vcs-file-history-show`, `vcs-conflicts`, `vcs-oplog` and `vcs-hunk-list` read, and `vcs-describe`, `vcs-file-split` and `vcs-hunk-split` write. Those ten names are what the user's guardrail rules point an agent at, so they are never renamed or aliased. `lib/ops.ts` is the only file that names the change-tracking CLI: a tool names a revision, files, hunks and a message and never a flag, and answers in one status vocabulary (`ok`, `failed`, `unsupported`, `empty-selected`, `empty`, `none`, `binary`) rather than an exit code, and a write is verified by re-resolving the post-state so a tool reports the ids the repo resolved and never the ones the caller typed. A result is written for two readers by `lib/toolResult.ts`: aligned-column text in `content` for the model and structured `details` for the GUI, folded by `lib/toolView.ts` and painted by `vcs/components/VcsToolRows.tsx`, dispatched from `core/components/ToolExecution.tsx`. The panel's describe (`d`), split (`s`) and split-hunk (`h`) keys send an instruction built in `lib/instructions.ts` — `ChangesPanelOptions.onInstruction` → `composerActions.sendInstruction` → `chat.send` — rather than typing a message or running the write locally, so no describe or split happens without a tool row behind it.
 - Stories are the visual regression suite: `stories/` holds one scene per feature row of `README.md`, and `.storybook/fixtures` is shared between them. A story that imports a plugin file is a real consumer of it — check `stories/` and `.storybook/` before removing anything.
