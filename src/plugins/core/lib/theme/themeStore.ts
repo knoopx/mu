@@ -1,7 +1,8 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { SCHEMES, type AccentKey, type ColorScheme } from "adwaita-gpuix";
 import { useSyncExternalStore } from "react";
+import { muConfigDir, muDir } from "../utils/paths";
 
 export const DEFAULT_SCHEME: ColorScheme = "nightsky";
 export const DEFAULT_ACCENT: AccentKey | null = null;
@@ -78,19 +79,10 @@ export function accentNameList(): string {
   return ["default", ...ACCENT_KEYS].join(" | ");
 }
 
-const CONFIG_DIR_NAME = "mu";
 const CONFIG_FILE_NAME = "theme.json";
 
-function configDir(): string {
-  const xdg = process.env.XDG_CONFIG_HOME;
-  const home = process.env.HOME ?? "";
-  return xdg !== undefined && xdg.length > 0
-    ? join(xdg, CONFIG_DIR_NAME)
-    : join(home, ".config", CONFIG_DIR_NAME);
-}
-
 function configFile(): string {
-  return join(configDir(), CONFIG_FILE_NAME);
+  return join(muConfigDir(), CONFIG_FILE_NAME);
 }
 
 function readSaved(): ThemeSelection {
@@ -110,7 +102,7 @@ function readSaved(): ThemeSelection {
 
 function saveSelection(selection: ThemeSelection): void {
   try {
-    mkdirSync(configDir(), { recursive: true });
+    muDir(muConfigDir());
     writeFileSync(
       configFile(),
       `${JSON.stringify({ scheme: selection.scheme, accent: selection.accent }, null, 2)}\n`,

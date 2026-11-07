@@ -115,7 +115,6 @@ export function composerFill(
   return t.color.surface.view;
 }
 
-
 export function buildNativeTheme(
   t: AdwaitaTheme,
   tone: ComposerTone = "idle",
