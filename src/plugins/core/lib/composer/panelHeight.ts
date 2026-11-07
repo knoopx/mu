@@ -8,18 +8,7 @@ const PANEL_MAX_HEIGHT = 760;
 
 export const PANEL_FIT_MIN_ROWS = 4;
 
-export const DIFF_MAX_LINES = 20;
-
 export const CODE_LINE_HEIGHT = 18;
-
-export function diffRuleHeight(t: AdwaitaTheme): number {
-  return t.control.dividerThickness + 2 * t.space.md;
-}
-
-export function diffLines(patch: string): number {
-  if (patch.length === 0) return 0;
-  return Math.min(patch.split("\n").length, DIFF_MAX_LINES);
-}
 
 export function composerPanelHeight(windowHeight: number | undefined): number {
   const h =

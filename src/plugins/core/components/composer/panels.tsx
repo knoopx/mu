@@ -28,9 +28,6 @@ import {
   composerPanelFitRows,
   composerPanelHeight,
   composerPanelRowsForHeight as panelRowsFor,
-  CODE_LINE_HEIGHT,
-  diffLines,
-  diffRuleHeight,
   PANEL_FIT_MIN_ROWS,
 } from "../../lib/composer/panelHeight";
 import {
@@ -67,7 +64,6 @@ import {
 import { SESSION_ROWS_CAP } from "../../lib/session/sessionList";
 import type { GuardrailsPanelApi } from "../../../guardrails/types";
 import { TREE_ROW_HEIGHT } from "../../hooks/useSessionTree";
-import { FILES_ROWS } from "../../../vcs/components/ChangesPanel";
 
 export function sessionStatusText(
   total: number,
@@ -319,31 +315,19 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   hints: TREE_HINTS,
 });
 
-function wideFitHeight(data: ComposerPanelData, isChanges: boolean): number {
-  const { theme: t, changes, tree, windowHeight } = data;
-  if (!isChanges)
-    return composerPanelFitHeight(
-      t,
-      windowHeight,
-      Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * TREE_ROW_HEIGHT,
-      true,
-    );
-  const rowHeight = t.control.rowHeight;
-  const stackHeight =
-    Math.max(PANEL_FIT_MIN_ROWS, changes.rows.length) * rowHeight;
-  const filesHeight =
-    Math.max(PANEL_FIT_MIN_ROWS, Math.min(changes.files.length, FILES_ROWS)) *
-    rowHeight;
-  const filesBlock =
-    changes.files.length === 0
-      ? filesHeight
-      : filesHeight +
-        diffRuleHeight(t) +
-        diffLines(changes.patch) * CODE_LINE_HEIGHT;
+/**
+ * The height of a wide panel. The changes panel owns a three-part layout — a
+ * stack, a file list and a diff — and the diff wants every pixel it can get, so
+ * it always takes the full band. The history tree is one short list, so it
+ * fits its content.
+ */
+function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
+  const { theme: t, tree, windowHeight } = data;
+  if (isChanges) return composerPanelHeight(windowHeight);
   return composerPanelFitHeight(
     t,
     windowHeight,
-    Math.max(stackHeight, filesBlock),
+    Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * TREE_ROW_HEIGHT,
     true,
   );
 }
@@ -353,7 +337,7 @@ function widePanelSpec(
   isChanges: boolean,
 ): ComposerPanelSpec {
   const { theme: t, changes, tree, windowHeight } = data;
-  const height = wideFitHeight(data, isChanges);
+  const height = wideHeight(data, isChanges);
   return {
     status: isChanges ? changesStatus(changes) : treeStatus(tree),
     rows: [],
