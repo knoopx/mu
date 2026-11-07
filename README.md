@@ -114,6 +114,12 @@ When the agent needs something your project does not know, it searches the web, 
 
 ![It went and looked](stories/WebSearch/results.png)
 
+## Code quality
+
+Before the agent changes a file it did not write, it asks the project about itself: what sits over the complexity thresholds, what nothing imports, what is copy-pasted, and how far one commit reaches. `code-complexity`, `code-dead-code`, `code-duplicates`, `code-review`, `code-symbol-inspect` and `code-symbol-references` answer in rows the log draws — chips for what was read, a meter showing how a finding ranks against its own run, clone groups listed with every place they appear — and every read is bounded, so surveying a large tree stays a survey instead of a wall of text. Nothing is fixed behind the agent's back: an unused export it found is a row, and deleting it is your call.
+
+![What the project says about itself](stories/CodeQuality/surveyed.png)
+
 ## Guardrails
 
 Some commands are not what a project wants: a global install, a `sleep` standing in for a real condition, a `rm` where `trash` exists. Guardrails read a tool call as a syntax tree rather than a string, and a call that matches never runs — the agent is handed the correction to take instead, in the result, so the next move is the right one.

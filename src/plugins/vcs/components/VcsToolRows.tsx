@@ -2,6 +2,8 @@
  * Draws a vcs tool call in the transcript. Each tool answers the model in
  * aligned columns and the log in structured details; this file paints the
  * details — chips for identities, rows for data, a real diff, a real file body.
+ * The rows themselves are core's: this file only says which badges a vcs state
+ * wears and which tool gets which extra block.
  */
 
 import type { JSX, ReactNode } from "react";
@@ -13,14 +15,34 @@ import {
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
+import {
+  ToolChips,
+  ToolDataRow,
+  ToolRunning,
+  ToolStateNote,
+  ToolSummary,
+  ToolUnknownResult,
+} from "../../core/components/ToolDataRows";
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
+import {
+  toolPreviewLine,
+  type ToolPreviewVocabulary,
+} from "../../core/lib/agent/toolPreview";
 import { buildNativeTheme } from "../../core/lib/ui/theme";
+import {
+  toolCellOf,
+  toolStatusIcon,
+  toolStatusTone,
+  type ToolRowTone,
+} from "../../core/lib/ui/toolRowPaint";
+import { toolGapColumn } from "../../core/lib/ui/toolRows";
 import {
   outputPanel,
   previewLineHeight,
 } from "../../core/lib/ui/transcriptLayout";
 import { plainOutputOf } from "../../core/lib/ui/toolOutputMode";
-import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
+  VCS_BADGE_VARIANTS,
   VCS_CONFLICTS_TOOL,
   VCS_DESCRIBE_TOOL,
   VCS_FILE_DIFF_TOOL,
@@ -33,19 +55,8 @@ import {
   VCS_OPLOG_TOOL,
   VCS_TOOL_NAMES,
 } from "../constants";
-import { toolGapColumn } from "../../core/lib/ui/toolRows";
 import { vcsToolViewOf } from "../lib/toolView";
 import type { VcsToolStatus, VcsToolView } from "../types";
-
-import {
-  VcsChips,
-  VcsDataRow,
-  VcsRunning,
-  VcsStateLine,
-  VcsSummary,
-  vcsCellOf,
-  type VcsTone,
-} from "./VcsRows";
 import { VcsSplitRows } from "./VcsSplitRows";
 
 const RUNNING_TEXT: Record<string, string> = {
@@ -74,13 +85,38 @@ const EMPTY_TEXT: Record<string, string> = {
   [VCS_HUNK_SPLIT_TOOL]: "nothing selected",
 };
 
+/** A status that answers in its own words whatever tool it belongs to. */
+const STATED_STATUS: Readonly<Record<string, string>> = {
+  unsupported: "no jj repo",
+  binary: "binary file",
+};
+
+/** The states a vcs vocabulary adds to the shared status tones and icons. */
+const VCS_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
+  "empty-selected": "warn",
+  binary: "warn",
+};
+
+const VCS_STATUS_ICONS: Readonly<Record<string, IconName>> = {
+  "empty-selected": "warning",
+  binary: "warning",
+};
+
 const PATH_TOOLS: readonly string[] = [
   VCS_FILE_DIFF_TOOL,
   VCS_FILE_HISTORY_TOOL,
   VCS_FILE_HISTORY_SHOW_TOOL,
 ];
 
-const PREVIEW_MAX = 96;
+/** What the ten vcs tools say about themselves, in their own words. */
+const VCS_WORDS: ToolPreviewVocabulary = {
+  running: RUNNING_TEXT,
+  runningDefault: "reading the repo",
+  clean: ["empty-selected", "empty", "none"],
+  empty: EMPTY_TEXT,
+  emptyDefault: "nothing found",
+  stated: STATED_STATUS,
+};
 
 /** True for the ten vcs tools — matched by their names, never retyped. */
 export function isVcsTool(name: string): boolean {
@@ -93,86 +129,40 @@ export function isVcsTool(name: string): boolean {
  * counts, ids and patch belong to the rows below, so the header never says
  * what the rows paint, and the rows never repeat the header.
  */
-export function vcsToolPreviewOf(item: ToolTranscriptItem): string {
-  const tool = item.name.toLowerCase();
-  if (item.status === "running")
-    return RUNNING_TEXT[tool] ?? "reading the repo";
-
-  const view = vcsToolViewOf(item.name, item.args, item.details, item.status);
-  if (view === null) return fallbackPreview(item);
-
-  if (view.status === "failed") return `${tool} · failed`;
-  if (view.status === "unsupported") return "no jj repo";
-  if (view.status === "empty-selected")
-    return EMPTY_TEXT[tool] ?? "nothing selected";
-  if (view.status === "none") return EMPTY_TEXT[tool] ?? "nothing found";
-  if (view.status === "binary") return "binary file";
-  if (view.status === "empty") return EMPTY_TEXT[tool] ?? "nothing found";
-
-  return clip(scopeOf(tool, view));
-}
-
-/** Details of an unknown shape answer in their own first line of text. */
-function fallbackPreview(item: ToolTranscriptItem): string {
-  const line = firstLineOf(item.output);
-  if (item.status === "error")
-    return `${item.name.toLowerCase()} · ${line === "" ? "failed" : line}`;
-  return line === "" ? item.name.toLowerCase() : clip(line);
-}
+export const vcsToolPreviewOf = (item: ToolTranscriptItem): string =>
+  toolPreviewLine(
+    item,
+    vcsToolViewOf(item.name, item.args, item.details, item.status),
+    VCS_WORDS,
+    scopeOf,
+  );
 
 /** The request a tool was pointed at, read back from its chips. */
 function scopeOf(tool: string, view: VcsToolView): string {
   if (tool === VCS_OPLOG_TOOL) return "op log";
-  if (PATH_TOOLS.includes(tool)) return vcsCellOf(view, "path");
+  if (PATH_TOOLS.includes(tool)) return toolCellOf(view.cells, "path");
   if (tool === VCS_DESCRIBE_TOOL)
-    return join([vcsCellOf(view, "rev"), vcsCellOf(view, "change")]);
+    return join([toolCellOf(view.cells, "rev"), toolCellOf(view.cells, "change")]);
   if (tool === VCS_FILE_SPLIT_TOOL)
-    return join([vcsCellOf(view, "rev"), vcsCellOf(view, "files")]);
-  if (tool === VCS_HUNK_SPLIT_TOOL) return vcsCellOf(view, "rev");
-  return vcsCellOf(view, "rev");
+    return join([toolCellOf(view.cells, "rev"), toolCellOf(view.cells, "files")]);
+  return toolCellOf(view.cells, "rev");
 }
 
 function join(parts: readonly string[]): string {
   return parts.filter((part) => part !== "").join(" · ");
 }
 
-function clip(text: string): string {
-  return text.length <= PREVIEW_MAX ? text : `${text.slice(0, PREVIEW_MAX)}…`;
-}
+const toneOf = (status: VcsToolStatus | ""): ToolRowTone =>
+  toolStatusTone(status, VCS_STATUS_TONES);
 
-function firstLineOf(text: string): string {
-  return (
-    text
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line !== "")[0] ?? ""
-  );
-}
-
-/** A tone for a status: destructive for a failure, warning for a partial one. */
-function toneOf(status: VcsToolStatus | ""): VcsTone {
-  if (status === "failed" || status === "unsupported") return "bad";
-  if (status === "empty-selected") return "warn";
-  if (status === "binary") return "warn";
-  if (status === "none") return "ok";
-  return "neutral";
-}
-
-/** The icon a status line carries — a clean repo reads as good news, not a warning. */
-function iconOf(status: VcsToolStatus | ""): IconName {
-  if (status === "failed") return "close";
-  if (status === "unsupported") return "warning";
-  if (status === "empty-selected") return "warning";
-  if (status === "none") return "check";
-  if (status === "binary") return "warning";
-  return "info";
-}
+const iconOf = (status: VcsToolStatus | ""): IconName =>
+  toolStatusIcon(status, VCS_STATUS_ICONS);
 
 /** The note of a view, painted only when there is one to paint. */
 function VcsNote({ view }: { view: VcsToolView }): JSX.Element | null {
   if (view.note === "") return null;
   return (
-    <VcsStateLine
+    <ToolStateNote
       icon={iconOf(view.status)}
       tone={toneOf(view.status)}
       text={view.note}
@@ -188,14 +178,14 @@ function VcsViewBody({
   summaryFirst = false,
 }: {
   view: VcsToolView;
-  tone?: VcsTone;
+  tone?: ToolRowTone;
   after?: ReactNode;
   summaryFirst?: boolean;
 }): JSX.Element {
   const t = useAdwaita();
-  const chips = <VcsChips cells={view.cells} />;
+  const chips = <ToolChips cells={view.cells} />;
   const summary = (
-    <VcsSummary
+    <ToolSummary
       text={view.headline}
       tone={tone ?? (view.status === "ok" ? "neutral" : toneOf(view.status))}
     />
@@ -205,7 +195,12 @@ function VcsViewBody({
       {summaryFirst ? summary : chips}
       {summaryFirst ? chips : summary}
       {view.rows.map((row, index) => (
-        <VcsDataRow key={row.key} row={row} first={index === 0} />
+        <ToolDataRow
+          key={row.key}
+          row={row}
+          first={index === 0}
+          variants={VCS_BADGE_VARIANTS}
+        />
       ))}
       <VcsNote view={view} />
       {after ?? null}
@@ -262,26 +257,14 @@ export interface VcsToolRowsProps {
  * table-shaped tools a row each.
  */
 export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
-  const t = useAdwaita();
   const tool = item.name.toLowerCase();
 
   if (item.status === "running")
-    return <VcsRunning text={RUNNING_TEXT[tool] ?? "reading the repo"} />;
+    return <ToolRunning text={RUNNING_TEXT[tool] ?? "reading the repo"} />;
 
   const view = vcsToolViewOf(item.name, item.args, item.details, item.status);
 
-  if (view === null) {
-    const line = firstLineOf(item.output);
-    if (item.status === "error")
-      return (
-        <VcsStateLine
-          icon="cancel"
-          tone="bad"
-          text={line === "" ? `${tool} failed` : line}
-        />
-      );
-    return <VcsStateLine icon="info" text={line} />;
-  }
+  if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
 
   if (tool === VCS_FILE_SPLIT_TOOL || tool === VCS_HUNK_SPLIT_TOOL)
     return <VcsSplitRows view={view} />;
@@ -300,7 +283,7 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
     return (
       <>
         <VcsViewBody view={view} />
-        <VcsFileBody path={vcsCellOf(view, "path")} content={view.content} />
+        <VcsFileBody path={toolCellOf(view.cells, "path")} content={view.content} />
       </>
     );
 

@@ -14,7 +14,7 @@ import { Type } from "typebox";
 
 import { VCS_FILE_HISTORY_SHOW_TOOL } from "../constants";
 import { NOT_A_JJ_REPO, jjRoot, resolveIds, runFileShow } from "../lib/ops";
-import { blocks, statusTable, toolResult } from "../lib/toolResult";
+import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileShowDetails, VcsFileShowParams } from "../types";
 
 const Parameters = Type.Object({

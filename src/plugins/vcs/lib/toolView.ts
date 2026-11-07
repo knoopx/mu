@@ -18,6 +18,7 @@ import {
   VCS_LOG_TOOL,
   VCS_OPLOG_TOOL,
 } from "../constants";
+import { firstLineOf as lineOf } from "../../core/lib/agent/toolText";
 import type {
   ConflictRow,
   HistoryRow,
@@ -212,15 +213,8 @@ function rowsOf<T>(value: unknown): T[] {
 }
 
 /** The first non-empty line, for a description or a one-line summary. */
-function firstLineOf(value: unknown): string {
-  const raw = typeof value === "string" ? value : "";
-  return (
-    raw
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line !== "")[0] ?? ""
-  );
-}
+const firstLineOf = (value: unknown): string =>
+  lineOf(typeof value === "string" ? value : "");
 
 /** A list read from args (`files`, `hunks`), joined for display. */
 function listArg(args: Args, key: string): string {

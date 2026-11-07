@@ -123,15 +123,12 @@ never fired is a domain nobody has proved.
 
 ## Checking
 
-```sh
-bun run guardrails:check                       # every suite, then coverage
-bun run guardrails:check --domain python       # one suite
-bun run guardrails:check --domain css --fixture block-css-important
-```
-
-`scripts/guardrailsCheck.ts` boots the extension so the rules load from disk, then
-calls the app's own `guardrails-test` and `guardrails-coverage` tools and prints the
-report the agent reads; it exits non-zero when a fixture fails. The tools evaluate
+There is no CLI entry: the three tools are agent tools, and they run inside a
+running mu session, where `startGuardrails()` has already loaded the rule files from
+disk. Ask the agent to run `guardrails-test` (every suite, or one `domain`, or one
+`domain` and `fixture`) and `guardrails-coverage` (the blocks each domain has really
+stopped since a window of sessions); the report is the same table either way, and a
+failing fixture is a failing row. The tools evaluate
 against the registry of the running process, which loads at boot — rules written
 while the app runs take effect on its next start, and the agent never arms, disarms,
 clears the log or dry-runs: arming is the panel's, driven by `/guardrails` and the

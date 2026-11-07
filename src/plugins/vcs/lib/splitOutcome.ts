@@ -13,7 +13,7 @@
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
 import { rebaseAfter, resolveIds } from "./ops";
-import { blocks, statusTable, tableOf, toolResult } from "./toolResult";
+import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type {
   RevisionIds,
   SplitOutcome,

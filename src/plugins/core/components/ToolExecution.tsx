@@ -57,6 +57,11 @@ import {
   vcsToolPreviewOf,
   VcsToolRows,
 } from "../../vcs/components/VcsToolRows";
+import {
+  isCodeQualityTool,
+  QualityToolRows,
+  qualityToolPreviewOf,
+} from "../../code-quality/components/QualityToolRows";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -167,25 +172,19 @@ function toToolState(item: ToolTranscriptItem): ToolState {
   }
 }
 
-/**
- * A plugin's own rows already say what its call did, and a guardrail block
- * says why the call never ran — such a tool never also prints its output.
- */
+
 function ownsItsRows(item: ToolTranscriptItem): boolean {
   return (
     isAskTool(item.name) ||
     isSearchTool(item.name) ||
     isGuardrailsTool(item.name) ||
     isVcsTool(item.name) ||
+    isCodeQualityTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
 
-/**
- * Everything the row is drawn from, decided once: the header's argument line,
- * the previews the file tools own, the patch an edit leaves, and whether the
- * call's own output still has a place on screen.
- */
+
 interface ToolRowLook {
   state: ToolState;
   args: string;
@@ -196,7 +195,7 @@ interface ToolRowLook {
   showOutput: boolean;
 }
 
-/** The header line: a plugin says its own, a plain tool says its arguments. */
+
 function argsLineOf(
   item: ToolTranscriptItem,
   readPreview: ReadPreviewData | undefined,
@@ -205,6 +204,7 @@ function argsLineOf(
   if (isSearchTool(item.name)) return searchPreviewOf(item);
   if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
+  if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
 }
@@ -240,7 +240,7 @@ function toolRowLookOf(
   };
 }
 
-/** The panels a plugin draws for its own call, in the order the row shows them. */
+
 function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
   const panels: JSX.Element[] = [];
   const block = guardrailBlockOf(item);
@@ -274,10 +274,16 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
         <VcsToolRows item={item} />
       </ToolContent>,
     );
+  if (isCodeQualityTool(item.name))
+    panels.push(
+      <ToolContent key="code-quality" open>
+        <QualityToolRows item={item} />
+      </ToolContent>,
+    );
   return panels;
 }
 
-/** The call's output as the tool left it: an error, a block of code, or prose. */
+
 function ToolOutputBody(props: {
   item: ToolTranscriptItem;
   state: ToolState;

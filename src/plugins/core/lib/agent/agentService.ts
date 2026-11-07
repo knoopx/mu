@@ -28,6 +28,13 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { agentSettingsManager } from "./settings";
 import { askUserTool } from "../../../interaction/tools/askUser";
+import { CODE_QUALITY_TOOL_NAMES } from "../../../code-quality/constants";
+import { codeComplexityTool } from "../../../code-quality/tools/codeComplexity";
+import { codeDeadCodeTool } from "../../../code-quality/tools/codeDeadCode";
+import { codeDuplicatesTool } from "../../../code-quality/tools/codeDuplicates";
+import { codeReviewTool } from "../../../code-quality/tools/codeReview";
+import { codeSymbolInspectTool } from "../../../code-quality/tools/codeSymbolInspect";
+import { codeSymbolReferencesTool } from "../../../code-quality/tools/codeSymbolReferences";
 import { webSearchTool } from "../../../web-search/tools/webSearch";
 import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
 import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
@@ -75,6 +82,7 @@ const APP_TOOL_NAMES = [
   "guardrails-fixture-update",
   "guardrails-coverage",
   ...VCS_TOOL_NAMES,
+  ...CODE_QUALITY_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -170,6 +178,12 @@ export async function createAgentSessionHandle(
         vcsFileSplitTool,
         vcsHunkListTool,
         vcsHunkSplitTool,
+        codeComplexityTool,
+        codeDeadCodeTool,
+        codeDuplicatesTool,
+        codeReviewTool,
+        codeSymbolInspectTool,
+        codeSymbolReferencesTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

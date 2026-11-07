@@ -14,7 +14,7 @@ import { Type } from "typebox";
 
 import { VCS_FILE_HISTORY_TOOL } from "../constants";
 import { NOT_A_JJ_REPO, jjRoot, runFileHistory } from "../lib/ops";
-import { tableOf, toolResult } from "../lib/toolResult";
+import { tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileHistoryDetails, VcsFileHistoryParams } from "../types";
 
 const Parameters = Type.Object({

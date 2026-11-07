@@ -20,7 +20,7 @@ import {
   resolveIds,
   runDiff,
 } from "../lib/ops";
-import { blocks, statusTable, toolResult } from "../lib/toolResult";
+import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileDiffDetails, VcsFileDiffParams } from "../types";
 
 const Parameters = Type.Object({

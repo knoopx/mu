@@ -13,7 +13,7 @@ import { Type } from "typebox";
 
 import { VCS_OPLOG_TOOL } from "../constants";
 import { NOT_A_JJ_REPO, jjRoot, runOplog } from "../lib/ops";
-import { blocks, statusTable, tableOf, toolResult } from "../lib/toolResult";
+import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsOplogDetails, VcsOplogParams } from "../types";
 
 const Parameters = Type.Object({

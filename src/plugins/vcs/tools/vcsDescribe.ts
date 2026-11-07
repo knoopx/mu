@@ -19,7 +19,7 @@ import {
   resolveIdentity,
   runDescribe,
 } from "../lib/ops";
-import { blocks, tableOf, toolResult } from "../lib/toolResult";
+import { blocks, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsDescribeDetails, VcsDescribeParams } from "../types";
 
 const Parameters = Type.Object({

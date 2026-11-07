@@ -1,3 +1,5 @@
+import type { ToolPaintRow, ToolRowCell } from "../core/lib/ui/toolRowPaint";
+
 export interface RevsetDef {
   label: string;
   revset: string;
@@ -234,17 +236,10 @@ export interface VcsOplogDetails {
   error: string;
 }
 
-export interface VcsCell {
-  label: string;
-  value: string;
-}
+/** A chip of what the call resolved, and a row of its table — the shapes the shared row painter draws. */
+export type VcsCell = ToolRowCell;
 
-export interface VcsRowView {
-  key: string;
-  primary: string;
-  secondary: string;
-  badge: string;
-}
+export type VcsRowView = ToolPaintRow;
 
 export interface VcsToolView {
   tool: string;

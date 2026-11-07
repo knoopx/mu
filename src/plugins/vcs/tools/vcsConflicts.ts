@@ -14,7 +14,7 @@ import { Type } from "typebox";
 
 import { VCS_CONFLICTS_TOOL } from "../constants";
 import { NOT_A_JJ_REPO, jjRoot, runConflicts } from "../lib/ops";
-import { blocks, statusTable, tableOf, toolResult } from "../lib/toolResult";
+import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsConflictsDetails, VcsConflictsParams } from "../types";
 
 const Parameters = Type.Object({

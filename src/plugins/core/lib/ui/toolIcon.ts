@@ -20,6 +20,12 @@ export const TOOL_ICONS: Record<string, IconName> = {
   "vcs-file-split": "verticalSplit",
   "vcs-hunk-list": "layers",
   "vcs-hunk-split": "callSplit",
+  "code-complexity": "analytics",
+  "code-dead-code": "sweep",
+  "code-duplicates": "contentCopy",
+  "code-review": "rateReview",
+  "code-symbol-inspect": "category",
+  "code-symbol-references": "accountTree",
 };
 
 export function toolIconOf(name: string): IconName {

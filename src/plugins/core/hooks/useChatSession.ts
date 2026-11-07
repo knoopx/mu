@@ -17,19 +17,21 @@ import {
   type TranscriptAction,
   type TranscriptItem,
 } from "../lib/agent/transcriptState";
-import type { ToolImage } from "../lib/agent/content";
-import type { PromptImages } from "../components/composer/attachments";
-import type { ThinkingLevel } from "../lib/agent/agentService";
 import { setChatProbe } from "../lib/agent/chatProbe";
 import { probeOf } from "../lib/agent/sessionProbe";
 import { errMsg } from "../lib/utils/errMsg";
-import type {
-  ChatSessionEffects,
-  TreeTarget,
-} from "../lib/session/sessionCommands";
-import { useChatSessionCommands } from "./useChatSessionCommands";
+import type { ChatSessionEffects } from "../lib/session/sessionCommands";
+import {
+  useChatSessionCommands,
+  type ChatSessionCommands,
+} from "./useChatSessionCommands";
 
-export interface ChatSessionState {
+/**
+ * The session as the app holds it: the log, what it is doing, and the eight
+ * commands the composer and the panels ask it for — which are exactly
+ * `ChatSessionCommands`, stated once in the hook that builds them.
+ */
+export interface ChatSessionState extends ChatSessionCommands {
   items: TranscriptItem[];
   isStreaming: boolean;
   ready: boolean;
@@ -37,14 +39,6 @@ export interface ChatSessionState {
   sessionStart: number | undefined;
   dispatch: (action: TranscriptAction) => void;
   system(text: string): void;
-  send(text: string, images?: PromptImages, userImages?: ToolImage[]): void;
-  abort(): void;
-  newSession(): void;
-  resume(path: string, onDone?: () => void): void;
-  setModel(ref: string): void;
-  setThinking(level: ThinkingLevel): void;
-  compact(): void;
-  navigateTree(target: TreeTarget): void;
 }
 
 export function useChatSession(

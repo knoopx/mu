@@ -22,7 +22,7 @@ import {
   resolveIds,
   runFileSplit,
 } from "../lib/ops";
-import { missing } from "../lib/toolResult";
+import { missing } from "../../core/lib/agent/toolText";
 import { reportSplit, splitFailure } from "../lib/splitOutcome";
 import type { VcsFileSplitDetails, VcsFileSplitParams } from "../types";
 

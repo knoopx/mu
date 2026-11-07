@@ -7,7 +7,7 @@ import {
   blocks,
   statusTable,
   tableOf,
-} from "../../src/plugins/vcs/lib/toolResult";
+} from "../../src/plugins/core/lib/agent/toolText";
 import type {
   VcsDescribeDetails,
   VcsFileDiffDetails,

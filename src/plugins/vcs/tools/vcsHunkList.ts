@@ -20,7 +20,7 @@ import {
   statusTable,
   tableOf,
   toolResult,
-} from "../lib/toolResult";
+} from "../../core/lib/agent/toolText";
 import type {
   VcsHunkListDetails,
   VcsHunkListParams,

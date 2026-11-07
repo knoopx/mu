@@ -1,3 +1,5 @@
+import type { BadgeVariant } from "adwaita-gpuix";
+
 import type { RevsetDef } from "./types";
 
 const DEFAULT_REVSET_LABEL = "Stack";
@@ -63,3 +65,13 @@ export const VCS_TOOL_LABELS: Record<string, string> = {
 
 /** A change id is shown short in the log and in every instruction. */
 export const SHORT_CHANGE_ID = 8;
+
+/** How a vcs badge is painted: the two roles of a split and the copy a call resolved. */
+export const VCS_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
+  selected: "default",
+  after: "default",
+  before: "secondary",
+  remaining: "secondary",
+  "working copy": "warning",
+  placement: "secondary",
+};
