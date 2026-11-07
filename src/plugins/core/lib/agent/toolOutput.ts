@@ -1,25 +1,34 @@
 import { joinTextParts, toolImageOf, type ToolImage } from "./content";
 
+/** The `output` a tool's details carry, when its content has nothing to say. */
+function detailsOutputOf(details: unknown): string | undefined {
+  if (!details || typeof details !== "object") return undefined;
+  const output = (details as { output?: unknown }).output;
+  return typeof output === "string" ? output : undefined;
+}
+
+/**
+ * The text a tool answer carries.
+ *
+ * A `content` array is the answer itself, so an empty one is a real state and
+ * not an unknown shape: the shell tools open a call with `content: []` to say
+ * the command started, and falling through to `JSON.stringify` painted
+ * `{"content":[]}` as the first line of every bash row. Only a value that is
+ * not a tool result at all — no content, no details — is shown as JSON.
+ */
 export function extractToolOutput(result: unknown): string {
   if (result === undefined || result === null) return "";
   if (typeof result === "string") return result;
+  if (typeof result !== "object") return String(result);
   const r = result as {
-    content?: Array<{
-      type: string;
-      text?: string;
-      data?: string;
-      mimeType?: string;
-    }>;
+    content?: unknown;
     details?: unknown;
   };
   if (Array.isArray(r.content)) {
-    const text = joinTextParts(r.content, "\n");
-    if (text) return text;
+    return joinTextParts(r.content, "\n") || (detailsOutputOf(r.details) ?? "");
   }
-  if (r.details && typeof r.details === "object") {
-    const d = r.details as Record<string, unknown>;
-    if (typeof d.output === "string") return d.output;
-  }
+  const fromDetails = detailsOutputOf(r.details);
+  if (fromDetails !== undefined) return fromDetails;
   try {
     return JSON.stringify(result);
   } catch {
