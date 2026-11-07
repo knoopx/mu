@@ -66,14 +66,21 @@ export function writePreviewOf(
 
   const streaming = item.status === "running";
   const total = lines.length;
-  const kept = lines.slice(0, MAX_WRITE_PREVIEW_LINES);
+  // While the call streams, the panel follows the pen: the newest lines are the
+  // ones being written now, so the tail is shown and scrolls. A finished write
+  // reads from the top, the way you would read the file.
+  const kept = streaming
+    ? lines.slice(-MAX_WRITE_PREVIEW_LINES)
+    : lines.slice(0, MAX_WRITE_PREVIEW_LINES);
   const truncated = total > kept.length;
   const hidden = total - kept.length;
 
   // While the call streams the count is the point: the file is that long and
   // growing. Only once it is written does the panel say what it cannot show.
   const caption = streaming
-    ? `writing · ${lineCount(total)} so far`
+    ? truncated
+      ? `writing · ${lineCount(total)} so far · last ${kept.length} shown`
+      : `writing · ${lineCount(total)} so far`
     : truncated
       ? `${lineCount(total)} · ${hidden} not shown`
       : lineCount(total);

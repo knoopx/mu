@@ -46,7 +46,7 @@ Pasted screenshots go into the conversation and the agent looks at them; the pic
 
 Every command, file read, and file edit is a line in the log, in the order it happened: running, passed, failed. Failed lines are marked in red and keep their error under them, so the failure sits right where the agent's next move begins.
 
-A line opens the moment the model opens the call, not when the tool finishes, and it grows with the arguments as they stream. A write is the clearest case: the file is painted as it is written, code-highlighted, and the row says how many lines have landed — no "successfully wrote" note about something you watched happen. A read shows the slice of the file it took; an edit shows the diff it made. Long output scrolls where it is and never pushes your conversation off screen. You can always see what the agent knew, and what it changed, before you trust it.
+A line opens the moment the model opens the call, not when the tool finishes, and it grows with the arguments as they stream. A write is the clearest case: the file is painted as it is written, code-highlighted, and while the call is still streaming the panel shows the newest lines rather than the first, so it scrolls as the pen moves; once the write lands it reads from the top again. The row says how many lines have landed — no "successfully wrote" note about something you watched happen. A read shows the slice of the file it took; an edit shows the diff it made. Long output scrolls where it is and never pushes your conversation off screen. You can always see what the agent knew, and what it changed, before you trust it.
 
 ![The agent at work](stories/AgentActions/work.png)
 
