@@ -14,6 +14,7 @@ import {
   createAgentSessionFromServices,
   createAgentSessionRuntime,
   createAgentSessionServices,
+  createCodemodeExtension,
   getAgentDir,
   SessionManager,
   type ContextUsage,
@@ -25,8 +26,24 @@ import {
   type SessionTreeNode,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
+import { agentSettingsManager } from "./settings";
 import { askUserTool } from "../../../interaction/tools/askUser";
 import { webSearchTool } from "../../../web-search/tools/webSearch";
+import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
+import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
+import { guardrailsFixtureUpdateTool } from "../../../guardrails/tools/guardrailsFixtureUpdate";
+import { guardrailsTestTool } from "../../../guardrails/tools/guardrailsTest";
+import { VCS_TOOL_NAMES } from "../../../vcs/constants";
+import { vcsConflictsTool } from "../../../vcs/tools/vcsConflicts";
+import { vcsDescribeTool } from "../../../vcs/tools/vcsDescribe";
+import { vcsFileDiffTool } from "../../../vcs/tools/vcsFileDiff";
+import { vcsFileHistoryShowTool } from "../../../vcs/tools/vcsFileHistoryShow";
+import { vcsFileHistoryTool } from "../../../vcs/tools/vcsFileHistory";
+import { vcsFileSplitTool } from "../../../vcs/tools/vcsFileSplit";
+import { vcsHunkListTool } from "../../../vcs/tools/vcsHunkList";
+import { vcsHunkSplitTool } from "../../../vcs/tools/vcsHunkSplit";
+import { vcsLogTool } from "../../../vcs/tools/vcsLog";
+import { vcsOplogTool } from "../../../vcs/tools/vcsOplog";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -51,8 +68,13 @@ const APP_TOOL_NAMES = [
   "bash",
   "edit",
   "write",
+  "codemode",
   "ask-user",
   "search-duckduckgo",
+  "guardrails-test",
+  "guardrails-fixture-update",
+  "guardrails-coverage",
+  ...VCS_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -61,6 +83,7 @@ const ISOLATED_RESOURCE_LOADER_OPTIONS = {
   noSkills: true,
   noPromptTemplates: true,
   noThemes: true,
+  extensionFactories: [guardrailsExtension, createCodemodeExtension()],
 };
 
 function readDefaultModelRef(agentDir: string): string | undefined {
@@ -121,6 +144,8 @@ export async function createAgentSessionHandle(
     const services = await createAgentSessionServices({
       cwd: effectiveCwd,
       agentDir: effectiveAgentDir,
+
+      settingsManager: agentSettingsManager(effectiveCwd, effectiveAgentDir),
       resourceLoaderOptions: ISOLATED_RESOURCE_LOADER_OPTIONS,
     });
     const created = await createAgentSessionFromServices({
@@ -129,7 +154,23 @@ export async function createAgentSessionHandle(
       sessionStartEvent,
 
       tools: [...APP_TOOL_NAMES],
-      customTools: [askUserTool, webSearchTool] as ToolDefinition[],
+      customTools: [
+        askUserTool,
+        webSearchTool,
+        guardrailsTestTool,
+        guardrailsFixtureUpdateTool,
+        guardrailsCoverageTool,
+        vcsLogTool,
+        vcsFileDiffTool,
+        vcsFileHistoryTool,
+        vcsFileHistoryShowTool,
+        vcsConflictsTool,
+        vcsOplogTool,
+        vcsDescribeTool,
+        vcsFileSplitTool,
+        vcsHunkListTool,
+        vcsHunkSplitTool,
+      ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [
       ...services.diagnostics,

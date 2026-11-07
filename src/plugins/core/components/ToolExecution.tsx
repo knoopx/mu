@@ -5,14 +5,30 @@ import {
   ToolDiff,
   ToolHeader,
   useAdwaita,
+  type AdwaitaTheme,
   type ToolState,
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { Markdown } from "./Markdown";
-import { ReadPreview, isReadTool, readPreviewOf } from "./ReadPreview";
-import { useProjectSource } from "./ProjectSource";
-import { outputModeFor, plainOutputOf } from "../lib/ui/toolOutputMode";
+import {
+  ReadPreview,
+  isReadTool,
+  readPreviewOf,
+  type ReadPreviewData,
+} from "./ReadPreview";
+import {
+  WritePreview,
+  isWriteTool,
+  writePreviewOf,
+  type WritePreviewData,
+} from "./WritePreview";
+import { useProjectSource, type ProjectSource } from "./ProjectSource";
+import {
+  outputModeFor,
+  plainOutputOf,
+  type OutputMode,
+} from "../lib/ui/toolOutputMode";
 import { toolIconOf } from "../lib/ui/toolIcon";
 import { PAGE_INSET, outputPanel } from "../lib/ui/transcriptLayout";
 import { buildNativeTheme } from "../lib/ui/theme";
@@ -27,10 +43,22 @@ import {
   searchPreviewOf,
   SearchResults,
 } from "../../web-search/components/SearchResults";
+import {
+  GuardrailBlockRows,
+  guardrailBlockOf,
+} from "../../guardrails/components/GuardrailBlockRows";
+import {
+  GuardrailsToolRows,
+  guardrailsToolPreview,
+  isGuardrailsTool,
+} from "../../guardrails/components/GuardrailsToolRows";
+import {
+  isVcsTool,
+  vcsToolPreviewOf,
+  VcsToolRows,
+} from "../../vcs/components/VcsToolRows";
 
-import type { TranscriptItem } from "../lib/agent/transcriptState";
-
-type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
+import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
 export interface ToolExecutionProps {
   item: ToolTranscriptItem;
@@ -139,33 +167,146 @@ function toToolState(item: ToolTranscriptItem): ToolState {
   }
 }
 
-export function ToolExecution(props: ToolExecutionProps): JSX.Element {
-  const source = useProjectSource();
-  const t = useAdwaita();
-  const { item } = props;
+/**
+ * A plugin's own rows already say what its call did, and a guardrail block
+ * says why the call never ran — such a tool never also prints its output.
+ */
+function ownsItsRows(item: ToolTranscriptItem): boolean {
+  return (
+    isAskTool(item.name) ||
+    isSearchTool(item.name) ||
+    isGuardrailsTool(item.name) ||
+    isVcsTool(item.name) ||
+    guardrailBlockOf(item) !== null
+  );
+}
+
+/**
+ * Everything the row is drawn from, decided once: the header's argument line,
+ * the previews the file tools own, the patch an edit leaves, and whether the
+ * call's own output still has a place on screen.
+ */
+interface ToolRowLook {
+  state: ToolState;
+  args: string;
+  outputMode: OutputMode;
+  readPreview?: ReadPreviewData;
+  writePreview?: WritePreviewData;
+  patch?: string;
+  showOutput: boolean;
+}
+
+/** The header line: a plugin says its own, a plain tool says its arguments. */
+function argsLineOf(
+  item: ToolTranscriptItem,
+  readPreview: ReadPreviewData | undefined,
+): string {
+  if (isAskTool(item.name)) return askPreview(item);
+  if (isSearchTool(item.name)) return searchPreviewOf(item);
+  if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
+  if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
+  if (readPreview !== undefined) return readPreview.caption;
+  return previewFor(item);
+}
+
+function toolRowLookOf(
+  item: ToolTranscriptItem,
+  source: ProjectSource,
+): ToolRowLook {
   const state = toToolState(item);
-  const isAsk = isAskTool(item.name);
-  const isSearch = isSearchTool(item.name);
-  const preview = previewFor(item);
   const readPreview = isReadTool(item.name)
     ? readPreviewOf(item, source)
     : undefined;
-  const outputMode = outputModeFor(item.name, item.output);
-  const hasOutput = item.output.length > 0;
+  const writePreview = isWriteTool(item.name)
+    ? writePreviewOf(item)
+    : undefined;
   const patch = DIFF_TOOLS.has(item.name.toLowerCase())
     ? patchOf(item)
     : undefined;
+  const isWrite = isWriteTool(item.name);
+  return {
+    state,
+    args: argsLineOf(item, readPreview),
+    outputMode: outputModeFor(item.name, item.output),
+    ...(readPreview === undefined ? {} : { readPreview }),
+    ...(writePreview === undefined ? {} : { writePreview }),
+    ...(patch === undefined ? {} : { patch }),
+    showOutput:
+      item.output.length > 0 &&
+      !ownsItsRows(item) &&
+      readPreview === undefined &&
+      patch === undefined &&
+      !(isWrite && state !== "output-error"),
+  };
+}
 
-  const args = isAsk
-    ? askPreview(item)
-    : isSearch
-      ? searchPreviewOf(item)
-      : readPreview !== undefined
-        ? readPreview.caption
-        : preview;
+/** The panels a plugin draws for its own call, in the order the row shows them. */
+function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
+  const panels: JSX.Element[] = [];
+  const block = guardrailBlockOf(item);
+  if (isAskTool(item.name))
+    panels.push(
+      <ToolContent key="ask" open>
+        <AskResultRows item={item} />
+      </ToolContent>,
+    );
+  if (isSearchTool(item.name))
+    panels.push(
+      <ToolContent key="search" open>
+        <SearchResults item={item} />
+      </ToolContent>,
+    );
+  if (block !== null)
+    panels.push(
+      <ToolContent key="block" open>
+        <GuardrailBlockRows hit={block} />
+      </ToolContent>,
+    );
+  if (isGuardrailsTool(item.name))
+    panels.push(
+      <ToolContent key="guardrails" open>
+        <GuardrailsToolRows item={item} />
+      </ToolContent>,
+    );
+  if (isVcsTool(item.name))
+    panels.push(
+      <ToolContent key="vcs" open>
+        <VcsToolRows item={item} />
+      </ToolContent>,
+    );
+  return panels;
+}
 
-  const showOutput =
-    hasOutput && readPreview === undefined && patch === undefined && !isSearch;
+/** The call's output as the tool left it: an error, a block of code, or prose. */
+function ToolOutputBody(props: {
+  item: ToolTranscriptItem;
+  state: ToolState;
+  outputMode: OutputMode;
+  theme: AdwaitaTheme;
+}): JSX.Element {
+  const { item, state, outputMode, theme } = props;
+  if (state === "output-error")
+    return <ToolContent open errorText={plainOutputOf(item.output)} />;
+  if (outputMode === "code")
+    return <ToolContent open output={plainOutputOf(item.output)} />;
+  return (
+    <ToolContent open>
+      <div style={outputPanel(theme)}>
+        <Markdown
+          source={item.output}
+          theme={buildNativeTheme(theme)}
+          style={{ padding: 0, flexShrink: 1, minWidth: 0 }}
+        />
+      </div>
+    </ToolContent>
+  );
+}
+
+export function ToolExecution(props: ToolExecutionProps): JSX.Element {
+  const source = useProjectSource();
+  const theme = useAdwaita();
+  const { item } = props;
+  const look = toolRowLookOf(item, source);
 
   return (
     <Tool
@@ -180,44 +321,28 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
       }}
     >
       <ToolHeader
-        state={state}
+        state={look.state}
         title={item.name}
-        args={args}
+        args={look.args}
         icon={toolIconOf(item.name)}
       />
-      {isAsk ? (
-        <ToolContent open>
-          <AskResultRows item={item} />
-        </ToolContent>
+      {ownedPanelsOf(item)}
+      {look.readPreview !== undefined ? (
+        <ReadPreview item={item} preview={look.readPreview} />
       ) : null}
-      {isSearch ? (
-        <ToolContent open>
-          <SearchResults item={item} />
-        </ToolContent>
+      {look.writePreview !== undefined ? (
+        <WritePreview preview={look.writePreview} />
       ) : null}
-      {readPreview !== undefined ? (
-        <ReadPreview item={item} preview={readPreview} />
+      {look.patch !== undefined ? (
+        <ToolDiff patch={look.patch} fileHeader={false} />
       ) : null}
-
-      {patch !== undefined ? (
-        <ToolDiff patch={patch} fileHeader={false} />
-      ) : null}
-      {!isAsk && showOutput ? (
-        state === "output-error" ? (
-          <ToolContent open errorText={plainOutputOf(item.output)} />
-        ) : outputMode === "code" ? (
-          <ToolContent open output={plainOutputOf(item.output)} />
-        ) : (
-          <ToolContent open>
-            <div style={outputPanel(t)}>
-              <Markdown
-                source={item.output}
-                theme={buildNativeTheme(t)}
-                style={{ padding: 0, flexShrink: 1, minWidth: 0 }}
-              />
-            </div>
-          </ToolContent>
-        )
+      {look.showOutput ? (
+        <ToolOutputBody
+          item={item}
+          state={look.state}
+          outputMode={look.outputMode}
+          theme={theme}
+        />
       ) : null}
     </Tool>
   );

@@ -3,6 +3,7 @@ import { changesCommand } from "./changes";
 import { treeCommand } from "./tree";
 import { themeCommand } from "./theme";
 import { accentCommand } from "./accent";
+import { guardrailsCommand } from "./guardrails";
 import type { CommandPlugin } from "./types";
 
 export const coreCommands: CommandPlugin[] = [
@@ -11,4 +12,5 @@ export const coreCommands: CommandPlugin[] = [
   treeCommand,
   themeCommand,
   accentCommand,
+  guardrailsCommand,
 ];

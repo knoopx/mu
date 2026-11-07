@@ -73,6 +73,11 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
       "Clear the composer draft (text and attachments)",
     ),
     def("composer.changes", "ctrl+k", "Open the changes composer panel"),
+    def(
+      "composer.guardrails",
+      "ctrl+shift+g",
+      "Open the guardrails composer panel",
+    ),
     def("composer.tree", "ctrl+shift+t", "Open the session history tree"),
     def(
       "composer.theme",

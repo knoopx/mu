@@ -50,8 +50,8 @@
       adwaitaSrc = pkgs.fetchFromGitHub {
         owner = "knoopx";
         repo = "adwaita-gpuix";
-        rev = "0e2a531aba7539884562bec67a6d283c75b203cb";
-        hash = "sha256-Qu1tbZEWy5Kp5NOX/yb6PDJnQCb678fTDl2MwmEqIbA=";
+        rev = "82069540cb512815f9383b4eeb370d7fb6fc12f8";
+        hash = "sha256-FgayuQphpfzfKwjpePG+7TzS27Vg9+0NtpMsHd9sBtk=";
       };
 
       # Every npm (registry) dependency, direct and transitive, of the bundle
@@ -328,6 +328,18 @@
           url = "https://registry.npmjs.org/typebox/-/typebox-1.3.27.tgz";
           hash = "sha256-WiiLzT1o9EVn3oSxheBNIF731bU2AoRrw9sw/dIZ3aM=";
         };
+        # Guardrails: the tree-sitter core and the prebuilt grammars. The
+        # grammars must carry a `dylink.0` custom section, which only
+        # @vscode/tree-sitter-wasm's build ships (the prebuilt tree-sitter-wasms
+        # set carries the older `dylink` and is refused by the core).
+        vscodeTreeSitterWasm = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@vscode/tree-sitter-wasm/-/tree-sitter-wasm-0.3.1.tgz";
+          hash = "sha256-mFaEss++Xo+QSZqfNuN1GYh8fU4ml9BFfQ8ekjzlGEw=";
+        };
+        webTreeSitter = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/web-tree-sitter/-/web-tree-sitter-0.27.2.tgz";
+          hash = "sha256-Cx0bLtzBR2x7FxCipFie75ypz0YbqlD4mVbVdTCWQ2I=";
+        };
         which = pkgs.fetchurl {
           url = "https://registry.npmjs.org/which/-/which-2.0.2.tgz";
           hash = "sha256-oTrfX93rdpZV7c5VHoH7sRkEucm+dtleQdqMTEmdTtw=";
@@ -394,6 +406,7 @@
             mkdir -p node_modules/@iconify-json/material-symbols && tar xzf ${npmDeps.iconifyJsonMaterialSymbols} -C node_modules/@iconify-json/material-symbols --strip-components=1
             mkdir -p node_modules/@silvia-odwyer/photon-node && tar xzf ${npmDeps.silviaOdwyerPhotonNode} -C node_modules/@silvia-odwyer/photon-node --strip-components=1
             mkdir -p node_modules/@stablelib/base64 && tar xzf ${npmDeps.stablelibBase64} -C node_modules/@stablelib/base64 --strip-components=1
+            mkdir -p node_modules/@vscode/tree-sitter-wasm && tar xzf ${npmDeps.vscodeTreeSitterWasm} -C node_modules/@vscode/tree-sitter-wasm --strip-components=1
             mkdir -p node_modules/agent-base && tar xzf ${npmDeps.agentBase} -C node_modules/agent-base --strip-components=1
             mkdir -p node_modules/balanced-match && tar xzf ${npmDeps.balancedMatch} -C node_modules/balanced-match --strip-components=1
             mkdir -p node_modules/base64-js && tar xzf ${npmDeps.base64Js} -C node_modules/base64-js --strip-components=1
@@ -447,6 +460,7 @@
             mkdir -p node_modules/signal-exit && tar xzf ${npmDeps.signalExit} -C node_modules/signal-exit --strip-components=1
             mkdir -p node_modules/standardwebhooks && tar xzf ${npmDeps.standardwebhooks} -C node_modules/standardwebhooks --strip-components=1
             mkdir -p node_modules/typebox && tar xzf ${npmDeps.typebox} -C node_modules/typebox --strip-components=1
+            mkdir -p node_modules/web-tree-sitter && tar xzf ${npmDeps.webTreeSitter} -C node_modules/web-tree-sitter --strip-components=1
             mkdir -p node_modules/which && tar xzf ${npmDeps.which} -C node_modules/which --strip-components=1
             mkdir -p node_modules/yaml && tar xzf ${npmDeps.yaml} -C node_modules/yaml --strip-components=1
             mkdir -p node_modules/zod && tar xzf ${npmDeps.zod} -C node_modules/zod --strip-components=1
