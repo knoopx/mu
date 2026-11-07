@@ -27,7 +27,11 @@ import { ChatComposerSlot } from "../components/ChatComposerSlot";
 import type { CancellableLoaderHandle } from "../components/CancellableLoader";
 import { AssistantMessage } from "../components/AssistantMessage";
 import { ToolExecution } from "../components/ToolExecution";
-import { composerGap, PAGE_INSET } from "../lib/ui/transcriptLayout";
+import {
+  composerGap,
+  PAGE_INSET,
+  userMessageLineHeight,
+} from "../lib/ui/transcriptLayout";
 import {
   AttachmentThumbs,
   type ComposerAttachment,
@@ -345,7 +349,11 @@ export function UserRow({
 
   const body = (
     <>
-      <T size="body" weight={600} color={t.color.text.primary}>
+      <T
+        size="body"
+        color={t.color.text.primary}
+        style={{ lineHeight: userMessageLineHeight(t) }}
+      >
         {text}
       </T>
       {images !== undefined && images.length > 0 ? (

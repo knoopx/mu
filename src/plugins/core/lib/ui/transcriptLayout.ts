@@ -73,6 +73,10 @@ export function toolPreviewWrap(
 export const previewLineHeight = (t: AdwaitaTheme): number =>
   Math.round(t.type.caption * 1.6);
 
+/** The line rhythm of a user's own words — looser than the theme's tight body. */
+export const userMessageLineHeight = (t: AdwaitaTheme): number =>
+  Math.round(t.type.body * 1.5);
+
 export function outputPanel(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",
