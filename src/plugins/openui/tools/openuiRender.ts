@@ -1,102 +1,62 @@
+/**
+ * `openui-render` — put a program in the log and draw it now.
+ */
+
 import type {
   AgentToolResult,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { OPENUI_RENDER_TOOL, OPENUI_TOOL_LABELS } from "../constants";
-import { analyze } from "../lib/analysis";
-import {
-  buildReport,
-  programLine,
-  componentLine,
-  errorBlock,
-  programName,
-  reportHead,
-  streamState,
-} from "../lib/answer";
-import { programStore } from "../lib/programStore";
-import {
-  activateParam,
-  codeParam,
-  doneParam,
-  programParam,
-} from "../lib/params";
-import { blocks, toolResult } from "../../core/lib/agent/toolText";
-import type { OpenuiRenderDetails, OpenuiRenderParams } from "../types";
+import { DEFAULT_PROGRAM_NAME, OPENUI_RENDER_TOOL } from "../constants";
+import type { OpenUIProgramDetails } from "../types";
+import { namedParam, codeParam } from "../lib/params";
+import { programWriteAnswer } from "../lib/answer";
+import { writeProgram } from "../lib/programStore/verbs";
+import { RENDER_GUIDELINES } from "./guidelines";
 
-const Parameters = Type.Object({
-  name: programParam("Program to create or replace"),
-  code: codeParam(),
-  done: doneParam(false),
-  activate: activateParam(),
+/** The move a call answers with when the source it sent has a hard error. */
+const PARSE_HINT =
+  "the program renders as far as it parses — fix the first error the call printed and re-send the same name rather than starting a second program.";
+
+const RenderParametersSchema = Type.Object({
+  name: Type.Optional(namedParam),
+  code: codeParam,
+  done: Type.Optional(
+    Type.Boolean({ description: "true closes the program and stops the live render mid-stream (default true)." }),
+  ),
+  activate: Type.Optional(
+    Type.Boolean({ description: "Make this program the one the log paints live (default true)." }),
+  ),
 });
 
-/**
- * A render is a parse and a paint. The parse is answered here, the paint is
- * what the row below the call draws, and what the renderer saw is read back
- * with openui-state — so a hard error still reaches the human's screen, with
- * the hint next to it.
- */
-async function executeOpenuiRender(
-  toolCallId: string,
-  params: OpenuiRenderParams,
-): Promise<AgentToolResult<OpenuiRenderDetails>> {
-  const name = programName(params.name);
-  const analysis = analyze(params.code);
-  const streaming = params.done === false;
-
-  programStore.upsert(name, {
-    lang: params.code,
-    streaming,
-    activate: params.activate !== false,
-    owner: toolCallId,
-  });
-
-  const report = buildReport(name, analysis, programStore.getSnapshot(), {
-    streaming,
-    chars: params.code.length,
-  });
-
-  return toolResult(
-    blocks(
-      reportHead(report),
-      errorBlock(report.errors),
-      componentLine(report.components),
-      streamState(streaming, report.incomplete),
-      programLine(report.active, report.programs),
-      report.ok
-        ? ""
-        : "the program is in the log with these errors — keep the same name and re-send corrected source",
-    ),
-    { ...report, receivedChars: params.code.length },
-  );
-}
-
-export const openuiRenderTool: ToolDefinition<
-  typeof Parameters,
-  OpenuiRenderDetails
+export const openUIRenderTool: ToolDefinition<
+  typeof RenderParametersSchema,
+  OpenUIProgramDetails
 > = {
   name: OPENUI_RENDER_TOOL,
-  label: OPENUI_TOOL_LABELS[OPENUI_RENDER_TOOL],
+  label: OPENUI_RENDER_TOOL,
   description:
-    "Replace program `name` with this OpenUI Lang source and draw it in the conversation log " +
-    "immediately. It parses first and answers with the diagnostics: `ok` is false when a hard " +
-    "error exists, the program still renders, so the human sees the partial screen and " +
-    "the hint sits next to it. Keep `name` stable to edit a program in place. Use openui-stream " +
-    "instead when the source should arrive piece by piece.",
+    "Replace program `name` with this OpenUI Lang source and draw it in the conversation log immediately. " +
+    "It parses first and answers with the diagnostics: `ok` is false when a hard error exists, the program still renders, " +
+    "so the human sees the partial screen and the hint sits next to it. Keep `name` stable to edit a program in place. Use openui-stream instead when the source should arrive piece by piece.",
   promptSnippet: "Put a program in the log and render it now",
-  promptGuidelines: [
-    "Render with openui-render, then read openui-state: the parse said the source is valid, the renderer says what it actually drew.",
-    "Keep one name per screen and re-send it to edit in place — a new name every turn leaves a trail of programs the human has to ignore.",
-    "A hard parse error still renders: fix the first error the call printed and re-send the same name rather than starting a second program.",
-    "Feed a program its data with openui-tools first — Query(name, args, default) has no backend here but the JSON you supply.",
-  ],
+  promptGuidelines: [...RENDER_GUIDELINES],
 
   executionMode: "sequential",
-  parameters: Parameters,
+  parameters: RenderParametersSchema,
 
-  async execute(toolCallId, params) {
-    return executeOpenuiRender(toolCallId, params);
+  async execute(toolCallId, params): Promise<AgentToolResult<OpenUIProgramDetails>> {
+    const name = params.name ?? DEFAULT_PROGRAM_NAME;
+    const outcome = writeProgram(name, params.code, toolCallId, {
+      streaming: params.done === false,
+      activate: params.activate !== false,
+    });
+
+    return programWriteAnswer(outcome, {
+      refusal: `program ${name} was not written`,
+      columns: { ok: outcome.details.ok ? "yes" : "no" },
+      hint: PARSE_HINT,
+    });
   },
 };

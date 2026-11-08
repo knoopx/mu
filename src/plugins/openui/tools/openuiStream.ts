@@ -1,86 +1,60 @@
+/**
+ * `openui-stream` — append one piece of a program and re-draw what has arrived.
+ */
+
 import type {
   AgentToolResult,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { OPENUI_STREAM_TOOL, OPENUI_TOOL_LABELS } from "../constants";
-import { analyze } from "../lib/analysis";
-import {
-  buildReport,
-  programLine,
-  componentLine,
-  errorBlock,
-  programName,
-  reportHead,
-  streamLine,
-  streamState,
-} from "../lib/answer";
-import { programStore } from "../lib/programStore";
-import { chunkParam, doneParam, programParam } from "../lib/params";
-import { blocks, toolResult } from "../../core/lib/agent/toolText";
-import type { OpenuiStreamDetails, OpenuiStreamParams } from "../types";
+import { DEFAULT_PROGRAM_NAME, OPENUI_STREAM_TOOL } from "../constants";
+import type { OpenUIProgramDetails } from "../types";
+import { chunkParam, namedParam } from "../lib/params";
+import { programWriteAnswer } from "../lib/answer";
+import { appendChunk } from "../lib/programStore/verbs";
+import { STREAM_GUIDELINES } from "./guidelines";
 
-const Parameters = Type.Object({
-  name: programParam("Program to append to"),
-  chunk: chunkParam(),
-  done: doneParam(true),
+const StreamParametersSchema = Type.Object({
+  name: Type.Optional(namedParam),
+  chunk: chunkParam,
+  done: Type.Optional(
+    Type.Boolean({
+      description:
+        "true closes the program and stops the live render mid-stream (default false).",
+    }),
+  ),
 });
 
-/**
- * A stream is one program arriving in pieces. Every call re-parses the whole
- * accumulated source, so the human watches the screen take shape and a
- * half-written statement is a normal mid-stream state, not a failure.
- */
-async function executeOpenuiStream(
-  toolCallId: string,
-  params: OpenuiStreamParams,
-): Promise<AgentToolResult<OpenuiStreamDetails>> {
-  const name = programName(params.name);
-  const done = params.done === true;
-
-  const program = programStore.appendChunk(name, params.chunk, done, toolCallId);
-  const analysis = analyze(program.lang);
-  const report = buildReport(name, analysis, programStore.getSnapshot(), {
-    streaming: program.streaming,
-    chars: program.lang.length,
-  });
-
-  return toolResult(
-    blocks(
-      reportHead(report),
-      streamLine(params.chunk.length, program.lang.length),
-      errorBlock(report.errors),
-      componentLine(report.components),
-      streamState(program.streaming, report.incomplete),
-      programLine(report.active, report.programs),
-    ),
-    { ...report, receivedChars: params.chunk.length },
-  );
-}
-
-export const openuiStreamTool: ToolDefinition<
-  typeof Parameters,
-  OpenuiStreamDetails
+export const openUIStreamTool: ToolDefinition<
+  typeof StreamParametersSchema,
+  OpenUIProgramDetails
 > = {
   name: OPENUI_STREAM_TOOL,
-  label: OPENUI_TOOL_LABELS[OPENUI_STREAM_TOOL],
+  label: OPENUI_STREAM_TOOL,
   description:
-    "Append one chunk of OpenUI Lang source to program `name`, re-parse the whole accumulated " +
-    "text and draw the partial result live in the log until `done: true` closes the program. " +
-    "Send source in the order you generate it; a truncated program mid-stream is reported as " +
-    "`incomplete: true` and is expected. Chunks are appended in call order, so this tool never " +
-    "runs beside another program write.",
+    "Append one chunk of OpenUI Lang source to program `name`, re-parse the whole accumulated text and draw the partial result live in the log until `done: true` closes the program. " +
+    "Send source in the order you generate it; a truncated program mid-stream is reported as `incomplete: true` and is expected. Chunks are appended in call order, so this tool never runs beside another program write.",
   promptSnippet: "Stream a program into the log piece by piece",
-  promptGuidelines: [
-    "Stream a long program with openui-stream so the human watches it appear, and close it with done: true — an open program keeps its form interactions disabled.",
-    "Do not re-send a chunk that was already accepted: the source accumulates, it does not replace.",
-  ],
+  promptGuidelines: [...STREAM_GUIDELINES],
 
   executionMode: "sequential",
-  parameters: Parameters,
+  parameters: StreamParametersSchema,
 
-  async execute(toolCallId, params) {
-    return executeOpenuiStream(toolCallId, params);
+  async execute(toolCallId, params): Promise<AgentToolResult<OpenUIProgramDetails>> {
+    const name = params.name ?? DEFAULT_PROGRAM_NAME;
+    const outcome = appendChunk(name, params.chunk, params.done === true, toolCallId);
+    const details = outcome.details;
+
+    return programWriteAnswer(outcome, {
+      refusal: `program ${name} could not take this chunk`,
+      columns: {
+        chunk: details.chunkChars,
+        ...(details.streaming ? { open: "yes" } : {}),
+      },
+      // A program mid-stream is meant to be half-written, so its warnings are
+      // the expected shape of the work and only a hard error is worth naming.
+      errorsOnly: true,
+    });
   },
 };

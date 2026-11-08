@@ -37,17 +37,17 @@ import { codeSymbolInspectTool } from "../../../code-quality/tools/codeSymbolIns
 import { codeSymbolReferencesTool } from "../../../code-quality/tools/codeSymbolReferences";
 import { webSearchTool } from "../../../web-search/tools/webSearch";
 import { OPENUI_TOOL_NAMES } from "../../../openui/constants";
-import { openuiClearTool } from "../../../openui/tools/openuiClear";
-import { openuiEventsTool } from "../../../openui/tools/openuiEvents";
-import { openuiLibraryTool } from "../../../openui/tools/openuiLibrary";
-import { openuiListTool } from "../../../openui/tools/openuiList";
-import { openuiPromptTool } from "../../../openui/tools/openuiPrompt";
-import { openuiRenderTool } from "../../../openui/tools/openuiRender";
-import { openuiStateTool } from "../../../openui/tools/openuiState";
-import { openuiStreamTool } from "../../../openui/tools/openuiStream";
-import { openuiSwitchTool } from "../../../openui/tools/openuiSwitch";
-import { openuiToolsTool } from "../../../openui/tools/openuiTools";
-import { openuiValidateTool } from "../../../openui/tools/openuiValidate";
+import { openUIPromptTool } from "../../../openui/tools/openuiPrompt";
+import { openUILibraryTool } from "../../../openui/tools/openuiLibrary";
+import { openUIValidateTool } from "../../../openui/tools/openuiValidate";
+import { openUIRenderTool } from "../../../openui/tools/openuiRender";
+import { openUIStreamTool } from "../../../openui/tools/openuiStream";
+import { openUIStateTool } from "../../../openui/tools/openuiState";
+import { openUIEventsTool } from "../../../openui/tools/openuiEvents";
+import { openUIToolsTool } from "../../../openui/tools/openuiTools";
+import { openUIListTool } from "../../../openui/tools/openuiList";
+import { openUISwitchTool } from "../../../openui/tools/openuiSwitch";
+import { openUIClearTool } from "../../../openui/tools/openuiClear";
 import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
 import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
 import { guardrailsFixtureUpdateTool } from "../../../guardrails/tools/guardrailsFixtureUpdate";
@@ -63,6 +63,8 @@ import { vcsHunkListTool } from "../../../vcs/tools/vcsHunkList";
 import { vcsHunkSplitTool } from "../../../vcs/tools/vcsHunkSplit";
 import { vcsLogTool } from "../../../vcs/tools/vcsLog";
 import { vcsOplogTool } from "../../../vcs/tools/vcsOplog";
+import { MERMAID_TOOL_NAMES } from "../../../mermaid/constants";
+import { mermaidRenderTool } from "../../../mermaid/tools/mermaidRender";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -96,6 +98,7 @@ const APP_TOOL_NAMES = [
   ...VCS_TOOL_NAMES,
   ...CODE_QUALITY_TOOL_NAMES,
   ...OPENUI_TOOL_NAMES,
+  ...MERMAID_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -197,17 +200,18 @@ export async function createAgentSessionHandle(
         codeReviewTool,
         codeSymbolInspectTool,
         codeSymbolReferencesTool,
-        openuiPromptTool,
-        openuiLibraryTool,
-        openuiValidateTool,
-        openuiRenderTool,
-        openuiStreamTool,
-        openuiStateTool,
-        openuiEventsTool,
-        openuiToolsTool,
-        openuiListTool,
-        openuiSwitchTool,
-        openuiClearTool,
+        openUIPromptTool,
+        openUILibraryTool,
+        openUIValidateTool,
+        openUIRenderTool,
+        openUIStreamTool,
+        openUIStateTool,
+        openUIEventsTool,
+        openUIToolsTool,
+        openUIListTool,
+        openUISwitchTool,
+        openUIClearTool,
+        mermaidRenderTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

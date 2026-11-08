@@ -1,136 +1,82 @@
 /**
- * The part every openui answer has in common.
+ * The part of an OpenUI answer that is not a list of rows.
  *
- * A openui tool answers the model in aligned columns and the log in structured
- * `details`, and both copies come from the same fields: one status row saying
- * what the call left in the log, then the diagnostics with the hint that
- * clears each one, then what the log holds. Only the body differs per
- * tool, so the head, the error block and the not-found sentences live here.
+ * Every tool names the program it acted on, says whether it found it, and then
+ * prints what the store holds. The way a missing program, an empty source and
+ * an oversized one are named lives here, so eleven tools say it the same way —
+ * and so does the whole shape of a write's answer, which a render and a stream
+ * otherwise spelled twice.
  */
 
-import {
-  blocks,
-  counted,
-  moreLine,
-  partsLine,
-  statusTable,
-  tableOf,
-} from "../../core/lib/agent/toolText";
-import { DEFAULT_PROGRAM } from "../constants";
-import { hiddenErrors, shownErrors } from "./analysis";
-import type { ProgramSnapshot, OpenuiDiagnostic } from "./programStore";
-import type { OpenuiReport, OpenuiToolStatus } from "../types";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
-/** What a call named when it named no program. */
-export const programName = (name?: string): string =>
-  name === undefined || name.trim() === "" ? DEFAULT_PROGRAM : name.trim();
+import { blocks, toolResult } from "../../core/lib/agent/toolText";
+import type { OpenUIProgramDetails } from "../types";
+import { ROOT_COMPONENT, ROOT_STATEMENT } from "../constants";
+import { diagnosticLines, programStatusRow, programWriteHead } from "./format";
+import { programStore } from "./programStore/store";
+import type { ProgramWriteOutcome } from "./programStore/verbs";
 
-/** A parse with hard errors is not a failed call: the program is in the log. */
-export const reportStatus = (ok: boolean): OpenuiToolStatus =>
-  ok ? "ok" : "invalid";
+/** The sentence a call answers with when the name it gave is not in the log. */
+export const unknownProgram = (name: string): string =>
+  name === ""
+    ? "no program is showing — render one, or name one of the programs in the log"
+    : `no program named "${name}" is in the log`;
 
-/** One parse report, ready for both readers. */
-export function buildReport(
-  program: string,
-  analysis: {
-    ok: boolean;
-    statements: number;
-    components: string[];
-    unresolved: string[];
-    incomplete: boolean;
-    errors: OpenuiDiagnostic[];
-  },
-  snapshot: ProgramSnapshot,
-  extra: { streaming: boolean; chars: number },
-): OpenuiReport {
-  return {
-    program,
-    status: reportStatus(analysis.ok),
-    ok: analysis.ok,
-    streaming: extra.streaming,
-    incomplete: analysis.incomplete,
-    statements: analysis.statements,
-    components: analysis.components,
-    unresolved: analysis.unresolved,
-    errors: analysis.errors,
-    chars: extra.chars,
-    active: snapshot.active,
-    programs: snapshot.order,
-  };
+/** A program name, as an answer spells it. */
+export const programWord = (name: string): string =>
+  name === "" ? "the showing program" : `program "${name}"`;
+
+/** What a call says when a source is empty or too big to hold. */
+export const sourceTooBig = (chars: number, max: number): string =>
+  `${String(chars)} characters is over this app's limit of ${String(max)} — a screen, not a website`;
+
+export const emptySource = (): string =>
+  "the source is empty: write at least one statement, starting with the root";
+
+/** The reminder a call answers with when a program has no root statement. */
+export const noRootHint = (): string =>
+  `a program must define \`${ROOT_STATEMENT} = ${ROOT_COMPONENT}([ ... ])\``;
+
+/** What a write's own tool supplies around the answer it all shares. */
+export interface ProgramWriteWords {
+  /** The sentence that stands in for a body when the store refused the write. */
+  refusal: string;
+  /** The columns only this kind of write counts — a render's `ok`, a stream's `chunk`. */
+  columns?: Readonly<Record<string, string | number>>;
+  /**
+   * True where a half-written program is the expected state — a stream
+   * mid-flight — so its warnings are noise and only hard errors are printed.
+   */
+  errorsOnly?: boolean;
+  /** The move to make next; printed only when the parse has a hard error. */
+  hint?: string;
 }
 
-/** the head of every report answer: what the call rendered and how it parsed. */
-export const reportHead = (report: OpenuiReport): string =>
-  statusTable({
-    program: report.program,
-    status: report.status,
-    statements: report.statements,
-    components: report.components.length,
-    errors: report.errors.length,
-    chars: report.chars,
-    streaming: report.streaming ? "yes" : "no",
-  });
+/**
+ * The answer both program writes give: the columns, the store's line for what
+ * is now in the log, every diagnostic worth naming, and the refusal — with the
+ * error in place of a body — when the store took nothing.
+ */
+export function programWriteAnswer(
+  outcome: ProgramWriteOutcome,
+  words: ProgramWriteWords,
+): AgentToolResult<OpenUIProgramDetails> {
+  if (outcome.error !== "")
+    return toolResult(blocks(words.refusal, outcome.error), outcome.details);
 
-/** One error per line, each with the move that clears it. */
-export const errorBlock = (errors: readonly OpenuiDiagnostic[]): string =>
-  errors.length === 0
-    ? ""
-    : blocks(
-        tableOf(
-          shownErrors(errors).map((error) => ({
-            code: error.code,
-            message: error.message,
-            hint: error.hint ?? "",
-          })),
-        ),
-        moreLine(hiddenErrors(errors), "error"),
-      );
+  const diagnostics =
+    words.errorsOnly === true
+      ? outcome.details.diagnostics.filter((row) => row.severity === "error")
+      : outcome.details.diagnostics;
 
-/** The warnings a program answers with but that do not block a render. */
-export const warningBlock = (errors: readonly OpenuiDiagnostic[]): string => {
-  const warnings = errors.filter((error) => error.severity === "warning");
-  return warnings.length === 0
-    ? ""
-    : warnings.map((error) => `${error.code}: ${error.message}`).join("\n");
-};
-
-/** What the log holds after a call, so a program name is never guessed. */
-export const programLine = (
-  active: string | null,
-  programs: readonly string[],
-): string =>
-  programs.length === 0
-    ? "programs: none"
-    : `programs: ${programs.join(", ")} · showing ${active ?? programs[0]}`;
-
-/** A program that is not in the log, with the names that are. */
-export const unknownProgram = (
-  name: string,
-  programs: readonly string[],
-): string =>
-  blocks(
-    `no program named "${name}" in the log`,
-    programs.length === 0
-      ? "no program is rendered yet — render one with openui-render"
-      : `in the log: ${programs.join(", ")}`,
+  return toolResult(
+    blocks(
+      programWriteHead(outcome.details, words.columns),
+      programStatusRow(programStore.infoOf(outcome.record)),
+      diagnosticLines(diagnostics),
+      outcome.details.ok ? "" : (words.hint ?? ""),
+    ),
+    outcome.details,
   );
-
-/** What `openui-state` says when there is nothing to read. */
-export const NO_PROGRAM =
-  "no program is rendered yet — render one with openui-render first";
-
-/** The components a program drew, which is how a reader checks the shape it got. */
-export const componentLine = (components: readonly string[]): string =>
-  components.length === 0 ? "" : `components: ${components.join(", ")}`;
-
-/** What a streamed call received and what the program now totals. */
-export const streamLine = (received: number, total: number): string =>
-  partsLine(`${counted(received, "char")} received`, `${String(total)} chars total`);
-
-/** Whether the stream is still open, in the words the model acts on. */
-export const streamState = (streaming: boolean, incomplete: boolean): string =>
-  streaming
-    ? incomplete
-      ? "streaming: still open, and the source is mid-statement"
-      : "streaming: still open — send done: true to close it"
-    : "";
+}

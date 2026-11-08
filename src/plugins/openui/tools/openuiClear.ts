@@ -1,84 +1,68 @@
+/**
+ * `openui-clear` — take a program, or every program, out of the log.
+ */
+
 import type {
   AgentToolResult,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { OPENUI_CLEAR_TOOL, OPENUI_TOOL_LABELS } from "../constants";
-import { programLine, unknownProgram } from "../lib/answer";
-import { programStore } from "../lib/programStore";
-import { programParam } from "../lib/params";
+import { MAX_PROGRAM_NAME, OPENUI_CLEAR_TOOL } from "../constants";
+import type { OpenUIClearDetails } from "../types";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
-import type { OpenuiClearDetails, OpenuiClearParams } from "../types";
+import { programStore } from "../lib/programStore/store";
+import { dropPrograms } from "../lib/programStore/verbs";
+import { CLEAR_GUIDELINES } from "./guidelines";
 
-const Parameters = Type.Object({
-  name: programParam(
-    "Program to remove — omit to remove every program in the log",
+const ClearParametersSchema = Type.Object({
+  name: Type.Optional(
+    Type.String({
+      maxLength: MAX_PROGRAM_NAME,
+      description:
+        "Program to remove — omit to remove every program in the log (default \"screen\").",
+    }),
   ),
 });
 
-async function executeOpenuiClear(
-  params: OpenuiClearParams,
-): Promise<AgentToolResult<OpenuiClearDetails>> {
-  const named = params.name?.trim() ?? "";
-  const snapshot = programStore.getSnapshot();
-
-  if (named !== "" && !programStore.hasProgram(named)) {
-    return {
-      content: [{ type: "text", text: unknownProgram(named, snapshot.order) }],
-      details: {
-        status: "unknown-program",
-        cleared: named,
-        active: snapshot.active,
-        programs: snapshot.order,
-      },
-      isError: true,
-    };
-  }
-
-  programStore.removeProgram(named === "" ? undefined : named);
-  const after = programStore.getSnapshot();
-
-  return toolResult(
-    blocks(
-      statusTable({
-        cleared: named === "" ? "every program" : named,
-        remaining: after.order.length,
-      }),
-      after.order.length === 0
-        ? "no program is rendered yet — its programs, their state and their queued interactions are gone"
-        : programLine(after.active, after.order),
-    ),
-    {
-      status: after.order.length === 0 ? "empty" : "ok",
-      cleared: named === "" ? "*" : named,
-      active: after.active,
-      programs: after.order,
-    },
-  );
-}
-
-export const openuiClearTool: ToolDefinition<
-  typeof Parameters,
-  OpenuiClearDetails
+export const openUIClearTool: ToolDefinition<
+  typeof ClearParametersSchema,
+  OpenUIClearDetails
 > = {
   name: OPENUI_CLEAR_TOOL,
-  label: OPENUI_TOOL_LABELS[OPENUI_CLEAR_TOOL],
+  label: OPENUI_CLEAR_TOOL,
   description:
-    "Remove one program from the log, or every program when `name` is omitted. Its source, " +
-    "its bound state and its queued interactions go with it, and the log stops painting it. " +
-    "The tool rows that rendered those programs stay in the conversation as the record of what " +
-    "was built.",
+    "Remove one program from the log, or every program when `name` is omitted. Its source, its bound state and its queued interactions go with it, and the log stops painting it. " +
+    "The tool rows that rendered those programs stay in the conversation as the record of what was built.",
   promptSnippet: "Remove one program, or every program, from the log",
-  promptGuidelines: [
-    "Clear a program before replacing a screen with a differently named one, so the log holds only the screens the human still needs.",
-    "Clearing is not undoing: the conversation keeps every render that happened, and a re-render of the same name is the way to fix a program.",
-  ],
+  promptGuidelines: [...CLEAR_GUIDELINES],
 
   executionMode: "sequential",
-  parameters: Parameters,
+  parameters: ClearParametersSchema,
 
-  async execute(_toolCallId, params) {
-    return executeOpenuiClear(params);
+  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIClearDetails>> {
+    const name = params.name ?? "";
+    const names =
+      name === "" ? programStore.clearAll() : programStore.remove(name) ? [name] : [];
+    dropPrograms(names);
+
+    const details: OpenUIClearDetails = {
+      status: names.length === 0 ? "unknown" : "ok",
+      error: names.length === 0 ? `no program named "${name}" is in the log` : "",
+      names,
+      removed: names.length,
+      remaining: programStore.list().map((record) => record.name),
+    };
+
+    return toolResult(
+      blocks(
+        statusTable({ removed: details.removed, remaining: details.remaining.length }),
+        names.length === 0 ? details.error : `out of the log: ${names.join(", ")}`,
+        details.remaining.length === 0
+          ? ""
+          : `still in the log: ${details.remaining.join(", ")}`,
+      ),
+      details,
+    );
   },
 };

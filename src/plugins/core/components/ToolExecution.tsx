@@ -64,10 +64,15 @@ import {
   qualityToolPreviewOf,
 } from "../../code-quality/components/QualityToolRows";
 import {
-  isOpenuiTool,
-  OpenuiToolRows,
-  openuiToolPreviewOf,
-} from "../../openui/components/OpenuiToolRows";
+  isOpenUITool,
+  openUIToolPreviewOf,
+  OpenUIToolRows,
+} from "../../openui/components/OpenUIToolRows";
+import {
+  isMermaidTool,
+  MermaidToolRows,
+  mermaidToolPreviewOf,
+} from "../../mermaid/components/MermaidToolRows";
 import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
 import { codemodePreviewOf } from "../lib/codemode/script";
 
@@ -162,8 +167,9 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isGuardrailsTool(item.name) ||
     isVcsTool(item.name) ||
     isCodeQualityTool(item.name) ||
-    isOpenuiTool(item.name) ||
     isCodemodeTool(item.name) ||
+    isOpenUITool(item.name) ||
+    isMermaidTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -189,7 +195,8 @@ function argsLineOf(
   if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
-  if (isOpenuiTool(item.name)) return openuiToolPreviewOf(item);
+  if (isOpenUITool(item.name)) return openUIToolPreviewOf(item);
+  if (isMermaidTool(item.name)) return mermaidToolPreviewOf(item);
   if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
@@ -266,19 +273,29 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
         <QualityToolRows item={item} />
       </ToolContent>,
     );
-  if (isOpenuiTool(item.name))
-    panels.push(
-      <ToolContent key="openui" open>
-        <OpenuiToolRows item={item} />
-      </ToolContent>,
-    );
   // The script's own rows, its printed output and its timing: pi answers with a
   // header plus text and records the nested calls in details, and none of that
   // is a table the shared output panel could draw.
+  // A program is not a table of findings: the row of a render or a stream is
+  // the screen itself, painted live from the program store.
+  if (isOpenUITool(item.name))
+    panels.push(
+      <ToolContent key="openui" open>
+        <OpenUIToolRows item={item} />
+      </ToolContent>,
+    );
   if (isCodemodeTool(item.name))
     panels.push(
       <ToolContent key="codemode" open>
         <CodemodeToolRows item={item} />
+      </ToolContent>,
+    );
+  // A diagram is not a table of findings: the row's body is the picture, drawn
+  // from the markup the call left in its details.
+  if (isMermaidTool(item.name))
+    panels.push(
+      <ToolContent key="mermaid" open>
+        <MermaidToolRows item={item} />
       </ToolContent>,
     );
   return panels;

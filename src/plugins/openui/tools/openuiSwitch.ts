@@ -1,70 +1,74 @@
+/**
+ * `openui-switch` — which program the log paints live.
+ */
+
 import type {
   AgentToolResult,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { OPENUI_SWITCH_TOOL, OPENUI_TOOL_LABELS } from "../constants";
-import { programLine, unknownProgram } from "../lib/answer";
-import { programStore } from "../lib/programStore";
-import { namedProgramParam } from "../lib/params";
+import { OPENUI_SWITCH_TOOL } from "../constants";
+import type { OpenUISwitchDetails } from "../types";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
-import type { OpenuiSwitchDetails, OpenuiSwitchParams } from "../types";
+import { namedParam } from "../lib/params";
+import { programTable } from "../lib/format";
+import { programStore } from "../lib/programStore/store";
+import { SWITCH_GUIDELINES } from "./guidelines";
 
-const Parameters = Type.Object({
-  name: namedProgramParam("Program to make the live one in the log"),
+const SwitchParametersSchema = Type.Object({
+  name: Type.Optional(namedParam),
 });
 
-async function executeOpenuiSwitch(
-  params: OpenuiSwitchParams,
-): Promise<AgentToolResult<OpenuiSwitchDetails>> {
-  const name = params.name.trim();
-  const snapshot = programStore.getSnapshot();
-
-  if (!programStore.hasProgram(name)) {
-    return {
-      content: [{ type: "text", text: unknownProgram(name, snapshot.order) }],
-      details: {
-        status: "unknown-program",
-        active: snapshot.active ?? "",
-        programs: snapshot.order,
-      },
-      isError: true,
-    };
-  }
-
-  programStore.setActive(name);
-  const after = programStore.getSnapshot();
-
-  return toolResult(
-    blocks(
-      statusTable({ showing: name, programs: after.order.length }),
-      programLine(after.active, after.order),
-    ),
-    { status: "ok", active: name, programs: after.order },
-  );
-}
-
-export const openuiSwitchTool: ToolDefinition<
-  typeof Parameters,
-  OpenuiSwitchDetails
+export const openUISwitchTool: ToolDefinition<
+  typeof SwitchParametersSchema,
+  OpenUISwitchDetails
 > = {
   name: OPENUI_SWITCH_TOOL,
-  label: OPENUI_TOOL_LABELS[OPENUI_SWITCH_TOOL],
+  label: OPENUI_SWITCH_TOOL,
   description:
-    "Make an existing program the one the log paints " +
-    "live and the one `openui-state` and `openui-events` read by default. An unknown name " +
-    "fails with the program list rather than guessing.",
+    "Make an existing program the one the log paints live and the one `openui-state` and `openui-events` read by default. An unknown name fails with the program list rather than guessing.",
   promptSnippet: "Make an existing program the live one in the log",
-  promptGuidelines: [
-    "Switch to a program before reading its state or events when several are in the log, so the read is unambiguous.",
-    "Switching shows a program; only openui-render or openui-stream changes what it says.",
-  ],
+  promptGuidelines: [...SWITCH_GUIDELINES],
 
   executionMode: "sequential",
-  parameters: Parameters,
+  parameters: SwitchParametersSchema,
 
-  async execute(_toolCallId, params) {
-    return executeOpenuiSwitch(params);
+  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUISwitchDetails>> {
+    const name = params.name ?? "";
+    const before = programStore.list().map((record) => programStore.infoOf(record));
+
+    if (name === "" || !programStore.setLive(name)) {
+      const details: OpenUISwitchDetails = {
+        status: before.length === 0 ? "empty" : "unknown",
+        error:
+          name === ""
+            ? "name the program to show — openui-list answers the names"
+            : `no program named "${name}" is in the log`,
+        name,
+        showing: programStore.liveName(),
+        programs: before,
+      };
+      return toolResult(
+        blocks("the log holds no program by that name", details.error, programTable(before)),
+        details,
+      );
+    }
+
+    const details: OpenUISwitchDetails = {
+      status: "ok",
+      error: "",
+      name,
+      showing: programStore.liveName(),
+      programs: programStore.list().map((record) => programStore.infoOf(record)),
+    };
+
+    return toolResult(
+      blocks(
+        statusTable({ showing: details.showing, switched: name }),
+        programTable(details.programs),
+      ),
+      details,
+    );
   },
 };

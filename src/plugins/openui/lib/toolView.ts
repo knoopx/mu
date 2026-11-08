@@ -1,34 +1,14 @@
 /**
- * Turns a openui answer into what the transcript draws.
+ * Folding a tool's `details` into the one shape the log paints from.
  *
- * A openui tool answers twice: aligned columns for the model, and `details`
- * for the log. This file folds the details into one `OpenuiToolView` — the
- * chips of what the call touched, the line of what it left in the log, and
- * rows in the shape the shared row painter already knows — so the component
- * never parses a report and never learns a tool's name.
- *
- * It is also where a row learns whether it is the live one: a program is drawn
- * by the newest call that rendered it, and every older row for that name says so
- * instead of drawing a second copy.
+ * Eleven tools answer with eleven details shapes; the row painter reaches a
+ * single `OpenUIToolView`, so a details change moves this file and nothing in
+ * the components. The view also decides the one thing only the store can say:
+ * whether this call is the row its program is painted from.
  */
 
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
-  listOf,
-  numberOf,
-  recordOf,
-  stringsOf,
-  textOf,
-  type JsonRecord,
-} from "../../code-quality/lib/json";
-import { counted, partsLine } from "../../core/lib/agent/toolText";
-import type {
-  ToolRowCell,
-  ToolRowTone,
-  ToolPaintRow,
-  ToolPaintSection,
-} from "../../core/lib/ui/toolRowPaint";
-import {
-  MAX_DIAGNOSTIC_ROWS,
   OPENUI_CLEAR_TOOL,
   OPENUI_EVENTS_TOOL,
   OPENUI_LIBRARY_TOOL,
@@ -37,491 +17,273 @@ import {
   OPENUI_RENDER_TOOL,
   OPENUI_STATE_TOOL,
   OPENUI_STREAM_TOOL,
-  OPENUI_TOOLS_TOOL,
   OPENUI_SWITCH_TOOL,
+  OPENUI_TOOLS_TOOL,
   OPENUI_VALIDATE_TOOL,
-  OPENUI_WRITE_TOOLS,
 } from "../constants";
-import { programStore } from "./programStore";
-import { clock, clipValue } from "./format";
 import type {
-  OpenuiDiagnostic,
-  OpenuiEvent,
-  OpenuiLibraryComponent,
-  OpenuiProgramRow,
-  OpenuiPropRow,
-  OpenuiToolStatus,
-  OpenuiToolView,
+  OpenUIClearDetails,
+  OpenUIDiagnostic,
+  OpenUIEventsDetails,
+  OpenUIFixturesDetails,
+  OpenUILibraryDetails,
+  OpenUIListDetails,
+  OpenUIProgramDetails,
+  OpenUIProgramInfo,
+  OpenUIPromptDetails,
+  OpenUISwitchDetails,
+  OpenUIValueRow,
+  OpenUIStateDetails,
+  OpenUIToolStatus,
+  OpenUIToolView,
+  OpenUIValidateDetails,
 } from "../types";
+import { programStore } from "./programStore/store";
+import { clipText, partsLine } from "../../core/lib/agent/toolText";
 
-const STATUSES: readonly OpenuiToolStatus[] = [
-  "ok",
-  "invalid",
-  "empty",
-  "unknown-program",
-  "no-program",
-  "failed",
-];
+const EMPTY: OpenUIToolView = {
+  tool: "",
+  status: "ok",
+  ok: true,
+  name: "",
+  headline: "",
+  cells: [],
+  programs: [],
+  components: [],
+  diagnostics: [],
+  events: [],
+  values: [],
+  drawn: [],
+  names: [],
+  omitted: 0,
+  streaming: false,
+  live: false,
+  waiting: 0,
+  drawnProgram: false,
+};
 
-type Args = JsonRecord;
-type Details = JsonRecord;
+const has = (details: unknown, key: string): boolean =>
+  typeof details === "object" &&
+  details !== null &&
+  key in (details as Record<string, unknown>);
 
-interface FoldInput {
-  tool: string;
-  args: Args;
-  details: Details;
-  itemStatus: string;
-  toolCallId: string;
+const as = <T>(details: unknown): T => details as T;
+
+/** One array field of a details shape, or nothing when that tool has none. */
+const fieldOf = <T>(details: unknown, key: string): T[] => {
+  const value = (details as Record<string, unknown>)[key];
+  return Array.isArray(value) ? (value as T[]) : [];
+};
+
+/** One number field of a details shape. */
+const numberOf = (details: unknown, key: string, fallback: number): number => {
+  const value = (details as Record<string, unknown>)[key];
+  return typeof value === "number" ? value : fallback;
+};
+
+/** One boolean field of a details shape. */
+const flagOf = (details: unknown, key: string): boolean =>
+  (details as Record<string, unknown>)[key] === true;
+
+const countOf = (value: number, one: string): string =>
+  `${String(value)} ${value === 1 ? one : `${one}s`}`;
+
+/** Each tool's own sentence for what its answer holds. One per tool, so a
+ * details change moves one line and the fold stays a lookup.
+ */
+type Headline = (details: unknown) => string;
+
+const promptHeadline: Headline = (details) =>
+  `${String(as<OpenUIPromptDetails>(details).chars)} chars of reference`;
+
+const libraryHeadline: Headline = (details) => {
+  const view = as<OpenUILibraryDetails>(details);
+  return view.name === ""
+    ? `${countOf(view.count, "component")} in ${countOf(view.groups.length, "group")}`
+    : `${view.name} · ${countOf(view.components[0]?.props.length ?? 0, "arg")}`;
+};
+
+const validateHeadline: Headline = (details) => {
+  const view = as<OpenUIValidateDetails>(details);
+  return partsLine(
+    countOf(view.statements, "statement"),
+    countOf(view.components.length, "component"),
+    view.diagnostics.length === 0 ? "" : `${String(view.diagnostics.length)} errors`,
+  );
+};
+
+const eventsHeadline: Headline = (details) =>
+  countOf(as<OpenUIEventsDetails>(details).events.length, "interaction");
+
+const fixturesHeadline: Headline = (details) => {
+  const names = as<OpenUIFixturesDetails>(details).names;
+  return names.length === 0 ? "cleared" : countOf(names.length, "name");
+};
+
+const programsHeadline: Headline = (details) =>
+  countOf(as<OpenUIListDetails>(details).programs.length, "program");
+
+const clearHeadline: Headline = (details) =>
+  countOf(as<OpenUIClearDetails>(details).removed, "program");
+
+const writeHeadline: Headline = (details) => {
+  const view = as<OpenUIProgramDetails>(details);
+  return partsLine(
+    `${String(view.chars)} chars`,
+    countOf(view.statements, "statement"),
+    view.components === 0 ? "" : `${String(view.components)} drawn`,
+    view.diagnostics.length === 0 ? "" : `${String(view.diagnostics.length)} errors`,
+  );
+};
+
+const stateHeadline: Headline = (details) => {
+  const view = as<OpenUIStateDetails>(details);
+  return partsLine(
+    countOf(view.statements, "statement"),
+    countOf(view.drawn.length, "component"),
+    view.errors.length === 0 ? "" : `${String(view.errors.length)} errors`,
+    view.waiting === 0 ? "" : `${String(view.waiting)} waiting`,
+  );
+};
+
+const HEADLINES: Readonly<Record<string, Headline>> = {
+  [OPENUI_PROMPT_TOOL]: promptHeadline,
+  [OPENUI_LIBRARY_TOOL]: libraryHeadline,
+  [OPENUI_VALIDATE_TOOL]: validateHeadline,
+  [OPENUI_EVENTS_TOOL]: eventsHeadline,
+  [OPENUI_TOOLS_TOOL]: fixturesHeadline,
+  [OPENUI_LIST_TOOL]: programsHeadline,
+  [OPENUI_SWITCH_TOOL]: programsHeadline,
+  [OPENUI_CLEAR_TOOL]: clearHeadline,
+  [OPENUI_RENDER_TOOL]: writeHeadline,
+  [OPENUI_STREAM_TOOL]: writeHeadline,
+  [OPENUI_STATE_TOOL]: stateHeadline,
+};
+
+/** The one-line summary a details shape carries, in the tool's own words. */
+function headlineOf(tool: string, details: unknown): string {
+  const words = HEADLINES[tool];
+  return words === undefined ? "" : words(details);
 }
 
-type Fold = (input: FoldInput) => OpenuiToolView;
-
-const FOLD_OF_TOOL: ReadonlyMap<string, Fold> = new Map([
-  [OPENUI_VALIDATE_TOOL, reportView],
-  [OPENUI_RENDER_TOOL, reportView],
-  [OPENUI_STREAM_TOOL, reportView],
-  [OPENUI_STATE_TOOL, stateView],
-  [OPENUI_EVENTS_TOOL, eventsView],
-  [OPENUI_LIST_TOOL, listView],
-  [OPENUI_LIBRARY_TOOL, libraryView],
-  [OPENUI_PROMPT_TOOL, promptView],
-  [OPENUI_TOOLS_TOOL, fixturesView],
-  [OPENUI_SWITCH_TOOL, logView],
-  [OPENUI_CLEAR_TOOL, logView],
-]);
-
-export function openuiToolViewOf(item: {
-  name: string;
-  args?: Record<string, unknown>;
-  details?: unknown;
-  status: string;
-  toolCallId: string;
-}): OpenuiToolView | null {
-  const fold = FOLD_OF_TOOL.get(item.name.toLowerCase());
-  if (fold === undefined) return null;
-
-  const details = recordOf(item.details);
-  if (details === null || typeof details["status"] !== "string") return null;
-
-  return fold({
-    tool: item.name.toLowerCase(),
-    args: recordOf(item.args) ?? {},
-    details,
-    itemStatus: item.status,
-    toolCallId: item.toolCallId,
-  });
+/** The identity chips a row opens with: the program, the source, the scope. */
+function cellsOf(tool: string, details: unknown): OpenUIToolView["cells"] {
+  if (has(details, "name")) {
+    const view = as<{ name?: string }>(details);
+    const name = view.name ?? "";
+    if (tool === OPENUI_VALIDATE_TOOL)
+      return [{ label: "program", value: "(not in the log)" }];
+    return [{ label: "program", value: name === "" ? "(showing)" : name }];
+  }
+  return [];
 }
 
-function statusOf(details: Details, itemStatus: string): OpenuiToolStatus {
-  if (itemStatus === "error") return "failed";
-  const stated = textOf(details, "status");
-  return STATUSES.includes(stated as OpenuiToolStatus)
-    ? (stated as OpenuiToolStatus)
-    : "ok";
-}
+/** The folded view of one OpenUI tool call, or null when its answer is not one. */
+export function openUIToolViewOf(
+  item: ToolTranscriptItem,
+): OpenUIToolView | null {
+  const tool = item.name.toLowerCase();
+  const details = item.details;
+  if (details === undefined || details === null || !has(details, "status"))
+    return null;
 
-function view(
-  tool: string,
-  details: Details,
-  input: FoldInput,
-): OpenuiToolView {
-  const program = textOf(details, "program") || textOf(input.args, "name");
+  const status = (details as { status: OpenUIToolStatus }).status;
+  const name = has(details, "name")
+    ? String((details as { name?: unknown }).name ?? "")
+    : String(item.args?.name ?? "");
+
+  const read = sectionsOf(tool, details);
+
   return {
+    ...EMPTY,
     tool,
-    status: statusOf(details, input.itemStatus),
-    program,
-    live:
-      program !== "" && programStore.isOwner(program, input.toolCallId),
-    headline: "",
-    cells: [],
-    sections: [],
-    note: "",
-    hiddenErrors: 0,
+    status,
+    ok: has(details, "ok") ? (details as { ok?: boolean }).ok !== false : true,
+    name,
+    headline: clipText(headlineOf(tool, details), 96),
+    cells: cellsOf(tool, details),
+    programs: fieldOf<OpenUIProgramInfo>(details, "programs"),
+    components: read.components,
+    diagnostics: read.diagnostics,
+    events: fieldOf(details, "events"),
+    values: read.values,
+    drawn: read.drawn,
+    names: fieldOf(details, "names"),
+    omitted: numberOf(details, "omitted", 0),
+    streaming: flagOf(details, "streaming"),
+    live: flagOf(details, "live"),
+    waiting: numberOf(details, "waiting", 0),
+    drawnProgram: drawnFrom(tool, item, name),
   };
 }
 
-function cellsOf(
-  ...pairs: readonly (readonly [string, string | number])[]
-): ToolRowCell[] {
-  return pairs
-    .map(([label, value]) => ({ label, value: String(value) }))
-    .filter((cell) => cell.value !== "" && cell.value !== "0");
-}
-
-function sectionsOf(title: string, rows: readonly ToolPaintRow[]): ToolPaintSection[] {
-  return rows.length === 0 ? [] : [{ title, rows }];
-}
-
-const diagnosticsOf = (value: unknown): OpenuiDiagnostic[] =>
-  listOf(value).flatMap((entry) => {
-    const record = recordOf(entry);
-    if (record === null) return [];
-    return [
-      {
-        code: textOf(record, "code"),
-        message: textOf(record, "message"),
-        ...(textOf(record, "hint") === "" ? {} : { hint: textOf(record, "hint") }),
-        ...(record["severity"] === "warning" ? { severity: "warning" as const } : {}),
-      },
-    ];
-  });
-
-/** One diagnostic: the complaint, the move that clears it, and how loud it is. */
-function diagnosticRow(error: OpenuiDiagnostic): ToolPaintRow {
-  const warning = error.severity === "warning";
-  return {
-    key: warning ? "warn" : "error",
-    primary: error.message,
-    secondary: error.hint ?? "",
-    badge: warning ? "warning" : error.code,
-    tone: warning ? "warn" : "bad",
-  };
-}
-
-/** The two chips every openui call states: which program it touched, and what is on show. */
-function listingCells(details: Details): ToolRowCell[] {
-  const programs = stringsOf(details["programs"]);
-  const active = textOf(details, "active");
-  return cellsOf(
-    ["in the log", programs.join(", ")],
-    ["showing", active],
-  );
-}
-
-/** What a program answered for itself: how it parsed, and how big it is. */
-const programCells = (details: Details): ToolRowCell[] =>
-  cellsOf(
-    ["statements", numberOf(details, "statements")],
-    ["components", listOf(details["components"]).length],
-    ["chars", numberOf(details, "chars")],
-  );
-
-const renderCell = (live: boolean): ToolRowCell[] =>
-  live ? cellsOf(["painted", "here"]) : cellsOf(["painted", "by a later call"]);
-
-/** openui-validate, openui-render and openui-stream all answer the same report. */
-function reportView(input: FoldInput): OpenuiToolView {
-  const v = view(input.tool, input.details, input);
-  const errors = diagnosticsOf(input.details["errors"]);
-  const drawn = errors.slice(0, MAX_DIAGNOSTIC_ROWS);
-  const streaming = input.details["streaming"] === true;
-  const incomplete = input.details["incomplete"] === true;
-  const writes = OPENUI_WRITE_TOOLS.includes(input.tool);
-
-  v.cells = [
-    ...programCells(input.details),
-    ...(writes ? renderCell(v.live) : []),
-    ...listingCells(input.details),
-  ];
-  v.headline = partsLine(
-    `${counted(numberOf(input.details, "statements"), "statement")} parsed`,
-    streaming ? (incomplete ? "mid-statement, stream open" : "stream open") : "",
-    errors.length === 0
-      ? "no errors"
-      : `${counted(errors.length, "error")} — the program renders with them`,
-  );
-  v.sections = sectionsOf("", drawn.map(diagnosticRow));
-  v.hiddenErrors = errors.length - drawn.length;
-  v.note =
-    v.status === "invalid"
-      ? "the program is in the log with these errors — fix them and re-send the same name"
-      : streaming
-        ? "the program is still streaming; send done: true to close it"
-        : "";
-  return v;
-}
-
-/** The `$variable` values a program holds, as the human left them. */
-function stateRows(state: JsonRecord | null): ToolPaintRow[] {
-  if (state === null) return [];
-  return Object.entries(state).map(([name, value]) => ({
-    key: name.startsWith("$") ? name : `$${name}`,
-    primary: clipValue(value),
-    secondary: "",
-    badge: "",
-    tone: "neutral",
-  }));
-}
-
-function stateView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_STATE_TOOL, input.details, input);
-  const runtime = recordOf(input.details["runtime"]);
-  const errors = diagnosticsOf(runtime?.["errors"]);
-  const queryErrors = stringsOf(runtime?.["queryErrors"]);
-  const state = recordOf(input.details["state"]);
-
-  v.cells = [
-    ...cellsOf(
-      ["chars", numberOf(input.details, "chars")],
-      ["statements", numberOf(runtime, "statements")],
-      ["components", listOf(runtime?.["components"]).length],
-      ["unread events", numberOf(runtime, "unread")],
-    ),
-    ...listingCells(input.details),
-  ];
-  v.headline =
-    Object.keys(state ?? {}).length === 0
-      ? "no state bound yet"
-      : counted(Object.keys(state ?? {}).length, "bound value");
-  v.sections = [
-    ...sectionsOf("$ state", stateRows(state)),
-    ...sectionsOf(
-      "query failures",
-      queryErrors.map((message) => ({
-        key: "query",
-        primary: message,
-        secondary: "",
-        badge: "query",
-        tone: "warn",
-      })),
-    ),
-    ...sectionsOf("render diagnostics", errors.map(diagnosticRow)),
-  ];
-  v.note = v.live ? "" : "this program is not the one the log paints";
-  return v;
-}
-
-/** One thing the human did in the rendered program. */
-function eventRow(event: OpenuiEvent): ToolPaintRow {
-  const form = recordOf(event.formState);
-  const params = recordOf(event.params);
-  return {
-    key: clock(event.at),
-    primary: event.message,
-    secondary: partsLine(
-      event.formName === undefined ? "" : `form ${event.formName}`,
-      form === null ? "" : `${String(Object.keys(form).length)} field values`,
-      params === null ? "" : Object.keys(params).join(", "),
-    ),
-    badge: event.type,
-    tone: "neutral",
-    members: form === null ? undefined : Object.entries(form).map(([name, value]) => `${name} = ${clipValue(value)}`),
-  };
-}
-
-function eventsView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_EVENTS_TOOL, input.details, input);
-  const events = listOf(input.details["events"]).flatMap((entry) => {
-    const record = recordOf(entry);
-    if (record === null) return [];
-    return [
-      {
-        at: numberOf(record, "at"),
-        type: textOf(record, "type"),
-        message: textOf(record, "message"),
-        params: recordOf(record["params"]) ?? undefined,
-        formState: recordOf(record["formState"]) ?? undefined,
-        formName: textOf(record, "formName") || undefined,
-      },
-    ];
-  });
-
-  v.cells = cellsOf(
-    ["program", v.program],
-    ["cleared", input.details["cleared"] === true ? "yes" : "no"],
-  );
-  v.headline = counted(events.length, "interaction");
-  v.sections = sectionsOf("", events.map(eventRow));
-  v.note =
-    events.length === 0
-      ? "the human has not clicked, typed or submitted anything in this program"
-      : "";
-  return v;
-}
-
-function listView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_LIST_TOOL, input.details, input);
-  const programs = listOf(input.details["programs"]).flatMap((entry): OpenuiProgramRow[] => {
-    const record = recordOf(entry);
-    if (record === null) return [];
-    return [
-      {
-        name: textOf(record, "name"),
-        chars: numberOf(record, "chars"),
-        streaming: record["streaming"] === true,
-        statements: numberOf(record, "statements"),
-        errors: numberOf(record, "errors"),
-        unread: numberOf(record, "unread"),
-        updatedAt: numberOf(record, "updatedAt"),
-      },
-    ];
-  });
-
-  v.cells = cellsOf(
-    ["showing", textOf(input.details, "active")],
-    ["fixtures", stringsOf(input.details["fixtures"]).join(", ")],
-  );
-  v.headline = counted(programs.length, "program");
-  v.sections = sectionsOf(
-    "",
-    programs.map((row) => ({
-      key: row.name === textOf(input.details, "active") ? "shown" : "idle",
-      primary: `${row.name} — ${counted(row.chars, "char")}`,
-      secondary: partsLine(
-        `${String(row.statements)} statements`,
-        row.errors === 0 ? "" : `${String(row.errors)} errors`,
-        row.unread === 0 ? "" : `${String(row.unread)} unread events`,
-        row.streaming ? "streaming" : "",
-      ),
-      badge: row.streaming ? "streaming" : row.errors > 0 ? "error" : "",
-      tone: (row.streaming || row.errors > 0 ? "warn" : "neutral") as ToolRowTone,
-    })),
-  );
-  v.note = programs.length === 0 ? "nothing in the log yet" : "";
-  return v;
-}
-
-/** One prop of a component: its name, the type it takes, and whether it is required. */
-function propRow(prop: OpenuiPropRow): ToolPaintRow {
-  return {
-    key: prop.required ? "req" : "opt",
-    primary: `${prop.name}: ${prop.type}`,
-    secondary: prop.description,
-    badge: prop.required ? "required" : "",
-    tone: prop.required ? "accent" : "neutral",
-  };
-}
-
-const GROUP_PREVIEW = 8;
-
-function libraryView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_LIBRARY_TOOL, input.details, input);
-  const props = listOf(input.details["props"]).flatMap((entry): OpenuiPropRow[] => {
-    const record = recordOf(entry);
-    if (record === null) return [];
-    return [
-      {
-        name: textOf(record, "name"),
-        type: textOf(record, "type"),
-        required: record["required"] === true,
-        description: textOf(record, "description"),
-      },
-    ];
-  });
-  const components = listOf(input.details["components"]).flatMap(
-    (entry): OpenuiLibraryComponent[] => {
-      const record = recordOf(entry);
-      if (record === null) return [];
-      return [
-        {
-          name: textOf(record, "name"),
-          description: textOf(record, "description"),
-          group: textOf(record, "group"),
-        },
-      ];
-    },
-  );
-  const groups = recordOf(input.details["groups"]);
-
-  v.cells = cellsOf(
-    ["component", v.program],
-    ["group", textOf(input.details, "group")],
-    ["root", textOf(input.details, "root")],
-    ["components", numberOf(input.details, "componentCount")],
-    ["groups", numberOf(input.details, "groupCount")],
-  );
-  v.headline =
-    v.program === ""
-      ? `${counted(numberOf(input.details, "componentCount"), "component")} in ${String(
-          numberOf(input.details, "groupCount"),
-        )} groups`
-      : textOf(input.details, "description");
-
-  const groupRows = Object.entries(groups ?? {}).map(([group, names]) => {
-    const list = listOf(names);
+/** The four sections a tool's answer fills, per tool rather than per field. */
+function sectionsOf(tool: string, details: unknown): {
+  components: OpenUILibraryDetails["components"];
+  diagnostics: OpenUIDiagnostic[];
+  values: OpenUIValueRow[];
+  drawn: string[];
+} {
+  if (tool === OPENUI_LIBRARY_TOOL)
     return {
-      key: group,
-      primary: `${String(list.length)} components`,
-      secondary:
-        list.slice(0, GROUP_PREVIEW).join(", ") +
-        (list.length > GROUP_PREVIEW ? ` +${String(list.length - GROUP_PREVIEW)} more` : ""),
-      badge: "",
-      tone: "neutral" as ToolRowTone,
+      components: as<OpenUILibraryDetails>(details).components,
+      diagnostics: [],
+      values: [],
+      drawn: [],
     };
-  });
-
-  v.sections = [
-    ...sectionsOf("props", props.map(propRow)),
-    ...sectionsOf(
-      "library",
-      components.map((entry) => ({
-        key: entry.group,
-        primary: entry.name,
-        secondary: entry.description,
-        badge: "",
-        tone: "neutral",
-      })),
-    ),
-    ...sectionsOf("groups", groupRows),
-  ];
-  v.note =
-    v.status === "unknown-program"
-      ? "no component of that name — ask openui-library without a name for the index"
-      : stringsOf(input.details["groupNotes"]).join(" ");
-  return v;
+  if (tool === OPENUI_VALIDATE_TOOL)
+    return {
+      components: [],
+      diagnostics: as<OpenUIValidateDetails>(details).diagnostics,
+      values: [],
+      drawn: [],
+    };
+  if (tool === OPENUI_STATE_TOOL) {
+    const view = as<OpenUIStateDetails>(details);
+    return {
+      components: [],
+      diagnostics: view.errors,
+      values: view.values,
+      drawn: view.drawn,
+    };
+  }
+  return {
+    components: [],
+    diagnostics: fieldOf(details, "diagnostics"),
+    values: [],
+    drawn: [],
+  };
 }
 
-function promptView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_PROMPT_TOOL, input.details, input);
-  v.cells = cellsOf(
-    ["components", numberOf(input.details, "components")],
-    ["root", textOf(input.details, "root")],
-    ["lines", numberOf(input.details, "lines")],
-    ["chars", numberOf(input.details, "chars")],
-    ["groups", stringsOf(input.details["groups"]).join(", ")],
-  );
-  v.headline = "the language reference, read before writing a program";
-  v.note = input.details["edit_mode"] === true ? "edit mode: patch an existing program" : "";
-  return v;
+/** Whether this call is the row its program is painted from. */
+function drawnFrom(tool: string, item: ToolTranscriptItem, name: string): boolean {
+  if (tool !== OPENUI_RENDER_TOOL && tool !== OPENUI_STREAM_TOOL) return false;
+  if (name === "") return false;
+  return programStore.get(name)?.anchor === item.toolCallId;
 }
 
-function fixturesView(input: FoldInput): OpenuiToolView {
-  const v = view(OPENUI_TOOLS_TOOL, input.details, input);
-  const fixtures = stringsOf(input.details["fixtures"]);
+/** The words a tool's empty answer reads as. */
+export const openUIEmptyWords: Readonly<Record<string, string>> = {
+  [OPENUI_LIST_TOOL]: "the log holds no program",
+  [OPENUI_EVENTS_TOOL]: "nobody has used the screen yet",
+  [OPENUI_STATE_TOOL]: "no program is showing",
+  [OPENUI_TOOLS_TOOL]: "no data is served to any program",
+  [OPENUI_LIBRARY_TOOL]: "the library is empty",
+  [OPENUI_SWITCH_TOOL]: "no program to show",
+  [OPENUI_CLEAR_TOOL]: "nothing to take out of the log",
+};
 
-  v.headline =
-    fixtures.length === 0
-      ? "fixtures cleared — every Query() falls back to its default"
-      : counted(fixtures.length, "fixture");
-  v.sections = sectionsOf(
-    "",
-    fixtures.map((name) => ({
-      key: "query",
-      primary: `Query("${name}", args, default)`,
-      secondary: "resolves to the JSON this call supplied",
-      badge: "",
-      tone: "neutral",
-    })),
-  );
-  return v;
-}
-
-/** openui-switch and openui-clear answer with what the log holds. */
-function logView(input: FoldInput): OpenuiToolView {
-  const v = view(
-    textOf(input.details, "cleared") === "" ? OPENUI_SWITCH_TOOL : OPENUI_CLEAR_TOOL,
-    input.details,
-    input,
-  );
-  const cleared = textOf(input.details, "cleared");
-  const active = textOf(input.details, "active");
-
-  v.cells = listingCells(input.details);
-  v.headline =
-    cleared === ""
-      ? `showing ${active === "" ? "nothing" : active}`
-      : cleared === "*"
-        ? "every program removed"
-        : `removed ${cleared}`;
-  v.note =
-    v.status === "unknown-program"
-      ? "no program of that name in the log"
-      : stringsOf(input.details["programs"]).length === 0
-        ? "no program is rendered yet"
-        : "";
-  return v;
-}
-
-export function openuiCellOf(view: OpenuiToolView, label: string): string {
-  return view.cells.find((cell) => cell.label === label)?.value ?? "";
-}
+/** What each tool is doing while it runs. */
+export const openUIRunningWords: Readonly<Record<string, string>> = {
+  [OPENUI_PROMPT_TOOL]: "writing the language reference",
+  [OPENUI_LIBRARY_TOOL]: "reading the component library",
+  [OPENUI_VALIDATE_TOOL]: "parsing the program",
+  [OPENUI_RENDER_TOOL]: "drawing the program",
+  [OPENUI_STREAM_TOOL]: "streaming the program",
+  [OPENUI_STATE_TOOL]: "reading what the screen holds",
+  [OPENUI_EVENTS_TOOL]: "reading what the human did",
+  [OPENUI_TOOLS_TOOL]: "serving the program's data",
+  [OPENUI_LIST_TOOL]: "counting the programs",
+  [OPENUI_SWITCH_TOOL]: "showing a program",
+  [OPENUI_CLEAR_TOOL]: "taking programs out of the log",
+};

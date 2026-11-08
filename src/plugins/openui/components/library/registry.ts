@@ -1,362 +1,172 @@
 /**
- * The component library an OpenUI program is written against.
+ * The library, in one place: every component definition of every area, the
+ * drawer each one paints with, and the groups the prompt and `openui-library`
+ * print them in.
  *
- * Everything the plugin knows about the language comes from this registry: the
- * parse validates against it, the system prompt is generated from it, the
- * `openui-library` tool reads its schemas, and the renderer draws from it. A
- * component that is not registered here cannot be drawn and cannot be named in
- * a prompt, so adding a binding to adwaita-gpuix means adding it here and
- * nowhere else.
+ * This is the list a program can draw from. A component that is not here does
+ * not exist: the parser drops it as `unknown-component`, and the renderer never
+ * sees its name.
  */
 
-import { createLibrary, type ComponentGroup } from "@openuidev/react-lang";
-import type { LibraryJSONSchema } from "@openuidev/lang-core";
+import type { OpenUIGroupInfo } from "../../types";
+import type { ProgramDrawer } from "./context";
+import { Bar, Chart, Stat, Table } from "./data";
 import {
-  Card,
-  CardHeader,
   Divider,
   Grid,
+  Pane,
   Row,
+  Screen,
   Spacer,
   Stack,
-  Tag,
 } from "./layout";
 import {
-  Callout,
-  Caption,
-  CodeBlock,
-  HeadingBlock,
-  Image,
-  Json,
-  KeyValue,
-  Link,
-  Metric,
-  Quote,
-  Text,
-  TextContent,
-} from "./text";
-import {
-  BarChart,
-  Chart,
-  Col,
-  LineChart,
-  ListBlock,
-  ListItem,
-  Progress,
-  Table,
-} from "./data";
-import {
   Button,
-  Buttons,
-  CheckBox,
-  Form,
-  Input,
-  Label,
-  Select,
-  SwitchField,
-  TextArea,
-} from "./forms";
-import { Box, Carousel, Flashcard, Popover, Pressable } from "./containers";
-import {
-  DatePicker,
-  IconButton,
-  RadioGroup,
-  SegmentedControl,
+  Choice,
+  Field,
   Slider,
-} from "./widgets";
+  Stepper,
+  Toggle,
+} from "./inputs";
+import { Header, StatusLine } from "./screen";
 import {
-  ActionRow,
-  BoxedList,
-  ButtonRow,
-  ComboRow,
-  EntryRow,
-  ExpanderRow,
-  RowList,
-  SwitchRow,
+  Breakdown,
+  Heatmap,
+  Timeline,
+  Trace,
+  Tree,
+} from "./figures";
+import {
+  Sections,
+  Steps,
+  Todos,
 } from "./lists";
 import {
-  HeaderBar,
-  Kbd,
-  KeyHint,
-  Pagination,
-  Sidebar,
-  SidebarItem,
-  SidebarLabel,
-  StatusBar,
-  Tabs,
-  ViewSwitcher,
-} from "./appshell";
-import { Banner, Empty, StatusPage, Toast } from "./feedback";
-import { svgComponents } from "./svg";
-import { Celebration, Glyph, YouTube } from "./media";
-import { MathBlock } from "./math";
+  Badge,
+  Caption,
+  Code,
+  Details,
+  KeyValue,
+  Note,
+  Text,
+  Title,
+} from "./text";
 
-const EXTRA_LAYOUT = ["Box", "Carousel", "Popover", "Pressable"];
-const EXTRA_TEXT = ["Caption", "Quote", "Link"];
-const EXTRA_INPUTS = [
-  "IconButton",
-  "SegmentedControl",
-  "Slider",
-  "RadioGroup",
-  "DatePicker",
-];
-const PLAY = ["Flashcard", "Celebration"];
-const MEDIA = ["Image", "Icon", "YouTube"];
-const DRAWING = [
-  "Svg",
-  "G",
-  "Circle",
-  "Ellipse",
-  "Rect",
-  "Line",
-  "Path",
-  "Polyline",
-  "Polygon",
-  "SvgText",
-];
-const LAYOUT = [
-  "Stack",
-  "Row",
-  "Grid",
-  "Card",
-  "CardHeader",
-  "Divider",
-  "Spacer",
-  "Tag",
-];
-const TEXT = [
-  "Heading",
-  "Text",
-  "TextContent",
-  "CodeBlock",
-  "KeyValue",
-  "Metric",
-  "Math",
-  "Callout",
-  "Image",
-  "Json",
-];
-const DATA = [
-  "Table",
-  "Col",
-  "ListBlock",
-  "ListItem",
-  "BarChart",
-  "LineChart",
-  "Chart",
-  "Progress",
-];
-const FORMS = [
-  "Form",
-  "Label",
-  "Input",
-  "TextArea",
-  "Select",
-  "CheckBox",
-  "SwitchField",
-  "Button",
-  "Buttons",
-];
-const LISTS = [
-  "RowList",
-  "BoxedList",
-  "ActionRow",
-  "EntryRow",
-  "SwitchRow",
-  "ComboRow",
-  "ExpanderRow",
-  "ButtonRow",
-];
-const APP = [
-  "HeaderBar",
-  "ViewSwitcher",
-  "Sidebar",
-  "SidebarItem",
-  "SidebarLabel",
-  "StatusBar",
-  "Tabs",
-  "Pagination",
-  "StatusPage",
-  "Empty",
-  "Toast",
-  "Banner",
-  "Kbd",
-  "KeyHint",
+export const programDefinitions = [
+  Screen,
+  Header,
+  Stack,
+  Row,
+  Grid,
+  Pane,
+  Divider,
+  Spacer,
+  StatusLine,
+  Title,
+  Text,
+  Caption,
+  Badge,
+  KeyValue,
+  Note,
+  Code,
+  Details,
+  Table,
+  Stat,
+  Bar,
+  Chart,
+  Tree,
+  Timeline,
+  Trace,
+  Heatmap,
+  Breakdown,
+  Sections,
+  Todos,
+  Steps,
+  Button,
+  Toggle,
+  Choice,
+  Slider,
+  Field,
+  Stepper,
 ];
 
-export const library = createLibrary({
-  components: [
-    Stack,
-    Row,
-    Grid,
-    Card,
-    CardHeader,
-    Divider,
-    Spacer,
-    Tag,
-    HeadingBlock,
-    Text,
-    TextContent,
-    CodeBlock,
-    KeyValue,
-    Metric,
-    MathBlock,
-    Callout,
-    Image,
-    Json,
-    Table,
-    Col,
-    ListBlock,
-    ListItem,
-    BarChart,
-    LineChart,
-    Chart,
-    Progress,
-    Form,
-    Label,
-    Input,
-    TextArea,
-    Select,
-    CheckBox,
-    SwitchField,
-    Button,
-    Buttons,
-    RowList,
-    BoxedList,
-    ActionRow,
-    EntryRow,
-    SwitchRow,
-    ComboRow,
-    ExpanderRow,
-    ButtonRow,
-    HeaderBar,
-    ViewSwitcher,
-    Sidebar,
-    SidebarItem,
-    SidebarLabel,
-    StatusBar,
-    Tabs,
-    Pagination,
-    StatusPage,
-    Empty,
-    Toast,
-    Banner,
-    Kbd,
-    KeyHint,
-    Box,
-    Carousel,
-    Popover,
-    Pressable,
-    Flashcard,
-    Glyph,
-    YouTube,
-    Celebration,
-    Caption,
-    Quote,
-    Link,
-    IconButton,
-    SegmentedControl,
-    Slider,
-    RadioGroup,
-    DatePicker,
-    ...svgComponents,
-  ],
-  root: "Stack",
-  componentGroups: [
-    { name: "Layout", components: [...LAYOUT, ...EXTRA_LAYOUT] },
-    { name: "Text", components: [...TEXT, ...EXTRA_TEXT] },
-    { name: "Data", components: DATA },
-    { name: "Forms", components: [...FORMS, ...EXTRA_INPUTS] },
-    {
-      name: "Lists",
-      components: LISTS,
-      notes: [
-        "Data rows go in RowList, flush on the view surface: no panel, no separators, no zebra, no tile per row.",
-        "BoxedList is the one sanctioned panel and it holds controls or one object's detail rows only — never a data list, never inside the Sidebar, never inside another panel.",
-        "Every repeating row carries the action for that item (ActionRow with @ToAssistant, a switch, a combo, an expander). A row with no action is a printout.",
-        "Rows are one continuous stack: container depth stays ≤ 1.",
-      ],
-    },
-    {
-      name: "App",
-      components: APP,
-      notes: [
-        "A window is HeaderBar (one centred title, flat verbs, ViewSwitcher) → content → StatusBar (text, rail, key caps — no controls).",
-        "The HeaderBar carries the verbs of the whole view: filter, sort, view switch, search, refresh. A filter is a flat header button opening a Popover of option rows — never a row of the Sidebar, never a panel above the list.",
-        "Sidebar lists places and objects only: SidebarItem rows, tinted fill on the current one. No SwitchRow, ComboRow, EntryRow, Button, panel or BoxedList inside it.",
-        "StatusPage, Empty, Toast and Banner are the empty, condition and acknowledgement states — bound to the state that caused them, replacing the content they describe.",
-      ],
-    },
-    { name: "Play", components: PLAY },
-    {
-      name: "Media and data",
-      components: [...MEDIA, ...DATA],
-      notes: [
-        "GPUI paints no map tiles, no video player and no HTML sandbox: YouTube renders the poster plus its URL, and Icon is a first-class inline child.",
-      ],
-    },
-    {
-      name: "Drawing",
-      components: DRAWING,
-      notes: [
-        "Svg takes a viewBox and shapes; shapes take plain numbers, so state can move them.",
-        "fill and stroke take a tone (default, muted, accent, success, warning, destructive) or a hex colour.",
-      ],
-    },
-  ] satisfies ComponentGroup[],
-});
+/**
+ * What each name in the library draws with — read off the definitions, so a
+ * component can be in the library and not have a drawer only by a type error.
+ */
+export const programDrawers: Record<string, ProgramDrawer> = Object.fromEntries(
+  programDefinitions.map((definition) => [definition.name, definition.component]),
+);
 
-let cachedSchema: LibraryJSONSchema | undefined;
-
-/** The JSON Schema the parser validates a program against; built once. */
-export function librarySchema(): LibraryJSONSchema {
-  cachedSchema ??= library.toJSONSchema();
-  return cachedSchema;
-}
-
-export interface PromptOptions {
-  tools?: string[];
-  preamble?: string;
-  examples?: string[];
-  editMode?: boolean;
-}
-
-/** The language reference for this library — syntax, every component, the action rules. */
-export function systemPrompt(options?: PromptOptions): string {
-  return library.prompt(options);
-}
-
-export interface ComponentEntry {
-  name: string;
-  description: string;
-  group: string;
-}
-
-const groupOf = new Map<string, string>();
-for (const group of library.componentGroups ?? []) {
-  for (const name of group.components) groupOf.set(name, group.name);
-}
-
-export function componentIndex(): ComponentEntry[] {
-  return Object.values(library.components).map((component) => ({
-    name: component.name,
-    description: component.description,
-    group: groupOf.get(component.name) ?? "Ungrouped",
-  }));
-}
-
-export const componentNames = (): string[] => Object.keys(library.components);
-
-export const componentEntry = (name: string): ComponentEntry | undefined =>
-  componentIndex().find((entry) => entry.name === name);
-
-/** Component names by the group the prompt teaches them in. */
-export function groupIndex(): Record<string, string[]> {
-  const groups: Record<string, string[]> = {};
-  for (const entry of componentIndex())
-    (groups[entry.group] ??= []).push(entry.name);
-  return groups;
-}
-
-export const groupNotes = (group: string): string[] =>
-  library.componentGroups?.find((entry) => entry.name === group)?.notes ?? [];
+/** How the library is taught: what belongs together, and what each group obeys. */
+export const programGroups: OpenUIGroupInfo[] = [
+  {
+    name: "Screen",
+    components: ["Screen", "Header", "StatusLine"],
+    notes: [
+      "root is always a Screen: a header bar, the blocks it operates on, and one inert status line at the foot.",
+      "A screen is a GNOME screen, not a web page — no wall of cards, no strip of figures with nothing to operate.",
+    ],
+  },
+  {
+    name: "Layout",
+    components: ["Stack", "Row", "Grid", "Pane", "Divider", "Spacer"],
+    notes: [
+      "gap counts 4px steps: 1 is 4px, 3 is 12px, 6 is 24px. Leave it unset on a Stack and a Pane and the app uses its own tier.",
+      "Pane groups one block of the screen. Never nest a Pane inside a Pane.",
+    ],
+  },
+  {
+    name: "Text",
+    components: [
+      "Title",
+      "Text",
+      "Caption",
+      "Badge",
+      "KeyValue",
+      "Details",
+      "Note",
+      "Code",
+    ],
+    notes: [
+      'Title "lg" and "xl" are for the screen, "sm" inside a Pane. Badge is one short fact, never a paragraph.',
+      "KeyValue is one line; Details is the list of them — a spec sheet, a model's card — with a rule between the rows and the values on the right.",
+    ],
+  },
+  {
+    name: "Data",
+    components: ["Table", "Stat", "Bar", "Chart"],
+    notes: [
+      "A Table is text cells in equal columns; a row is a list of cells. Stat and Bar are figures the screen reads out, not controls.",
+      "Chart is the many-values-on-one-canvas primitive: Chart(points, \"bar\" | \"line\", height, width, grid, markers, fill, labels, tone, dash, emphasis). A point is [label, value], {label, value} or a bare number; more than one value on a row makes it multi-series. Reach for Chart when the set is the point, Bar when one figure is.",
+      "A line that is a plan, not a measurement, is dashed (dash 7); `emphasis` is the index of the point the reader stands at. Bar takes `weight` (×N, when a figure counts more than the others) and `caption` (the line under it).",
+      "A cell that reads as a number is set in mono and stands on the right of its column: write the figure, do not pad it.",
+    ],
+  },
+  {
+    name: "Figures",
+    components: ["Tree", "Timeline", "Trace", "Heatmap", "Breakdown"],
+    notes: [
+      "These draw a shape rather than cells: the files of a change, the spans of a run, the days of a period, the parts a total is made of.",
+      "A row is a list of cells or an object of named fields — both read the same way, and the field names are in each signature.",
+      "A figure needs the count that frames it: put it in the Pane's `trailing`, not in a Caption of its own above it.",
+      "A count of what moved is coloured, not plain: Row([Text(\"+78\", \"sm\", \"success\"), Text(\"-9\", \"sm\", \"danger\")], 1). A Tree colours each path's own counts.",
+    ],
+  },
+  {
+    name: "Status",
+    components: ["Sections", "Todos", "Steps"],
+    notes: [
+      "The states a row may name: done, running, current, pending, skipped, error — and their common words (complete, wip, todo, cancelled, failed) reach the same mark.",
+      "A line the work is behind is struck through, not removed: a screen says what happened, including what was skipped.",
+    ],
+  },
+  {
+    name: "Inputs",
+    components: ["Button", "Toggle", "Choice", "Slider", "Field", "Stepper"],
+    notes: [
+      "An input's bound argument is a $variable the screen writes with @Set or a binding — every input must change something on the page or ask the agent something with @ToAssistant.",
+      "Every interaction is recorded and waits for the agent to read it with openui-events.",
+    ],
+  },
+];

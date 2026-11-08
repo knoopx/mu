@@ -26,6 +26,8 @@ Every screen below is shown as it looks in a real window, with a session in it.
 | Changes        | the project's history, the files of a change, its diff                                         |
 | Changes        | a split asked of the agent, the diff it read, the two changes it made                          |
 | Web search     | a search, the pages it read, a search that got nothing                                         |
+| Code quality   | what the project says about itself: thresholds, unused code, clones, a change's reach          |
+| Generative UI  | an answer that is a working screen: a filter picked, a stepper moved, one press waiting        |
 | Guardrails     | a command stopped before it ran, the panel of rules that stopped it                            |
 | Guardrails     | the rules tested, the cases written, the coverage read                                         |
 | Status bar     | the counts of one answer and of the whole conversation                                         |
@@ -119,6 +121,24 @@ When the agent needs something your project does not know, it searches the web, 
 Before the agent changes a file it did not write, it asks the project about itself: what sits over the complexity thresholds, what nothing imports, what is copy-pasted, and how far one commit reaches. `code-complexity`, `code-dead-code`, `code-duplicates`, `code-review`, `code-symbol-inspect` and `code-symbol-references` answer in rows the log draws — chips for what was read, a meter showing how a finding ranks against its own run, clone groups listed with every place they appear — and every read is bounded, so surveying a large tree stays a survey instead of a wall of text. Nothing is fixed behind the agent's back: an unused export it found is a row, and deleting it is your call.
 
 ![What the project says about itself](stories/CodeQuality/surveyed.png)
+
+## Generative UI
+
+Sometimes the answer is a screen. The agent writes a program in [OpenUI Lang](https://openui.com) and mu draws it in the log — a header, the thing you operate, a status line — from a library of components the app itself owns: `Screen`, `Header`, `Pane`, `Table`, `Choice`, `Stepper`, `Slider`, `Field`, `Button`, and the rest, all rendered by `adwaita-gpuix` with no DOM anywhere.
+
+The program is not a picture of a form. It keeps its own state: the filter, the stepper and the slider write `$variables` the rest of the screen reads, so picking "Only the big ones" hides rows without another message. What it needs from outside comes as data the agent serves it — `openui-tools` decides what a `Query("get_orders", …)` resolves to, and a name nothing served fails in the open, reported to the program rather than answered with an empty table. What you do with the screen is queued: every press, pick and drag waits, and `openui-events` hands it to the agent once.
+
+The program lives in the log, not in the call that wrote it: `openui-render` opens it, `openui-stream` grows it piece by piece while you watch, and every later call edits the same screen in place. `openui-state` says what actually drew, `openui-library` says what may be named at all, `openui-validate` checks a program before it is committed, and `openui-list`, `openui-switch` and `openui-clear` say what is in the log and what is showing. A resumed session keeps its rows and loses its screens, and the row says so instead of inventing one.
+
+![An answer you can operate](stories/GenerativeUI/rendered.png)
+
+## Diagrams
+
+Some explanations are a picture. `mermaid-render` takes Mermaid source and draws it in the log: flowcharts, sequence, state and class diagrams, ER, gantt, pie, git graphs, mindmaps, C4, timelines, kanban. The picture is painted from the SVG the engine produced, in the colours the window is currently wearing, and it is scaled to the log rather than to the diagram's own canvas — so `path` also writes the `.svg` next to your project, which is the full-size one you can commit or open.
+
+The model cannot see the picture, so its answer is a reading of it: the kind that came out, the canvas it was laid out on, how long it took, and every label the diagram says. That is what makes a wrong diagram visible to something without eyes — a label that is missing is a node that was never parsed. A source the parser refuses answers with its code, its line, its column and the line it stopped on, which is a fixable thing; the row shows the same snippet with its caret.
+
+The engine is [Pele](https://pele.run), the renderer Obsidian ships: pure JavaScript, no browser, no DOM, no PNG rasteriser — it measures text from its own metrics, so a diagram is drawn in the same process as the conversation it explains.
 
 ## Guardrails
 

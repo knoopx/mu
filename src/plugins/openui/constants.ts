@@ -1,3 +1,9 @@
+/**
+ * What the OpenUI plugin shares: the tool names the user's guardrail rules
+ * point at, the bounds every read and every program lives inside, and the
+ * words a program's rows are painted with.
+ */
+
 import type { BadgeVariant } from "adwaita-gpuix";
 
 export const OPENUI_PROMPT_TOOL = "openui-prompt";
@@ -12,7 +18,10 @@ export const OPENUI_LIST_TOOL = "openui-list";
 export const OPENUI_SWITCH_TOOL = "openui-switch";
 export const OPENUI_CLEAR_TOOL = "openui-clear";
 
-/** Every openui tool the agent can call, learn-render-read order. */
+/**
+ * These eleven names are what a guardrail rule and a story point at, so they
+ * are never renamed or aliased.
+ */
 export const OPENUI_TOOL_NAMES: readonly string[] = [
   OPENUI_PROMPT_TOOL,
   OPENUI_LIBRARY_TOOL,
@@ -27,58 +36,74 @@ export const OPENUI_TOOL_NAMES: readonly string[] = [
   OPENUI_CLEAR_TOOL,
 ];
 
-/**
- * The tools that put a program in the log. They are the ones a row paints
- * live, so they are also the ones a description has to keep honest about what
- * the human now sees.
- */
-export const OPENUI_WRITE_TOOLS: readonly string[] = [
-  OPENUI_RENDER_TOOL,
-  OPENUI_STREAM_TOOL,
-  OPENUI_SWITCH_TOOL,
-  OPENUI_CLEAR_TOOL,
-  OPENUI_TOOLS_TOOL,
-];
+/** The root statement a program must define, and the component it must name. */
+export const ROOT_STATEMENT = "root";
+export const ROOT_COMPONENT = "Screen";
 
-export const OPENUI_TOOL_LABELS: Record<string, string> = {
-  [OPENUI_PROMPT_TOOL]: "OpenUI language reference",
-  [OPENUI_LIBRARY_TOOL]: "OpenUI component library",
-  [OPENUI_VALIDATE_TOOL]: "OpenUI validate",
-  [OPENUI_RENDER_TOOL]: "OpenUI render",
-  [OPENUI_STREAM_TOOL]: "OpenUI stream",
-  [OPENUI_STATE_TOOL]: "OpenUI program state",
-  [OPENUI_EVENTS_TOOL]: "OpenUI interaction events",
-  [OPENUI_TOOLS_TOOL]: "OpenUI query fixtures",
-  [OPENUI_LIST_TOOL]: "OpenUI program list",
-  [OPENUI_SWITCH_TOOL]: "OpenUI show program",
-  [OPENUI_CLEAR_TOOL]: "OpenUI clear programs",
-};
+/** How many programs the log holds before the oldest render stops being drawn. */
+export const MAX_PROGRAMS = 12;
 
-/** The program a call means when it names none — the one screen a call renders by default. */
-export const DEFAULT_PROGRAM = "screen";
+/** A program's source is bounded: a screen, not a website. */
+export const MAX_PROGRAM_CHARS = 24_000;
 
-/** How long a program may get before a call is told to split or trim it. */
-export const MAX_PROGRAM_CHARS = 60_000;
+/** One streamed chunk is bounded so a program arrives in readable pieces. */
+export const MAX_CHUNK_CHARS = 6_000;
 
-/** How many interaction events the log holds for one program before the oldest go. */
-export const MAX_EVENTS = 200;
+/** A program name is a slug the model keeps stable across renders. */
+export const MAX_PROGRAM_NAME = 48;
 
-/** How many diagnostics one answer prints; the rest is counted, not shown. */
-export const MAX_DIAGNOSTIC_ROWS = 15;
+/** The name a write takes when the call leaves one out. */
+export const DEFAULT_PROGRAM_NAME = "screen";
 
-/** How far the component walk goes before it stops counting a program's nodes. */
-export const MAX_WALK_NODES = 2000;
+/** How many interactions wait on the agent before the queue drops the oldest. */
+export const MAX_WAITING_EVENTS = 200;
 
-/** How an openui badge is painted: what blocks a render, what only explains one. */
+/** How many interactions one `openui-events` call drains by default. */
+export const DEFAULT_EVENT_LIMIT = 40;
+export const MAX_EVENT_LIMIT = 100;
+
+/** How many rows the library index and a program's component list answer with. */
+export const DEFAULT_LIBRARY_LIMIT = 40;
+export const MAX_LIBRARY_LIMIT = 120;
+export const MAX_COMPONENT_ROWS = 24;
+
+/** How much of a program's source `openui-state` prints back. */
+export const MAX_STATE_SOURCE_CHARS = 4_000;
+
+/** How many fixture keys one `openui-tools` call may serve, and how deep. */
+export const MAX_FIXTURE_KEYS = 40;
+export const MAX_FIXTURE_CHARS = 12_000;
+
+/** How many `$variable` values one state read prints. */
+export const MAX_VALUE_ROWS = 40;
+
+/** What the program's own spacing tiers mean in the screen's tokens. */
+export const PROGRAM_GAP_TIER = {
+  inner: 1,
+  group: 3,
+  section: 6,
+} as const;
+
+/** A program's default gaps: what a Stack and a Pane leave when left unset. */
+export const DEFAULT_PROGRAM_GAP = PROGRAM_GAP_TIER.group;
+export const SCREEN_GAP = PROGRAM_GAP_TIER.section;
+export const PANE_GAP = PROGRAM_GAP_TIER.group;
+
+/** How a program's rows are badged: what is a hard error, what is only a note. */
 export const OPENUI_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
   error: "destructive",
-  parse: "destructive",
+  hard: "destructive",
+  failed: "destructive",
+  incomplete: "warning",
+  open: "warning",
   warning: "warning",
   unresolved: "warning",
-  incomplete: "warning",
-  streaming: "warning",
-  query: "warning",
-  live: "default",
-  replaced: "secondary",
-  ok: "secondary",
+  running: "secondary",
+  live: "secondary",
+  showing: "secondary",
+  drawn: "secondary",
+  ok: "outline",
 };
+
+/** The note a row shows when a program exists but is no longer drawn. */
+export const NOT_DRAWN_NOTE = "no longer in the log";

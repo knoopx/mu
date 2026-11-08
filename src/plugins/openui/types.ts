@@ -1,240 +1,267 @@
 /**
- * What the openui tools take and what they answer.
+ * The shapes the OpenUI plugin passes around: what a program in the log *is*,
+ * what a parse says about it, what an interaction the human made looks like,
+ * and what each of the eleven tools answers with.
  *
- * One file for the whole plugin's shared shapes: the parameters each tool
- * takes, the `details` each returns (the log's copy of the answer, read by
- * `lib/toolView.ts`), and the view the transcript rows are drawn from. The
- * model's copy of every answer is built in `lib/answer.ts` from the same
- * fields, so a fact is stated once and read twice.
+ * A program is the unit. A tool call is only what did something to a program,
+ * so every details object names the program it acted on and carries enough of
+ * what the store held to paint a row after the program is gone.
  */
 
-import type {
-  ToolPaintSection,
-  ToolRowCell,
-} from "../core/lib/ui/toolRowPaint";
-import type { OpenuiDiagnostic, OpenuiEvent } from "./lib/programStore";
+import type { ToolRowCell } from "../core/lib/ui/toolRowPaint";
 
-export type { OpenuiDiagnostic, OpenuiEvent };
+/** The one status vocabulary the eleven tools answer in. */
+export type OpenUIToolStatus =
+  | "ok"
+  | "failed"
+  | "empty"
+  | "unknown"
+  | "open";
 
 /**
- * The one status vocabulary of this plugin. `invalid` is not a failure: the
- * program is in the log and the human can see it; the parse just has hard
- * errors in it.
+ * What a program may call the state of one line of work: a section it settled,
+ * a todo it is on, a stage a job reached.
+ *
+ * The words a program writes are wider than this — `components/library/rows.ts`
+ * folds the aliases in — and every mark is drawn from this one list, in
+ * `lib/theme.ts`.
  */
-export type OpenuiToolStatus =
-  | "ok"
-  | "invalid"
-  | "empty"
-  | "unknown-program"
-  | "no-program"
-  | "failed";
+export type ProgramStatus =
+  | "done"
+  | "running"
+  | "current"
+  | "pending"
+  | "skipped"
+  | "error";
 
-/** A program the renderer published nothing about yet. */
-export interface OpenuiRuntimeSummary {
-  statements: number;
-  components: string[];
-  unresolved: string[];
-  queryErrors: string[];
-  incomplete: boolean;
-  streaming: boolean;
-  unread: number;
-  errors: OpenuiDiagnostic[];
+/** One rejection of a program: a component the library has no name for, a
+ * required argument that never arrived, a reference that stayed a name. */
+export interface OpenUIDiagnostic {
+  code: string;
+  component: string;
+  path: string;
+  message: string;
+  severity: "error" | "warning";
 }
 
-/** What one parse answered, and what the log holds after it. */
-export interface OpenuiReport {
-  program: string;
-  status: OpenuiToolStatus;
+/** What the parse of one source answers: the tree plus everything said about it. */
+export interface OpenUIProgramParse {
   ok: boolean;
-  streaming: boolean;
   incomplete: boolean;
   statements: number;
   components: string[];
   unresolved: string[];
-  errors: OpenuiDiagnostic[];
-  chars: number;
-
-  active: string | null;
-  programs: string[];
+  orphaned: string[];
+  diagnostics: OpenUIDiagnostic[];
+  variables: Record<string, unknown>;
+  queries: OpenUIQueryInfo[];
 }
 
-export interface OpenuiPromptParams {
-  preamble?: string;
-  tools?: string[];
-  examples?: string[];
-  editMode?: boolean;
+/** One interaction the human produced in a drawn program. */
+export interface OpenUIEventRecord {
+  /** When it happened, so a queue read years later still reads in order. */
+  at: number;
+  /** click, submit, selection, switch, slider, input, open, assistant */
+  type: string;
+  /** What it was, in the human's words: the button's label, the chosen option. */
+  message: string;
+  params?: Record<string, unknown>;
+  formState?: Record<string, unknown>;
+  formName?: string;
 }
 
-export interface OpenuiPromptDetails {
-  status: OpenuiToolStatus;
-  chars: number;
-  lines: number;
-
-  /** how many components the reference documents */
-  components: number;
-  root: string;
-  groups: string[];
-  editMode: boolean;
-  toolNames: string[];
-}
-
-export interface OpenuiLibraryParams {
-  name?: string;
-}
-
-export interface OpenuiLibraryComponent {
+/** A `$variable` as the human left it. */
+export interface OpenUIValueRow {
   name: string;
-  description: string;
-  group: string;
+  value: string;
 }
 
-export interface OpenuiLibraryDetails {
-  status: OpenuiToolStatus;
-
+/** One component of this app's library, as `openui-library` reads it. */
+export interface OpenUIComponentInfo {
   name: string;
-
-  description: string;
   group: string;
-  root: string;
-  chars: number;
-
-  componentCount: number;
-  groupCount: number;
-  groups: Record<string, string[]>;
-  components: OpenuiLibraryComponent[];
-
-  /** the component's own JSON Schema, printed in full for one named component */
-  schema: unknown;
-
-  /** the group's own rules, the notes the prompt teaches with the group */
-  groupNotes: string[];
-
-  /** the same schema read as rows: one prop, its type, whether it is required */
-  props: OpenuiPropRow[];
+  signature: string;
+  description: string;
+  props: OpenUIPropInfo[];
 }
 
-export interface OpenuiPropRow {
+/** One argument of one component: what it takes, and whether it must be given. */
+export interface OpenUIPropInfo {
   name: string;
   type: string;
   required: boolean;
-  description: string;
 }
 
-export interface OpenuiValidateParams {
-  code: string;
+/** One group of the library: what belongs together and what the group teaches. */
+export interface OpenUIGroupInfo {
+  name: string;
+  components: string[];
+  notes: string[];
 }
 
-export type OpenuiValidateDetails = OpenuiReport;
-
-export interface OpenuiRenderParams {
-  name?: string;
-  code: string;
-  done?: boolean;
-  activate?: boolean;
-}
-
-export type OpenuiRenderDetails = OpenuiReport & { receivedChars: number };
-
-export interface OpenuiStreamParams {
-  name?: string;
-  chunk: string;
-  done?: boolean;
-}
-
-export type OpenuiStreamDetails = OpenuiReport & { receivedChars: number };
-
-export interface OpenuiStateParams {
-  name?: string;
-}
-
-export interface OpenuiStateDetails {
-  status: OpenuiToolStatus;
-  program: string;
-
-  lang: string;
-  chars: number;
-  updatedAt: number;
-
-  state: Record<string, unknown>;
-  runtime: OpenuiRuntimeSummary;
-}
-
-export interface OpenuiEventsParams {
-  name?: string;
-  clear?: boolean;
-}
-
-export interface OpenuiEventsDetails {
-  status: OpenuiToolStatus;
-  program: string;
-  cleared: boolean;
-  count: number;
-  events: OpenuiEvent[];
-}
-
-export interface OpenuiToolsParams {
-  fixtures: Record<string, unknown>;
-}
-
-export interface OpenuiToolsDetails {
-  status: OpenuiToolStatus;
-  count: number;
-  fixtures: string[];
-}
-
-export interface OpenuiListParams {}
-
-export interface OpenuiProgramRow {
+/** A program in the log, as a tool or a row reads it. */
+export interface OpenUIProgramInfo {
   name: string;
   chars: number;
+  lines: number;
   streaming: boolean;
   statements: number;
+  components: number;
+  unresolved: number;
   errors: number;
-  unread: number;
-  updatedAt: number;
-}
-
-export interface OpenuiListDetails {
-  status: OpenuiToolStatus;
-  active: string | null;
-  count: number;
-  programs: OpenuiProgramRow[];
-  fixtures: string[];
-}
-
-export interface OpenuiSwitchParams {
-  name: string;
-}
-
-export interface OpenuiSwitchDetails {
-  status: OpenuiToolStatus;
-  active: string;
-  programs: string[];
-}
-
-export interface OpenuiClearParams {
-  name?: string;
-}
-
-export interface OpenuiClearDetails {
-  status: OpenuiToolStatus;
-  cleared: string;
-  active: string | null;
-  programs: string[];
-}
-
-/** Everything the transcript needs to draw one openui tool call. */
-export interface OpenuiToolView {
-  tool: string;
-  status: OpenuiToolStatus;
-  program: string;
-
-  /** whether this row is the live one: the newest call that rendered the program */
+  waiting: number;
   live: boolean;
+  drawn: boolean;
+}
 
+/** What a program's data is: the tool name and the arguments its Query used. */
+export interface OpenUIQueryInfo {
+  statementId: string;
+  tool: string;
+  served: boolean;
+}
+
+export interface OpenUIPromptDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  chars: number;
+  root: string;
+  components: number;
+  groups: string[];
+  tools: string[];
+  examples: number;
+  editMode: boolean;
+}
+
+export interface OpenUILibraryDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  name: string;
+  root: string;
+  count: number;
+  omitted: number;
+  groups: OpenUIGroupInfo[];
+  components: OpenUIComponentInfo[];
+}
+
+export interface OpenUIValidateDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  ok: boolean;
+  name: string;
+  chars: number;
+  statements: number;
+  components: string[];
+  unresolved: string[];
+  orphaned: string[];
+  incomplete: boolean;
+  diagnostics: OpenUIDiagnostic[];
+  queries: OpenUIQueryInfo[];
+  values: OpenUIValueRow[];
+}
+
+export interface OpenUIProgramDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  ok: boolean;
+  name: string;
+  chars: number;
+  chunkChars: number;
+  statements: number;
+  components: number;
+  unresolved: string[];
+  diagnostics: OpenUIDiagnostic[];
+  incomplete: boolean;
+  streaming: boolean;
+  live: boolean;
+  drawn: boolean;
+  waiting: number;
+  queries: OpenUIQueryInfo[];
+}
+
+export interface OpenUIStateDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  name: string;
+  source: string;
+  truncated: boolean;
+  streaming: boolean;
+  live: boolean;
+  drawn: string[];
+  unresolved: string[];
+  errors: OpenUIDiagnostic[];
+  values: OpenUIValueRow[];
+  waiting: number;
+  queries: OpenUIQueryInfo[];
+  failures: string[];
+  statements: number;
+}
+
+export interface OpenUIEventsDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  name: string;
+  events: OpenUIEventRecord[];
+  waiting: number;
+  omitted: number;
+  cleared: boolean;
+}
+
+export interface OpenUIFixturesDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  names: string[];
+  cleared: boolean;
+  chars: number;
+  refreshed: number;
+}
+
+export interface OpenUIListDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  programs: OpenUIProgramInfo[];
+  count: number;
+  showing: string;
+}
+
+export interface OpenUISwitchDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  name: string;
+  showing: string;
+  programs: OpenUIProgramInfo[];
+}
+
+export interface OpenUIClearDetails {
+  status: OpenUIToolStatus;
+  error: string;
+  names: string[];
+  removed: number;
+  remaining: string[];
+}
+
+/**
+ * The folded view a row is painted from: every tool's answer reduced to the
+ * same cells, counts and lists, so `OpenUIToolRows` never reaches into a
+ * tool's own details shape.
+ */
+export interface OpenUIToolView {
+  tool: string;
+  status: OpenUIToolStatus;
+  ok: boolean;
+  name: string;
   headline: string;
   cells: ToolRowCell[];
-  sections: ToolPaintSection[];
-  note: string;
-  hiddenErrors: number;
+  programs: OpenUIProgramInfo[];
+  components: OpenUIComponentInfo[];
+  diagnostics: OpenUIDiagnostic[];
+  events: OpenUIEventRecord[];
+  values: OpenUIValueRow[];
+  drawn: string[];
+  names: string[];
+  omitted: number;
+  streaming: boolean;
+  live: boolean;
+  waiting: number;
+  drawnProgram: boolean;
 }

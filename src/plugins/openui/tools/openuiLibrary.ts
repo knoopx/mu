@@ -1,174 +1,142 @@
+/**
+ * `openui-library` — the component index, or one component's exact props.
+ *
+ * A guessed component name is a hard parse error, so this is the call that
+ * settles it: what the app can draw, in which group, with which arguments in
+ * which positional order.
+ */
+
 import type {
   AgentToolResult,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { OPENUI_LIBRARY_TOOL, OPENUI_TOOL_LABELS } from "../constants";
 import {
-  componentEntry,
-  componentIndex,
-  componentNames,
-  groupIndex,
-  groupNotes,
-  library,
-  librarySchema,
-} from "../components/library/registry";
+  DEFAULT_LIBRARY_LIMIT,
+  MAX_LIBRARY_LIMIT,
+  OPENUI_LIBRARY_TOOL,
+} from "../constants";
+import type { OpenUILibraryDetails } from "../types";
 import {
   blocks,
+  counted,
+  moreLine,
   statusTable,
-  tableOf,
   toolResult,
 } from "../../core/lib/agent/toolText";
-import { readProps, schemaText } from "../lib/schema";
-import { programParam } from "../lib/params";
-import type { OpenuiLibraryDetails, OpenuiLibraryParams } from "../types";
+import { limitParam } from "../lib/params";
+import { componentLines, groupLines, libraryTable } from "../lib/format";
+import {
+  componentCount,
+  componentIndex,
+  componentInfo,
+  libraryGroups,
+  rootComponent,
+} from "../lib/schema/library";
+import { LIBRARY_GUIDELINES } from "./guidelines";
 
-const Parameters = Type.Object({
-  name: programParam(
-    "Component to read, e.g. \"Table\" — omit for the whole component index",
+const LibraryParametersSchema = Type.Object({
+  name: Type.Optional(
+    Type.String({
+      maxLength: 48,
+      description:
+        "Component to read, e.g. \"Table\" — omit for the whole component index (default \"screen\").",
+    }),
   ),
+  limit: limitParam("component"),
 });
 
-const EMPTY_DETAILS: OpenuiLibraryDetails = {
-  status: "ok",
-  name: "",
-  description: "",
-  group: "",
-  root: "Stack",
-  chars: 0,
-  componentCount: 0,
-  groupCount: 0,
-  groups: {},
-  components: [],
-  schema: {},
-  props: [],
-  groupNotes: [],
-};
-
-const componentNamesLine = (): string =>
-  `available: ${componentNames().join(", ")}`;
-
-/** Every component, grouped the way the language reference teaches them. */
-function indexAnswer(): AgentToolResult<OpenuiLibraryDetails> {
-  const root = library.root ?? "Stack";
-  const groups = groupIndex();
-  const components = componentIndex();
-  const body = blocks(
-    statusTable({
-      root,
-      components: components.length,
-      groups: Object.keys(groups).length,
-      status: "ok",
-    }),
-    groupsOf(groups),
-    `openui-library({ name: "Table" }) answers one component's exact schema; openui-prompt answers the whole language. Root component: ${root}.`,
-  );
-
-  return toolResult(body, {
-    ...EMPTY_DETAILS,
-    root,
-    componentCount: components.length,
-    groupCount: Object.keys(groups).length,
-    groups,
-    components,
-    chars: body.length,
-  });
-}
-
-/** One component: its props as rows, the rules of its group, and its schema. */
-function componentAnswer(name: string): AgentToolResult<OpenuiLibraryDetails> {
-  const root = library.root ?? "Stack";
-  const definition = librarySchema().$defs?.[name];
-  const entry = componentEntry(name);
-
-  if (definition === undefined) {
-    return {
-      content:
-        [{ type: "text", text: blocks(`no component "${name}" in this library`, componentNamesLine()) }],
-      details: { ...EMPTY_DETAILS, status: "unknown-program", name, root },
-      isError: true,
-    };
-  }
-
-  const props = readProps(definition);
-  const notes = entry === undefined ? [] : groupNotes(entry.group);
-  const body = blocks(
-    statusTable({
-      component: name,
-      group: entry?.group ?? "",
-      props: `${String(props.filter((prop) => prop.required).length)} of ${String(
-        props.length,
-      )} required`,
-      status: "ok",
-    }),
-    entry?.description === undefined ? "" : entry.description,
-    tableOf(
-      props.map((prop) => ({
-        prop: prop.name,
-        type: prop.type,
-        required: prop.required ? "yes" : "",
-        description: prop.description,
-      })),
-    ),
-    notes.length === 0 ? "" : notes.join("\n"),
-    schemaText(definition),
-  );
-
-  return toolResult(body, {
-    ...EMPTY_DETAILS,
-    name,
-    description: entry?.description ?? "",
-    group: entry?.group ?? "",
-    root,
-    chars: body.length,
-    componentCount: props.length,
-    schema: definition,
-    props,
-    groupNotes: notes,
-  });
-}
-
-async function executeOpenuiLibrary(
-  params: OpenuiLibraryParams,
-): Promise<AgentToolResult<OpenuiLibraryDetails>> {
-  const name = params.name?.trim() ?? "";
-  return name === "" ? indexAnswer() : componentAnswer(name);
-}
-
-const groupsOf = (groups: Record<string, string[]>): string =>
-  tableOf(
-    Object.entries(groups).map(([group, names]) => ({
-      group,
-      components: String(names.length),
-      names: names.join(", "),
-    })),
-  );
-
-export const openuiLibraryTool: ToolDefinition<
-  typeof Parameters,
-  OpenuiLibraryDetails
+export const openUILibraryTool: ToolDefinition<
+  typeof LibraryParametersSchema,
+  OpenUILibraryDetails
 > = {
   name: OPENUI_LIBRARY_TOOL,
-  label: OPENUI_TOOL_LABELS[OPENUI_LIBRARY_TOOL],
+  label: OPENUI_LIBRARY_TOOL,
   description:
-    "Inspect the component library this app renders. Without `name`: the component index " +
-    "(name, description, group), the root component and the counts. With `name`: that " +
-    "component's JSON Schema, its props as one row each with the type it takes and whether " +
-    "it is required, and the rules its group is taught by. Read this before and while " +
-    "authoring — a guessed component name is a hard parse error.",
-  promptSnippet:
-    "Read the component index, or one component's exact props and JSON Schema",
-  promptGuidelines: [
-    "Ask openui-library for the index once, then for the specific components a program uses before writing them.",
-    "Read a rejected call's component again with openui-library({ name }): the row that says which prop is missing is the fix.",
-    "A component absent from the index cannot be drawn, however obvious its name looks.",
-  ],
+    "Inspect the component library this app renders. Without `name`: the component index (name, description, group), the root component and the counts. " +
+    "With `name`: that component's JSON Schema, its props as one row each with the type it takes and whether it is required, and the rules its group is taught by. Read this before and while authoring — a guessed component name is a hard parse error.",
+  promptSnippet: "Read the component index, or one component's exact props and JSON Schema",
+  promptGuidelines: [...LIBRARY_GUIDELINES],
 
   executionMode: "parallel",
-  parameters: Parameters,
+  parameters: LibraryParametersSchema,
 
-  async execute(_toolCallId, params) {
-    return executeOpenuiLibrary(params);
+  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUILibraryDetails>> {
+    const all = componentIndex();
+    const groups = libraryGroups();
+    const wanted = params.name ?? "";
+
+    if (wanted !== "") {
+      const component = componentInfo(wanted);
+      if (component === null) {
+        const details: OpenUILibraryDetails = {
+          status: "unknown",
+          error: `the library has no component named "${wanted}"`,
+          name: wanted,
+          root: rootComponent,
+          count: all.length,
+          omitted: 0,
+          groups,
+          components: [],
+        };
+        return toolResult(
+          blocks(
+            "no component by that name",
+            details.error,
+            `the library holds ${counted(all.length, "component")}: ${all
+              .map((entry) => entry.name)
+              .join(", ")}`,
+          ),
+          details,
+        );
+      }
+
+      const group = groups.find((entry) => entry.name === component.group);
+      const details: OpenUILibraryDetails = {
+        status: "ok",
+        error: "",
+        name: component.name,
+        root: rootComponent,
+        count: 1,
+        omitted: 0,
+        groups: group === undefined ? [] : [group],
+        components: [component],
+      };
+
+      return toolResult(
+        blocks(
+          statusTable({ component: component.name, group: component.group, args: component.props.length }),
+          componentLines(component),
+          group === undefined || group.notes.length === 0
+            ? ""
+            : `rules of the ${component.group} group:\n${group.notes.join("\n")}`,
+        ),
+        details,
+      );
+    }
+
+    const limit = params.limit ?? DEFAULT_LIBRARY_LIMIT;
+    const shown = all.slice(0, limit);
+    const details: OpenUILibraryDetails = {
+      status: all.length === 0 ? "empty" : "ok",
+      error: "",
+      name: "",
+      root: rootComponent,
+      count: componentCount(),
+      omitted: all.length - shown.length,
+      groups,
+      components: shown,
+    };
+
+    return toolResult(
+      blocks(
+        statusTable({ root: rootComponent, components: details.count, groups: groups.length }),
+        libraryTable(shown),
+        groupLines(groups),
+        moreLine(details.omitted, "component"),
+      ),
+      details,
+    );
   },
 };

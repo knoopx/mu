@@ -295,6 +295,13 @@
           url = "https://registry.npmjs.org/partial-json/-/partial-json-0.1.7.tgz";
           hash = "sha256-MOr+7W/cJfssok80w3eW2fmPC/XhVkUrmKLDVnYvYyI=";
         };
+        # Mermaid: the engine the `mermaid-render` tool draws diagrams with. It
+        # is pure JS — it measures text from its own metrics, so it needs no DOM,
+        # no canvas, and no runtime asset file to embed beside the binary.
+        pele = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/pele/-/pele-1.6.0.tgz";
+          hash = "sha256-CUXL/1jUycSVmhXhix5nQ8dqtAUl3oVvxHj9xO2YmmM=";
+        };
         pathKey = pkgs.fetchurl {
           url = "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz";
           hash = "sha256-S4mZrLkUgw7c08W4/sYysyxrx1msPtyGM29angi6e5I=";
@@ -489,6 +496,7 @@
             mkdir -p node_modules/p-retry && tar xzf ${npmDeps.pRetry} -C node_modules/p-retry --strip-components=1
             mkdir -p node_modules/partial-json && tar xzf ${npmDeps.partialJson} -C node_modules/partial-json --strip-components=1
             mkdir -p node_modules/path-key && tar xzf ${npmDeps.pathKey} -C node_modules/path-key --strip-components=1
+            mkdir -p node_modules/pele && tar xzf ${npmDeps.pele} -C node_modules/pele --strip-components=1
             mkdir -p node_modules/proper-lockfile && tar xzf ${npmDeps.properLockfile} -C node_modules/proper-lockfile --strip-components=1
             mkdir -p node_modules/quickjs-wasi && tar xzf ${npmDeps.quickjsWasi} -C node_modules/quickjs-wasi --strip-components=1
             mkdir -p node_modules/react && tar xzf ${npmDeps.react} -C node_modules/react --strip-components=1

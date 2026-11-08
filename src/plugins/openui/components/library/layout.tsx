@@ -1,222 +1,328 @@
-import { defineComponent } from "@openuidev/react-lang";
-import { z } from "zod";
+/**
+ * The layout area of the language: what a program arranges things in.
+ *
+ * The reference app's rule holds — a program composes a page and the app owns
+ * the spacing tiers — so a `Stack` left without a `gap` stands in the group
+ * tier, the `Screen` body in the section tier, and only a `Row` or `Grid` that
+ * says a number gets its own.
+ */
+
+import type { JSX } from "react";
+import { defineComponent } from "@openuidev/lang-core";
+import { Icon, T } from "adwaita-gpuix";
+import { z } from "zod/v4";
+
+import type { ElementNode } from "@openuidev/lang-core";
+
 import {
-  Badge,
-  Card as AdwCard,
-  CardTitle as AdwCardTitle,
-  CardDescription as AdwCardDescription,
-  type BadgeVariant,
-} from "adwaita-gpuix";
+  HAIRLINE,
+  INLINE_GLYPH,
+  figureGap,
+} from "../../../core/lib/ui/tokens";
 import {
-  ALIGN_TOKENS,
-  GAP_TOKENS,
-  JUSTIFY_TOKENS,
-  TONE_TOKENS,
-  flexStyle,
-  gapPx,
-  type ToneToken,
+  groupGap,
+  panePad,
+  paneRadius,
+  programGap,
+  programTitleWeight,
+  sectionGap,
 } from "../../lib/tokens";
+import {
+  programEdge,
+  programSurfaceFill,
+  programTextColor,
+  programToneGlyph,
+  toneOfValue,
+  type ProgramTone,
+} from "../../lib/theme";
+import type { ProgramContext } from "./context";
+import { prop } from "./context";
 
-const flexProps = {
-  direction: z
-    .enum(["row", "column"])
-    .optional()
-    .describe('Main axis: "column" (default) or "row".'),
-  gap: z
-    .enum(GAP_TOKENS)
-    .optional()
-    .describe('Spacing between children (default "m").'),
-  align: z.enum(ALIGN_TOKENS).optional().describe("Cross-axis alignment."),
-  justify: z.enum(JUSTIFY_TOKENS).optional().describe("Main-axis distribution."),
-  wrap: z.boolean().optional().describe("Wrap children onto new lines."),
-  grow: z
-    .boolean()
-    .optional()
-    .describe("Take the space left by siblings — the root container of a window sets it so its status bar sits on the bottom edge."),
-};
-
-const childrenProp = z
-  .array(z.any())
-  .describe("Ordered children (component refs or strings).");
+export const Screen = defineComponent({
+  name: "Screen",
+  description:
+    "the program's body: the blocks of one screen, stacked in the app's section gap",
+  props: z.object({
+    children: z.array(z.any()),
+  }),
+  component: drawScreen,
+});
 
 export const Stack = defineComponent({
   name: "Stack",
-  props: z.object({ children: childrenProp, ...flexProps }),
   description:
-    'Flex container and the usual program root. direction "row"|"column" (default "column"), gap "none"|"xs"|"s"|"m"|"l"|"xl"|"2xl" (default "m"), align, justify, wrap.',
-  component: ({ props, renderNode }) => (
-    <div style={{ ...flexStyle(props), width: "100%" }}>
-      {renderNode(props.children)}
-    </div>
-  ),
+    "a vertical column of blocks; leave gap unset and the app uses its group tier",
+  props: z.object({
+    children: z.array(z.any()),
+    gap: z.number().optional(),
+  }),
+  component: drawStack,
 });
 
 export const Row = defineComponent({
   name: "Row",
-  props: z.object({ children: childrenProp, ...flexProps }),
   description:
-    "Horizontal Stack (direction is fixed to row). Use for toolbars, label/value pairs, button groups.",
-  component: ({ props, renderNode }) => (
-    <div
-      style={{
-        ...flexStyle({
-          ...props,
-          direction: "row",
-          align: props.align ?? "center",
-        }),
-        width: "100%",
-      }}
-    >
-      {renderNode(props.children)}
-    </div>
-  ),
+    "a horizontal line of blocks — the one place a gap number is usually worth setting",
+  props: z.object({
+    children: z.array(z.any()),
+    gap: z.number().optional(),
+    align: z.enum(["start", "center", "end"]).nullable().optional(),
+    justify: z
+      .enum(["start", "center", "end", "space-between"])
+      .nullable()
+      .optional(),
+  }),
+  component: drawRow,
 });
 
 export const Grid = defineComponent({
   name: "Grid",
+  description: "the children laid out in equal columns",
   props: z.object({
-    children: childrenProp,
-    columns: z
-      .number()
-      .int()
-      .min(1)
-      .max(6)
-      .optional()
-      .describe("Equal-width columns (default 2)."),
-    gap: z.enum(GAP_TOKENS).optional().describe("Spacing between cells."),
+    children: z.array(z.any()),
+    columns: z.number(),
+    gap: z.number().optional(),
   }),
-  description:
-    "Equal-column grid. Columns are numeric; children flow into cells in order.",
-  component: ({ props, renderNode }) => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: props.columns ?? 2,
-        gap: gapPx(props.gap),
-        width: "100%",
-      }}
-    >
-      {renderNode(props.children)}
-    </div>
-  ),
+  component: drawGrid,
 });
 
-export const Card = defineComponent({
-  name: "Card",
-  props: z.object({
-    title: z.string().optional().describe("Section heading, flush on the surface."),
-    children: childrenProp,
-    ...flexProps,
-    grow: z.number().optional().describe("Flex grow weight when sharing a Row."),
-  }),
+export const Pane = defineComponent({
+  name: "Pane",
   description:
-    "Section: heading plus spacing on the view surface. Paints no panel, no frame and no shadow. Accepts the same flex props as Stack. Never nest it inside another Card.",
-  component: ({ props, renderNode }) => (
-    <AdwCard title={props.title} style={{ flexGrow: props.grow ?? 0, minWidth: 0 }}>
-      <div style={{ ...flexStyle(props), width: "100%" }}>
-        {renderNode(props.children)}
-      </div>
-    </AdwCard>
-  ),
-});
+    "a titled group of blocks: one block of the screen, framed by the app, with the one fact that counts it on the title's right",
+  props: z.object({
+    title: z.string(),
+    children: z.array(z.any()),
+    surface: z.enum(["card", "sunken", "plain"]).nullable().optional(),
+    tone: z.string().nullable().optional(),
 
-export const CardHeader = defineComponent({
-  name: "CardHeader",
-  props: z.object({
-    title: z.string().describe("Heading of the block."),
-    subtitle: z.string().optional().describe("Secondary line under the title."),
-    trailing: z.any().optional().describe("Right-aligned child (e.g. a Badge)."),
+    /** The count, the elapsed time, the state — the figure a block is read by. */
+    trailing: z.array(z.any()).nullable().optional(),
   }),
-  description:
-    "Section heading: title + optional dimmed subtitle + optional trailing element. Paints nothing.",
-  component: ({ props, renderNode }) => (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 12,
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          flexGrow: 1,
-          minWidth: 0,
-        }}
-      >
-        <AdwCardTitle>{props.title}</AdwCardTitle>
-        {props.subtitle ? (
-          <AdwCardDescription>{props.subtitle}</AdwCardDescription>
-        ) : null}
-      </div>
-      {props.trailing != null ? (
-        <div style={{ flexShrink: 0 }}>{renderNode(props.trailing)}</div>
-      ) : null}
-    </div>
-  ),
+  component: drawPane,
 });
 
 export const Divider = defineComponent({
   name: "Divider",
-  props: z.object({
-    orientation: z
-      .enum(["horizontal", "vertical"])
-      .optional()
-      .describe("Direction of the gap (default horizontal)."),
-    size: z.enum(GAP_TOKENS).optional().describe("Whitespace size (default \"l\")."),
-  }),
-  description:
-    "Invisible whitespace between blocks, like Libadwaita's .spacer — it paints no line. Prefer a Stack/Row gap; never use it as section chrome.",
-  component: ({ props }) => {
-    const px = gapPx(props.size ?? "l");
-    return props.orientation === "vertical" ? (
-      <div style={{ width: px, alignSelf: "stretch", pointerEvents: "none" }} />
-    ) : (
-      <div style={{ width: "100%", height: px, pointerEvents: "none" }} />
-    );
-  },
+  description: "a rule across the screen",
+  props: z.object({}),
+  component: drawDivider,
 });
 
 export const Spacer = defineComponent({
   name: "Spacer",
-  props: z.object({
-    size: z.number().optional().describe("Fixed size in px; omit to flex-grow."),
-  }),
-  description: "Invisible space. Grows to fill the parent unless a px size is given.",
-  component: ({ props }) => (
+  description: "the air that pushes what follows it to the far end of a Row",
+  props: z.object({}),
+  component: drawSpacer,
+});
+
+/* ------------------------------------------------------------------ draws */
+
+export function drawScreen(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  return (
     <div
-      style={
-        typeof props.size === "number"
-          ? { width: props.size, height: props.size }
-          : { flexGrow: 1, minHeight: 1, minWidth: 1 }
-      }
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        minWidth: 0,
+        gap: sectionGap(ctx.t),
+      }}
+    >
+      {ctx.nodes(prop(node.props, "children", []))}
+    </div>
+  );
+}
+
+export function drawStack(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const gap = node.props.gap;
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        minWidth: 0,
+        gap: typeof gap === "number" ? programGap(ctx.t, gap) : groupGap(ctx.t),
+      }}
+    >
+      {ctx.nodes(prop(node.props, "children", []))}
+    </div>
+  );
+}
+
+export function drawRow(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const gap = node.props.gap;
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: node.props.align === "center" ? "center" : "start",
+        justifyContent:
+          node.props.justify === "space-between" ? "space-between" : "start",
+        width: "100%",
+        minWidth: 0,
+        flexWrap: "wrap",
+        gap: typeof gap === "number" ? programGap(ctx.t, gap) : groupGap(ctx.t),
+      }}
+    >
+      {ctx.nodes(prop(node.props, "children", []))}
+    </div>
+  );
+}
+
+/** Children in rows of `columns`; the last row is padded so cells stay equal. */
+function inRows(
+  items: readonly unknown[],
+  columns: number,
+): unknown[][] {
+  const width = Math.max(1, Math.floor(columns));
+  const rows: unknown[][] = [];
+  for (let at = 0; at < items.length; at += width)
+    rows.push(items.slice(at, at + width));
+  return rows;
+}
+
+export function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const items = prop<unknown[]>(node.props, "children", []);
+  const rows = inRows(items, prop(node.props, "columns", 2));
+  const gap = node.props.gap;
+  const columnGap =
+    typeof gap === "number" ? programGap(ctx.t, gap) : sectionGap(ctx.t);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        minWidth: 0,
+        gap: columnGap,
+      }}
+    >
+      {rows.map((row, rowIndex) => (
+        <div
+          key={`row-${String(rowIndex)}`}
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "start",
+            width: "100%",
+            minWidth: 0,
+            gap: columnGap,
+          }}
+        >
+          {row.map((child, childIndex) => (
+            <div
+              key={`cell-${String(rowIndex)}-${String(childIndex)}`}
+              style={{
+                display: "flex",
+                flexGrow: 1,
+                flexBasis: 0,
+                minWidth: 0,
+              }}
+            >
+              {ctx.node(child)}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const title = prop(node.props, "title", "");
+  const surface = prop<"card" | "sunken" | "plain" | null>(
+    node.props,
+    "surface",
+    "card",
+  );
+  const tone = toneOfValue(node.props.tone);
+  const trailing = prop<unknown[]>(node.props, "trailing", []);
+  const glyph = tone === null ? null : programToneGlyph(tone);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        minWidth: 0,
+        gap: groupGap(ctx.t),
+        padding: panePad(ctx.t),
+        borderRadius: paneRadius(ctx.t),
+        backgroundColor: programSurfaceFill(ctx.t, surface),
+        borderWidth: HAIRLINE,
+        borderColor: programEdge(ctx.t, tone),
+      }}
+    >
+      {title === "" && trailing.length === 0 ? null : (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            width: "100%",
+            minWidth: 0,
+            gap: figureGap(ctx.t),
+          }}
+        >
+          {glyph === null ? null : (
+            <Icon
+              name={glyph}
+              size={INLINE_GLYPH}
+              color={programTextColor(ctx.t, tone)}
+              style={{ flexShrink: 0 }}
+            />
+          )}
+          {title === "" ? null : (
+            <T
+              size="title4"
+              weight={programTitleWeight(ctx.t)}
+              color={ctx.t.color.text.primary}
+              clamp={2}
+              style={{ flexGrow: 1, flexBasis: 0, minWidth: 0 }}
+            >
+              {title}
+            </T>
+          )}
+          {trailing.length === 0 ? null : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                flexShrink: 0,
+                minWidth: 0,
+                gap: figureGap(ctx.t),
+              }}
+            >
+              {ctx.nodes(trailing)}
+            </div>
+          )}
+        </div>
+      )}
+      {ctx.nodes(prop(node.props, "children", []))}
+    </div>
+  );
+}
+
+export function drawDivider(_node: ElementNode, ctx: ProgramContext): JSX.Element {
+  return (
+    <div
+      style={{
+        width: "100%",
+        height: HAIRLINE,
+        flexShrink: 0,
+        backgroundColor: ctx.t.color.divider.default,
+      }}
     />
-  ),
-});
+  );
+}
 
-const BADGE_TONE: Record<ToneToken, BadgeVariant> = {
-  default: "default",
-  muted: "secondary",
-  accent: "outline",
-  success: "success",
-  warning: "warning",
-  destructive: "destructive",
-};
+export function drawSpacer(_node: ElementNode, _ctx: ProgramContext): JSX.Element {
+  return <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />;
+}
 
-export const Tag = defineComponent({
-  name: "Tag",
-  props: z.object({
-    label: z.string().describe("Badge text."),
-    tone: z.enum(TONE_TOKENS).optional().describe("Colour tone (default default)."),
-  }),
-  description: "Small pill label for status or metadata.",
-  component: ({ props }) => (
-    <Badge variant={BADGE_TONE[props.tone as ToneToken] ?? "default"}>
-      {props.label}
-    </Badge>
-  ),
-});

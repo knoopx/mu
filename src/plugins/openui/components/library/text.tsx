@@ -1,385 +1,329 @@
-import { defineComponent } from "@openuidev/react-lang";
-import { z } from "zod";
-import type { GpuixTheme } from "@gpuix/react";
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Heading,
-  Icon,
-  JsonView,
-  T,
-  useAdwaita,
-} from "adwaita-gpuix";
-import {
-  TONE_TOKENS,
+/**
+ * The text area of the language: what a program says, at the size and in the
+ * colour word it asks for.
+ *
+ * A program never sets a font: `Title("…","lg")` is a `ProgramTextSize` and the
+ * app's scale answers for it, and `tone: "muted"` is a word this library's
+ * colour vocabulary turns into a theme colour.
+ */
 
-  type ToneToken,
+import type { JSX } from "react";
+import { defineComponent, type ElementNode } from "@openuidev/lang-core";
+import { Badge as AdwaitaBadge, T } from "adwaita-gpuix";
+import { z } from "zod/v4";
+
+import { HAIRLINE } from "../../../core/lib/ui/tokens";
+import { mutedText } from "../../../core/lib/ui/theme";
+import { innerGap } from "../../lib/tokens";
+import {
+  programBadgeVariant,
+  programTextColor,
+  toneOfValue,
+  type ProgramTone,
+} from "../../lib/theme";
+import {
+  programEmphasisWeight,
+  programTextRole,
+  programTitleWeight,
+  type ProgramTextSize,
 } from "../../lib/tokens";
-import { toneColor } from "../../lib/theme";
+import type { ProgramContext } from "./context";
+import { ProgramText, prop, textOf } from "./context";
+import { cellOf, isFigure, textCell } from "./rows";
 
-export const HeadingBlock = defineComponent({
-  name: "Heading",
+const SIZE_WORD = z.enum(["sm", "md", "lg", "xl"]);
+
+/** What a detail row calls its two cells. */
+const DETAIL_NAMES = ["label", "value", "tone"] as const;
+
+export const Title = defineComponent({
+  name: "Title",
+  description: "a heading: sm inside a Pane, lg or xl only for the screen itself",
   props: z.object({
-    text: z.string().describe("Heading text."),
-    level: z
-      .number()
-      .int()
-      .min(1)
-      .max(6)
-      .optional()
-      .describe("Heading level: 1 (largest) to 6 (default 2)."),
+    text: z.union([z.string(), z.number()]),
+    size: SIZE_WORD.nullable().optional(),
   }),
-  description: "Section heading. Use level 1 for the title of the program.",
-  component: ({ props }) => (
-    <Heading level={props.level as 1 | 2 | 3 | 4 | 5 | 6 | undefined}>
-      {props.text}
-    </Heading>
-  ),
+  component: drawTitle,
 });
-
-
-function deltaTone(subtext: string, tone?: ToneToken): ToneToken {
-  if (tone && tone !== "default") return tone;
-  if (subtext.startsWith("+")) return "success";
-  if (subtext.startsWith("-")) return "destructive";
-  return "muted";
-}
 
 export const Text = defineComponent({
   name: "Text",
+  description: "a paragraph of the screen's prose",
   props: z.object({
-    value: z.string().describe("Primary line."),
-    subtext: z.string().optional().describe("Secondary line below."),
-    tone: z
-      .enum(TONE_TOKENS)
-      .optional()
-      .describe('Colour tone: "muted" to de-emphasise, "success"/"destructive" for deltas.'),
-    size: z.enum(["sm", "md", "lg"]).optional().describe("Text size (default md)."),
-    align: z.enum(["left", "center", "right"]).optional().describe("Text alignment."),
+    text: z.union([z.string(), z.number()]),
+    size: SIZE_WORD.nullable().optional(),
+    tone: z.string().nullable().optional(),
+    emphasise: z.boolean().nullable().optional(),
   }),
-  description:
-    "One line of prose with optional subtext. A subtext starting with +/- is coloured green/red automatically.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    const size =
-      props.size === "sm" ? "caption" : props.size === "lg" ? "title4" : "body";
-    return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, width: "100%" }}>
-        <T
-          size={size}
-          color={toneColor(t, props.tone as ToneToken)}
-          align={props.align}
-        >
-          {props.value}
-        </T>
-        {props.subtext ? (
-          <T
-            size="caption"
-            color={toneColor(t, deltaTone(props.subtext, props.tone as ToneToken))}
-            align={props.align}
-          >
-            {props.subtext}
-          </T>
-        ) : null}
-      </div>
-    );
-  },
+  component: drawText,
 });
 
-export const TextContent = defineComponent({
-  name: "TextContent",
-  props: z.object({ content: z.string().describe("GitHub-flavoured markdown.") }),
-  description:
-    "Markdown block: headings, lists, tables, fenced code, links. Best for long prose.",
-  component: ({ props }) => (
-    <markdown source={props.content} theme={useGpuixTheme()} style={{ width: "100%" }} />
-  ),
+export const Caption = defineComponent({
+  name: "Caption",
+  description: "a quiet line: a label, a count, a footnote",
+  props: z.object({
+    text: z.union([z.string(), z.number()]),
+  }),
+  component: drawCaption,
 });
 
-export const CodeBlock = defineComponent({
-  name: "CodeBlock",
+export const Badge = defineComponent({
+  name: "Badge",
+  description: "one fact, short: a state, a count, a category",
   props: z.object({
-    code: z.string().describe("Source to display."),
-    language: z.string().optional().describe('Language alias, e.g. "ts", "bash".'),
-    showLineNumbers: z.boolean().optional().describe("Render a line-number gutter."),
+    text: z.union([z.string(), z.number()]),
+    tone: z.string().nullable().optional(),
   }),
-  description:
-    "Syntax-highlighted code flush on the view surface, scrolling horizontally — no panel fill, no frame.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <div
-        style={{
-          display: "flex",
-          width: "100%",
-          borderRadius: t.radius.lg,
-          borderWidth: 0,
-          overflow: "hidden",
-        }}
-      >
-        <code
-          code={props.code}
-          language={props.language}
-          showLineNumbers={props.showLineNumbers}
-          theme={useGpuixTheme()}
-          style={{ width: "100%", padding: 12 }}
-        />
-      </div>
-    );
-  },
+  component: drawBadge,
 });
 
 export const KeyValue = defineComponent({
   name: "KeyValue",
+  description: "a label and its value on one line — the row of a detail list",
   props: z.object({
-    label: z.string().describe("Field name."),
-    value: z.string().describe("Field value."),
-    tone: z.enum(TONE_TOKENS).optional().describe("Colour of the value."),
+    label: z.union([z.string(), z.number()]),
+    value: z.union([z.string(), z.number()]),
+    tone: z.string().nullable().optional(),
   }),
-  description: "Inline label/value pair with a dimmed label.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 8,
-          alignItems: "baseline",
-          width: "100%",
-        }}
-      >
-        <T size="caption" color={t.color.text.dim} weight={600}>
-          {props.label}
-        </T>
-        <T
-          size="body"
-          weight={600}
-          color={toneColor(t, props.tone as ToneToken)}
-          style={{ flexGrow: 1, minWidth: 0 }}
-        >
-          {props.value}
-        </T>
-      </div>
-    );
-  },
+  component: drawKeyValue,
 });
 
-export const Metric = defineComponent({
-  name: "Metric",
+export const Details = defineComponent({
+  name: "Details",
+  description:
+    "a detail list: one labelled fact per row, its value on the right, a rule between them",
   props: z.object({
-    label: z.string().describe("Metric name."),
-    value: z.string().describe("The number, as display text."),
-    subtext: z.string().optional().describe("Delta or note under the value."),
-    tone: z.enum(TONE_TOKENS).optional().describe("Colour of the subtext."),
+    rows: z.array(z.any()),
   }),
-  description: "KPI block: dim label, large value, optional delta.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          width: "100%",
-          minWidth: 0,
-        }}
-      >
-        <T size="caption" color={t.color.text.dim} weight={600}>
-          {props.label}
-        </T>
-        <text style={{ color: t.color.text.primary, fontSize: 28, fontWeight: 700, lineHeight: 32 }}>
-          {props.value}
-        </text>
-        {props.subtext ? (
-          <T
-            size="caption"
-            color={toneColor(t, deltaTone(props.subtext, props.tone as ToneToken))}
-          >
-            {props.subtext}
-          </T>
-        ) : null}
-      </div>
-    );
-  },
+  component: drawDetails,
 });
 
-export const Callout = defineComponent({
-  name: "Callout",
+export const Note = defineComponent({
+  name: "Note",
+  description: "one line the app states about the screen itself",
   props: z.object({
-    title: z.string().optional().describe("Callout heading."),
-    text: z.string().describe("Callout body."),
-    variant: z
-      .enum(["default", "success", "warning", "destructive"])
-      .optional()
-      .describe("Semantic variant (default)."),
+    text: z.string(),
+    tone: z.string().nullable().optional(),
   }),
-  description: "Tinted notice block for status, warnings and explanations.",
-  component: ({ props }) => (
-    <Alert variant={props.variant ?? "default"} style={{ width: "100%" }}>
-      {props.title ? <AlertTitle>{props.title}</AlertTitle> : null}
-      <AlertDescription>{props.text}</AlertDescription>
-    </Alert>
-  ),
+  component: drawNote,
 });
 
-export const Image = defineComponent({
-  name: "Image",
+export const Code = defineComponent({
+  name: "Code",
+  description: "a block of monospace text the human may want to copy",
   props: z.object({
-    src: z.string().describe("http(s) URL, filesystem path, or data: URL."),
-    alt: z.string().optional().describe("Accessible description."),
-    fit: z
-      .enum(["contain", "cover", "fill", "scaleDown", "none"])
-      .optional()
-      .describe("How the image fits its box (default contain)."),
-    height: z.number().optional().describe("Box height in px (default 240)."),
+    text: z.string(),
   }),
-  description: "Raster image from a URL, data URL or local path.",
-  component: ({ props }) => (
-    <img
-      src={props.src}
-      alt={props.alt ?? ""}
-      objectFit={props.fit ?? "contain"}
-      style={{
-        width: "100%",
-        height: props.height ?? 240,
-        borderRadius: 8,
-        overflow: "hidden",
-      }}
-    />
-  ),
+  component: drawCode,
 });
 
-export const Json = defineComponent({
-  name: "Json",
-  props: z.object({
-    data: z.any().describe("Any JSON value to inspect."),
-    name: z.string().optional().describe("Optional caption."),
-  }),
-  description: "Collapsible JSON tree, for showing structured data to the user.",
-  component: ({ props }) => (
-    <JsonView
-      src={props.data}
-      name={props.name}
-      collapsed={2}
-      style={{ width: "100%" }}
-    />
-  ),
-});
+/* ------------------------------------------------------------------ draws */
 
-
-function useGpuixTheme(): GpuixTheme {
-  const t = useAdwaita();
-  return {
-    appearance: t.scheme === "dark" ? "dark" : "light",
-    bg: t.color.surface.view,
-    text: t.color.text.primary,
-    textMuted: t.color.text.dim,
-    
-    
-    border: t.color.surface.view,
-    accent: t.color.accent.base,
-    fontSans: t.type.fontFamily,
-    fontMono: t.type.fontFamilyMono,
-  };
+export function drawTitle(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  return (
+    <T
+      size={programTextRole(prop<ProgramTextSize>(node.props, "size", "md"))}
+      weight={programTitleWeight(ctx.t)}
+      color={ctx.t.color.text.primary}
+      clamp={3}
+      style={{ flexShrink: 1, minWidth: 0 }}
+    >
+      {textOf(node.props.text) ?? ""}
+    </T>
+  );
 }
 
-export const Caption = defineComponent({
-  name: "Caption",
-  props: z.object({
-    text: z.string().describe("Secondary text."),
-    tone: z.enum(TONE_TOKENS).optional().describe("Colour tone (default muted)."),
-  }),
-  description: "Small secondary line under a title, figure or row.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <T
-        size="caption"
-        color={toneColor(t, (props.tone ?? "muted") as ToneToken)}
-        style={{ width: "100%" }}
-      >
-        {props.text}
-      </T>
-    );
-  },
-});
+export function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const tone = prop<ProgramTone | null>(node.props, "tone", null);
+  return (
+    <T
+      size={programTextRole(prop<ProgramTextSize>(node.props, "size", "md"))}
+      weight={node.props.emphasise ? programEmphasisWeight(ctx.t) : undefined}
+      color={programTextColor(ctx.t, tone)}
+      clamp={8}
+      style={{ flexShrink: 1, minWidth: 0 }}
+    >
+      {textOf(node.props.text) ?? ""}
+    </T>
+  );
+}
 
-export const Quote = defineComponent({
-  name: "Quote",
-  props: z.object({
-    text: z.string().describe("The quotation."),
-    cite: z.string().optional().describe("Who or what it came from."),
-  }),
-  description: "Quotation or aside with an accent rule down the left.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          width: "100%",
-          paddingLeft: 12,
-          borderLeftWidth: 3,
-          borderColor: t.color.accent.base,
-        }}
-      >
-        <T size="body" color={t.color.text.primary}>
-          {props.text}
-        </T>
-        {props.cite ? (
-          <T size="caption" color={t.color.text.dim}>
-            {`— ${props.cite}`}
-          </T>
-        ) : null}
-      </div>
-    );
-  },
-});
+export function drawCaption(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  return (
+    <T
+      size="caption"
+      color={mutedText(ctx.t)}
+      clamp={4}
+      style={{ flexShrink: 1, minWidth: 0 }}
+    >
+      {textOf(node.props.text) ?? ""}
+    </T>
+  );
+}
 
-export const Link = defineComponent({
-  name: "Link",
-  props: z.object({
-    text: z.string().describe("Label shown."),
-    url: z.string().describe("http(s) URL."),
-  }),
-  description:
-    "An external link shown as accent text with the URL underneath; put it in a Button's @OpenUrl to make it openable.",
-  component: ({ props }) => {
-    const t = useAdwaita();
-    return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 6,
-          alignItems: "center",
-          width: "100%",
-        }}
-      >
-        <T size="body" weight={600} color={t.color.accent.base}>
-          {props.text || props.url}
-        </T>
-        <Icon name="arrowForward" size={14} color={t.color.text.dim} />
-        {props.text !== props.url ? (
-          <T
-            size="caption"
-            color={t.color.text.dim}
+export function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const tone = prop<ProgramTone | null>(node.props, "tone", null);
+  return (
+    <AdwaitaBadge variant={programBadgeVariant(tone)} size="sm">
+      {textOf(node.props.text) ?? ""}
+    </AdwaitaBadge>
+  );
+}
+
+export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const tone = toneOfValue(node.props.tone);
+  const value = textOf(node.props.value) ?? "";
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        minWidth: 0,
+        gap: innerGap(ctx.t),
+      }}
+    >
+      <ProgramText value={node.props.label} ctx={ctx} size="caption" color={mutedText(ctx.t)} />
+      <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />
+      <ProgramText
+        value={value}
+        ctx={ctx}
+        size="list"
+        color={programTextColor(ctx.t, tone)}
+        mono={isFigure(value)}
+      />
+    </div>
+  );
+}
+
+/**
+ * The rows of a detail list, joined by rules.
+ *
+ * `KeyValue` is one line; a screen's spec sheet is a list of them, and a list has
+ * the one thing a loose stack of lines does not: the rule that says where each
+ * fact ends. The label stands quiet on the left in mono and the value on the right
+ * — mono when it is a figure, so a column of them lines up on its digits.
+ */
+export function drawDetails(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const rows = prop<unknown[]>(node.props, "rows", []);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      {rows.map((row, index) => {
+        const label = textCell(row, DETAIL_NAMES, 0) ?? "";
+        const value = textCell(row, DETAIL_NAMES, 1) ?? "";
+        const tone = toneOfValue(cellOf(row, DETAIL_NAMES, 2));
+        const figure = isFigure(value);
+        const last = index === rows.length - 1;
+        return (
+          <div
+            key={`d-${String(index)}`}
             style={{
-              fontFamily: t.type.fontFamilyMono,
-              lineClamp: 1,
-              textOverflow: "ellipsis",
+              display: "flex",
+              flexDirection: "column",
+              width: "100%",
               minWidth: 0,
             }}
           >
-            {props.url}
-          </T>
-        ) : null}
-      </div>
-    );
-  },
-});
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                width: "100%",
+                minWidth: 0,
+                gap: innerGap(ctx.t),
+                paddingTop: index === 0 ? 0 : innerGap(ctx.t),
+                paddingBottom: last ? 0 : innerGap(ctx.t),
+              }}
+            >
+              <T
+                size="caption"
+                color={mutedText(ctx.t)}
+                clamp={2}
+                style={{
+                  fontFamily: ctx.t.type.fontFamilyMono,
+                  flexShrink: 1,
+                  minWidth: 0,
+                }}
+              >
+                {label}
+              </T>
+              <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />
+              <T
+                size="list"
+                color={programTextColor(ctx.t, tone)}
+                align="right"
+                clamp={2}
+                style={{
+                  flexShrink: 1,
+                  minWidth: 0,
+                  fontFamily: figure ? ctx.t.type.fontFamilyMono : undefined,
+                  whiteSpace: figure ? "nowrap" : undefined,
+                }}
+              >
+                {value}
+              </T>
+            </div>
+            {last ? null : (
+              <div
+                style={{
+                  width: "100%",
+                  height: HAIRLINE,
+                  flexShrink: 0,
+                  backgroundColor: ctx.t.color.divider.faint,
+                }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+export function drawNote(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const tone = prop<ProgramTone | null>(node.props, "tone", null);
+  return (
+    <T
+      size="caption"
+      color={programTextColor(ctx.t, tone === null ? "muted" : tone)}
+      clamp={4}
+      style={{ flexShrink: 1, minWidth: 0 }}
+    >
+      {prop(node.props, "text", "")}
+    </T>
+  );
+}
+
+export function drawCode(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  return (
+    <div
+      style={{
+        display: "flex",
+        width: "100%",
+        minWidth: 0,
+        padding: innerGap(ctx.t),
+        borderRadius: ctx.t.radius.sm,
+        backgroundColor: ctx.t.color.surface.sunken,
+      }}
+    >
+      <T
+        size="caption"
+        color={ctx.t.color.text.primary}
+        clamp={20}
+        style={{ fontFamily: ctx.t.type.fontFamilyMono, flexShrink: 1, minWidth: 0 }}
+      >
+        {prop(node.props, "text", "")}
+      </T>
+    </div>
+  );
+}
