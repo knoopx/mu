@@ -1,6 +1,8 @@
 import { isDarkScheme, type AdwaitaTheme } from "adwaita-gpuix";
 import type { GpuixTheme, StyleDesc } from "@gpuix/react";
 
+import { ELEVATION, codeLineBox, headingLineBox, lineBox } from "./tokens";
+
 function rgbTriplet(hex: string): [number, number, number] {
   const h = hex.replace("#", "");
   return [
@@ -78,22 +80,21 @@ export function tintedDivider(t: AdwaitaTheme, tone: ComposerTone): string {
   return tinted(t, t.color.divider.default, tone);
 }
 
-export function tintedHover(t: AdwaitaTheme, tone: ComposerTone): string {
-  return tinted(t, t.color.surface.hover, tone);
-}
-
+/** The wash behind a block the log quotes: a code preview, a diff hunk. */
 export function panelFill(t: AdwaitaTheme): string {
   return t.color.surface.headerbar;
 }
 
+/**
+ * The page the log sits on. A different role from a quoted block — the block
+ * has to read as set into the page — and the same surface until a scheme says
+ * otherwise.
+ */
 export function paneFill(t: AdwaitaTheme): string {
   return t.color.surface.headerbar;
 }
 
-function cardFill(t: AdwaitaTheme): string {
-  return t.color.surface.view;
-}
-
+/** The band a tool shows its own output in: lines read, lines written, a patch. */
 export function bandFill(t: AdwaitaTheme): string {
   return t.color.surface.card;
 }
@@ -145,10 +146,10 @@ export function buildNativeTheme(
     md: t.radius.md,
   };
 
-  const mdLineHeight = Math.round(text.body * 1.55);
+  const mdLineHeight = lineBox(t, "body");
   const mdHeadingSizes = [text.title1, text.title2, text.title3, text.title4];
   const mdHeadingLineHeights = mdHeadingSizes.map((size) =>
-    Math.max(mdLineHeight, Math.round(size * 1.3)),
+    headingLineBox(t, size),
   );
 
   return {
@@ -196,9 +197,9 @@ export function buildNativeTheme(
     },
     metrics: {
       codeTextSize: text.small,
-      codeLineHeight: Math.round(text.small * 1.6),
+      codeLineHeight: codeLineBox(t, text.small),
       diffTextSize: text.small,
-      diffLineHeight: Math.round(text.small * 1.6),
+      diffLineHeight: codeLineBox(t, text.small),
       mdTextSize: text.body,
       mdLineHeight,
       mdBlockGap: space.md,
@@ -217,28 +218,11 @@ export function buildNativeTheme(
   };
 }
 
-function overlayStyle(
-  t: AdwaitaTheme,
-  paddingX: number,
-  paddingY: number,
-): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    paddingLeft: paddingX,
-    paddingRight: paddingX,
-    paddingTop: paddingY,
-    paddingBottom: paddingY,
-    borderRadius: t.radius.xl,
-    borderWidth: 0,
-    overflow: "hidden",
-    backgroundColor: t.color.surface.headerbar,
-    boxShadow: {
-      offsetX: 0,
-      offsetY: 8,
-      blurRadius: 24,
-      spreadRadius: -6,
-      color: "rgba(0,0,0,0.55)",
-    },
-  };
+/** The ink of a floating surface's drop, over whatever is under it. */
+const ELEVATION_INK = "rgba(0,0,0,0.55)";
+
+/** The shadow every surface that floats above the log wears, at one height. */
+export function elevatedShadow(): NonNullable<StyleDesc["boxShadow"]> {
+  return { offsetX: 0, ...ELEVATION, color: ELEVATION_INK };
 }
+

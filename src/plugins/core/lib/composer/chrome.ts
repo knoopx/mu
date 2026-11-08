@@ -1,5 +1,6 @@
 import { useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
+import { HAIRLINE, ROW_HEIGHT } from "../ui/tokens";
 
 export interface PanelChrome {
   column: StyleDesc;
@@ -46,7 +47,7 @@ export function panelChrome(t: AdwaitaTheme): PanelChrome {
       minHeight: 0,
     },
     paneRule: {
-      width: t.control.dividerThickness,
+      width: HAIRLINE,
       alignSelf: "stretch",
       flexShrink: 0,
       backgroundColor: t.color.divider.default,
@@ -60,7 +61,7 @@ export function panelChrome(t: AdwaitaTheme): PanelChrome {
       backgroundColor: "transparent",
     },
     paneRuleH: {
-      height: t.control.dividerThickness,
+      height: HAIRLINE,
       alignSelf: "stretch",
       flexShrink: 0,
       marginTop: t.space.md,
@@ -73,7 +74,7 @@ export function panelChrome(t: AdwaitaTheme): PanelChrome {
       return {
         ...column,
         flexShrink: 0,
-        height: rows * t.control.rowHeight,
+        height: rows * ROW_HEIGHT,
         minHeight: 0,
         overflow: "hidden",
       };

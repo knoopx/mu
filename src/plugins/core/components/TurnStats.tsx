@@ -3,6 +3,7 @@ import { type JSX } from "react";
 import { type StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "../lib/ui/theme";
+import { glyphForText } from "../lib/ui/tokens";
 import {
   BAR,
   DOT,
@@ -58,7 +59,8 @@ function StatsLine(props: {
   const t = useAdwaita();
   const muted = mutedText(t);
   const size = t.type.caption;
-  const glyph = Math.round(size * 0.92);
+  // A mark in a stat line stands beside figures of this size and takes its measure.
+  const glyph = glyphForText(size);
   const row: StyleDesc = {
     display: "flex",
     flexDirection: "row",
@@ -77,7 +79,7 @@ function StatsLine(props: {
     flexShrink: 0,
     userSelect: "none",
   };
-  const separator: StyleDesc = { ...figure, color: t.color.text.dim };
+  const separator: StyleDesc = { ...figure, color: muted };
 
   const nodes = props.segments.flatMap((segment, i): JSX.Element[] => {
     const out: JSX.Element[] = [];

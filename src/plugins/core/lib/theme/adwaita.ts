@@ -1,5 +1,6 @@
 import { useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { MuTheme } from "../../../../theme";
+import { leadingOf } from "../ui/tokens";
 
 export function buildMuThemeFromAdwaita(a: AdwaitaTheme): MuTheme {
   const { color, type, radius } = a;
@@ -20,7 +21,7 @@ export function buildMuThemeFromAdwaita(a: AdwaitaTheme): MuTheme {
     fontMono: type.fontFamilyMono,
     radius: radius.md,
     fontSize: type.body,
-    lineHeight: 1.5,
+    lineHeight: leadingOf("body"),
   };
 }
 

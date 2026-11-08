@@ -1,5 +1,6 @@
 import { type AdwaitaTheme } from "adwaita-gpuix";
 import { composerPanelRowHeight } from "../../components/composer/rows";
+import { ROW_HEIGHT } from "../ui/tokens";
 import type { ComposerPanelRow } from "../../components/composer/Composer";
 
 const PANEL_WINDOW_FRACTION = 0.8;
@@ -7,8 +8,6 @@ const PANEL_MIN_HEIGHT = 480;
 const PANEL_MAX_HEIGHT = 760;
 
 export const PANEL_FIT_MIN_ROWS = 4;
-
-export const CODE_LINE_HEIGHT = 18;
 
 export function composerPanelHeight(windowHeight: number | undefined): number {
   const h =
@@ -27,7 +26,7 @@ export function composerPanelChrome(
   fieldExtra = 0,
 ): number {
   return (
-    t.control.rowHeight +
+    ROW_HEIGHT +
     fieldExtra +
     2 * t.space.sm +
     t.space.xs +
@@ -42,10 +41,10 @@ export function composerPanelRowsForHeight(
   fieldExtra = 0,
 ): number {
   return Math.max(
-    4,
+    PANEL_FIT_MIN_ROWS,
     Math.floor(
       (panelHeight - composerPanelChrome(t, statusBar, fieldExtra)) /
-        t.control.rowHeight,
+        ROW_HEIGHT,
     ),
   );
 }
@@ -63,7 +62,7 @@ export function composerPanelFitRows(
     used += height;
     count += 1;
   }
-  return Math.max(4, count);
+  return Math.max(PANEL_FIT_MIN_ROWS, count);
 }
 
 export function composerPanelFitHeight(

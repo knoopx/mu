@@ -1,4 +1,5 @@
 import { type AdwaitaTheme } from "adwaita-gpuix";
+import { ROW_HEIGHT, codeLineBox } from "../ui/tokens";
 
 const MAX_ONE_ROW_CHARS = 120;
 
@@ -10,11 +11,11 @@ export function composerFieldSize(t: AdwaitaTheme): number {
 }
 
 export function fieldLineBox(t: AdwaitaTheme): number {
-  return Math.round(composerFieldSize(t) * 1.75);
+  return codeLineBox(t, composerFieldSize(t));
 }
 
 export function fieldPadY(t: AdwaitaTheme): number {
-  return Math.max(0, Math.round((t.control.rowHeight - fieldLineBox(t)) / 2));
+  return Math.max(0, Math.round((ROW_HEIGHT - fieldLineBox(t)) / 2));
 }
 
 /**

@@ -1,13 +1,17 @@
 import { type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 import { composerFieldSize, fieldLineBox, fieldPadY } from "./fieldRows";
+import { ROW_HEIGHT } from "../ui/tokens";
+
+/** A field that holds several rows breathes by this fraction of its own text size. */
+const FIELD_PAD_RATIO = 0.35;
 
 export function composerFieldHeight(t: AdwaitaTheme): number {
   return t.control.deviceRowHeight;
 }
 
 export function composerFieldLineHeight(t: AdwaitaTheme): number {
-  return t.control.rowHeight;
+  return ROW_HEIGHT;
 }
 
 export function composerFieldRow(t: AdwaitaTheme): StyleDesc {
@@ -56,7 +60,7 @@ export function composerFieldBox(t: AdwaitaTheme): StyleDesc {
     ...composerFieldStyle(t),
     lineHeight: fieldLineBox(t),
     minHeight: composerFieldHeight(t),
-    paddingTop: Math.round(composerFieldSize(t) * 0.35),
-    paddingBottom: Math.round(composerFieldSize(t) * 0.35),
+    paddingTop: Math.round(composerFieldSize(t) * FIELD_PAD_RATIO),
+    paddingBottom: Math.round(composerFieldSize(t) * FIELD_PAD_RATIO),
   };
 }

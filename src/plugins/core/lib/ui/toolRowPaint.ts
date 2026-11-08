@@ -17,6 +17,14 @@ import {
 import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "./theme";
+import {
+  CHIP_INSET,
+  CHIP_PAD_Y,
+  HAIRLINE,
+  METER_MIN_FILL,
+  METER_TRACK_WIDTH,
+  idColumn,
+} from "./tokens";
 import { toolGapColumn, toolLine } from "./toolRows";
 
 /** The colour roles a tool row can paint. */
@@ -118,12 +126,12 @@ export const toolChip = (t: AdwaitaTheme): StyleDesc => ({
   flexDirection: "row",
   alignItems: "center",
   gap: t.space.xs,
-  paddingLeft: t.space.xs + 2,
-  paddingRight: t.space.xs + 2,
-  paddingTop: 2,
-  paddingBottom: 2,
+  paddingLeft: t.space.xs + CHIP_INSET,
+  paddingRight: t.space.xs + CHIP_INSET,
+  paddingTop: CHIP_PAD_Y,
+  paddingBottom: CHIP_PAD_Y,
   borderRadius: t.radius.sm,
-  borderWidth: t.control.dividerThickness,
+  borderWidth: HAIRLINE,
   borderColor: t.color.divider.faint,
   backgroundColor: t.color.surface.button,
   flexShrink: 0,
@@ -143,7 +151,7 @@ export function toolDataRow(
     paddingLeft: t.space.sm,
     paddingRight: t.space.sm,
     borderRadius: t.radius.sm,
-    borderTopWidth: first ? 0 : t.control.dividerThickness,
+    borderTopWidth: first ? 0 : HAIRLINE,
     borderColor: t.color.divider.faint,
     hover: { backgroundColor: rowHoverBg(t) },
   };
@@ -154,7 +162,7 @@ export function toolDataRow(
 
 /** The id column: a fixed mono width, so every body line starts at the same x. */
 export const toolKeyColumn = (t: AdwaitaTheme): StyleDesc => ({
-  width: t.type.caption * 7.5,
+  width: idColumn(t),
   flexShrink: 0,
   fontFamily: t.type.fontFamilyMono,
   pointerEvents: "none",
@@ -173,10 +181,11 @@ export const toolMonoGrow = (t: AdwaitaTheme): StyleDesc => ({
   fontFamily: t.type.fontFamilyMono,
 });
 
-/** How wide a meter track is, and how far its score fills it. */
-export const METER_TRACK_WIDTH = 84;
-
+/** How far a score fills its meter track — never a sliver too thin to see. */
 export const meterFill = (meter: ToolRowMeter): number => {
   if (meter.worst <= 0) return 0;
-  return Math.max(3, Math.round(Math.min(1, meter.score / meter.worst) * METER_TRACK_WIDTH));
+  return Math.max(
+    METER_MIN_FILL,
+    Math.round(Math.min(1, meter.score / meter.worst) * METER_TRACK_WIDTH),
+  );
 };

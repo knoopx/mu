@@ -17,7 +17,13 @@ import {
   type StyleDesc,
   useWindowSize,
 } from "@gpuix/react";
-import { mutedText, paneFill, userBandFill } from "../lib/ui/theme";
+import {
+  elevatedShadow,
+  mutedText,
+  paneFill,
+  userBandFill,
+} from "../lib/ui/theme";
+import { INLINE_GLYPH } from "../lib/ui/tokens";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { AgentSnapshot } from "../lib/agent/agentService";
 import type { ToolImage } from "../lib/agent/content";
@@ -374,7 +380,7 @@ export function SystemRow({ text }: { text: string }): JSX.Element {
   return (
     <Message style={{ paddingLeft: PAGE_INSET, paddingRight: PAGE_INSET }}>
       <MessageAvatar>
-        <Icon name="info" size={14} color={mutedText(t)} />
+        <Icon name="info" size={INLINE_GLYPH} color={mutedText(t)} />
       </MessageAvatar>
       <MessageContent>
         <T size="caption" color={t.color.text.primary}>
@@ -457,13 +463,7 @@ export function ToastLayer(props: {
             pointerEvents: "auto",
             maxWidth: maxWidth ?? "100%",
             backgroundColor: t.color.surface.button,
-            boxShadow: {
-              offsetX: 0,
-              offsetY: 8,
-              blurRadius: 24,
-              spreadRadius: -6,
-              color: "rgba(0,0,0,0.55)",
-            },
+            boxShadow: elevatedShadow(),
           }}
         />
       ))}

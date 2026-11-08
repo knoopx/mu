@@ -63,7 +63,7 @@ import {
 } from "../../lib/composer/pathCompletion";
 import { SESSION_ROWS_CAP } from "../../lib/session/sessionList";
 import type { GuardrailsPanelApi } from "../../../guardrails/types";
-import { TREE_ROW_HEIGHT } from "../../hooks/useSessionTree";
+import { ROW_HEIGHT } from "../../lib/ui/tokens";
 
 export function sessionStatusText(
   total: number,
@@ -321,7 +321,7 @@ function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
   return composerPanelFitHeight(
     t,
     windowHeight,
-    Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * TREE_ROW_HEIGHT,
+    Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * ROW_HEIGHT,
     true,
   );
 }
@@ -375,7 +375,7 @@ function listPanelSpec(
   const fieldExtra = tallList ? composerFieldExtraHeight(t, query) : 0;
   const statusBar = true;
   const statusLine =
-    busy || error !== undefined || rows.length === 0 ? t.control.rowHeight : 0;
+    busy || error !== undefined || rows.length === 0 ? ROW_HEIGHT : 0;
   const listHeight = rowsHeightOf(rows) + statusLine;
   const fitHeight = composerPanelFitHeight(
     t,

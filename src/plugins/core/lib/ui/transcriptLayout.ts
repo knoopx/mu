@@ -2,6 +2,7 @@ import { type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { bandFill, composerFill } from "./theme";
+import { HAIRLINE, ROW_HEIGHT, lineBox } from "./tokens";
 
 export const PAGE_INSET = 56;
 
@@ -31,12 +32,12 @@ function hintsRow(t: AdwaitaTheme): StyleDesc {
     alignItems: "center",
     gap: t.space.sm,
     flexShrink: 0,
-    minHeight: t.control.rowHeight,
+    minHeight: ROW_HEIGHT,
     paddingLeft: t.space.sm,
     paddingRight: t.space.sm,
     paddingTop: t.space.xs,
     paddingBottom: t.space.xs,
-    borderTopWidth: 1,
+    borderTopWidth: HAIRLINE,
     borderColor: t.color.divider.default,
     overflow: "hidden",
   };
@@ -70,12 +71,10 @@ export function toolPreviewWrap(
 }
 
 /** One line of a text preview, at the caption rhythm every preview keeps. */
-export const previewLineHeight = (t: AdwaitaTheme): number =>
-  Math.round(t.type.caption * 1.6);
+export const previewLineHeight = (t: AdwaitaTheme): number => lineBox(t, "caption");
 
 /** The line rhythm of a user's own words — looser than the theme's tight body. */
-export const userMessageLineHeight = (t: AdwaitaTheme): number =>
-  Math.round(t.type.body * 1.5);
+export const userMessageLineHeight = (t: AdwaitaTheme): number => lineBox(t, "body");
 
 export function outputPanel(t: AdwaitaTheme): StyleDesc {
   return {
@@ -83,7 +82,7 @@ export function outputPanel(t: AdwaitaTheme): StyleDesc {
     flexDirection: "column",
     minWidth: 0,
     flexShrink: 1,
-    padding: 10,
+    padding: t.space.sm,
     borderRadius: t.radius.sm,
     borderWidth: 0,
     backgroundColor: bandFill(t),

@@ -11,19 +11,32 @@ import {
 import type { StyleDesc } from "@gpuix/react";
 import { centerRow } from "../../lib/ui/layout";
 import { mutedText } from "../../lib/ui/theme";
+import {
+  HAIRLINE,
+  INLINE_GLYPH,
+  ROW_HEIGHT,
+  SWATCH_HEIGHT,
+  SWATCH_WIDTH,
+  glyphForText,
+  lineBox,
+  lineBoxAt,
+  monoColumn,
+} from "../../lib/ui/tokens";
 import type {
   ComposerPanelRow,
   ComposerRowFigure,
   ComposerSwatchSpec,
 } from "./Composer";
 
-const NAME_COLUMN = 150;
-const ARGS_COLUMN = 190;
+/** A command row's two fixed columns, in characters of the caption size. */
+const NAME_COLUMN_CHARS = 12;
+const ARGS_COLUMN_CHARS = 16;
 
+/** How much of an em one monospace character takes, for a column of figures. */
 const MONO_ADVANCE = 0.6;
 
-const figureGlyph = (t: AdwaitaTheme): number =>
-  Math.round(t.type.caption * 0.92);
+/** A figure's glyph stands beside caption text and takes its measure. */
+const figureGlyph = (t: AdwaitaTheme): number => glyphForText(t.type.caption);
 
 
 export const composerFigureTextWidth = (t: AdwaitaTheme, chars: number): number =>
@@ -57,7 +70,7 @@ function panelRowStyle(
 }
 
 function rowStyle(t: AdwaitaTheme, active: boolean, focused = true): StyleDesc {
-  return panelRowStyle(t, active, focused, t.control.rowHeight);
+  return panelRowStyle(t, active, focused, ROW_HEIGHT);
 }
 
 const label = (t: AdwaitaTheme, active: boolean): StyleDesc => ({
@@ -83,18 +96,16 @@ const truncate = (t: AdwaitaTheme): StyleDesc => ({
   textOverflow: "ellipsis",
 });
 
-const LINE_HEIGHT = 1.4;
-
 function optionRowHeight(t: AdwaitaTheme, hasCaption: boolean): number {
-  if (!hasCaption) return t.control.rowHeight;
-  return Math.ceil(t.type.caption * LINE_HEIGHT * 2 + t.space.xs);
+  if (!hasCaption) return ROW_HEIGHT;
+  return Math.ceil(lineBox(t, "caption") * 2 + t.space.xs);
 }
 
 export function composerPanelRowHeight(
   t: AdwaitaTheme,
   row: ComposerPanelRow,
 ): number {
-  if (row.kind !== "option") return t.control.rowHeight;
+  if (row.kind !== "option") return ROW_HEIGHT;
   return optionRowHeight(
     t,
     row.caption !== undefined && row.caption !== row.label,
@@ -125,7 +136,7 @@ function RowIcon({
   return (
     <Icon
       name={icon}
-      size={t.control.navIconSize}
+      size={INLINE_GLYPH}
       color={active ? t.color.accent.base : mutedText(t)}
       style={{ flexShrink: 0 }}
     />
@@ -171,7 +182,7 @@ const rowLine = (t: AdwaitaTheme, size: number, lines: number): StyleDesc => ({
   flexShrink: 0,
   minWidth: 0,
   maxWidth: "100%",
-  lineHeight: size * LINE_HEIGHT,
+  lineHeight: lineBoxAt(t, "caption", size),
   lineClamp: lines,
   whiteSpace: "nowrap",
   overflow: "hidden",
@@ -236,7 +247,8 @@ function RowFigures({
   );
 }
 
-const AGE_COLUMN_WIDTH = (t: AdwaitaTheme): number => t.control.rowHeight;
+/** A row's trailing age: two characters of a mono column, right-aligned. */
+const AGE_COLUMN_WIDTH = (t: AdwaitaTheme): number => monoColumn(t, 2);
 
 const ageColumn = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
@@ -272,12 +284,22 @@ export function ComposerCommandRow(
       onHover={props.onHover}
     >
       <text
-        style={{ ...label(t, props.active), width: NAME_COLUMN, flexShrink: 0 }}
+        style={{
+          ...label(t, props.active),
+          width: monoColumn(t, NAME_COLUMN_CHARS),
+          flexShrink: 0,
+        }}
       >
         {props.name}
       </text>
 
-      <text style={{ ...meta(t), width: ARGS_COLUMN, ...truncate(t) }}>
+      <text
+        style={{
+          ...meta(t),
+          width: monoColumn(t, ARGS_COLUMN_CHARS),
+          ...truncate(t),
+        }}
+      >
         {props.args ?? ""}
       </text>
       {props.description !== undefined && (
@@ -379,7 +401,7 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
               style={{
                 ...meta(t),
                 ...truncate(t),
-                lineHeight: t.type.caption * LINE_HEIGHT,
+                lineHeight: lineBox(t, "caption"),
                 textAlign: "right",
               }}
             >
@@ -389,15 +411,15 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
       {props.picked ? (
         <Icon
           name="check"
-          size={t.control.navIconSize}
+          size={INLINE_GLYPH}
           color={t.color.accent.base}
           style={{ flexShrink: 0 }}
         />
       ) : props.checkColumn === true ? (
         <div
           style={{
-            width: t.control.navIconSize,
-            height: t.control.navIconSize,
+            width: INLINE_GLYPH,
+            height: INLINE_GLYPH,
             flexShrink: 0,
             pointerEvents: "none",
           }}
@@ -406,9 +428,6 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
     </ComposerRow>
   );
 }
-
-const SWATCH_WIDTH = 30;
-const SWATCH_HEIGHT = 18;
 
 function swatchStyle(t: AdwaitaTheme, swatch: ComposerSwatchSpec): StyleDesc {
   return {
@@ -422,7 +441,7 @@ function swatchStyle(t: AdwaitaTheme, swatch: ComposerSwatchSpec): StyleDesc {
     paddingRight: t.space.xs,
     paddingTop: t.space.xs,
     borderRadius: t.radius.xs,
-    borderWidth: 1,
+    borderWidth: HAIRLINE,
     borderColor: hexToRgba(swatch.text, 0.34),
     backgroundColor: swatch.window,
     pointerEvents: "none",
@@ -505,7 +524,7 @@ export function ComposerStatus(props: {
         display: "flex",
         flexDirection: "row",
         alignItems: "center",
-        height: t.control.rowHeight,
+        height: ROW_HEIGHT,
         paddingLeft: t.space.sm,
         paddingRight: t.space.sm,
         userSelect: "none",

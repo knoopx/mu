@@ -5,10 +5,9 @@ import {
   type LinearGradientStop,
   type StyleDesc,
 } from "@gpuix/react";
-import { withAlpha } from "../../lib/ui/theme";
+import { withAlpha, mutedText } from "../../lib/ui/theme";
+import { PILL_HEIGHT } from "../../lib/ui/tokens";
 
-export const PILL_HEIGHT = 22;
-const PILL_PAD_X = 8;
 const PILL_LABEL_MAX_WIDTH = 240;
 
 export const CONTEXT_RING_WIDTH = 1;
@@ -24,8 +23,8 @@ function pillBox(t: AdwaitaTheme): StyleDesc {
     flexDirection: "row",
     alignItems: "center",
     height: PILL_HEIGHT,
-    paddingLeft: PILL_PAD_X,
-    paddingRight: PILL_PAD_X,
+    paddingLeft: t.space.sm,
+    paddingRight: t.space.sm,
     borderRadius: t.radius.full,
     borderWidth: 0,
     backgroundColor: pillFill(t),
@@ -46,7 +45,7 @@ function pillText(t: AdwaitaTheme): StyleDesc {
     fontSize: t.type.caption,
     lineHeight: PILL_HEIGHT,
     fontFamily: t.type.fontFamily,
-    color: t.color.text.dim,
+    color: mutedText(t),
     whiteSpace: "nowrap",
     flexShrink: 1,
     minWidth: 0,

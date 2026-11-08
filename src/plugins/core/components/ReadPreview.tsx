@@ -6,6 +6,7 @@ import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
 import { buildNativeTheme } from "../lib/ui/theme";
+import { PREVIEW_IMAGE_HEIGHT, PREVIEW_IMAGE_WIDTH } from "../lib/ui/tokens";
 import {
   outputPanel,
   previewLineHeight,
@@ -16,6 +17,7 @@ import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
 export const READ_TOOL_NAMES = new Set(["read"]);
 
+/** How many lines of a file the log quotes before it says "more lines". */
 const MAX_PREVIEW_LINES = 8;
 
 const CONTINUATION_NOTICE = /^\[(\d+ more lines|Showing lines|Line \d+ is)/;
@@ -181,8 +183,8 @@ export function ReadPreview({
   const card: StyleDesc = { ...outputPanel(t), flexShrink: 0 };
 
   const tile: StyleDesc = {
-    width: t.control.mediaTileWidth * 2,
-    height: t.control.mediaTileHeight * 2,
+    width: PREVIEW_IMAGE_WIDTH,
+    height: PREVIEW_IMAGE_HEIGHT,
     borderRadius: t.radius.sm,
     flexShrink: 0,
   };

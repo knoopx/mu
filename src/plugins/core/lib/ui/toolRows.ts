@@ -11,6 +11,8 @@
 import { type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
+import { HAIRLINE } from "./tokens";
+
 /** Text in a line: it gives way, but never below what it has to show. */
 export const toolGrow: StyleDesc = { flexShrink: 1, minWidth: 0 };
 
@@ -63,7 +65,7 @@ export function toolCell(t: AdwaitaTheme, first: boolean): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
-    borderTopWidth: first ? 0 : t.control.dividerThickness,
+    borderTopWidth: first ? 0 : HAIRLINE,
     borderColor: t.color.divider.faint,
     minWidth: 0,
     flexShrink: 0,

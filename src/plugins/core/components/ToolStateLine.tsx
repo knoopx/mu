@@ -8,6 +8,7 @@
 import { Icon, T, useAdwaita, type IconName } from "adwaita-gpuix";
 import type { JSX } from "react";
 
+import { INLINE_GLYPH } from "../lib/ui/tokens";
 import { toolGrow, toolLine } from "../lib/ui/toolRows";
 
 export interface ToolStateLineProps {
@@ -26,7 +27,7 @@ export function ToolStateLine({
     <div style={toolLine(t)}>
       <Icon
         name={icon}
-        size={t.control.navIconSize}
+        size={INLINE_GLYPH}
         color={color}
         style={{ flexShrink: 0 }}
       />

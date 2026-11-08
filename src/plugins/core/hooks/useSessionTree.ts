@@ -28,8 +28,7 @@ import {
 } from "../lib/session/shortcuts";
 import { keyOf, modsOf } from "../lib/ui/keyEvents";
 import { clamp } from "../../../utils/clamp";
-
-export const TREE_ROW_HEIGHT = 24;
+import { ROW_HEIGHT } from "../lib/ui/tokens";
 
 const PAGE_ROWS = 8;
 
@@ -68,7 +67,7 @@ export function useSessionTree(options: SessionTreeOptions): SessionTreeApi {
   const { data, enabled, query, onNavigate } = options;
   const renderer = useGpuixRequired();
   const listRef = useRef<PublicInstance | null>(null);
-  const ensureVisible = useListFollow(listRef, renderer, TREE_ROW_HEIGHT);
+  const ensureVisible = useListFollow(listRef, renderer, ROW_HEIGHT);
 
   const [filter, setFilterState] = useState<TreeFilter>(DEFAULT_TREE_FILTER);
   const [sel, setSel] = useState(0);

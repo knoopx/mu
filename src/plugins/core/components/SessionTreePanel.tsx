@@ -14,7 +14,13 @@ import {
 import type { PublicInstance } from "@gpuix/react";
 import { ellipsisFill } from "../lib/ui/layout";
 import { usePanelChrome } from "../lib/composer/chrome";
-import { TREE_ROW_HEIGHT } from "../hooks/useSessionTree";
+import { mutedText } from "../lib/ui/theme";
+import {
+  MARKER_GLYPH,
+  ROW_HEIGHT,
+  emphasisWeight,
+  plainWeight,
+} from "../lib/ui/tokens";
 import type {
   TreeFilter,
   TreeModel,
@@ -47,12 +53,12 @@ function TreeRowView({
     ? color.accent.base
     : row.active
       ? color.text.primary
-      : color.text.dim;
+      : mutedText(t);
   return (
     <ListRow
       selected={selected}
       focused={focused}
-      height={TREE_ROW_HEIGHT}
+      height={ROW_HEIGHT}
       onClick={() => onSelect(index)}
     >
       <RowShell>
@@ -66,13 +72,13 @@ function TreeRowView({
         />
         <Icon
           name={row.icon}
-          size={12}
-          color={row.role === "tool" ? color.text.dim : text}
+          size={MARKER_GLYPH}
+          color={row.role === "tool" ? mutedText(t) : text}
         />
         {row.label !== undefined && row.label.length > 0 && (
           <T
             size="caption"
-            weight={600}
+            weight={emphasisWeight(t)}
             color={color.functional.warning}
             style={{ flexShrink: 0 }}
           >
@@ -81,7 +87,7 @@ function TreeRowView({
         )}
         <T
           size="caption"
-          weight={active ? 600 : 400}
+          weight={active ? emphasisWeight(t) : plainWeight(t)}
           color={text}
           style={ellipsisFill()}
         >
@@ -89,7 +95,7 @@ function TreeRowView({
         </T>
         <T
           size="caption"
-          color={row.leaf ? color.accent.base : color.text.dim}
+          color={row.leaf ? color.accent.base : mutedText(t)}
           style={{
             fontFamily: t.type.fontFamilyMono,
             whiteSpace: "nowrap",
@@ -121,7 +127,7 @@ export function SessionTreePanel({
   const s = usePanelChrome();
   const fallbackListRef = useRef<PublicInstance | null>(null);
   const rows = model.rows;
-  const win = useListWindow(rows.length, TREE_ROW_HEIGHT);
+  const win = useListWindow(rows.length, ROW_HEIGHT);
   const windowed = win.slice(rows);
 
   return (
@@ -146,7 +152,7 @@ export function SessionTreePanel({
         <VirtualListPanel
           listRef={listRef ?? fallbackListRef}
           bare
-          estimatedItemHeight={TREE_ROW_HEIGHT}
+          estimatedItemHeight={ROW_HEIGHT}
           itemCount={win.itemCount}
           windowStart={win.windowStart}
           overdraw={win.overdraw}

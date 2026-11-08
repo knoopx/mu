@@ -16,6 +16,7 @@ import type { StyleDesc } from "@gpuix/react";
 import type { ToolImage } from "../../lib/agent/content";
 import { row } from "../../lib/ui/layout";
 import { mediaKind } from "../../lib/ui/media";
+import { HAIRLINE, STATE_GLYPH } from "../../lib/ui/tokens";
 
 export interface ComposerAttachment {
   id: string;
@@ -86,11 +87,12 @@ function attachmentImagesOf(
   }));
 }
 
+/** An attachment's thumbnail: a square, bordered by a hairline, with a remove badge in its corner. */
 export const ATTACHMENT_THUMB = 48;
 
-const THUMB_BORDER = 1;
-
+/** The badge a thumb wears in its corner, and the glyph that fills the badge. */
 const REMOVE_RATIO = 0.375;
+const REMOVE_GLYPH_RATIO = 0.55;
 
 function thumbBox(t: AdwaitaTheme, size: number): StyleDesc {
   return {
@@ -99,7 +101,7 @@ function thumbBox(t: AdwaitaTheme, size: number): StyleDesc {
     height: size,
     flexShrink: 0,
     borderRadius: t.radius.sm,
-    borderWidth: THUMB_BORDER,
+    borderWidth: HAIRLINE,
     borderColor: t.color.border.default,
     backgroundColor: t.color.surface.raised,
     overflow: "hidden",
@@ -117,7 +119,7 @@ function thumbCenter(t: AdwaitaTheme, size: number): StyleDesc {
 }
 
 function thumbImage(size: number): StyleDesc {
-  const inner = size - 2 * THUMB_BORDER;
+  const inner = size - 2 * HAIRLINE;
   return {
     width: inner,
     height: inner,
@@ -212,7 +214,7 @@ function AttachmentThumb(props: {
         <div style={removeBadge(t, props.size)}>
           <Icon
             name="close"
-            size={Math.round(removeSize * 0.55)}
+            size={Math.round(removeSize * REMOVE_GLYPH_RATIO)}
             color={t.color.accent.fg}
           />
         </div>
@@ -244,7 +246,7 @@ export function ComposerAttachments(
       ))}
       {busy === true ? (
         <div style={thumbCenter(t, size)}>
-          <Spinner size={16} animated label={false} />
+          <Spinner size={STATE_GLYPH} animated label={false} />
         </div>
       ) : null}
     </div>

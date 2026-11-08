@@ -24,13 +24,22 @@ import { ToolCaptionLine } from "./ToolCaptionLine";
 import { ToolStateLine } from "./ToolStateLine";
 import { mutedText } from "../lib/ui/theme";
 import {
+  METER_RULE_HEIGHT,
+  METER_RULE_RADIUS,
+  METER_TRACK_WIDTH,
+  MARKER_GLYPH,
+  STATE_GLYPH,
+  emphasisWeight,
+  lineBox,
+  subLineIndent,
+} from "../lib/ui/tokens";
+import {
   toolBodyColumn,
   toolGapColumn,
   toolGrow,
   toolLine,
 } from "../lib/ui/toolRows";
 import {
-  METER_TRACK_WIDTH,
   meterFill,
   toolBadgeVariant,
   toolChip,
@@ -92,7 +101,7 @@ function ToolMeterBar({
     <div
       style={{
         width: METER_TRACK_WIDTH,
-        height: t.type.micro,
+        height: lineBox(t, "micro"),
         flexShrink: 0,
         display: "flex",
         flexDirection: "column",
@@ -101,8 +110,8 @@ function ToolMeterBar({
     >
       <div
         style={{
-          height: 4,
-          borderRadius: 2,
+          height: METER_RULE_HEIGHT,
+          borderRadius: METER_RULE_RADIUS,
           backgroundColor: t.color.divider.faint,
           display: "flex",
           flexDirection: "column",
@@ -112,8 +121,8 @@ function ToolMeterBar({
         <div
           style={{
             width,
-            height: 4,
-            borderRadius: 2,
+            height: METER_RULE_HEIGHT,
+            borderRadius: METER_RULE_RADIUS,
             backgroundColor: color,
             flexShrink: 0,
           }}
@@ -161,7 +170,7 @@ function ToolRowBody({
           display: "flex",
           flexDirection: "column",
           gap: 0,
-          paddingLeft: t.type.caption * 7.5 + t.space.md,
+          paddingLeft: subLineIndent(t),
           flexGrow: 1,
           flexBasis: 0,
           minWidth: 0,
@@ -278,7 +287,11 @@ export function ToolSummary({
   const t = useAdwaita();
   if (text === "") return null;
   return (
-    <ToolCaptionLine color={toolToneColor(t, tone)} text={text} weight={600} />
+    <ToolCaptionLine
+      color={toolToneColor(t, tone)}
+      text={text}
+      weight={emphasisWeight(t)}
+    />
   );
 }
 
@@ -305,12 +318,25 @@ export function ToolSectionHead({ text }: { text: string }): JSX.Element | null 
   if (text === "") return null;
   return (
     <div style={{ ...toolLine(t), paddingTop: t.space.sm }}>
-      <T size="caption" color={mutedText(t)} weight={600} style={toolGrow}>
+      <T
+        size="caption"
+        color={mutedText(t)}
+        weight={emphasisWeight(t)}
+        style={toolGrow}
+      >
         {text}
       </T>
     </div>
   );
 }
+
+/**
+ * The bars a running call shows before its rows arrive, in characters of the
+ * marker glyph: three chips of an identity line, then an id and a body per row.
+ */
+const SKELETON_CHIP_GLYPHS = [6, 8, 6] as const;
+const SKELETON_KEY_GLYPHS = 6;
+const SKELETON_BODY_GLYPHS = 18;
 
 /** The running block: a spinner with what is being read, then skeleton rows. */
 export function ToolRunning({
@@ -324,24 +350,34 @@ export function ToolRunning({
   return (
     <div style={toolGapColumn(t)}>
       <div style={{ ...toolLine(t), paddingTop: t.space.xs }}>
-        <Spinner size={16} color="accent" style={{ flexShrink: 0 }} />
+        <Spinner
+          size={STATE_GLYPH}
+          color="accent"
+          style={{ flexShrink: 0 }}
+        />
         <T size="caption" color={mutedText(t)} style={toolGrow}>
           {text}
         </T>
       </div>
       <div style={{ ...toolLine(t), gap: t.space.xs, flexWrap: "wrap" }}>
-        {[0, 1, 2].map((i) => (
+        {SKELETON_CHIP_GLYPHS.map((chars, i) => (
           <Skeleton
             key={i}
-            width={t.control.compactIconSize * (i === 1 ? 8 : 6)}
+            width={MARKER_GLYPH * chars}
             height={t.type.micro}
           />
         ))}
       </div>
       {[...Array(rows).keys()].map((i) => (
         <div key={i} style={{ ...toolLine(t), pointerEvents: "none" }}>
-          <Skeleton width={t.type.caption * 6} height={t.type.caption} />
-          <Skeleton width={t.control.filterEntryWidth} height={t.type.caption} />
+          <Skeleton
+            width={MARKER_GLYPH * SKELETON_KEY_GLYPHS}
+            height={t.type.caption}
+          />
+          <Skeleton
+            width={MARKER_GLYPH * SKELETON_BODY_GLYPHS}
+            height={t.type.caption}
+          />
         </div>
       ))}
     </div>

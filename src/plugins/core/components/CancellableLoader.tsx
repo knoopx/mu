@@ -11,6 +11,7 @@ import type { EventPayload } from "@gpuix/native";
 import type { StyleDesc } from "@gpuix/react";
 import { Spinner, T, useAdwaita } from "adwaita-gpuix";
 import { mutedText } from "../lib/ui/theme";
+import { STATE_GLYPH } from "../lib/ui/tokens";
 
 export interface CancellableLoaderHandle {
   readonly signal: AbortSignal;
@@ -88,7 +89,7 @@ export function CancellableLoader(props: CancellableLoaderProps): JSX.Element {
             flexShrink: 0,
           }}
         >
-          <Spinner size={16} label={false} />
+          <Spinner size={STATE_GLYPH} label={false} />
           <T size="caption" color={mutedText(t)}>
             {props.message ?? "Loading…"}
           </T>

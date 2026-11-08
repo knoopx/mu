@@ -4,6 +4,7 @@ import type { StyleDesc } from "@gpuix/react";
 import { centerRow } from "../lib/ui/layout";
 import { NO_BOOKMARK } from "../lib/workspace/workspaceStatus";
 import { mutedText } from "../lib/ui/theme";
+import { ROW_HEIGHT } from "../lib/ui/tokens";
 import { ConversationStatsLine } from "./TurnStats";
 import type { ConversationStats } from "../lib/agent/turnStats";
 
@@ -55,7 +56,7 @@ export function SessionStatus(props: SessionStatusProps): JSX.Element {
     flexDirection: "row",
     alignItems: "center",
     gap: t.space.md,
-    height: t.control.rowHeight,
+    height: ROW_HEIGHT,
     flexShrink: 0,
     paddingLeft: 0,
     paddingRight: 0,

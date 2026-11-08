@@ -23,7 +23,12 @@ import {
 } from "../../lib/ui/theme";
 import { addInputListener } from "../../../../window/window";
 import { truncateToWidth } from "../../../../utils/truncate";
-import { CODE_LINE_HEIGHT } from "../../lib/composer/panelHeight";
+import {
+  HAIRLINE,
+  PILL_HEIGHT,
+  ROW_HEIGHT,
+  codeLineBox,
+} from "../../lib/ui/tokens";
 import {
   composerFieldRows,
   composerFieldSize,
@@ -50,7 +55,6 @@ import {
 import {
   CONTEXT_RING_WIDTH,
   ComposerPill,
-  PILL_HEIGHT,
   contextFraction,
   contextRingGradient,
 } from "./pills";
@@ -192,17 +196,16 @@ const META_LABEL_MAX_WIDTH = 420;
 const META_LABEL_MAX_CHARS = 64;
 const DEFAULT_MAX_VISIBLE = 8;
 
+/** How many lines of a preview fit in the band the panel leaves for it. */
 function previewLinesOf(
   preview: ComposerPreviewSpec | undefined,
   maxHeightPx: number,
+  lineBoxPx: number,
 ): string[] {
   if (preview === undefined) return [];
   const hasContent = preview.lines.some((line) => line.trim() !== "");
   if (!hasContent) return [];
-  return preview.lines.slice(
-    0,
-    Math.max(1, Math.floor(maxHeightPx / CODE_LINE_HEIGHT)),
-  );
+  return preview.lines.slice(0, Math.max(1, Math.floor(maxHeightPx / lineBoxPx)));
 }
 
 interface ComposerStyles {
@@ -234,7 +237,7 @@ function composerStyles(
   ringFraction: number | null = null,
 ): ComposerStyles {
   const column: StyleDesc = { display: "flex", flexDirection: "column" };
-  const rowHeight = t.control.rowHeight;
+  const rowHeight = ROW_HEIGHT;
   const ring = ringFraction !== null;
   const ringWidth = ring ? CONTEXT_RING_WIDTH : 0;
 
@@ -328,7 +331,7 @@ function composerStyles(
       fontSize: t.type.caption,
       lineHeight: PILL_HEIGHT,
       fontFamily: t.type.fontFamily,
-      color: t.color.text.dim,
+      color: mutedText(t),
       whiteSpace: "nowrap",
       flexShrink: 1,
       minWidth: 0,
@@ -368,7 +371,7 @@ function composerStyles(
       minWidth: 0,
     },
     paneRule: {
-      width: t.control.dividerThickness,
+      width: HAIRLINE,
       alignSelf: "stretch",
       flexShrink: 0,
       backgroundColor: t.color.divider.default,
@@ -386,6 +389,7 @@ function composerStyles(
       minHeight: 0,
       overflow: "hidden",
       fontSize: t.type.caption,
+      lineHeight: codeLineBox(t),
       fontFamily: t.type.fontFamilyMono,
       color: t.color.text.primary,
     },
@@ -800,7 +804,7 @@ function ComposerLayout(props: {
   panel: ComposerPanelSpec | undefined;
   win: RowWindow | null;
   active: number;
-  previewMaxPx: number;
+  previewLines: string[];
   styles: ComposerStyles;
   statusBar: JSX.Element | null;
   field: JSX.Element;
@@ -815,9 +819,7 @@ function ComposerLayout(props: {
         win={win}
         active={props.active}
         styles={styles}
-        previewLines={
-          props.wide ? [] : previewLinesOf(panel.preview, props.previewMaxPx)
-        }
+        previewLines={props.previewLines}
         onKeyDown={props.onListKey}
         panelRef={props.capturePanel}
       />
@@ -880,7 +882,15 @@ export function Composer(props: ComposerProps): JSX.Element {
       panel={panel}
       win={win}
       active={active}
-      previewMaxPx={maxVisible * t.control.rowHeight}
+      previewLines={
+        wideOpen
+          ? []
+          : previewLinesOf(
+              panel?.preview,
+              maxVisible * ROW_HEIGHT,
+              codeLineBox(t),
+            )
+      }
       styles={styles}
       statusBar={
         <ComposerStatusBar

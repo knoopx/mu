@@ -19,7 +19,6 @@ import {
   graphLaneCount,
   type AdwaitaTheme,
   type GraphNode,
-  type SemanticColors,
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
@@ -27,18 +26,31 @@ import { PAGE_INSET } from "../lib/ui/transcriptLayout";
 import { centerRow, column, ellipsis, ellipsisFill } from "../lib/ui/layout";
 import { mutedText } from "../lib/ui/theme";
 import {
+  INLINE_GLYPH,
+  MARKER_GLYPH,
+  ROW_HEIGHT,
+  STATE_GLYPH,
+  STATUS_DOT,
+  STATUS_DOT_RADIUS,
+  glyphForText,
+  lineBox,
+  monoColumn,
+  titleWeight,
+} from "../lib/ui/tokens";
+import {
   FEED_COUNT,
   type FeedChange,
   type ProjectSummaryModel,
 } from "../lib/project/projectSummary";
 import type { PromptPill } from "../lib/project/promptTemplates";
 
-export const CHANGE_ROW_HEIGHT = 24;
+/** How many characters a feed row's two fixed columns hold. */
+const ID_COLUMN_CHARS = 6;
+const AGE_COLUMN_CHARS = 7;
 
-const IDENTITY_ROW_HEIGHT = 64;
-
-const ID_COLUMN_WIDTH = 72;
-const AGE_COLUMN_WIDTH = 80;
+/** The lines a loading header stands in for, in characters: a short title and two meta lines. */
+const SKELETON_TITLE_CHARS = 18;
+const SKELETON_META_CHARS = [38, 26] as const;
 
 const FEED_LIMIT = FEED_COUNT;
 
@@ -59,17 +71,17 @@ function ChangeFeedRow(props: {
   node: GraphNode;
   prev: GraphNode | null;
   laneCount: number;
-  color: SemanticColors;
   onPick?: () => void;
 }): JSX.Element {
+  const t = useAdwaita();
   const { change, bookmarks } = props.feed;
   const descColor =
     change.description === "(no description)"
-      ? props.color.text.dim
-      : props.color.text.primary;
+      ? mutedText(t)
+      : t.color.text.primary;
   return (
     <ListRow
-      height={CHANGE_ROW_HEIGHT}
+      height={ROW_HEIGHT}
       onClick={props.onPick}
       style={{ paddingLeft: 0, paddingRight: 0 }}
     >
@@ -82,11 +94,11 @@ function ChangeFeedRow(props: {
         />
         <div
           style={{
-            width: ID_COLUMN_WIDTH,
+            width: monoColumn(t, ID_COLUMN_CHARS),
             flexShrink: 0,
-            fontFamily: "monospace",
-            fontSize: 11,
-            color: props.color.text.dim,
+            fontFamily: t.type.fontFamilyMono,
+            fontSize: t.type.micro,
+            color: mutedText(t),
             whiteSpace: "nowrap",
           }}
         >
@@ -106,18 +118,18 @@ function ChangeFeedRow(props: {
         {change.has_conflicts ? (
           <Icon
             name="warning"
-            size={12}
-            color={props.color.functional.destructive}
+            size={MARKER_GLYPH}
+            color={t.color.functional.destructive}
             style={{ flexShrink: 0 }}
           />
         ) : null}
         <div
           style={{
-            width: AGE_COLUMN_WIDTH,
+            width: monoColumn(t, AGE_COLUMN_CHARS),
             flexShrink: 0,
             textAlign: "right",
-            fontSize: 10,
-            color: props.color.text.dim,
+            fontSize: t.type.micro,
+            color: mutedText(t),
             whiteSpace: "nowrap",
             overflow: "hidden",
           }}
@@ -156,28 +168,32 @@ function SectionTitle(props: {
   trailing?: string;
   inset: number;
 }): JSX.Element {
-  const { color } = useAdwaita();
+  const t = useAdwaita();
   return (
     <Block
       inset={props.inset}
-      gap={4}
-      style={{ paddingTop: 8, paddingBottom: 4 }}
+      gap={t.space.xs}
+      style={{ paddingTop: t.space.sm, paddingBottom: t.space.xs }}
     >
       <div
         style={{
           display: "flex",
           flexDirection: "row",
           alignItems: "baseline",
-          gap: 6,
+          gap: t.space.sm,
         }}
       >
-        <T size="title4" weight={700} color={color.text.primary}>
+        <T
+          size="title4"
+          weight={titleWeight(t)}
+          color={t.color.text.primary}
+        >
           {props.title}
         </T>
         {props.trailing !== undefined ? (
           <T
             size="caption"
-            color={color.text.dim}
+            color={mutedText(t)}
             style={{ whiteSpace: "nowrap" }}
           >
             {props.trailing}
@@ -209,7 +225,7 @@ export function projectSummaryRows(
       <Block
         key="error"
         inset={inset}
-        gap={4}
+        gap={t.space.xs}
         style={{ paddingTop: t.space.md }}
       >
         <div
@@ -222,7 +238,7 @@ export function projectSummaryRows(
         >
           <Icon
             name="warning"
-            size={16}
+            size={STATE_GLYPH}
             color={color.functional.warning}
             style={{ flexShrink: 0 }}
           />
@@ -239,14 +255,14 @@ export function projectSummaryRows(
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 4,
+                gap: t.space.xs,
                 cursor: "pointer",
               }}
               onClick={props.onReload}
             >
               <Icon
                 name="refresh"
-                size={14}
+                size={INLINE_GLYPH}
                 color={mutedText(t)}
                 style={{ flexShrink: 0 }}
               />
@@ -284,9 +300,10 @@ export function projectSummaryRows(
         gap={t.space.md}
         style={{ paddingTop: t.space.md }}
       >
-        {bar(220, 20, "a")}
-        {bar(460, 13, "b")}
-        {bar(320, 13, "c")}
+        {bar(monoColumn(t, SKELETON_TITLE_CHARS), t.type.title1, "title")}
+        {...SKELETON_META_CHARS.map((chars, i) =>
+          bar(monoColumn(t, chars), t.type.caption, `meta-${i}`),
+        )}
       </Block>,
     ];
   }
@@ -313,30 +330,30 @@ export function projectSummaryRows(
       style={{ paddingTop: t.space.md, paddingBottom: t.space.sm }}
     >
       <div style={centerRow(t.space.lg, { width: "100%" })}>
-        <div style={column(4, { flexGrow: 1, flexBasis: 0 })}>
-          <div style={centerRow(6)}>
+        <div style={column(t.space.xs, { flexGrow: 1, flexBasis: 0 })}>
+          <div style={centerRow(t.space.sm)}>
             <Icon
               name="folder"
-              size={15}
-              color={color.text.dim}
+              size={glyphForText(t.type.body)}
+              color={mutedText(t)}
               style={{ flexShrink: 0 }}
             />
             <T
               size="body"
-              weight={700}
+              weight={titleWeight(t)}
               color={color.text.primary}
-              style={ellipsis({ lineHeight: 18 })}
+              style={ellipsis({ lineHeight: lineBox(t, "body") })}
             >
               {identity.name}
             </T>
           </div>
-          <div style={centerRow(6)}>
+          <div style={centerRow(t.space.sm)}>
             {dot !== null ? (
               <div
                 style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: 4,
+                  width: STATUS_DOT,
+                  height: STATUS_DOT,
+                  borderRadius: STATUS_DOT_RADIUS,
                   backgroundColor: dot,
                   flexShrink: 0,
                   pointerEvents: "none",
@@ -344,9 +361,12 @@ export function projectSummaryRows(
               />
             ) : null}
             <T
-              size="caption"
-              color={color.text.dim}
-              style={{ fontSize: 11, lineHeight: 14, whiteSpace: "nowrap" }}
+              size="micro"
+              color={mutedText(t)}
+              style={{
+                lineHeight: lineBox(t, "micro"),
+                whiteSpace: "nowrap",
+              }}
             >
               {metaSegments.join(" · ")}
             </T>
@@ -371,7 +391,7 @@ export function projectSummaryRows(
         key="heatmap"
         inset={inset}
         gap={0}
-        style={{ paddingTop: 12, paddingBottom: 12 }}
+        style={{ paddingTop: t.space.md, paddingBottom: t.space.md }}
       >
         <ContributionHeatmap
           weeks={activity.weeks}
@@ -405,7 +425,6 @@ export function projectSummaryRows(
               node={graph[i]}
               prev={i > 0 ? graph[i - 1] : null}
               laneCount={laneCount}
-              color={color}
               onPick={
                 props.onPrompt === undefined
                   ? undefined
@@ -433,7 +452,7 @@ export function projectSummaryRows(
       <Block
         key="pills"
         inset={inset}
-        gap={6}
+        gap={t.space.sm}
         style={{
           flexDirection: "row",
           flexWrap: "wrap",
@@ -454,7 +473,7 @@ export function projectSummaryRows(
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
-                gap: 6,
+                gap: t.space.xs,
                 pointerEvents: "none",
               }}
             >
@@ -468,7 +487,7 @@ export function projectSummaryRows(
               {pill.hint.length > 0 ? (
                 <T
                   size="caption"
-                  color={color.text.dim}
+                  color={mutedText(t)}
                   style={{ whiteSpace: "nowrap" }}
                 >
                   {pill.hint}
