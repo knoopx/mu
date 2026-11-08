@@ -23,6 +23,7 @@ import { keyOf, modsOf } from "../../core/lib/ui/keyEvents";
 import { type Change, type FileChange } from "adwaita-gpuix";
 import { FilePanelFocus, PanelMode, RevsetDef } from "../types";
 import { useChangeGraph } from "./useChangeGraph";
+import type { ChangeImage } from "./useChangeFiles";
 import { useChangeStackData } from "./useChangeStackData";
 import { useChangeWrites } from "./useChangeWrites";
 import { useChangesActions } from "./useChangesActions";
@@ -64,6 +65,7 @@ export interface ChangesPanelState {
   files: FileChange[];
   fileSel: number;
   patch: string;
+  image: ChangeImage | null;
 
   error: string | null;
 
@@ -210,6 +212,7 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     files: data.files,
     fileSel: data.fileSel,
     patch: data.patch,
+    image: data.image,
     error: data.error,
     overlay: overlay.overlay,
     overlayChangeId: overlay.changeId,

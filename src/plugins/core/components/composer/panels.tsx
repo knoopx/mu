@@ -183,7 +183,6 @@ const BUSY_TEXT: Partial<Record<ListSource, string>> = {
 const EMPTY_TEXT: Partial<Record<ListSource, string>> = {
   session: "No sessions for this folder",
   userMessageHistory: "No user messages in this folder’s sessions",
-  guardrails: "No rules — guarded calls are read and released",
   path: "No path matches",
 };
 
@@ -315,12 +314,7 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   hints: TREE_HINTS,
 });
 
-/**
- * The height of a wide panel. The changes panel owns a three-part layout — a
- * stack, a file list and a diff — and the diff wants every pixel it can get, so
- * it always takes the full band. The history tree is one short list, so it
- * fits its content.
- */
+
 function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
   const { theme: t, tree, windowHeight } = data;
   if (isChanges) return composerPanelHeight(windowHeight);
@@ -390,13 +384,15 @@ function listPanelSpec(
     statusBar,
     fieldExtra,
   );
-  const maxVisible = tallList
-    ? composerPanelFitRows(
-        t,
-        rows,
-        panelBand - composerPanelChrome(t, statusBar, fieldExtra),
-      )
-    : panelRowsFor(t, fitHeight, statusBar, fieldExtra);
+  
+  
+  
+  
+  const maxVisible = composerPanelFitRows(
+    t,
+    rows,
+    panelBand - composerPanelChrome(t, statusBar, fieldExtra),
+  );
   const windowedHeight =
     rowsHeightOf(
       windowRows(rows, panelIndex(mode, rows.length), maxVisible).visible,
@@ -419,7 +415,12 @@ function listPanelSpec(
     error,
     status: listStatus(data, source, rows, query, total),
     ...(source === "session" ? { onDelete: data.onDelete } : {}),
-    emptyText: EMPTY_TEXT[source] ?? "No matches",
+    
+    
+    emptyText:
+      source === "guardrails"
+        ? data.guardrails.emptyText
+        : (EMPTY_TEXT[source] ?? "No matches"),
     onPick: data.onPick,
     onHover: (index: number) => data.onHover(mode, index, rows.length),
   };

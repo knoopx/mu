@@ -47,7 +47,7 @@ Matching runs `query` → `capture` → `filters`. A filter's `capture` names a 
 of the **same** match, or `"$"` for the whole guarded text; a filter naming a capture
 the query never produces yields no text, so the rule does not fire. Every rule of the
 source runs, armed or not: a disarmed match is recorded with `blocked: false` so the
-panel shows what arming it would stop. Only an armed match blocks, and the block
+transcript row shows what arming it would have stopped. Only an armed match blocks, and the block
 reason carries **one** message — the earliest match, ties to registry order.
 
 A `#match?` written on a bare `(program) @root` is ignored by the query engine, which

@@ -93,6 +93,9 @@ export type ComposerPanelRow =
 
 export interface ComposerRowFigure {
   icon?: IconName;
+
+  
+  color?: string;
   text: string;
 
   width?: number;
@@ -108,7 +111,7 @@ export interface ComposerPreviewSpec {
   path: string;
   lines: string[];
 
-  /** What to say when there is nothing to paint: a folder, an empty file, a binary. */
+  
   note?: string;
 }
 
@@ -176,7 +179,7 @@ export interface ComposerProps {
 
   onHistory?: () => void;
 
-  /** Tab: complete the path the draft is typing. */
+  
   onComplete?: () => void;
 
   tone?: ComposerTone;
@@ -548,7 +551,7 @@ function PanelPreview({
   const src = imageSourceOf(preview.path);
   if (src !== undefined)
     return <PanelImagePreview path={preview.path} src={src} styles={styles} />;
-  // `lines` is what fits the pane: empty for a folder, an empty file, a binary.
+  
   if (lines.length === 0)
     return (
       <div style={styles.previewPane}>

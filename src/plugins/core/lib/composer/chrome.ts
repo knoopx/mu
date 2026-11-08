@@ -8,7 +8,6 @@ export interface PanelChrome {
   listPane: (width?: number) => StyleDesc;
   widePane: StyleDesc;
   previewPane: StyleDesc;
-  previewCode: StyleDesc;
   paneRule: StyleDesc;
   paneRuleH: StyleDesc;
   rowList: (rows: number) => StyleDesc;
@@ -45,14 +44,6 @@ export function panelChrome(t: AdwaitaTheme): PanelChrome {
       flexBasis: 0,
       minWidth: 0,
       minHeight: 0,
-    },
-    previewCode: {
-      flexGrow: 1,
-      minHeight: 0,
-      overflow: "hidden",
-      fontSize: t.type.caption,
-      fontFamily: t.type.fontFamilyMono,
-      color: t.color.text.primary,
     },
     paneRule: {
       width: t.control.dividerThickness,

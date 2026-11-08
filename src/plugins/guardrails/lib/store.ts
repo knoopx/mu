@@ -6,7 +6,7 @@ import type {
   GuardrailsSnapshot,
 } from "../types";
 import { readGuardrailsState, writeGuardrailsState } from "./rulesFile";
-import { guardrailDomains, guardrailRules } from "./rules";
+import { guardrailDomains } from "./rules";
 
 const EMPTY_ENGINE: GuardrailEngineState = {
   phase: "idle",
@@ -91,17 +91,6 @@ export class GuardrailsStore {
     this.publish();
   }
 
-  setArmed(on: boolean): string {
-    if (on === this.armedAll)
-      return on ? "Guardrails already armed" : "Guardrails already disarmed";
-    this.armedAll = on;
-    this.publish();
-    const count = guardrailRules().length;
-    return on
-      ? `Guardrails armed · ${count} ${count === 1 ? "rule" : "rules"} block`
-      : "Guardrails disarmed · calls run unguarded";
-  }
-
   toggleDomain(domain: string): string {
     if (this.disarmed.has(domain)) this.disarmed.delete(domain);
     else this.disarmed.add(domain);
@@ -123,16 +112,13 @@ export class GuardrailsStore {
   }
 
   private build(): GuardrailsSnapshot {
-    const rules = guardrailRules();
     const domains = guardrailDomains();
     return {
       armed: this.armedAll,
       disarmed: [...this.disarmed],
       hits: this.hits,
       engine: this.engine,
-      ruleCount: rules.length,
       domainCount: domains.length,
-      rulesPending: rules.length === 0,
       rulesDir: this.rulesDir,
       ruleFiles: this.ruleFiles,
       ruleErrors: this.ruleErrors,

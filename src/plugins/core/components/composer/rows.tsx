@@ -25,13 +25,17 @@ const MONO_ADVANCE = 0.6;
 const figureGlyph = (t: AdwaitaTheme): number =>
   Math.round(t.type.caption * 0.92);
 
+
+export const composerFigureTextWidth = (t: AdwaitaTheme, chars: number): number =>
+  Math.round(chars * t.type.caption * MONO_ADVANCE);
+
+
+export const composerFigureGlyphWidth = (t: AdwaitaTheme): number => figureGlyph(t);
+
 export const composerFigureColumnWidth = (
   t: AdwaitaTheme,
   chars: number,
-): number =>
-  figureGlyph(t) +
-  t.space.xs +
-  Math.round(chars * t.type.caption * MONO_ADVANCE);
+): number => figureGlyph(t) + t.space.xs + composerFigureTextWidth(t, chars);
 
 function panelRowStyle(
   t: AdwaitaTheme,
@@ -219,11 +223,13 @@ function RowFigures({
             <Icon
               name={figure.icon}
               size={glyph}
-              color={ink}
+              color={figure.color ?? ink}
               style={{ flexShrink: 0, userSelect: "none" }}
             />
           )}
-          <text style={figureText(t)}>{figure.text}</text>
+          {figure.text === "" ? null : (
+            <text style={figureText(t)}>{figure.text}</text>
+          )}
         </div>
       ))}
     </div>

@@ -75,7 +75,7 @@ export const PANEL_PLACEHOLDER: Record<
   accent: "Type an accent colour name",
   userMessageHistory:
     "Type to search the user messages of every session in this folder",
-  guardrails: "Type to filter rules and hits",
+  guardrails: "Type to filter the guardrail domains",
 };
 
 export const panelPlaceholder = (

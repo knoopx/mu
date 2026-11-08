@@ -10,11 +10,12 @@ import {
   useListWindow,
   VirtualListPanel,
 } from "adwaita-gpuix";
-import { buildNativeTheme, mutedText } from "../../core/lib/ui/theme";
+import { mutedText } from "../../core/lib/ui/theme";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { iconForFile } from "../../core/lib/composer/options";
 import { relativeAge } from "../../core/lib/utils/time";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
+import { ChangesPreview } from "./ChangesPreview";
 import type { ChangesPanelState } from "../hooks/useChangesPanel";
 
 const LIST_CAP = 200;
@@ -176,18 +177,13 @@ export function ChangesPanel({
             </div>
             <div style={s.paneRuleH} />
             <div style={s.previewPane}>
-              {panel.patch.length === 0 ? (
-                <PaneEmpty text="No diff for this file" style={s.emptyPane} />
-              ) : (
-                <code
-                  ref={panel.diffRef}
-                  code={panel.patch}
-                  path={file?.path ?? ""}
-                  showLineNumbers
-                  theme={buildNativeTheme(t)}
-                  style={s.previewCode}
-                />
-              )}
+              <ChangesPreview
+                path={file?.path ?? ""}
+                status={file?.status ?? ""}
+                patch={panel.patch}
+                image={panel.image}
+                diffRef={panel.diffRef}
+              />
             </div>
           </>
         )}

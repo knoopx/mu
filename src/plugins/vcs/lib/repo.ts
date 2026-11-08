@@ -180,10 +180,15 @@ export function bookmarkNamesFor(
 
 const filesCache = new Map<string, FileChange[]>();
 const patchCache = new Map<string, string>();
+const blobCache = new Map<string, Uint8Array | null>();
+
+/** A picture the panel will paint: big files stay in the repo, not in memory. */
+const MAX_BLOB_BYTES = 8 * 1024 * 1024;
 
 function clearPatchCaches(): void {
   filesCache.clear();
   patchCache.clear();
+  blobCache.clear();
 }
 
 async function cacheKey(changeId: string): Promise<string> {
@@ -229,6 +234,48 @@ export async function getRawDiff(
   const out = (await vcs(args)).stdout;
   patchCache.set(key, out);
   return out;
+}
+
+/**
+ * The bytes of one file of a change: at the change itself, or at its first
+ * parent.
+ *
+ * A patch is text and `run` decodes stdout as text, which would eat a picture,
+ * so a picture is read from jj's own content store, binary-safe. Null means jj
+ * had no such file there — an added picture has no before, a deleted picture no
+ * after — or that it is too big to hand over.
+ */
+export async function loadFileBytes(
+  changeId: string,
+  filePath: string,
+  at: "change" | "parent",
+): Promise<Uint8Array | null> {
+  if (hasVcsMock()) return null;
+
+  const revision = at === "change" ? changeId : await parentChangeId(changeId);
+  if (revision === null) return null;
+
+  const key = `${await cacheKey(changeId)}:${revision}:${filePath}`;
+  const cached = blobCache.get(key);
+  if (cached !== undefined) return cached;
+
+  let bytes: Uint8Array | null = null;
+  try {
+    const { stdout } = await pExecFile(
+      VCS,
+      ["file", "show", "-r", revision, filePath],
+      {
+        cwd: findWorkspaceRoot(),
+        maxBuffer: MAX_BLOB_BYTES,
+        encoding: "buffer",
+      },
+    );
+    if (stdout.length > 0 && stdout.length <= MAX_BLOB_BYTES) bytes = stdout;
+  } catch {
+    bytes = null;
+  }
+  blobCache.set(key, bytes);
+  return bytes;
 }
 
 function hunkToolAvailable(): boolean {

@@ -98,7 +98,7 @@ A conversation is a tree, not a line. Open the history to see every point you ha
 
 ## Changes
 
-The agent's work is your project's history. The changes panel shows the stack of changes on the left, the files of the selected change on the right, and its diff in between. Space checks changes, so one ask can cover several of them.
+The agent's work is your project's history. The changes panel shows the stack of changes on the left, the files of the selected change on the right, and under them the file you are on, drawn as what it is. Source is a real diff — its lines tinted in and out, with the words that changed marked inside a paired line. A csv, tsv or tab file is its two tables lined up row by row, with the cells that changed marked. A picture is the picture before and the picture after, because no patch says what changed in an image. Space checks changes, so one ask can cover several of them.
 
 Naming a change and splitting it are asked of the agent. Press describe, or split on the change or on one of its files, or split hunks, and the panel hands over the change, the files and the hunks you named: the agent reads the diff, writes the message itself, makes the write, and leaves a row in the log with the change ids it ended up with and which half holds what, so you can check it against the history it came from.
 
@@ -124,7 +124,7 @@ Before the agent changes a file it did not write, it asks the project about itse
 
 Some commands are not what a project wants: a global install, a `sleep` standing in for a real condition, a `rm` where `trash` exists. Guardrails read a tool call as a syntax tree rather than a string, and a call that matches never runs — the agent is handed the correction to take instead, in the result, so the next move is the right one.
 
-`/guardrails` (Ctrl+Shift+G) opens the panel: the rules grouped by domain, the domains ticked while they are armed, and the calls the engine stopped underneath. Enter arms or disarms a domain without moving the cursor, and the status line says how long the parser took to boot, so an engine that is not reading is never silent. A command the engine cannot read is let through: a guardrail that cannot be read blocks nothing.
+`/guardrails` (Ctrl+Shift+G) opens the panel: one line per rule file — the domain, how many rules it holds, the grammars those rules read, and the tick that says the domain is armed. A domain is the smallest thing that can be armed: a rule is a line in a file you own, not a switch. Enter arms or disarms a domain without moving the cursor, and the status line counts the domains that are armed, the rule files that were read, and says how long the parser took to boot, so an engine that is not reading is never silent. A command the engine cannot read is let through: a guardrail that cannot be read blocks nothing.
 
 A guardrail is a file you own. Rules live in mu's own directory under your config — `~/.config/mu/guardrails/package-manager.json`, `nix.json`, `jj.json` — and the cases that prove each rule sit beside it as `package-manager.fixtures.json`. Nothing is written into your project, nothing is inherited from another program's settings, and mu remembers which domains you disarmed, so a domain you turned off stays off. A rule is a query, a domain, and the correction the agent is handed instead of the command.
 

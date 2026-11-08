@@ -2,7 +2,7 @@ import type { CommandPlugin } from "./types";
 
 export const guardrailsCommand: CommandPlugin = {
   name: "guardrails",
-  description: "Arm the guardrails and read what they blocked",
+  description: "Arm the guardrail domains",
   icon: "shield",
   target: "guardrails",
 };

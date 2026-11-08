@@ -2,7 +2,7 @@ export const GUARDRAILS_COMMAND = "guardrails";
 export const GUARDRAILS_PANEL_KEY = "guardrails";
 export const GUARDRAILS_OPEN_BINDING = "composer.guardrails";
 
-/** Tools whose command text is guarded, and the keys that hold it. */
+
 export const GUARDED_COMMAND_TOOLS: readonly string[] = [
   "bash",
   "shell",
@@ -12,10 +12,7 @@ export const GUARDED_COMMAND_TOOLS: readonly string[] = [
 ];
 export const COMMAND_INPUT_KEYS: readonly string[] = ["command", "cmd"];
 
-/**
- * Tools whose file text is guarded, the keys that hold it, and the key that
- * names the grammar that text is written in.
- */
+
 export const GUARDED_FILE_TOOLS: readonly string[] = [
   "write",
   "edit",
@@ -37,9 +34,8 @@ export const PARSE_BUDGET_MS = 25;
 
 export const MAX_GUARDED_BYTES = 64 * 1024;
 
-export const MAX_PANEL_HITS = 24;
 
-export const MAX_PANEL_RULES = 60;
+export const MAX_PANEL_HITS = 24;
 
 export const GUARDRAILS_TEST_TOOL = "guardrails-test";
 export const GUARDRAILS_FIXTURE_TOOL = "guardrails-fixture-update";

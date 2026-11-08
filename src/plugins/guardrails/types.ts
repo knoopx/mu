@@ -1,11 +1,6 @@
 import type { ComposerPanelRow } from "../core/components/composer/Composer";
 
-/**
- * Every grammar the runtime can load, named by its key in
- * `treeSitter/grammar.ts`. A language is guarded only when a rule names it and
- * a source resolves to it, so the list is what the wasm set supports, not what
- * any one session uses.
- */
+
 export type GuardrailLanguage =
   | "bash"
   | "cpp"
@@ -36,10 +31,10 @@ export interface GuardrailRule {
 
   capture?: string;
 
-  /** The tools this rule reads; every guarded tool of its language when unset. */
+  
   tools?: readonly string[];
 
-  /** The input fields this rule reads; the command keys when unset. */
+  
   fields?: readonly string[];
 
   filters?: GuardrailFilter[];
@@ -116,10 +111,7 @@ export interface GuardrailsSnapshot {
   disarmed: readonly string[];
   hits: readonly GuardrailHit[];
   engine: GuardrailEngineState;
-  ruleCount: number;
   domainCount: number;
-
-  rulesPending: boolean;
 
   rulesDir: string | null;
 
@@ -226,6 +218,7 @@ export interface GuardrailsPanelApi {
   snapshot: GuardrailsSnapshot;
   rows: readonly ComposerPanelRow[];
   statusText: string;
+  emptyText: string;
 
   toggle(key: string): string;
 }

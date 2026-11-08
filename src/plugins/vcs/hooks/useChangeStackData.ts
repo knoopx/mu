@@ -16,7 +16,7 @@ import {
 import { REVSETS } from "../constants";
 import { bookmarksByChange, type Change, type FileChange } from "adwaita-gpuix";
 import { RevsetDef } from "../types";
-import { useChangeFiles } from "./useChangeFiles";
+import { type ChangeImage, useChangeFiles } from "./useChangeFiles";
 import { useRepoWatch } from "./useRepoWatch";
 
 /** The panel's latest answers, read at the moment a key is handled. */
@@ -41,6 +41,7 @@ export interface StackData {
   files: FileChange[];
   fileSel: number;
   patch: string;
+  image: ChangeImage | null;
   error: string | null;
   bookmarks: Map<string, string[]>;
   currentId: string | null;
@@ -88,6 +89,7 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     files,
     fileSel,
     patch,
+    image,
     show: showFiles,
     select: selectFileOf,
     setFileSel,
@@ -164,6 +166,7 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     files,
     fileSel,
     patch,
+    image,
     error,
     bookmarks,
     currentId,

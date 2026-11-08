@@ -1,6 +1,22 @@
-import type { ComposerPanelRow } from "../../core/components/composer/Composer";
-import { MAX_PANEL_HITS, MAX_PANEL_RULES } from "../constants";
-import type { GuardrailEngineState, GuardrailsSnapshot } from "../types";
+import {
+  getFileIcon,
+  getFileIconColor,
+  type AdwaitaTheme,
+  type IconName,
+} from "adwaita-gpuix";
+import type {
+  ComposerPanelRow,
+  ComposerRowFigure,
+} from "../../core/components/composer/Composer";
+import {
+  composerFigureGlyphWidth,
+  composerFigureTextWidth,
+} from "../../core/components/composer/rows";
+import type {
+  GuardrailEngineState,
+  GuardrailLanguage,
+  GuardrailsSnapshot,
+} from "../types";
 import { guardrailDomains, guardrailRules } from "./rules";
 import { guardrailsStore } from "./store";
 
@@ -23,138 +39,121 @@ export function engineLabel(engine: GuardrailEngineState): string {
   }
 }
 
-function timeAgo(at: number, now: number): string {
-  const seconds = Math.max(0, Math.round((now - at) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  return `${Math.round(minutes / 60)}h ago`;
+
+export const domainArmed = (
+  snapshot: GuardrailsSnapshot,
+  domain: string,
+): boolean => snapshot.armed && !snapshot.disarmed.includes(domain);
+
+function armedDomainCount(snapshot: GuardrailsSnapshot): number {
+  return guardrailDomains().filter((domain) => domainArmed(snapshot, domain))
+    .length;
 }
 
-function clip(text: string, width: number): string {
-  const flat = text.replace(/\s+/g, " ").trim();
-  return flat.length <= width ? flat : `${flat.slice(0, width - 1)}…`;
+const ruleCountText = (count: number): string =>
+  `${count} ${count === 1 ? "rule" : "rules"}`;
+
+
+const GRAMMAR_FILE: Partial<Record<GuardrailLanguage, string>> = {
+  bash: "rule.sh",
+  cpp: "rule.cpp",
+  csharp: "rule.cs",
+  css: "rule.css",
+  go: "rule.go",
+  java: "rule.java",
+  javascript: "rule.js",
+  php: "rule.php",
+  python: "rule.py",
+  ruby: "rule.rb",
+  rust: "rule.rs",
+  tsx: "rule.tsx",
+  typescript: "rule.ts",
+};
+
+const GRAMMAR_ICON: Partial<Record<GuardrailLanguage, IconName>> = {
+  ini: "settings",
+  powershell: "terminal",
+  regex: "token",
+};
+
+function grammarFigure(
+  language: GuardrailLanguage,
+  width: number,
+): ComposerRowFigure {
+  const file = GRAMMAR_FILE[language];
+  const icon =
+    file === undefined ? (GRAMMAR_ICON[language] ?? "description") : getFileIcon(file);
+  const color = file === undefined ? null : getFileIconColor(file);
+  return { icon, ...(color === null ? {} : { color }), text: "", width };
 }
 
-function matches(query: string, row: ComposerPanelRow): boolean {
-  if (query.trim() === "") return true;
-  const needle = query.trim().toLowerCase();
-  const haystack = [
-    row.kind === "option" ? row.label : "",
-    row.kind === "option" ? (row.caption ?? "") : "",
-    row.kind === "option" ? (row.description ?? "") : "",
-  ]
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes(needle);
+interface DomainRow {
+  domain: string;
+  count: number;
+  languages: GuardrailLanguage[];
 }
+
+function domainRows(): DomainRow[] {
+  const rules = guardrailRules();
+  return guardrailDomains().map((domain) => {
+    const inDomain = rules.filter((rule) => rule.domain === domain);
+    return {
+      domain,
+      count: inDomain.length,
+      languages: [...new Set(inDomain.map((rule) => rule.language))],
+    };
+  });
+}
+
+const searchable = (row: DomainRow): string =>
+  `${row.domain} ${ruleCountText(row.count)} ${row.languages.join(" ")}`;
+
 
 export function guardrailPanelRows(
   snapshot: GuardrailsSnapshot,
+  theme: AdwaitaTheme,
   query = "",
-  now = Date.now(),
 ): ComposerPanelRow[] {
-  const rules = guardrailRules();
-  const domains = guardrailDomains();
-  const rows: ComposerPanelRow[] = [];
+  const t = theme;
+  const rows = domainRows();
+  const needle = query.trim().toLowerCase();
+  const visible =
+    needle === ""
+      ? rows
+      : rows.filter((row) => searchable(row).toLowerCase().includes(needle));
+  const rulesColumn = composerFigureTextWidth(
+    t,
+    Math.max(...visible.map((row) => ruleCountText(row.count).length), 0),
+  );
+  const glyphColumn = composerFigureGlyphWidth(t);
 
-  rows.push({
-    kind: "option",
-    key: "arm:all",
-    label: "All guardrails",
-    caption: snapshot.rulesPending
-      ? "no rules"
-      : `${snapshot.ruleCount} rules in ${snapshot.domainCount} ${
-          snapshot.domainCount === 1 ? "domain" : "domains"
-        }`,
-    description: snapshot.armed
-      ? "armed — a match blocks the call"
-      : "disarmed — calls run unguarded",
-    picked: snapshot.armed,
-    icon: snapshot.armed ? "shield" : "gppBad",
+  return visible.map((entry) => {
+    const figures: ComposerRowFigure[] = [
+      { text: ruleCountText(entry.count), width: rulesColumn },
+      ...entry.languages.map((language) => grammarFigure(language, glyphColumn)),
+    ];
+    return {
+      kind: "option",
+      key: `domain:${entry.domain}`,
+      label: entry.domain,
+      figures,
+      picked: domainArmed(snapshot, entry.domain),
+      icon: "folder",
+    };
   });
-
-  if (snapshot.ruleFiles === 0)
-    rows.push({
-      kind: "option",
-      key: "rules:dir",
-      label: "no rules",
-      caption: snapshot.rulesDir ?? "mu's guardrails directory",
-      description:
-        "write <domain>.json here; the suite goes beside it as <domain>.fixtures.json",
-      picked: false,
-      icon: "folder",
-    });
-
-  for (const domain of domains) {
-    const inDomain = rules.filter((rule) => rule.domain === domain);
-    rows.push({
-      kind: "option",
-      key: `domain:${domain}`,
-      label: domain,
-      caption: `${inDomain.length} ${inDomain.length === 1 ? "rule" : "rules"}`,
-      description: [...new Set(inDomain.map((rule) => rule.language))].join(
-        ", ",
-      ),
-      picked: snapshot.armed && !snapshot.disarmed.includes(domain),
-      icon: "folder",
-    });
-  }
-
-  for (const rule of rules.slice(0, MAX_PANEL_RULES)) {
-    rows.push({
-      kind: "option",
-      key: `rule:${rule.id}`,
-      label: clip(rule.message, 76),
-      caption: rule.id,
-      description: `${rule.domain} · ${rule.language}`,
-      picked: snapshot.armed && !snapshot.disarmed.includes(rule.domain),
-      icon: "textSearch",
-    });
-  }
-  if (rules.length > MAX_PANEL_RULES)
-    rows.push({
-      kind: "option",
-      key: "more:rules",
-      label: `${rules.length - MAX_PANEL_RULES} more rules`,
-      caption: "type to filter",
-      picked: false,
-      icon: "moreHoriz",
-    });
-
-  for (const hit of snapshot.hits.slice(0, MAX_PANEL_HITS)) {
-    rows.push({
-      kind: "option",
-      key: `hit:${hit.toolCallId}`,
-      label: `${hit.blocked ? "blocked" : "matched"} ${hit.tool}.${hit.field} · ${hit.ruleId}`,
-      caption: clip(hit.matchText, 64),
-      description: `${timeAgo(hit.at, now)} · ${hit.engineMs}ms`,
-      picked: false,
-      icon: hit.blocked ? "block" : "visibility",
-      tabular: true,
-    });
-  }
-
-  return rows.filter((row) => matches(query, row));
 }
 
 export function toggleGuardrail(key: string): string {
-  if (key === "arm:all")
-    return guardrailsStore.setArmed(!guardrailsStore.getSnapshot().armed);
   if (key.startsWith("domain:"))
     return guardrailsStore.toggleDomain(key.slice("domain:".length));
-  if (key.startsWith("rule:")) {
-    const id = key.slice("rule:".length);
-    const rule = guardrailRules().find((candidate) => candidate.id === id);
-    return rule === undefined
-      ? `Unknown guardrail rule ${id}`
-      : guardrailsStore.toggleDomain(rule.domain);
-  }
-  if (key.startsWith("hit:"))
-    return "Hits are a log — arm a domain to change what blocks";
-  if (key === "rules:dir")
-    return `Rules are files — write <domain>.json in ${guardrailsStore.getSnapshot().rulesDir ?? "mu's guardrails directory"}`;
   return "Nothing to arm here";
+}
+
+
+export function guardrailsEmptyText(snapshot: GuardrailsSnapshot): string {
+  return snapshot.ruleFiles === 0
+    ? `No rules — write <domain>.json in ${snapshot.rulesDir ?? "mu's guardrails directory"}`
+    : "No guardrail domain matches";
 }
 
 export function guardrailStatusText(
@@ -163,10 +162,13 @@ export function guardrailStatusText(
   visible: number,
 ): string {
   const blocked = snapshot.hits.filter((hit) => hit.blocked).length;
-  const total =
-    snapshot.ruleCount + snapshot.domainCount + snapshot.hits.length + 1;
+  const on = armedDomainCount(snapshot);
+  const total = snapshot.domainCount;
+  const domains = `${snapshot.domainCount} ${
+    snapshot.domainCount === 1 ? "domain" : "domains"
+  }`;
   return [
-    `guardrails ${snapshot.armed ? "armed" : "disarmed"}`,
+    `guardrails · ${on} of ${domains} armed`,
     query.trim() === "" ? `${visible} rows` : `${visible} of ${total} rows`,
     blocked === 0
       ? "no calls stopped yet"

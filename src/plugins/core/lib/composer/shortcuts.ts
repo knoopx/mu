@@ -10,35 +10,6 @@ export const DELETE_SESSION_KEY = "composer.deleteSession";
 
 export const AUTOCOMPLETE_KEY = "editor.autocomplete";
 
-const PANEL_LABEL: Record<string, string> = {
-  commands: "commands",
-  model: "models",
-  thinking: "thinking",
-  session: "sessions",
-  file: "files",
-  path: "paths",
-  changes: "changes",
-  tree: "history",
-  theme: "theme",
-  accent: "accent",
-  userMessageHistory: "messages",
-  guardrails: "guardrails",
-};
-
-const PANEL_OPEN_KEY: Record<string, string> = {
-  commands: "composer.commands",
-  model: "composer.models",
-  thinking: "composer.thinking",
-  session: "composer.sessions",
-  file: "composer.files",
-  changes: "composer.changes",
-  tree: "composer.tree",
-  theme: "composer.theme",
-  accent: "composer.accent",
-  userMessageHistory: "composer.userMessageHistory",
-  guardrails: "composer.guardrails",
-};
-
 const PANEL_CHOOSE: Record<string, string> = {
   commands: "run",
   model: "use",
@@ -54,15 +25,9 @@ const PANEL_CHOOSE: Record<string, string> = {
   guardrails: "arm",
 };
 
+
 export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
-  const openKey = PANEL_OPEN_KEY[panel];
   const rows: Shortcut[] = [];
-  if (openKey !== undefined)
-    rows.push({
-      id: "open",
-      kbds: [getKeybindings().get(openKey)],
-      desc: PANEL_LABEL[panel],
-    });
   rows.push(...navShortcuts({ select: "move" }));
   rows.push({ id: "choose", kbds: ["enter"], desc: PANEL_CHOOSE[panel] });
   rows.push({ id: "close", kbds: ["escape"], desc: "close" });
@@ -73,11 +38,7 @@ export function panelHints(panel: ComposerTarget | "commands"): Shortcut[] {
   return hints(panelShortcuts(panel));
 }
 
-/**
- * The completion panel is opened by Tab, not by a hotkey, so its first hint is
- * the key that opened it: Tab completes the path being typed, and Tab again
- * takes the highlighted one.
- */
+
 export function pathCompletionShortcuts(): Shortcut[] {
   return [
     {
