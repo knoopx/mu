@@ -14,12 +14,12 @@ import { Type } from "typebox";
 
 import { VCS_FILE_DIFF_TOOL } from "../constants";
 import {
-  NOT_A_JJ_REPO,
-  jjRoot,
-  parentRev,
-  resolveIds,
-  runDiff,
-} from "../lib/ops";
+  failedResult,
+  missingResult,
+  noRepoResult,
+  type VcsBlank,
+} from "../lib/answer";
+import { jjRoot, parentRev, resolveIds, runDiff } from "../lib/ops";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileDiffDetails, VcsFileDiffParams } from "../types";
 
@@ -40,24 +40,6 @@ const Parameters = Type.Object({
   ),
 });
 
-/** A failure still answers in the full details shape — the log paints a row for it either way. */
-const empty = (
-  status: VcsFileDiffDetails["status"],
-  error: string,
-  params: Partial<VcsFileDiffParams> = {},
-): VcsFileDiffDetails => ({
-  from: params.from ?? "",
-  to: params.to ?? "",
-  path: params.path ?? "",
-  from_git: "",
-  from_change: "",
-  to_git: "",
-  to_change: "",
-  status,
-  diff_line_count: 0,
-  diff: "",
-  error,
-});
 
 /** An omitted `to` is the parent of `from`, resolved first so the second end is an identity and not a guess. */
 export async function executeVcsFileDiff(
@@ -67,17 +49,21 @@ export async function executeVcsFileDiff(
   const to = (params.to ?? "").trim();
   const path = params.path.trim();
 
-  if (from.length === 0)
-    return toolResult(
-      "missing required parameter: from",
-      empty("failed", "missing required parameter: from", params),
-    );
+  // A failure still answers in the full details shape — the log paints a row for it either way.
+  const blank: VcsBlank<VcsFileDiffDetails> = {
+    from,
+    to,
+    path,
+    from_git: "",
+    from_change: "",
+    to_git: "",
+    to_change: "",
+    diff_line_count: 0,
+    diff: "",
+  };
 
-  if (jjRoot() === null)
-    return toolResult(
-      NOT_A_JJ_REPO,
-      empty("unsupported", NOT_A_JJ_REPO, params),
-    );
+  if (from.length === 0) return missingResult(blank, "from");
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const target = to.length === 0 ? await parentRev(from) : to;
   const [fromIds, toIds] = await Promise.all([
@@ -88,24 +74,15 @@ export async function executeVcsFileDiff(
   ]);
 
   const found = await runDiff(path, from, to);
-  const identities = {
-    from,
-    to,
-    path,
+  const identities: VcsBlank<VcsFileDiffDetails> = {
+    ...blank,
     from_git: fromIds.git,
     from_change: fromIds.change,
     to_git: toIds.git,
     to_change: toIds.change,
   };
 
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      ...identities,
-      status: "failed",
-      diff_line_count: 0,
-      diff: "",
-      error: found.error,
-    });
+  if (found.status === "failed") return failedResult(identities, found.error);
 
   const label = path.length === 0 || path === "*" ? "*" : path;
   const toLabel = to.length === 0 ? "working copy" : to;

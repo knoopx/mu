@@ -11,6 +11,7 @@
 import { counted, partsLine, scopeLabel } from "../../core/lib/agent/toolText";
 import type {
   ToolPaintRow,
+  ToolPaintSection,
   ToolRowMeter,
   ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
@@ -27,7 +28,6 @@ import { listOf, numberOf, recordOf, textOf, type JsonRecord } from "./json";
 import type {
   ComplexityRow,
   QualityCell,
-  QualitySection,
   QualityToolStatus,
   QualityToolView,
   RiskRow,
@@ -110,7 +110,7 @@ const analyserPairs = (details: Details): (readonly [string, string])[] => [
   ["scope", scopeLabel(textOf(details, "path"))],
 ];
 
-function section(title: string, rows: readonly ToolPaintRow[]): QualitySection[] {
+function section(title: string, rows: readonly ToolPaintRow[]): ToolPaintSection[] {
   return rows.length === 0 ? [] : [{ title, rows }];
 }
 

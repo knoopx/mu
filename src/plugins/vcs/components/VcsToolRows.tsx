@@ -17,9 +17,9 @@ import type { StyleDesc } from "@gpuix/react";
 
 import {
   ToolChips,
-  ToolDataRow,
+  ToolRowList,
   ToolRunning,
-  ToolStateNote,
+  ToolStatusNote,
   ToolSummary,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
@@ -31,7 +31,6 @@ import {
 import { buildNativeTheme } from "../../core/lib/ui/theme";
 import {
   toolCellOf,
-  toolStatusIcon,
   toolStatusTone,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
@@ -158,21 +157,6 @@ function join(parts: readonly string[]): string {
 const toneOf = (status: VcsToolStatus | ""): ToolRowTone =>
   toolStatusTone(status, VCS_STATUS_TONES);
 
-const iconOf = (status: VcsToolStatus | ""): IconName =>
-  toolStatusIcon(status, VCS_STATUS_ICONS);
-
-/** The note of a view, painted only when there is one to paint. */
-function VcsNote({ view }: { view: VcsToolView }): JSX.Element | null {
-  if (view.note === "") return null;
-  return (
-    <ToolStateNote
-      icon={iconOf(view.status)}
-      tone={toneOf(view.status)}
-      text={view.note}
-    />
-  );
-}
-
 /** Chips, summary, rows and note — the shape every table-shaped vcs tool shares. */
 function VcsViewBody({
   view,
@@ -197,15 +181,13 @@ function VcsViewBody({
     <div style={toolGapColumn(t)}>
       {summaryFirst ? summary : chips}
       {summaryFirst ? chips : summary}
-      {view.rows.map((row, index) => (
-        <ToolDataRow
-          key={row.key}
-          row={row}
-          first={index === 0}
-          variants={VCS_BADGE_VARIANTS}
-        />
-      ))}
-      <VcsNote view={view} />
+      <ToolRowList rows={view.rows} variants={VCS_BADGE_VARIANTS} />
+      <ToolStatusNote
+        status={view.status}
+        note={view.note}
+        tones={VCS_STATUS_TONES}
+        icons={VCS_STATUS_ICONS}
+      />
       {after ?? null}
     </div>
   );

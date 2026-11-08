@@ -87,6 +87,7 @@ const blankOf = (
   callers: [],
   callees: [],
   omitted: 0,
+  elapsed_ms: 0,
   error,
 });
 

@@ -12,7 +12,8 @@
 
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
-import { rebaseAfter, resolveIds } from "./ops";
+import { jjRoot, rebaseAfter, resolveIds } from "./ops";
+import { failedResult, missingResult, noRepoResult, type VcsBlank } from "./answer";
 import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type {
   RevisionIds,
@@ -21,13 +22,35 @@ import type {
   VcsToolStatus,
 } from "../types";
 
+/**
+ * What both splits check before a repo is touched, in one order: a revision,
+ * a message, a non-empty selection, a repo to write in. The tool supplies its
+ * own words for an empty selection, because only it knows what it asked for.
+ * `null` means the call may run.
+ */
+export const splitGuard = <D extends VcsSplitDetails>(
+  base: VcsBlank<D>,
+  rev: string,
+  message: string,
+  entries: readonly unknown[],
+  emptySelection: string,
+): AgentToolResult<D> | null => {
+  if (rev.length === 0) return missingResult(base, "rev");
+  if (message.trim().length === 0) return missingResult(base, "message");
+  if (entries.length === 0) return failedResult(base, emptySelection);
+  if (jjRoot() === null) return noRepoResult(base);
+  return null;
+};
+
 /** The pre-state plus this error, and any post-state the CLI already reported. */
-export const splitFailure = <D extends VcsSplitDetails>(
+const splitFailure = <D extends VcsSplitDetails>(
   text: string,
-  base: D,
+  base: VcsBlank<D>,
   overrides: Partial<D> = {},
 ): AgentToolResult<D> =>
-  toolResult(text, { ...base, status: "failed", error: text, ...overrides });
+  // `base` carries the tool's own fields and the overrides its post-state, so the
+  // assembled object is the tool's details type whatever D it was called with.
+  toolResult(text, { ...base, status: "failed", error: text, ...overrides } as D);
 
 /** The four fields both halves of a split always fill in. */
 const halvesOf = (
@@ -51,7 +74,7 @@ const halvesOf = (
  */
 export async function reportSplit<D extends VcsSplitDetails>(
   outcome: SplitOutcome,
-  base: D,
+  base: VcsBlank<D>,
   insertAfter: string,
   statusColumns: Record<string, string | number> = {},
 ): Promise<AgentToolResult<D>> {
@@ -91,7 +114,7 @@ export async function reportSplit<D extends VcsSplitDetails>(
       ...halves,
       status: "failed" as VcsToolStatus,
       error: rebaseFailure,
-    });
+    } as D);
 
   const text = blocks(
     statusTable({
@@ -113,5 +136,5 @@ export async function reportSplit<D extends VcsSplitDetails>(
     ...halves,
     status: "ok" as VcsToolStatus,
     error: "",
-  });
+  } as D);
 }

@@ -13,7 +13,14 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_FILE_HISTORY_TOOL } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, runFileHistory } from "../lib/ops";
+import {
+  failedResult,
+  missingResult,
+  noRepoResult,
+  type VcsBlank,
+} from "../lib/answer";
+import { limitParam, offsetParam } from "../lib/params";
+import { jjRoot, runFileHistory } from "../lib/ops";
 import { tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileHistoryDetails, VcsFileHistoryParams } from "../types";
 
@@ -22,19 +29,8 @@ const Parameters = Type.Object({
     description:
       "File path (absolute, or relative to the working directory), or a revision ID (jj change ID, jj commit ID, or revset).",
   }),
-  limit: Type.Optional(
-    Type.Number({
-      minimum: 1,
-      maximum: 500,
-      description: "Cap on revisions (default 20).",
-    }),
-  ),
-  offset: Type.Optional(
-    Type.Number({
-      minimum: 0,
-      description: "Skip the first N revisions (default 0).",
-    }),
-  ),
+  limit: limitParam("revisions", 20),
+  offset: offsetParam("revisions"),
 });
 
 /** `empty` is an answer here, not a failure: the path may be new, or spelled differently than the repo has it. */
@@ -42,36 +38,18 @@ export async function executeVcsFileHistory(
   params: VcsFileHistoryParams,
 ): Promise<AgentToolResult<VcsFileHistoryDetails>> {
   const path = params.path.trim();
-  if (path.length === 0)
-    return toolResult("missing required parameter: path", {
-      vcs: "jj",
-      path: "",
-      status: "failed",
-      revision_count: 0,
-      rows: [],
-      error: "missing required parameter: path",
-    });
+  const blank: VcsBlank<VcsFileHistoryDetails> = {
+    vcs: "jj",
+    path,
+    revision_count: 0,
+    rows: [],
+  };
 
-  if (jjRoot() === null)
-    return toolResult(NOT_A_JJ_REPO, {
-      vcs: "",
-      path,
-      status: "unsupported",
-      revision_count: 0,
-      rows: [],
-      error: NOT_A_JJ_REPO,
-    });
+  if (path.length === 0) return missingResult(blank, "path");
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const found = await runFileHistory(path, params.limit, params.offset);
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      vcs: "jj",
-      path,
-      status: "failed",
-      revision_count: 0,
-      rows: [],
-      error: found.error,
-    });
+  if (found.status === "failed") return failedResult(blank, found.error);
 
   const text =
     found.rows.length === 0
@@ -88,8 +66,7 @@ export async function executeVcsFileHistory(
         );
 
   return toolResult(text, {
-    vcs: "jj",
-    path,
+    ...blank,
     status: found.status,
     revision_count: found.rows.length,
     rows: found.rows,

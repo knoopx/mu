@@ -14,33 +14,24 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_FILE_SPLIT_TOOL, VCS_TOOL_LABELS } from "../constants";
-import {
-  NOT_A_JJ_REPO,
-  jjRoot,
-  rebaseAfter,
-  relativeToRoot,
-  resolveIds,
-  runFileSplit,
-} from "../lib/ops";
-import { missing } from "../../core/lib/agent/toolText";
-import { reportSplit, splitFailure } from "../lib/splitOutcome";
+import { unresolvedResult, type VcsBlank } from "../lib/answer";
+import { requiredText } from "../lib/params";
+import { relativeToRoot, resolveIds, runFileSplit } from "../lib/ops";
+import { reportSplit, splitGuard } from "../lib/splitOutcome";
 import type { VcsFileSplitDetails, VcsFileSplitParams } from "../types";
 
-const nonEmptyString = (description: string) =>
-  Type.String({ minLength: 1, pattern: "^\\s*\\S", description });
-
 const Parameters = Type.Object({
-  rev: nonEmptyString(
+  rev: requiredText(
     "The revision to split — a jj change ID, jj commit ID, or revset (e.g. `@`, `@-`).",
   ),
   files: Type.Array(
-    nonEmptyString("A file path or fileset; globs are matched by jj."),
+    requiredText("A file path or fileset; globs are matched by jj."),
     {
       description:
         "File paths / filesets to extract. Globs pass literally to jj; the named files are the SELECTED files — they go to the first/bottom commit.",
     },
   ),
-  message: nonEmptyString(
+  message: requiredText(
     "Description for the selected/bottom commit (the one carrying the named files).",
   ),
   insertAfter: Type.Optional(
@@ -54,7 +45,7 @@ const Parameters = Type.Object({
 const baseOf = (
   params: Partial<VcsFileSplitParams>,
   files: string,
-): VcsFileSplitDetails => ({
+): VcsBlank<VcsFileSplitDetails> => ({
   rev: params.rev?.trim() ?? "",
   git: "",
   change: "",
@@ -64,8 +55,6 @@ const baseOf = (
   selected_change: "",
   remaining_git: "",
   remaining_change: "",
-  status: "failed",
-  error: "",
 });
 
 /** Parameters, repo, revision, post-state, in that order: nothing runs against a revset that cannot be resolved. */
@@ -80,38 +69,23 @@ export async function executeVcsFileSplit(
     .map((file) => relativeToRoot(file.trim()))
     .filter((file) => file.length > 0);
   const filesLabel = files.join(", ");
+  const base = baseOf(params, filesLabel);
 
-  if (rev.length === 0)
-    return splitFailure(missing("rev"), baseOf(params, filesLabel));
-  if (message.trim().length === 0)
-    return splitFailure(missing("message"), baseOf(params, filesLabel));
-  if (files.length === 0)
-    return splitFailure(
-      "no valid file entries (each must be a non-empty file path or fileset)",
-      baseOf(params, filesLabel),
-    );
-
-  if (jjRoot() === null)
-    return splitFailure(NOT_A_JJ_REPO, baseOf(params, filesLabel), {
-      status: "unsupported",
-    });
+  const stopped = splitGuard(
+    base,
+    rev,
+    message,
+    files,
+    "no valid file entries (each must be a non-empty file path or fileset)",
+  );
+  if (stopped !== null) return stopped;
 
   const pre = await resolveIds(rev);
-  if (pre.git.length === 0)
-    return splitFailure(
-      `cannot resolve revision ${rev}`,
-      baseOf(params, filesLabel),
-    );
+  if (pre.git.length === 0) return unresolvedResult(base, rev);
 
-  const base = {
-    ...baseOf(params, filesLabel),
-    git: pre.git,
-    change: pre.change,
-  };
-
-  return reportSplit(
+  return reportSplit<VcsFileSplitDetails>(
     await runFileSplit(rev, files, message),
-    base,
+    { ...base, git: pre.git, change: pre.change },
     insertAfter,
     { files: filesLabel },
   );

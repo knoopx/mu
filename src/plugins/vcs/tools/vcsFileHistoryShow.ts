@@ -13,7 +13,13 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_FILE_HISTORY_SHOW_TOOL } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, resolveIds, runFileShow } from "../lib/ops";
+import {
+  failedResult,
+  missingResult,
+  noRepoResult,
+  type VcsBlank,
+} from "../lib/answer";
+import { jjRoot, resolveIds, runFileShow } from "../lib/ops";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsFileShowDetails, VcsFileShowParams } from "../types";
 
@@ -34,48 +40,34 @@ export async function executeVcsFileHistoryShow(
   const path = params.path.trim();
   const hash = params.hash.trim();
 
-  if (path.length === 0 || hash.length === 0) {
-    const reason = `missing required parameter: ${path.length === 0 ? "path" : "hash"}`;
-    return toolResult(reason, {
-      hash,
-      change: "",
-      path,
-      status: "failed",
-      lines: 0,
-      content: "",
-      error: reason,
-    });
-  }
+  const blank: VcsBlank<VcsFileShowDetails> = {
+    hash,
+    change: "",
+    path,
+    lines: 0,
+    content: "",
+  };
 
-  if (jjRoot() === null)
-    return toolResult(NOT_A_JJ_REPO, {
-      hash,
-      change: "",
-      path,
-      status: "unsupported",
-      lines: 0,
-      content: "",
-      error: NOT_A_JJ_REPO,
-    });
+  if (path.length === 0 || hash.length === 0)
+    return missingResult(blank, path.length === 0 ? "path" : "hash");
+
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const ids = await resolveIds(hash);
   const found = await runFileShow(path, hash);
 
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      hash: ids.git.length > 0 ? ids.git : hash,
-      change: ids.change,
-      path,
-      status: "failed",
-      lines: 0,
-      content: "",
-      error: found.error,
-    });
+  // A failure still names the change it read, so the chips say what was looked at.
+  const read: VcsBlank<VcsFileShowDetails> = {
+    ...blank,
+    hash: ids.git.length > 0 ? ids.git : hash,
+    change: ids.change,
+  };
+
+  if (found.status === "failed") return failedResult(read, found.error);
 
   const details: VcsFileShowDetails = {
+    ...read,
     hash: ids.git,
-    change: ids.change,
-    path,
     status: found.status,
     lines: found.lines,
     content: found.body,

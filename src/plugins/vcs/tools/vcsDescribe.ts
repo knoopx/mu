@@ -14,11 +14,12 @@ import { Type } from "typebox";
 
 import { VCS_DESCRIBE_TOOL } from "../constants";
 import {
-  NOT_A_JJ_REPO,
-  jjRoot,
-  resolveIdentity,
-  runDescribe,
-} from "../lib/ops";
+  failedResult,
+  missingResult,
+  noRepoResult,
+  type VcsBlank,
+} from "../lib/answer";
+import { jjRoot, resolveIdentity, runDescribe } from "../lib/ops";
 import { blocks, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsDescribeDetails, VcsDescribeParams } from "../types";
 
@@ -31,24 +32,6 @@ const Parameters = Type.Object({
   }),
 });
 
-const blank = (
-  status: VcsDescribeDetails["status"],
-  error: string,
-  previous: { commit: string; change: string } = { commit: "", change: "" },
-  post: { commit: string; change: string; message: string } = {
-    commit: "",
-    change: "",
-    message: "",
-  },
-): VcsDescribeDetails => ({
-  commit: post.commit,
-  change: post.change,
-  previous_commit: previous.commit,
-  previous_change: previous.change,
-  message: post.message,
-  status,
-  error,
-});
 
 /** Resolved before and after: a write that cannot name what it changed has not proved it ran. */
 export async function executeVcsDescribe(
@@ -57,58 +40,48 @@ export async function executeVcsDescribe(
   const hash = params.hash.trim();
   const message = params.message;
 
-  if (hash.length === 0)
-    return toolResult(
-      "missing required parameter: hash",
-      blank("failed", "missing required parameter: hash"),
-    );
-  if (message.trim().length === 0)
-    return toolResult(
-      "missing required parameter: message",
-      blank(
-        "failed",
-        "missing required parameter: message",
-        { commit: "", change: "" },
-        { commit: "", change: "", message: "" },
-      ),
-    );
+  const blank: VcsBlank<VcsDescribeDetails> = {
+    commit: "",
+    change: "",
+    previous_commit: "",
+    previous_change: "",
+    message: "",
+  };
+
+  if (hash.length === 0) return missingResult(blank, "hash");
+  if (message.trim().length === 0) return missingResult(blank, "message");
 
   const root = jjRoot();
-  if (root === null)
-    return toolResult(NOT_A_JJ_REPO, blank("unsupported", NOT_A_JJ_REPO));
+  if (root === null) return noRepoResult(blank);
 
   const previous = await resolveIdentity(hash);
-  if (previous.change.length === 0) {
-    const reason = `cannot resolve revision ${hash} in ${root}`;
-    return toolResult(reason, blank("failed", reason));
-  }
+  if (previous.change.length === 0)
+    return failedResult(
+      blank,
+      `cannot resolve revision ${hash} in ${root}`,
+    );
 
   const write = await runDescribe(hash, message);
   if (write.error.length > 0)
-    return toolResult(
+    return failedResult(
+      { ...blank, previous_commit: previous.git, previous_change: previous.change },
       write.error,
-      blank(
-        "failed",
-        write.error,
-        { commit: previous.git, change: previous.change },
-        { commit: "", change: "", message: "" },
-      ),
     );
 
   const post = await resolveIdentity(hash);
   const identities =
     post.git.length > 0 ? post : await resolveIdentity(previous.change);
 
-  const details = blank(
-    "ok",
-    "",
-    { commit: previous.git, change: previous.change },
-    {
-      commit: identities.git,
-      change: identities.change,
-      message: identities.description,
-    },
-  );
+  const details: VcsDescribeDetails = {
+    ...blank,
+    commit: identities.git,
+    change: identities.change,
+    previous_commit: previous.git,
+    previous_change: previous.change,
+    message: identities.description,
+    status: "ok",
+    error: "",
+  };
 
   const text = blocks(
     tableOf([

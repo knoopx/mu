@@ -13,19 +13,21 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_HUNK_LIST_TOOL, VCS_TOOL_LABELS } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, resolveIds, runHunkList } from "../lib/ops";
+import {
+  failedResult,
+  missingResult,
+  noRepoResult,
+  unresolvedResult,
+  type VcsBlank,
+} from "../lib/answer";
+import { jjRoot, resolveIds, runHunkList } from "../lib/ops";
 import {
   blocks,
-  missing,
   statusTable,
   tableOf,
   toolResult,
 } from "../../core/lib/agent/toolText";
-import type {
-  VcsHunkListDetails,
-  VcsHunkListParams,
-  VcsToolStatus,
-} from "../types";
+import type { VcsHunkListDetails, VcsHunkListParams } from "../types";
 
 const Parameters = Type.Object({
   rev: Type.String({
@@ -40,58 +42,39 @@ const Parameters = Type.Object({
   ),
 });
 
-const blank = (
-  rev: string,
-  git: string,
-  change: string,
-  status: VcsToolStatus,
-  error: string,
-): VcsHunkListDetails => ({
-  rev,
-  git,
-  change,
-  status,
-  hunk_count: 0,
-  rows: [],
-  error,
-});
 
 /** The revision is resolved even when there are no hunks, so the chips still say what was read. */
 export async function executeVcsHunkList(
   params: VcsHunkListParams,
 ): Promise<AgentToolResult<VcsHunkListDetails>> {
   const rev = params.rev.trim();
+  const blank: VcsBlank<VcsHunkListDetails> = {
+    rev: "",
+    git: "",
+    change: "",
+    hunk_count: 0,
+    rows: [],
+  };
+  const scope: VcsBlank<VcsHunkListDetails> = { ...blank, rev };
 
-  if (rev.length === 0)
-    return toolResult(
-      missing("rev"),
-      blank("", "", "", "failed", missing("rev")),
-    );
-
-  if (jjRoot() === null)
-    return toolResult(
-      NOT_A_JJ_REPO,
-      blank(rev, "", "", "unsupported", NOT_A_JJ_REPO),
-    );
+  if (rev.length === 0) return missingResult(blank, "rev");
+  if (jjRoot() === null) return noRepoResult(scope);
 
   const ids = await resolveIds(rev);
-  if (ids.git.length === 0) {
-    const reason = `cannot resolve revision ${rev}`;
-    return toolResult(reason, blank(rev, "", "", "failed", reason));
-  }
+  if (ids.git.length === 0) return unresolvedResult(scope, rev);
+
+  // The revision is resolved even when there are no hunks, so the chips still say what was read.
+  const read: VcsBlank<VcsHunkListDetails> = {
+    ...scope,
+    git: ids.git,
+    change: ids.change,
+  };
 
   const found = await runHunkList(rev, params.files);
-  if (found.status === "failed")
-    return toolResult(
-      found.error,
-      blank(rev, ids.git, ids.change, "failed", found.error),
-    );
+  if (found.status === "failed") return failedResult(read, found.error);
 
   if (found.rows.length === 0)
-    return toolResult(
-      `no hunks for ${rev}`,
-      blank(rev, ids.git, ids.change, "empty", ""),
-    );
+    return toolResult(`no hunks for ${rev}`, { ...read, status: "empty", error: "" });
 
   const text = blocks(
     statusTable({ rev, git: ids.git, change: ids.change, status: "ok" }),
@@ -107,9 +90,7 @@ export async function executeVcsHunkList(
   );
 
   return toolResult(text, {
-    rev,
-    git: ids.git,
-    change: ids.change,
+    ...read,
     status: found.status,
     hunk_count: found.rows.length,
     rows: found.rows,

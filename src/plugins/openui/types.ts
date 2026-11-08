@@ -8,7 +8,10 @@
  * fields, so a fact is stated once and read twice.
  */
 
-import type { ToolRowCell, ToolPaintRow } from "../core/lib/ui/toolRowPaint";
+import type {
+  ToolPaintSection,
+  ToolRowCell,
+} from "../core/lib/ui/toolRowPaint";
 import type { OpenuiDiagnostic, OpenuiEvent } from "./lib/programStore";
 
 export type { OpenuiDiagnostic, OpenuiEvent };
@@ -220,12 +223,6 @@ export interface OpenuiClearDetails {
   programs: string[];
 }
 
-/** One section of a tool row: a title when the block needs one, then its rows. */
-export interface OpenuiSection {
-  title: string;
-  rows: readonly ToolPaintRow[];
-}
-
 /** Everything the transcript needs to draw one openui tool call. */
 export interface OpenuiToolView {
   tool: string;
@@ -237,7 +234,7 @@ export interface OpenuiToolView {
 
   headline: string;
   cells: ToolRowCell[];
-  sections: OpenuiSection[];
+  sections: ToolPaintSection[];
   note: string;
   hiddenErrors: number;
 }

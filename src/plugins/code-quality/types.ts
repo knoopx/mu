@@ -1,7 +1,7 @@
 
 
 import type {
-  ToolPaintRow,
+  ToolPaintSection,
   ToolRowCell,
   ToolRowMeter,
 } from "../core/lib/ui/toolRowPaint";
@@ -250,16 +250,11 @@ export interface CodeSymbolReferencesDetails {
   callers: ReferenceRow[];
   callees: ReferenceRow[];
   omitted: number;
+  elapsed_ms: number;
   error: string;
 }
 
 
-
-
-export interface QualitySection {
-  title: string;
-  rows: readonly ToolPaintRow[];
-}
 
 
 
@@ -270,7 +265,7 @@ export interface QualityToolView {
   status: QualityToolStatus | "";
   headline: string;
   cells: QualityCell[];
-  sections: QualitySection[];
+  sections: ToolPaintSection[];
   omitted: number;
   note: string;
 }

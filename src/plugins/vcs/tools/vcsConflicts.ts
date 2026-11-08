@@ -13,7 +13,8 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_CONFLICTS_TOOL } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, runConflicts } from "../lib/ops";
+import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
+import { jjRoot, runConflicts } from "../lib/ops";
 import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsConflictsDetails, VcsConflictsParams } from "../types";
 
@@ -32,29 +33,19 @@ export async function executeVcsConflicts(
 ): Promise<AgentToolResult<VcsConflictsDetails>> {
   const rev = (params.rev ?? "").trim();
 
-  if (jjRoot() === null)
-    return toolResult(NOT_A_JJ_REPO, {
-      vcs: "",
-      rev,
-      status: "unsupported",
-      conflict_count: 0,
-      file_count: 0,
-      rows: [],
-      error: NOT_A_JJ_REPO,
-    });
+  const blank: VcsBlank<VcsConflictsDetails> = {
+    vcs: "jj",
+    rev,
+    conflict_count: 0,
+    file_count: 0,
+    rows: [],
+  };
+
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const found = await runConflicts(rev);
 
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      vcs: "jj",
-      rev,
-      status: "failed",
-      conflict_count: 0,
-      file_count: 0,
-      rows: [],
-      error: found.error,
-    });
+  if (found.status === "failed") return failedResult(blank, found.error);
 
   const text =
     found.status === "none"
@@ -74,8 +65,7 @@ export async function executeVcsConflicts(
         );
 
   return toolResult(text, {
-    vcs: "jj",
-    rev,
+    ...blank,
     status: found.status,
     conflict_count: found.revisions,
     file_count: found.rows.length,

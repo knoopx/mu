@@ -12,32 +12,24 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_OPLOG_TOOL } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, runOplog } from "../lib/ops";
+import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
+import {
+  formatParam,
+  limitParam,
+  offsetParam,
+  oldestFirstParam,
+} from "../lib/params";
+import { jjRoot, runOplog } from "../lib/ops";
 import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsOplogDetails, VcsOplogParams } from "../types";
 
 const Parameters = Type.Object({
-  limit: Type.Optional(
-    Type.Number({
-      minimum: 1,
-      maximum: 500,
-      description: "Cap on operations (default 25).",
-    }),
-  ),
-  offset: Type.Optional(
-    Type.Number({
-      minimum: 0,
-      description: "Skip the first N operations (default 0).",
-    }),
-  ),
-  oldest_first: Type.Optional(
-    Type.Boolean({ description: "Oldest-first ordering (jj `--reversed`)." }),
-  ),
-  format: Type.Optional(
-    Type.Union([Type.Literal("compact"), Type.Literal("full")], {
-      description:
-        "`compact` truncates the op id to 12 characters and the description to 120; `full` keeps both whole.",
-    }),
+  limit: limitParam("operations"),
+  offset: offsetParam("operations"),
+  oldest_first: oldestFirstParam(),
+  format: formatParam(
+    "truncates the op id to 12 characters and the description to 120",
+    "keeps both whole",
   ),
 });
 
@@ -45,14 +37,9 @@ const Parameters = Type.Object({
 export async function executeVcsOplog(
   params: VcsOplogParams,
 ): Promise<AgentToolResult<VcsOplogDetails>> {
-  if (jjRoot() === null)
-    return toolResult(NOT_A_JJ_REPO, {
-      vcs: "",
-      status: "unsupported",
-      op_count: 0,
-      rows: [],
-      error: NOT_A_JJ_REPO,
-    });
+  const blank: VcsBlank<VcsOplogDetails> = { vcs: "jj", op_count: 0, rows: [] };
+
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const found = await runOplog(
     params.limit,
@@ -61,14 +48,7 @@ export async function executeVcsOplog(
     params.format === "full",
   );
 
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      vcs: "jj",
-      status: "failed",
-      op_count: 0,
-      rows: [],
-      error: found.error,
-    });
+  if (found.status === "failed") return failedResult(blank, found.error);
 
   const text =
     found.rows.length === 0
@@ -85,7 +65,7 @@ export async function executeVcsOplog(
         );
 
   return toolResult(text, {
-    vcs: "jj",
+    ...blank,
     status: found.status,
     op_count: found.rows.length,
     rows: found.rows,

@@ -16,11 +16,11 @@ import { useAdwaita, type IconName } from "adwaita-gpuix";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
   ToolChips,
-  ToolDataRow,
   ToolRunning,
-  ToolSectionHead,
-  ToolStateNote,
+  ToolSections,
+  ToolStatusNote,
   ToolSummary,
+  ToolTruncated,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import {
@@ -29,7 +29,6 @@ import {
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusIcon,
   toolStatusTone,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
@@ -50,7 +49,7 @@ import {
   OPENUI_WRITE_TOOLS,
 } from "../constants";
 import { useProgramOwner } from "../hooks/usePrograms";
-import { openuiCellOf, openuiRowsOf, openuiToolViewOf } from "../lib/toolView";
+import { openuiCellOf, openuiToolViewOf } from "../lib/toolView";
 import type { OpenuiToolStatus, OpenuiToolView } from "../types";
 import { ProgramOutput } from "./ProgramOutput";
 
@@ -107,9 +106,6 @@ export function isOpenuiTool(name: string): boolean {
 const toneOf = (status: OpenuiToolStatus | ""): ToolRowTone =>
   toolStatusTone(status, PROGRAM_STATUS_TONES);
 
-const iconOf = (status: OpenuiToolStatus | ""): IconName =>
-  toolStatusIcon(status, PROGRAM_STATUS_ICONS);
-
 /** The tool header: which program, how it parsed, and what what the log holds. */
 export const openuiToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
@@ -128,49 +124,6 @@ function headOf(tool: string, view: OpenuiToolView): string {
     parts.push(`${components} components`);
 
   return parts.filter((part) => part !== "").join(" · ");
-}
-
-function OpenuiNote({ view }: { view: OpenuiToolView }): JSX.Element | null {
-  if (view.note === "") return null;
-  return (
-    <ToolStateNote
-      icon={iconOf(view.status)}
-      tone={toneOf(view.status)}
-      text={view.note}
-    />
-  );
-}
-
-function OpenuiHidden({ view }: { view: OpenuiToolView }): JSX.Element | null {
-  if (view.hiddenErrors <= 0) return null;
-  return (
-    <ToolStateNote
-      icon="unfoldMore"
-      tone="neutral"
-      text={`${String(view.hiddenErrors)} more diagnostics not shown — fix the first ones and re-send`}
-    />
-  );
-}
-
-function OpenuiSections({ view }: { view: OpenuiToolView }): JSX.Element[] {
-  const t = useAdwaita();
-  return view.sections.map((section, index) => (
-    <div
-      key={`${section.title || "rows"}-${String(index)}`}
-      style={toolBodyStack(t)}
-    >
-      <ToolSectionHead text={section.title} />
-      {section.rows.map((row, rowIndex) => (
-        <ToolDataRow
-          key={`${row.key}-${String(rowIndex)}`}
-          row={row}
-          first={rowIndex === 0}
-          variants={OPENUI_BADGE_VARIANTS}
-          pressable={false}
-        />
-      ))}
-    </div>
-  ));
 }
 
 
@@ -219,9 +172,17 @@ export function OpenuiToolRows({ item }: OpenuiToolRowsProps): JSX.Element {
       <ToolChips cells={view.cells} />
       {clean ? null : <ToolSummary text={view.headline} tone={toneOf(view.status)} />}
       {live ? <LiveProgram name={view.program} /> : null}
-      <OpenuiSections view={view} />
-      <OpenuiHidden view={view} />
-      <OpenuiNote view={view} />
+      <ToolSections sections={view.sections} variants={OPENUI_BADGE_VARIANTS} />
+      <ToolTruncated
+        count={view.hiddenErrors}
+        text={`${String(view.hiddenErrors)} more diagnostics not shown — fix the first ones and re-send`}
+      />
+      <ToolStatusNote
+        status={view.status}
+        note={view.note}
+        tones={PROGRAM_STATUS_TONES}
+        icons={PROGRAM_STATUS_ICONS}
+      />
     </div>
   );
 }

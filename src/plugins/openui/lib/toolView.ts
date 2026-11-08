@@ -25,6 +25,7 @@ import type {
   ToolRowCell,
   ToolRowTone,
   ToolPaintRow,
+  ToolPaintSection,
 } from "../../core/lib/ui/toolRowPaint";
 import {
   MAX_DIAGNOSTIC_ROWS,
@@ -49,7 +50,6 @@ import type {
   OpenuiLibraryComponent,
   OpenuiProgramRow,
   OpenuiPropRow,
-  OpenuiSection,
   OpenuiToolStatus,
   OpenuiToolView,
 } from "../types";
@@ -148,7 +148,7 @@ function cellsOf(
     .filter((cell) => cell.value !== "" && cell.value !== "0");
 }
 
-function sectionsOf(title: string, rows: readonly ToolPaintRow[]): OpenuiSection[] {
+function sectionsOf(title: string, rows: readonly ToolPaintRow[]): ToolPaintSection[] {
   return rows.length === 0 ? [] : [{ title, rows }];
 }
 
@@ -524,8 +524,4 @@ function logView(input: FoldInput): OpenuiToolView {
 
 export function openuiCellOf(view: OpenuiToolView, label: string): string {
   return view.cells.find((cell) => cell.label === label)?.value ?? "";
-}
-
-export function openuiRowsOf(view: OpenuiToolView): ToolPaintRow[] {
-  return view.sections.flatMap((section) => [...section.rows]);
 }

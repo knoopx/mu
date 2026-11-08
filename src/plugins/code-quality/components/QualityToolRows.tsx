@@ -12,11 +12,11 @@ import { useAdwaita, type IconName } from "adwaita-gpuix";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
   ToolChips,
-  ToolDataRow,
   ToolRunning,
-  ToolSectionHead,
-  ToolStateNote,
+  ToolSections,
+  ToolStatusNote,
   ToolSummary,
+  ToolTruncated,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import {
@@ -25,7 +25,6 @@ import {
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusIcon,
   toolStatusTone,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
@@ -101,9 +100,6 @@ export function isCodeQualityTool(name: string): boolean {
 const toneOf = (status: QualityToolStatus | ""): ToolRowTone =>
   toolStatusTone(status, QUALITY_STATUS_TONES);
 
-const iconOf = (status: QualityToolStatus | ""): IconName =>
-  toolStatusIcon(status, QUALITY_STATUS_ICONS);
-
 /** The tool header: what ran, what it counted, and the scope it was pointed at. */
 export const qualityToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
@@ -123,50 +119,6 @@ function headOf(tool: string, view: QualityToolView): string {
     parts.push(`${String(rows)} edges`);
 
   return parts.filter((part) => part !== "").join(" · ");
-}
-
-function QualityNote({ view }: { view: QualityToolView }): JSX.Element | null {
-  if (view.note === "") return null;
-  return (
-    <ToolStateNote
-      icon={iconOf(view.status)}
-      tone={toneOf(view.status)}
-      text={view.note}
-    />
-  );
-}
-
-function QualityOmitted({ view }: { view: QualityToolView }): JSX.Element | null {
-  if (view.omitted <= 0) return null;
-  return (
-    <ToolStateNote
-      icon="unfoldMore"
-      tone="neutral"
-      text={`${String(view.omitted)} more not shown — raise \`limit\` to read them`}
-    />
-  );
-}
-
-/** One block per section the view asked for: a head when it has a title, then its rows. */
-function QualitySections({ view }: { view: QualityToolView }): JSX.Element[] {
-  const t = useAdwaita();
-  return view.sections.map((entry, index) => (
-    <div
-      key={`${entry.title || "rows"}-${String(index)}`}
-      style={toolBodyStack(t)}
-    >
-      <ToolSectionHead text={entry.title} />
-      {entry.rows.map((row, rowIndex) => (
-        <ToolDataRow
-          key={`${row.key}-${String(rowIndex)}`}
-          row={row}
-          first={rowIndex === 0}
-          variants={QUALITY_BADGE_VARIANTS}
-          pressable={false}
-        />
-      ))}
-    </div>
-  ));
 }
 
 export interface QualityToolRowsProps {
@@ -196,9 +148,17 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
           tone={status === "ok" ? "neutral" : toneOf(status)}
         />
       )}
-      <QualitySections view={view} />
-      <QualityOmitted view={view} />
-      <QualityNote view={view} />
+      <ToolSections sections={view.sections} variants={QUALITY_BADGE_VARIANTS} />
+      <ToolTruncated
+        count={view.omitted}
+        text={`${String(view.omitted)} more not shown — raise \`limit\` to read them`}
+      />
+      <ToolStatusNote
+        status={status}
+        note={view.note}
+        tones={QUALITY_STATUS_TONES}
+        icons={QUALITY_STATUS_ICONS}
+      />
     </div>
   );
 }

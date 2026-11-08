@@ -12,7 +12,18 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_LOG_TOOL } from "../constants";
-import { NOT_A_JJ_REPO, jjRoot, runLog } from "../lib/ops";
+import {
+  failedResult,
+  noRepoResult,
+  type VcsBlank,
+} from "../lib/answer";
+import {
+  formatParam,
+  limitParam,
+  offsetParam,
+  oldestFirstParam,
+} from "../lib/params";
+import { jjRoot, runLog } from "../lib/ops";
 import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsLogDetails, VcsLogParams } from "../types";
 
@@ -29,27 +40,12 @@ const Parameters = Type.Object({
         "Bookmark name — resolves `bookmarks(<name>)`, intersected with `rev` when both are given.",
     }),
   ),
-  oldest_first: Type.Optional(
-    Type.Boolean({ description: "Oldest-first ordering (jj `--reversed`)." }),
-  ),
-  limit: Type.Optional(
-    Type.Number({
-      minimum: 1,
-      maximum: 500,
-      description: "Cap on commits (default 25).",
-    }),
-  ),
-  offset: Type.Optional(
-    Type.Number({
-      minimum: 0,
-      description: "Skip the first N commits (default 0).",
-    }),
-  ),
-  format: Type.Optional(
-    Type.Union([Type.Literal("compact"), Type.Literal("full")], {
-      description:
-        "`compact` is change, commit, author, date, description; `full` adds bookmarks, tags, files.",
-    }),
+  oldest_first: oldestFirstParam(),
+  limit: limitParam("commits"),
+  offset: offsetParam("commits"),
+  format: formatParam(
+    "is change, commit, author, date, description",
+    "adds bookmarks, tags, files",
   ),
 });
 
@@ -57,16 +53,14 @@ const Parameters = Type.Object({
 export async function executeVcsLog(
   params: VcsLogParams,
 ): Promise<AgentToolResult<VcsLogDetails>> {
-  if (jjRoot() === null) {
-    return toolResult(NOT_A_JJ_REPO, {
-      vcs: "",
-      rev: params.rev ?? "",
-      status: "unsupported",
-      commit_count: 0,
-      rows: [],
-      error: NOT_A_JJ_REPO,
-    });
-  }
+  const blank: VcsBlank<VcsLogDetails> = {
+    vcs: "jj",
+    rev: params.rev ?? "",
+    commit_count: 0,
+    rows: [],
+  };
+
+  if (jjRoot() === null) return noRepoResult(blank);
 
   const found = await runLog({
     rev: params.rev,
@@ -77,15 +71,7 @@ export async function executeVcsLog(
     full: params.format === "full",
   });
 
-  if (found.status === "failed")
-    return toolResult(found.error, {
-      vcs: "jj",
-      rev: params.rev ?? "",
-      status: "failed",
-      commit_count: 0,
-      rows: [],
-      error: found.error,
-    });
+  if (found.status === "failed") return failedResult(blank, found.error);
 
   const scope = found.revset.length > 0 ? found.revset : "(all)";
   const full = params.format === "full";
@@ -113,8 +99,7 @@ export async function executeVcsLog(
         );
 
   return toolResult(text, {
-    vcs: "jj",
-    rev: params.rev ?? "",
+    ...blank,
     status: found.status,
     commit_count: found.rows.length,
     rows: found.rows,

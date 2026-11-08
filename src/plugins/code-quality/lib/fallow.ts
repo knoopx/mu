@@ -39,6 +39,15 @@ import type {
 } from "../types";
 
 
+interface QualityToolHead {
+  analyzer: "fallow";
+  version: string;
+  status: QualityToolStatus;
+  omitted: number;
+  elapsed_ms: number;
+  error: string;
+}
+
 interface FallowRun {
   envelope: JsonRecord | null;
   run: AnalyserRun;
@@ -82,6 +91,21 @@ async function fallow(
   };
 }
 
+
+/**
+ * The head every answer carries: the analyser that ran, the version that
+ * answered, how the call ended, and how long it took. A tool adds its own
+ * counts and rows below this, so the head of one answer can never drift from
+ * the head of another.
+ */
+const baseOf = (found: FallowRun): QualityToolHead => ({
+  analyzer: "fallow",
+  version: found.version,
+  status: "ok",
+  omitted: 0,
+  elapsed_ms: found.elapsed,
+  error: "",
+});
 
 function failedOf(found: FallowRun): { status: QualityToolStatus; error: string } {
   if (found.run.status !== "ok")
@@ -161,19 +185,14 @@ export async function fallowComplexity(
 ): Promise<CodeComplexityDetails> {
   const found = await fallow(["health", "--complexity", "--lean"], path);
   const empty: CodeComplexityDetails = {
-    analyzer: "fallow",
-    version: found.version,
+    ...baseOf(found),
     path: (path ?? "").trim(),
-    status: "ok",
     files_analyzed: 0,
     functions_analyzed: 0,
     above_threshold: 0,
     thresholds: { cyclomatic: 0, cognitive: 0, crap: 0 },
     severity_counts: [],
     rows: [],
-    omitted: 0,
-    elapsed_ms: found.elapsed,
-    error: "",
   };
 
   if (found.envelope === null) return { ...empty, ...failedOf(found) };
@@ -291,17 +310,12 @@ export async function fallowDeadCode(
 ): Promise<CodeDeadCodeDetails> {
   const found = await fallow(["dead-code", "--lean"], path);
   const empty: CodeDeadCodeDetails = {
-    analyzer: "fallow",
-    version: found.version,
+    ...baseOf(found),
     path: (path ?? "").trim(),
-    status: "ok",
     total_issues: 0,
     entry_points: 0,
     counts: [],
     rows: [],
-    omitted: 0,
-    elapsed_ms: found.elapsed,
-    error: "",
   };
 
   if (found.envelope === null) return { ...empty, ...failedOf(found) };
@@ -343,10 +357,8 @@ export async function fallowDupes(
 ): Promise<CodeDuplicatesDetails> {
   const found = await fallow(["dupes"], path);
   const empty: CodeDuplicatesDetails = {
-    analyzer: "fallow",
-    version: found.version,
+    ...baseOf(found),
     path: (path ?? "").trim(),
-    status: "ok",
     total_files: 0,
     files_with_clones: 0,
     total_lines: 0,
@@ -355,9 +367,6 @@ export async function fallowDupes(
     clone_groups: 0,
     clone_instances: 0,
     rows: [],
-    omitted: 0,
-    elapsed_ms: found.elapsed,
-    error: "",
   };
 
   if (found.envelope === null) return { ...empty, ...failedOf(found) };
@@ -443,11 +452,9 @@ export async function fallowInspect(
       : ["inspect", "--symbol", `${file}:${asked}`];
   const found = await fallow(args, root);
   const empty: CodeSymbolInspectDetails = {
-    analyzer: "fallow",
-    version: found.version,
+    ...baseOf(found),
     path: file,
     symbol: asked,
-    status: "ok",
     reachable: false,
     entry_point: false,
     used: false,
@@ -458,8 +465,6 @@ export async function fallowInspect(
     rows: [],
     hotspots: [],
     duplicates: 0,
-    omitted: 0,
-    error: "",
   };
 
   if (found.envelope === null) return { ...empty, ...failedOf(found) };
@@ -509,11 +514,9 @@ export async function fallowTrace(
   const found = await fallow(["trace", target, "--depth", String(depth)], root);
   const [file = "", ...rest] = target.split(":");
   const empty: CodeSymbolReferencesDetails = {
-    analyzer: "fallow",
-    version: found.version,
+    ...baseOf(found),
     file,
     symbol: rest.join(":"),
-    status: "ok",
     found: false,
     best_effort: true,
     depth: depth || DEFAULT_TRACE_DEPTH,
@@ -523,8 +526,6 @@ export async function fallowTrace(
     unresolved_count: 0,
     callers: [],
     callees: [],
-    omitted: 0,
-    error: "",
   };
 
   if (found.envelope === null) return { ...empty, ...failedOf(found) };

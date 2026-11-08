@@ -59,6 +59,15 @@ export interface ToolPaintRow {
   trailing?: string;
 }
 
+/**
+ * A titled group of rows inside one call's answer: findings the view splits
+ * into categories (a surface, its hotspots, its clones) wear one head each.
+ */
+export interface ToolPaintSection {
+  title: string;
+  rows: readonly ToolPaintRow[];
+}
+
 /** The value of one chip, read by a view that paints that chip itself. */
 export const toolCellOf = (
   cells: readonly ToolRowCell[],

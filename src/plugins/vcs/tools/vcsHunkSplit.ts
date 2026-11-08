@@ -14,34 +14,24 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_HUNK_SPLIT_TOOL, VCS_TOOL_LABELS } from "../constants";
-import {
-  NOT_A_JJ_REPO,
-  hunkEntries,
-  hunkSpec,
-  jjRoot,
-  rebaseAfter,
-  resolveIds,
-  runHunkSplit,
-} from "../lib/ops";
-import { missing } from "../../core/lib/agent/toolText";
-import { reportSplit, splitFailure } from "../lib/splitOutcome";
+import { unresolvedResult, type VcsBlank } from "../lib/answer";
+import { requiredText } from "../lib/params";
+import { hunkEntries, hunkSpec, resolveIds, runHunkSplit } from "../lib/ops";
+import { reportSplit, splitGuard } from "../lib/splitOutcome";
 import type { VcsHunkSplitParams, VcsSplitDetails } from "../types";
 
-const nonEmptyString = (description: string) =>
-  Type.String({ minLength: 1, pattern: "^\\s*\\S", description });
-
 const Parameters = Type.Object({
-  rev: nonEmptyString(
+  rev: requiredText(
     "The revision to split — a jj change ID, jj commit ID, or revset (e.g. `@`, `@-`).",
   ),
   hunks: Type.Array(
-    nonEmptyString("One `file=hunk-id` entry, e.g. `src/a.c=hunk-97fb…`."),
+    requiredText("One `file=hunk-id` entry, e.g. `src/a.c=hunk-97fb…`."),
     {
       description:
         "Each entry is `file=hunk-id`, where `file` is repo-relative and `hunk-id` is the full content-addressed id (`hunk-` + 64 hex) from vcs-hunk-list. Entries are grouped per file into the split spec.",
     },
   ),
-  message: nonEmptyString(
+  message: requiredText(
     "Commit message for the extracted-hunks (selected) commit.",
   ),
   insertAfter: Type.Optional(
@@ -52,7 +42,9 @@ const Parameters = Type.Object({
   ),
 });
 
-const baseOf = (params: Partial<VcsHunkSplitParams>): VcsSplitDetails => ({
+const baseOf = (
+  params: Partial<VcsHunkSplitParams>,
+): VcsBlank<VcsSplitDetails> => ({
   rev: params.rev?.trim() ?? "",
   git: "",
   change: "",
@@ -61,8 +53,6 @@ const baseOf = (params: Partial<VcsHunkSplitParams>): VcsSplitDetails => ({
   selected_change: "",
   remaining_git: "",
   remaining_change: "",
-  status: "failed",
-  error: "",
 });
 
 /** Entries are checked before the repo is touched — a malformed spec must not half-run. */
@@ -73,31 +63,23 @@ export async function executeVcsHunkSplit(
   const message = params.message;
   const insertAfter = (params.insertAfter ?? "").trim();
   const entries = hunkEntries(params.hunks);
+  const base = baseOf(params);
 
-  if (rev.length === 0) return splitFailure(missing("rev"), baseOf(params));
-  if (message.trim().length === 0)
-    return splitFailure(missing("message"), baseOf(params));
-
-  if (entries.length === 0)
-    return splitFailure(
-      "no valid hunk entries (each must be file=hunk-id)",
-      baseOf(params),
-    );
-
-  if (jjRoot() === null)
-    return splitFailure(NOT_A_JJ_REPO, baseOf(params), {
-      status: "unsupported",
-    });
+  const stopped = splitGuard(
+    base,
+    rev,
+    message,
+    entries,
+    "no valid hunk entries (each must be file=hunk-id)",
+  );
+  if (stopped !== null) return stopped;
 
   const pre = await resolveIds(rev);
-  if (pre.git.length === 0)
-    return splitFailure(`cannot resolve revision ${rev}`, baseOf(params));
+  if (pre.git.length === 0) return unresolvedResult(base, rev);
 
-  const base = { ...baseOf(params), git: pre.git, change: pre.change };
-
-  return reportSplit(
+  return reportSplit<VcsSplitDetails>(
     await runHunkSplit(rev, hunkSpec(entries), message),
-    base,
+    { ...base, git: pre.git, change: pre.change },
     insertAfter,
   );
 }

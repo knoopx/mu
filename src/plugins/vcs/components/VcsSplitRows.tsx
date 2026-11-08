@@ -6,12 +6,13 @@
  */
 
 import type { JSX } from "react";
-import { useAdwaita } from "adwaita-gpuix";
+import { useAdwaita, type IconName } from "adwaita-gpuix";
 
 import {
   ToolChips,
-  ToolDataRow,
+  ToolRowList,
   ToolStateNote,
+  ToolStatusNote,
   ToolSummary,
 } from "../../core/components/ToolDataRows";
 import {
@@ -26,6 +27,10 @@ import type { VcsToolView } from "../types";
 /** A split that selected nothing is a warning, not a failure: the call answered. */
 const SPLIT_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
   "empty-selected": "warn",
+};
+
+const SPLIT_STATUS_ICONS: Readonly<Record<string, IconName>> = {
+  "empty-selected": "warning",
 };
 
 const toneOf = (status: VcsToolView["status"]): ToolRowTone =>
@@ -51,14 +56,7 @@ export function VcsSplitRows({ view }: VcsSplitRowsProps): JSX.Element {
     <div style={toolGapColumn(t)}>
       <ToolChips cells={view.cells} />
       <ToolSummary text={view.headline} tone={tone} />
-      {view.rows.map((row, index) => (
-        <ToolDataRow
-          key={row.key}
-          row={row}
-          first={index === 0}
-          variants={VCS_BADGE_VARIANTS}
-        />
-      ))}
+      <ToolRowList rows={view.rows} variants={VCS_BADGE_VARIANTS} />
       {placement === "" ? null : (
         <ToolStateNote
           icon="subdirectoryArrowRight"
@@ -66,13 +64,12 @@ export function VcsSplitRows({ view }: VcsSplitRowsProps): JSX.Element {
           text={`remaining placed after ${placement}`}
         />
       )}
-      {view.note === "" ? null : (
-        <ToolStateNote
-          icon={view.status === "failed" ? "close" : "warning"}
-          tone={tone}
-          text={view.note}
-        />
-      )}
+      <ToolStatusNote
+        status={view.status}
+        note={view.note}
+        tones={SPLIT_STATUS_TONES}
+        icons={SPLIT_STATUS_ICONS}
+      />
     </div>
   );
 }

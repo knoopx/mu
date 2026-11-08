@@ -42,14 +42,18 @@ import {
 import {
   meterFill,
   toolBadgeVariant,
+  toolBodyStack,
   toolChip,
   toolChipLine,
   toolDataRow,
   toolIdText,
   toolKeyColumn,
   toolMonoGrow,
+  toolStatusIcon,
+  toolStatusTone,
   toolToneColor,
   type ToolPaintRow,
+  type ToolPaintSection,
   type ToolRowCell,
   type ToolRowMeter,
   type ToolRowTone,
@@ -199,7 +203,7 @@ function ToolRowBody({
  * the row lights up under a press are the caller's, because only the caller
  * knows what its rows mean.
  */
-export function ToolDataRow({
+function ToolDataRow({
   row,
   first,
   variants = {},
@@ -313,7 +317,7 @@ export function ToolStateNote({
 }
 
 /** The name of a group of rows inside one tool's answer. */
-export function ToolSectionHead({ text }: { text: string }): JSX.Element | null {
+function ToolSectionHead({ text }: { text: string }): JSX.Element | null {
   const t = useAdwaita();
   if (text === "") return null;
   return (
@@ -328,6 +332,94 @@ export function ToolSectionHead({ text }: { text: string }): JSX.Element | null 
       </T>
     </div>
   );
+}
+
+/**
+ * A call's rows in the order its view put them: one row each, divided, the
+ * first undivided. The badge variants are the plugin's because only it knows
+ * what its rows' states are called.
+ */
+export function ToolRowList({
+  rows,
+  variants = {},
+  pressable = true,
+}: {
+  rows: readonly ToolPaintRow[];
+  variants?: Readonly<Record<string, BadgeVariant>>;
+  pressable?: boolean;
+}): JSX.Element[] {
+  return rows.map((row, index) => (
+    <ToolDataRow
+      key={`${row.key}-${String(index)}`}
+      row={row}
+      first={index === 0}
+      variants={variants}
+      pressable={pressable}
+    />
+  ));
+}
+
+/** Every section of a call's answer: a head when it has a title, then its rows. */
+export function ToolSections({
+  sections,
+  variants = {},
+  pressable = false,
+}: {
+  sections: readonly ToolPaintSection[];
+  variants?: Readonly<Record<string, BadgeVariant>>;
+  pressable?: boolean;
+}): JSX.Element[] {
+  const t = useAdwaita();
+  return sections.map((section, index) => (
+    <div
+      key={`${section.title || "rows"}-${String(index)}`}
+      style={toolBodyStack(t)}
+    >
+      <ToolSectionHead text={section.title} />
+      <ToolRowList
+        rows={section.rows}
+        variants={variants}
+        pressable={pressable}
+      />
+    </div>
+  ));
+}
+
+/**
+ * The note of a view, in the tone and icon its status states. A plugin names
+ * its own extra states in `tones`/`icons`; everything else reads from the
+ * shared status vocabulary, so a failure looks like a failure in every tool.
+ */
+export function ToolStatusNote({
+  status,
+  note,
+  tones = {},
+  icons = {},
+}: {
+  status: string;
+  note: string;
+  tones?: Readonly<Record<string, ToolRowTone>>;
+  icons?: Readonly<Record<string, IconName>>;
+}): JSX.Element | null {
+  return (
+    <ToolStateNote
+      icon={toolStatusIcon(status, icons)}
+      tone={toolStatusTone(status, tones)}
+      text={note}
+    />
+  );
+}
+
+/** How much a call left out, and what the reader does about it — one line, whatever tool it was. */
+export function ToolTruncated({
+  count,
+  text,
+}: {
+  count: number;
+  text: string;
+}): JSX.Element | null {
+  if (count <= 0) return null;
+  return <ToolStateNote icon="unfoldMore" tone="neutral" text={text} />;
 }
 
 /**
