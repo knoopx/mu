@@ -23,10 +23,11 @@ src/plugins/
 ├── interaction/     lib/ components/ hooks/ tools/askUser.ts types.ts constants.ts
 ├── guardrails/      lib/ (treeSitter/ rules/ rulesFile/ engine/ store/ panelRows/ coverage/ report/) components/ hooks/ tools/ README.md types.ts constants.ts
 ├── vcs/             lib/ components/ hooks/ tools/ types.ts constants.ts
-└── web-search/      lib/duckduckgo/ components/ tools/webSearch.ts types.ts constants.ts
+├── web-search/      lib/duckduckgo/ components/ tools/webSearch.ts types.ts constants.ts
+└── openui/          lib/ (programStore/ analysis/ answer/ params/ schema/ toolView/ format/ tokens/ theme/) components/ (library/) hooks/ tools/ README.md types.ts constants.ts
 ```
 
-A namespace is a folder inside a kind: the agent bridge is `core/lib/agent`, the composer's layout and mode logic is `core/lib/composer`, the DuckDuckGo engine is `web-search/lib/duckduckgo`. A tool is one file per tool, named after the tool: `interaction/tools/askUser.ts` is `ask-user`, `web-search/tools/webSearch.ts` is `search-duckduckgo`, `guardrails/tools/guardrailsTest.ts` is `guardrails-test`, `vcs/tools/vcsLog.ts` is `vcs-log` — the file is camelCase, the tool name it registers is kebab. A plugin that registers no agent tool has no `tools/`.
+A namespace is a folder inside a kind: the agent bridge is `core/lib/agent`, the composer's layout and mode logic is `core/lib/composer`, the DuckDuckGo engine is `web-search/lib/duckduckgo`, the OpenUI component library is `openui/components/library`. A tool is one file per tool, named after the tool: `interaction/tools/askUser.ts` is `ask-user`, `web-search/tools/webSearch.ts` is `search-duckduckgo`, `guardrails/tools/guardrailsTest.ts` is `guardrails-test`, `vcs/tools/vcsLog.ts` is `vcs-log` — the file is camelCase, the tool name it registers is kebab. A plugin that registers no agent tool has no `tools/`.
 
 ### Imports: no barrels
 
@@ -36,7 +37,7 @@ Adding a file means adding its path at each consumer; there is no public surface
 
 ### Naming
 
-- a component file is PascalCase and matches the component it exports (`vcs/components/ChangesPanel.tsx` exports `ChangesPanel`)
+- a component file is PascalCase and matches the component it exports (`vcs/components/ChangesPanel.tsx` exports `ChangesPanel`). The one exception is a namespace of component *definitions* rather than components: `openui/components/library/layout.tsx` holds the `Stack`, `Row` and `Grid` definitions of one area of the language and `registry.ts` registers them — the area is the unit there, not one component
 - a hook file is `useThing.ts` and lives in its plugin's `hooks/`, in the plugin that owns the thing (`useProjectSummary` in `core/hooks`, `useChangesPanel` in `vcs/hooks`)
 - a namespace keeps its key hints in `shortcuts.ts`, and a plugin keeps what the whole plugin shares in `types.ts` and `constants.ts`
 - when two modules in one namespace want the same name, the name is the thing that is wrong: the changes panel's state hook returns `ChangesPanelState` so the `ChangesPanel` component owns the name, and the composer counts rows in a height with `composerPanelRowsForHeight` so the panel's own `composerPanelRows` owns its name
@@ -66,6 +67,7 @@ A story id is the meta `title` over the exported scene, so `stories/Chat.stories
 | Changes                           | `Changes/panel`, `Changes/instructed`                                         |
 | Web search                        | `WebSearch/results`                                                           |
 | Code quality                      | `CodeQuality/surveyed`                                                        |
+| Generative UI                     | `GenerativeUI/rendered`                                                       |
 | Guardrails                        | `Guardrails/triggered`, `Guardrails/tended`                                   |
 | Project header                    | `ProjectHeader/opens`                                                         |
 | Looks                             | `Looks/light`, `Looks/dark`, `Looks/nightsky`, `Looks/accents`                |
