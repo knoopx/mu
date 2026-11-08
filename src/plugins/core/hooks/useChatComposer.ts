@@ -105,8 +105,10 @@ export function useChatComposer(
     appendPath,
   } = composer;
 
+  // A new session is a new conversation, not a new draft. Whatever is being
+  // typed — the text and the attachments — stays typed so it can go to the
+  // session that just opened; only the panel closes.
   const startNewSession = (): void => {
-    clearComposer();
     setMode(draftMode());
     chat.newSession();
   };
