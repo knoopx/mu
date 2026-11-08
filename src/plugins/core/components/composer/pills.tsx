@@ -5,7 +5,8 @@ import {
   type LinearGradientStop,
   type StyleDesc,
 } from "@gpuix/react";
-import { withAlpha, mutedText } from "../../lib/ui/theme";
+import { clamp } from "../../../../utils/clamp";
+import { mixHex, mutedText, withAlpha } from "../../lib/ui/theme";
 import { PILL_HEIGHT } from "../../lib/ui/tokens";
 
 const PILL_LABEL_MAX_WIDTH = 240;
@@ -22,11 +23,19 @@ const CONTEXT_RING_ANGLE = 90;
  * finish line unpainted. */
 export const CONTEXT_RING_FADE = 0.1;
 
-/** Where the ring's ink turns from green to yellow: half the context spent. */
+/** Where the ring's ink is half green and half yellow: half the context spent. */
 export const CONTEXT_WARN_FRACTION = 0.5;
 
-/** And from yellow to red: the last tenth of the context. */
+/** And half yellow and half red: a tenth short of the whole window. */
 export const CONTEXT_DANGER_FRACTION = 0.9;
+
+/** How much of the context one colour change costs, as a share of the window.
+ *
+ * Each functional colour is reached — and left — over this span, centred on the
+ * fraction named above, so the ring never flips on one frame: it is already
+ * warming at 45% and already reddening at 85%. A threshold that changes the ink
+ * all at once reads as a switch that was thrown, not as a window filling up. */
+export const CONTEXT_BLEND_FRACTION = 0.2;
 
 function pillBox(t: AdwaitaTheme): StyleDesc {
   return {
@@ -81,22 +90,36 @@ export function ComposerPill(props: ComposerPillProps): JSX.Element {
 }
 
 export const contextFraction = (used: number, total: number): number =>
-  total > 0 ? Math.max(0, Math.min(1, used / total)) : 0;
+  total > 0 ? clamp(used / total, 1) : 0;
+
+/** Where the fill ends along the gradient line. */
+export const contextRingEdge = (fraction: number): number => clamp(fraction, 1);
+
+/** How far the blend centred on `center` has travelled at `fraction`. */
+const contextBlend = (fraction: number, center: number): number =>
+  clamp((fraction - center) / CONTEXT_BLEND_FRACTION + 0.5, 1);
 
 /** The ring says how much of the context is spent, so it wears the theme's three
  * functional colours rather than its accent: green while there is room, yellow
- * past half, red in the last tenth. The accent would say "the app's colour", not
- * "how close the window is to compacting". */
-export const contextRingColor = (t: AdwaitaTheme, fraction: number): string =>
-  fraction >= CONTEXT_DANGER_FRACTION
-    ? t.color.functional.destructive
-    : fraction >= CONTEXT_WARN_FRACTION
-      ? t.color.functional.warning
-      : t.color.functional.success;
-
-/** Where the fill ends along the gradient line. */
-export const contextRingEdge = (fraction: number): number =>
-  Math.max(0, Math.min(1, fraction));
+ * around half, red in the last tenth. The accent would say "the app's colour", not
+ * "how close the window is to compacting".
+ *
+ * It blends between those three rather than picking one: the ink of a ring at 90%
+ * is halfway from yellow to red, and the colour is a reading of the whole window
+ * instead of which band the last token landed in. */
+export const contextRingColor = (t: AdwaitaTheme, fraction: number): string => {
+  const spent = contextRingEdge(fraction);
+  const warm = mixHex(
+    t.color.functional.success,
+    t.color.functional.warning,
+    contextBlend(spent, CONTEXT_WARN_FRACTION),
+  );
+  return mixHex(
+    warm,
+    t.color.functional.destructive,
+    contextBlend(spent, CONTEXT_DANGER_FRACTION),
+  );
+};
 
 /** Where that fill's fade begins: one `CONTEXT_RING_FADE` behind the edge, and
  * never before the start of the line. */

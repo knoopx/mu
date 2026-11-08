@@ -140,8 +140,16 @@ running mu session, where `startGuardrails()` has already loaded the rule files 
 disk. Ask the agent to run `guardrails-test` (every suite, or one `domain`, or one
 `domain` and `fixture`) and `guardrails-coverage` (the blocks each domain has really
 stopped since a window of sessions); the report is the same table either way, and a
-failing fixture is a failing row. The tools evaluate
-against the registry of the running process, which loads at boot — rules written
-while the app runs take effect on its next start, and the agent never arms, disarms,
-clears the log or dry-runs: arming is the panel's, driven by `/guardrails` and the
-composer keybinding.
+failing fixture is a failing row.
+
+**`guardrails-test` re-reads the rule files before it grades a single fixture.**
+The suite is the proof a rule is safe to ship, and a rule edited with a file tool
+mid-session would otherwise be graded as the app last loaded it at boot — so the
+run calls `reloadGuardrails()` first, and the same registry the `tool_call` hook
+evaluates against is refreshed with it: an edited rule is graded by the suite and
+enforced by the app from that run on, not at the next start. A rule file that no
+longer parses is named in the run's note and its rules are simply absent from the
+run (one unreadable file loses only its own rules); a reload that throws leaves
+the running registry alone and says so. The agent never arms, disarms, clears the
+log or dry-runs: arming is the panel's, driven by `/guardrails` and the composer
+keybinding.

@@ -5,6 +5,7 @@ import type {
 import { Type } from "typebox";
 
 import { GUARDRAILS_TEST_TOOL, MAX_TEST_FIXTURES } from "../constants";
+import { reloadGuardrails } from "../lib/guardrailsExtension";
 import {
   fixtureSuites,
   fixturesDirFor,
@@ -201,12 +202,34 @@ async function runSuites(
   return { rows, pass, fail, ran };
 }
 
+/**
+ * The suite grades the rules **as written**, so a rule edited on disk since the
+ * app booted is re-read before a single fixture runs: otherwise a green run
+ * proves the rules the app happened to load at start, not the file that was
+ * just changed. A file that no longer parses is named here, because its rules
+ * are absent from the run rather than silently unchanged.
+ */
+function rulesNote(): string {
+  let loaded: ReturnType<typeof reloadGuardrails>;
+  try {
+    loaded = reloadGuardrails();
+  } catch (error) {
+    const why = error instanceof Error ? error.message : String(error);
+    return `rule files could not be re-read: ${why} — this run graded the rules the app booted with`;
+  }
+  if (loaded.errors.length === 0) return "";
+  return `rule files with errors, their rules not in this run:\n${loaded.errors
+    .map((line) => `  ${line}`)
+    .join("\n")}`;
+}
+
 /** What a run that proved nothing owes the model: why it proved nothing. */
 function runNote(
   run: FixtureRun,
   suites: readonly GuardrailFixtureSuite[],
   domain: string | undefined,
   fixture: string | undefined,
+  rules: string,
 ): string {
   const total = run.pass + run.fail;
   const missing =
@@ -219,7 +242,7 @@ function runNote(
         ? "no suites in the directory — a domain's suite is `fixtures/<domain>.json`"
         : "the suites hold no fixtures — every rule needs a block-* case and an ok-* case"
       : "";
-  return [missing, empty, suiteNote(suites), disarmedNote(suites)]
+  return [rules, missing, empty, suiteNote(suites), disarmedNote(suites)]
     .filter((line) => line !== "")
     .join("\n");
 }
@@ -273,9 +296,10 @@ export async function runGuardrailTests(
   if (fixture !== undefined && domain === undefined)
     return needsDomainResult(dir, fixture, all);
 
+  const rules = rulesNote();
   await warmGuardrails();
   const run = await runSuites(wanted, fixture);
-  const note = runNote(run, wanted, domain, fixture);
+  const note = runNote(run, wanted, domain, fixture, rules);
   const suites = domainNames(wanted);
 
   return {
@@ -312,12 +336,14 @@ export const guardrailsTestTool: ToolDefinition<
     "the engine read: `command` for a shell tool, `newText`/`content`/`oldText` for a file tool. " +
     "Each fixture is one tool call and the verdict it deserves: `block-*` cases must be stopped, " +
     "`ok-*` cases must be released, and a `reason_contains` must appear in the reason the model " +
-    "is handed. Use it after changing a rule, a query, a filter or a grammar to prove the suite " +
-    "still passes.",
+    "is handed. The rule files are re-read before the fixtures run, so a rule edited on disk is " +
+    "graded as written. Use it after changing a rule, a query, a filter or a grammar to prove the " +
+    "suite still passes.",
   promptSnippet:
     "Run the guardrails fixture suites and report PASS/FAIL per fixture",
   promptGuidelines: [
     "Run guardrails-test after changing a guardrails rule, query or filter; a suite that was green is the proof a rule is safe to ship.",
+    "The run re-reads the rule files first, so it grades a rule you edited with a file tool; a domain whose file no longer parses is named in the note and its rules are missing from the run.",
     "Every rule needs one block-* fixture and one ok-* fixture: the first proves the rule fires, the second proves it does not fire on a command that only looks alike.",
     "A suite is a `<domain>.json` file in mu's own guardrails directory under the user's config, next to the rules it proves; run one suite with `domain`, one case with `domain` and `fixture`.",
     "A file-domain fixture is a `write`/`edit` call: its `path` names the grammar the text is parsed in, so a `.py` fixture is checked against python rules and a `.json` path is released unread.",
