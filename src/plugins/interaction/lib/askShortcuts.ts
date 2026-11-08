@@ -1,23 +1,29 @@
-import type { KeyMods } from "adwaita-gpuix/shortcuts";
 import type { AskMode } from "../types";
 
 export type ShortcutSource = "field" | "window";
 
+/**
+ * What the panel takes from the field rather than letting the text widget spend
+ * it on itself — the arrows, space, escape. While the field has the keyboard a
+ * plain press never reaches the window listener, so these arrive through it.
+ */
 const FIELD_OWNED_IDS = new Set(["up", "down", "toggle", "cancel", "back"]);
 
-const COMBO_IDS = new Set(["submit"]);
-
-export const isCombo = (mods: KeyMods): boolean =>
-  mods.ctrl === true || mods.alt === true || mods.cmd === true;
-
+/**
+ * One press reaches the panel twice: as the keyDown of the focused field, and as
+ * the window key event. Only the field sees a press while it holds the keyboard,
+ * and only the window sees one while something else does, so the two answers
+ * partition the keys: the field keeps FIELD_OWNED_IDS while it has focus, the
+ * panel takes everything else. Either way a press acts exactly once — a cursor
+ * that moves one row per arrow key, a space that checks one box.
+ */
 export function claimShortcut(
   source: ShortcutSource,
   id: string,
-  mods: KeyMods,
   fieldFocused: boolean,
 ): boolean {
   if (source === "field") return FIELD_OWNED_IDS.has(id);
-  return !fieldFocused || isCombo(mods) || COMBO_IDS.has(id);
+  return !fieldFocused || !FIELD_OWNED_IDS.has(id);
 }
 
 export interface AskShortcutContext {
@@ -40,20 +46,28 @@ export interface AskShortcutContext {
 
 type AskShortcutHandler = (ctx: AskShortcutContext) => boolean;
 
+/** The arrows belong to the list, and the list is only drawn while selecting. */
+const listOnly = (ctx: AskShortcutContext): boolean =>
+  ctx.mode === "select" && ctx.rowCount > 0;
+
 const HANDLERS: Record<string, AskShortcutHandler> = {
   up: (ctx) => {
+    if (!listOnly(ctx)) return false;
     ctx.move(-1);
     return true;
   },
   down: (ctx) => {
+    if (!listOnly(ctx)) return false;
     ctx.move(1);
     return true;
   },
   home: (ctx) => {
+    if (!listOnly(ctx)) return false;
     ctx.jumpTo(0);
     return true;
   },
   end: (ctx) => {
+    if (!listOnly(ctx)) return false;
     ctx.jumpTo(ctx.rowCount - 1);
     return true;
   },

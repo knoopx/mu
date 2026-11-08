@@ -10,7 +10,13 @@ import {
 } from "adwaita-gpuix";
 import { matchShortcut } from "adwaita-gpuix/shortcuts";
 import type { EventPayload } from "@gpuix/native";
-import { type GpuixTheme, type StyleDesc, useWindowSize } from "@gpuix/react";
+import {
+  type GpuixTheme,
+  type PublicInstance,
+  type StyleDesc,
+  useGpuixRequired,
+  useWindowSize,
+} from "@gpuix/react";
 
 import {
   buildNativeTheme,
@@ -27,6 +33,7 @@ import {
   composerFieldLineStyle,
   composerFieldRow,
 } from "../../core/lib/composer/field";
+import { ownsFocus } from "../../core/lib/composer/keyRouter";
 import {
   composerPanelHeight,
   composerPanelRowsForHeight,
@@ -66,10 +73,14 @@ export interface AskComposerProps {
   style?: Partial<StyleDesc>;
 }
 
-interface FieldFocus {
-  onFocus: () => void;
-  onBlur: () => void;
-}
+/**
+ * The panel's field and the window listener each get their own copy of one key
+ * press, so exactly one of them may act on it. The renderer's focused element is
+ * the only answer both paths can agree on: a focus listener of our own misses the
+ * focus `autoFocus` takes, so the press gets claimed twice — a cursor that jumps
+ * two rows for one arrow key.
+ */
+type FieldCapture = (node: PublicInstance | null) => void;
 
 /** How the question's two panes share the width: the options first, the detail wider. */
 const PANE_GROW = { list: 4, detail: 6 } as const;
@@ -304,7 +315,7 @@ function AskDraftPane({
   onDraft,
   onSubmit,
   onFieldKey,
-  fieldFocus,
+  captureField,
 }: {
   t: AdwaitaTheme;
   fieldTheme: GpuixTheme;
@@ -316,7 +327,7 @@ function AskDraftPane({
   onDraft: (text: string) => void;
   onSubmit: () => void;
   onFieldKey: (event: EventPayload) => void;
-  fieldFocus: FieldFocus;
+  captureField: FieldCapture;
 }): JSX.Element {
   const freeform = mode === "freeform";
   return (
@@ -347,7 +358,7 @@ function AskDraftPane({
         onChange={(event) => onDraft(event.value ?? "")}
         onSubmit={onSubmit}
         onKeyDown={onFieldKey}
-        {...fieldFocus}
+        ref={captureField}
         style={composerFieldBox(t)}
       />
     </div>
@@ -412,16 +423,14 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
   const [freeformDraft, setFreeformDraft] = useState("");
   const [commentDraft, setCommentDraft] = useState("");
   const [selections, setSelections] = useState<string[]>([]);
-  const fieldFocused = useRef(false);
+  const renderer = useGpuixRequired();
+  const fieldNode = useRef<number | null>(null);
 
-  const fieldFocus: FieldFocus = {
-    onFocus: () => {
-      fieldFocused.current = true;
-    },
-    onBlur: () => {
-      fieldFocused.current = false;
-    },
+  const captureField: FieldCapture = (node) => {
+    fieldNode.current = node?.id ?? null;
   };
+
+  const fieldOwnsFocus = (): boolean => ownsFocus(fieldNode.current, renderer);
 
   useEffect(() => {
     setCursor(0);
@@ -570,8 +579,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
       mods,
     );
     if (match === null) return false;
-    if (!claimShortcut(source, match.id, mods, fieldFocused.current))
-      return false;
+    if (!claimShortcut(source, match.id, fieldOwnsFocus())) return false;
     return runAskShortcut({
       id: match.id,
       source,
@@ -662,7 +670,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
             onChange={(event) => setQuery(event.value ?? "")}
             onSubmit={() => activate()}
             onKeyDown={onFieldKey}
-            {...fieldFocus}
+            ref={captureField}
             style={fieldStyle}
           />
         </div>
@@ -704,7 +712,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
           }
           onSubmit={submitText}
           onFieldKey={onFieldKey}
-          fieldFocus={fieldFocus}
+          captureField={captureField}
         />
       )}
 
