@@ -45,6 +45,7 @@ import {
   type ComposerKeyContext,
 } from "../../lib/composer/keyRouter";
 import {
+  isCompletionMode,
   isPanelMode,
   panelIndex,
   transition,
@@ -760,6 +761,8 @@ function ComposerField(props: {
   onFieldKey: (event: EventPayload) => void;
   captureField: (node: PublicInstance | null) => void;
   pickActive: () => void;
+  /** Enter in the completion panel sends the draft instead of taking a name. */
+  enterSends: boolean;
 }): JSX.Element {
   const { styles, t } = props;
   const oneRow = fitsOneRow(props.fieldText);
@@ -778,7 +781,7 @@ function ComposerField(props: {
         theme={buildNativeTheme(t)}
         onChange={(e) => props.onText(e.value ?? "")}
         onSubmit={(e) => {
-          if (props.panelOpen) {
+          if (props.panelOpen && props.enterSends === false) {
             props.pickActive();
             return;
           }
@@ -873,6 +876,8 @@ export function Composer(props: ComposerProps): JSX.Element {
     onClear: props.onClear,
     onPaste: props.onPaste,
     onComplete: props.onComplete,
+    // The completion panel's query is the draft, so Enter sends that draft.
+    onSendDraft: () => props.onSubmit(props.value),
   });
 
   return (
@@ -913,6 +918,7 @@ export function Composer(props: ComposerProps): JSX.Element {
           onFieldKey={keys.onFieldKey}
           captureField={keys.captureField}
           pickActive={keys.pickActive}
+          enterSends={isCompletionMode(mode)}
         />
       }
       onListKey={keys.onListKey}
