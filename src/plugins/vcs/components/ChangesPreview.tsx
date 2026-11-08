@@ -25,6 +25,7 @@ import {
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
 import { emphasisWeight } from "../../core/lib/ui/tokens";
+import { paneGap, panelGap } from "../../core/lib/composer/chrome";
 import type { StyleDesc } from "@gpuix/react";
 import { filePreviewOf } from "../lib/preview";
 import type { ChangeImage } from "../hooks/useChangeFiles";
@@ -61,7 +62,7 @@ function tileStyle(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
-    gap: t.space.xs,
+    gap: panelGap(t),
     flexGrow: 1,
     flexBasis: 0,
     minHeight: 0,
@@ -141,7 +142,7 @@ function ImageSides({
       style={{
         display: "flex",
         flexDirection: "row",
-        gap: t.space.md,
+        gap: paneGap(t),
         flexGrow: 1,
         minHeight: 0,
         minWidth: 0,

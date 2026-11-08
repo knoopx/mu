@@ -7,34 +7,46 @@ import { codeLineBox, HAIRLINE, ROW_HEIGHT } from "../ui/tokens";
  * The frame every panel in the composer slot is built from: the draft's own
  * panel, the question panel, the changes panel and the history panel.
  *
- * The measurements are stated once here and read by all four, because a panel's
- * ink is only ever in one column: the box sits `panelPageInset` in from the
- * slot, and everything the panel says — the draft, a row's label, a note, the
- * status line — sits `panelInset` inside the box. A row's own hover band runs to
- * the box's edge, so a row is wider than its text by exactly `panelInset`; that
- * is the one difference a panel is allowed to draw.
+ * The measurements are stated once here and read by all four, and they obey one
+ * rule about a band's four sides: the box pads itself by `panelPad` — the same
+ * measure left, top, right and bottom, so a panel breathes equally on every
+ * side — and everything the panel *says* stands `panelInset` further in. So a
+ * panel's ink sits at twice its own breathing in from the left and right and at
+ * one measure from the top and bottom: a 1x2 width-to-height ratio, which is the
+ * shape mu's bands keep (an equal padding is its degenerate case; a chip or an
+ * inline mark is not a band and keeps its own measure). A row's own hover band
+ * runs to its pane's edge and only its ink steps in; that is the one difference
+ * a panel is allowed to draw, and the
+ * reason `paneInk` exists for the ink a pane holds that is not a row.
  *
  * `lib/composer/panelHeight.ts` does the arithmetic over these numbers, so a
  * padding changed here moves a panel's row budget with it.
  */
 
-/** How far a panel's box stands in from the composer slot's edge. */
-export const panelPageInset = (t: AdwaitaTheme): number => t.space.lg;
+/** The panel's one padding unit: what its box pads itself by on all four sides. */
+const panelPad = (t: AdwaitaTheme): number => t.space.sm;
 
-/** How far a panel's ink sits inside its box: draft, row label, note, status line. */
-export const panelInset = (t: AdwaitaTheme): number => t.space.sm;
+/** How far a panel's box pads its content in from its left and right edges. */
+export const panelPageInset = (t: AdwaitaTheme): number => panelPad(t);
 
-/** How much air a panel keeps above and below its slots. */
-export const panelPadY = (t: AdwaitaTheme): number => t.space.sm;
+/** How much air a panel keeps above and below its slots — its sides' measure. */
+export const panelPadY = (t: AdwaitaTheme): number => panelPad(t);
+
+/**
+ * How far a panel's ink stands inside its band: the draft, a row's label, a
+ * note, the status line, a preview. One step beyond the box's own padding, so
+ * the ink column is twice the band's breathing wide and one step deep.
+ */
+export const panelInset = (t: AdwaitaTheme): number => panelPad(t);
 
 /** The gap between the slots of one panel: draft, list, status line. */
 export const panelGap = (t: AdwaitaTheme): number => t.space.xs;
 
-/** The gap between two panes of one panel, each with its own list. */
-export const paneGap = (t: AdwaitaTheme): number => t.space.md;
+/** The gap between two panes of one panel: one step above the slot gap. */
+export const paneGap = (t: AdwaitaTheme): number => 2 * panelGap(t);
 
 /** The air around a rule that divides one panel's panes. */
-export const ruleGap = (t: AdwaitaTheme): number => t.space.md;
+export const ruleGap = (t: AdwaitaTheme): number => paneGap(t);
 
 /** The panel's own band: its box, its fill, its breathing. */
 export function panelBox(t: AdwaitaTheme, tone: ComposerTone): StyleDesc {
@@ -56,6 +68,17 @@ export function panelBox(t: AdwaitaTheme, tone: ComposerTone): StyleDesc {
     backgroundColor: composerFill(t, tone),
   };
 }
+
+/**
+ * The ink column of a pane, for the ink a pane holds that is not a row: a
+ * preview, a caption, a note, a block of prose. A row pads its own ink and lets
+ * its band run to the pane's edge; anything else has to step in by the same
+ * measure or it lands in a second column.
+ */
+export const paneInk = (t: AdwaitaTheme): StyleDesc => ({
+  paddingLeft: panelInset(t),
+  paddingRight: panelInset(t),
+});
 
 /** A hairline across a panel, in the colour that panel's tone asks for. */
 export const ruleH = (t: AdwaitaTheme, color: string): StyleDesc => ({
@@ -128,6 +151,7 @@ export function panelChrome(t: AdwaitaTheme): PanelChrome {
     },
     previewPane: {
       ...column,
+      ...paneInk(t),
       flexGrow: 1,
       flexBasis: 0,
       minWidth: 0,

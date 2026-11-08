@@ -33,10 +33,12 @@ import {
   composerFieldRow,
 } from "../../core/lib/composer/field";
 import {
+  paneInk,
   panelBox,
   panelChrome,
   panelGap,
   panelInset,
+  paneGap,
   ruleH,
   ruleV,
 } from "../../core/lib/composer/chrome";
@@ -104,7 +106,8 @@ const listPane = (t: AdwaitaTheme): StyleDesc =>
 
 const detailPane = (t: AdwaitaTheme): StyleDesc => ({
   ...panelChrome(t).flexPane(PANE_GROW.detail),
-  gap: t.space.sm,
+  ...paneInk(t),
+  gap: panelGap(t),
   paddingTop: panelGap(t),
 });
 
@@ -122,11 +125,18 @@ const stacked = (t: AdwaitaTheme): StyleDesc => ({
   minWidth: 0,
 });
 
+/** A pane's worth of prose, standing in the same ink column as the rows beside it. */
+const inkStack = (t: AdwaitaTheme): StyleDesc => ({
+  ...stacked(t),
+  ...paneInk(t),
+});
+
 const hintRow = (t: AdwaitaTheme): StyleDesc => ({
   ...stacked(t),
+  ...paneInk(t),
   flexDirection: "row",
   alignItems: "center",
-  gap: t.space.md,
+  gap: paneGap(t),
   paddingTop: panelGap(t),
 });
 
@@ -195,7 +205,7 @@ function AskContextPane({
   context: string;
 }): JSX.Element {
   return (
-    <div style={stacked(t)}>
+    <div style={inkStack(t)}>
       <div style={{ flexShrink: 0, minWidth: 0 }}>
         <Markdown source={context} theme={theme} style={{ padding: 0 }} />
       </div>
@@ -306,11 +316,16 @@ function AskDraftPane({
         size="caption"
         weight={emphasisWeight(t)}
         color={t.color.accent.base}
+        style={paneInk(t)}
       >
         {freeform ? "Custom response" : "Extra context"}
       </T>
       {mode === "comment" && selections.length > 0 && (
-        <T size="caption" color={muted} style={{ flexShrink: 0 }}>
+        <T
+          size="caption"
+          color={muted}
+          style={{ flexShrink: 0, ...paneInk(t) }}
+        >
           {`Selected: ${selections.join(", ")}`}
         </T>
       )}
@@ -614,7 +629,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
         size="caption"
         weight={emphasisWeight(t)}
         color={t.color.text.primary}
-        style={{ flexShrink: 0 }}
+        style={{ flexShrink: 0, ...paneInk(t) }}
       >
         {question.question}
       </T>

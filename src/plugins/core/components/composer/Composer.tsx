@@ -35,8 +35,10 @@ import {
   composerFieldRow,
 } from "../../lib/composer/field";
 import {
+  paneGap,
   panelBox,
   panelChrome,
+  panelInset,
   type PanelChrome,
 } from "../../lib/composer/chrome";
 import {
@@ -264,7 +266,9 @@ function composerStyles(
       alignContent: "center",
       justifyContent: "flex-end",
       alignSelf: "center",
-      gap: t.space.md,
+      /** The draft's own right-hand ink stands in the panel's ink column, as a row's trailing figures do. */
+      paddingRight: panelInset(t),
+      gap: paneGap(t),
       flexShrink: 1,
       minWidth: 0,
       pointerEvents: "none",
