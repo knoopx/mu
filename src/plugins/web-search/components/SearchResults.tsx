@@ -83,6 +83,18 @@ function skeletonRow(t: AdwaitaTheme): StyleDesc {
   return { ...rowShell(t), pointerEvents: "none" };
 }
 
+/**
+ * The body of a placeholder row: two bars, not two lines of text.
+ *
+ * `toolBodyColumn` gaps nothing because a real row stacks two text lines whose
+ * line boxes already carry the leading between them. A `Skeleton` is exactly a
+ * glyph box tall, so the same column draws the two placeholders flush against
+ * each other; the stack needs the theme's gap back.
+ */
+function skeletonBodyColumn(t: AdwaitaTheme): StyleDesc {
+  return { ...toolBodyColumn, gap: t.space.xs };
+}
+
 function resultRow(t: AdwaitaTheme): StyleDesc {
   return {
     ...rowShell(t),
@@ -179,7 +191,7 @@ function SearchSkeleton(): JSX.Element {
         <div key={i} style={toolCell(t, i === 0)}>
           <div style={skeletonRow(t)}>
             <Skeleton width={t.space.lg} height={t.type.caption} />
-            <div style={toolBodyColumn}>
+            <div style={skeletonBodyColumn(t)}>
               <Skeleton
                 width={
                   i === 1
