@@ -10,8 +10,6 @@ export const GUARDED_COMMAND_TOOLS: readonly string[] = [
   "exec",
   "run",
 ];
-export const COMMAND_INPUT_KEYS: readonly string[] = ["command", "cmd"];
-
 
 export const GUARDED_FILE_TOOLS: readonly string[] = [
   "write",
@@ -20,13 +18,6 @@ export const GUARDED_FILE_TOOLS: readonly string[] = [
   "multiedit",
   "notebook-edit",
 ];
-export const FILE_TEXT_INPUT_KEYS: readonly string[] = [
-  "content",
-  "newText",
-  "oldText",
-  "text",
-];
-export const PATH_INPUT_KEYS: readonly string[] = ["path", "file", "filePath"];
 
 export const BLOCK_REASON_PREFIX = "blocked(guardrails";
 

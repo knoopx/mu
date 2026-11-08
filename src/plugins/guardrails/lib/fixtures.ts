@@ -2,13 +2,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import {
-  COMMAND_INPUT_KEYS,
-  FILE_TEXT_INPUT_KEYS,
   FIXTURES_FILE_SUFFIX,
   GUARDED_COMMAND_TOOLS,
   GUARDED_FILE_TOOLS,
-  PATH_INPUT_KEYS,
 } from "../constants";
+import {
+  COMMAND_INPUT_KEYS,
+  FILE_TEXT_INPUT_KEYS,
+  PATH_INPUT_KEYS,
+} from "../../core/lib/agent/toolInput";
 import type {
   GuardrailFixture,
   GuardrailFixtureOp,

@@ -1,4 +1,4 @@
-import { COMMAND_INPUT_KEYS } from "../constants";
+import { COMMAND_INPUT_KEYS } from "../../core/lib/agent/toolInput";
 import { GRAMMAR_ASSETS } from "./treeSitter/grammar";
 import { invalidateQueries } from "./treeSitter/queries";
 import type { GuardedSource } from "./treeSitter/source";

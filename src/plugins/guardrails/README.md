@@ -65,6 +65,12 @@ written before file sources did.
 | `bash`, `shell`, `terminal`, `exec`, `run`              | `command`, `cmd`                                                        | `bash`       |
 | `write`, `edit`, `create`, `multiedit`, `notebook-edit` | `content`, `newText`, `oldText`, `text` — the grammar comes from `path` | by extension |
 
+The keys themselves live in `core/lib/agent/toolInput.ts` — `COMMAND_INPUT_KEYS`,
+`PATH_INPUT_KEYS`, `FILE_TEXT_INPUT_KEYS` — because the log reads the same keys to
+say what a call was pointed at, and spelling them twice is how the two drift
+apart. A path is taken under any spelling a provider uses: `path`, `file_path`,
+`filePath`, `file`, `notebook_path`.
+
 `lib/treeSitter/source.ts` owns the extension map: `sh`, `py`, `js`, `jsx`, `mjs`,
 `cjs`, `ts`, `mts`, `cts`, `tsx`, `rs`, `go`, `rb`, `java`, `php`, `css`, `regex`,
 `ini`, `cfg`, `conf`, `ps1`, `psm1`, `c`, `h`, `cc`, `cpp`, `cxx`, `hpp`, `cs`. A path

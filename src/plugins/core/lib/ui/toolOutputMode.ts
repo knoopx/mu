@@ -1,30 +1,19 @@
-export type OutputMode = "code" | "markdown";
+import { commandTextOf } from "../agent/toolInput";
+import type { ToolTranscriptItem } from "../agent/transcriptState";
 
-export const PLAIN_OUTPUT_TOOLS: ReadonlySet<string> = new Set([
-  "bash",
-  "shell",
-  "terminal",
-  "exec",
-  "run",
-  "powershell",
-  "ls",
-  "grep",
-  "find",
-]);
+export type OutputMode = "code" | "markdown";
 
 export const MAX_OUTPUT_LINES = 40;
 
-export function isPlainOutputTool(name: string): boolean {
-  return PLAIN_OUTPUT_TOOLS.has(name.toLowerCase());
-}
-
 /**
- * A command tool's output is text the shell printed, never prose the model
- * wrote: it is drawn as code, with no guess at whether it looks like markdown.
+ * A command's answer is text a program printed, never prose the model wrote: it
+ * is drawn as code, with no guess at whether it looks like markdown. The call's
+ * **shape** decides, not its name — mu's tool set is fixed by `APP_TOOL_NAMES`
+ * in `core/lib/agent/agentService.ts` with extensions and MCP off, so a list of
+ * command-tool names can only drift into names no call ever has.
  */
-export function outputModeFor(name: string): OutputMode {
-  if (isPlainOutputTool(name)) return "code";
-  return "markdown";
+export function outputModeFor(item: ToolTranscriptItem): OutputMode {
+  return commandTextOf(item.args) === "" ? "markdown" : "code";
 }
 
 /** Which end a bounded body keeps: a shell's tail holds the result a command ended on, a script's head holds the answer it printed first. */

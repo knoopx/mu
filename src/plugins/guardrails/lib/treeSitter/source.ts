@@ -1,13 +1,15 @@
 import { extname } from "node:path";
 
 import {
-  COMMAND_INPUT_KEYS,
-  FILE_TEXT_INPUT_KEYS,
   GUARDED_COMMAND_TOOLS,
   GUARDED_FILE_TOOLS,
   MAX_GUARDED_BYTES,
-  PATH_INPUT_KEYS,
 } from "../../constants";
+import {
+  COMMAND_INPUT_KEYS,
+  FILE_TEXT_INPUT_KEYS,
+  PATH_INPUT_KEYS,
+} from "../../../core/lib/agent/toolInput";
 import type { GuardrailLanguage } from "../../types";
 
 export interface GuardedSource {

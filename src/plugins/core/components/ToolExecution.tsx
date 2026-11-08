@@ -29,6 +29,7 @@ import {
   plainOutputOf,
   type OutputMode,
 } from "../lib/ui/toolOutputMode";
+import { commandTextOf, pathTextOf } from "../lib/agent/toolInput";
 import { toolIconOf } from "../lib/ui/toolIcon";
 import { PAGE_INSET, outputPanel } from "../lib/ui/transcriptLayout";
 import { buildNativeTheme } from "../lib/ui/theme";
@@ -79,25 +80,7 @@ export interface ToolExecutionProps {
 
 const PREVIEW_MAX = 72;
 
-const COMMAND_TOOLS = new Set(["bash", "shell", "terminal", "exec", "run"]);
-
 const DIFF_TOOLS = new Set(["edit"]);
-const COMMAND_KEYS = ["command", "cmd"];
-const CODE_KEYS = ["code"];
-const URL_KEYS = ["url", "uri"];
-const PATH_KEYS = ["path", "file_path", "filePath", "file", "notebook_path"];
-const PATTERN_KEYS = ["pattern", "regex", "query", "glob", "search"];
-
-function pickString(
-  args: Record<string, unknown>,
-  keys: string[],
-): string | undefined {
-  for (const key of keys) {
-    const value = args[key];
-    if (typeof value === "string" && value.trim() !== "") return value;
-  }
-  return undefined;
-}
 
 function snippet(value: string): string {
   const normalized = value.split(/\s+/).filter(Boolean).join(" ");
@@ -111,28 +94,20 @@ function formatArgs(args: Record<string, unknown>): string {
     .join(" ");
 }
 
+/**
+ * The header line of a call the log has no view of its own for: what it was
+ * pointed at. A command shows the command and a file call shows the path — both
+ * read from the call's shape, because a table of tool names here is a list that
+ * only ever goes stale.
+ */
 function previewFor(item: ToolTranscriptItem): string {
   const args = item.args ?? {};
-  const name = item.name.toLowerCase();
 
-  const isCommand = COMMAND_TOOLS.has(name);
-  if (isCommand) {
-    const command = pickString(args, COMMAND_KEYS);
-    if (command) return snippet(command);
-  }
+  const command = commandTextOf(args);
+  if (command !== "") return snippet(command);
 
-  const code = pickString(args, CODE_KEYS);
-  if (code)
-    return snippet(code.split("\n").find((line) => line.trim() !== "") ?? "");
-
-  const url = pickString(args, URL_KEYS);
-  if (url) return snippet(url);
-
-  const path = pickString(args, PATH_KEYS);
-  if (path) return snippet(path);
-
-  const pattern = pickString(args, PATTERN_KEYS);
-  if (pattern) return snippet(pattern);
+  const path = pathTextOf(args);
+  if (path !== "") return snippet(path);
 
   return snippet(formatArgs(args));
 }
@@ -238,7 +213,7 @@ function toolRowLookOf(
   return {
     state,
     args: argsLineOf(item, readPreview),
-    outputMode: outputModeFor(item.name),
+    outputMode: outputModeFor(item),
     ...(readPreview === undefined ? {} : { readPreview }),
     ...(writePreview === undefined ? {} : { writePreview }),
     ...(patch === undefined ? {} : { patch }),
