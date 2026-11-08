@@ -6,14 +6,13 @@
  * gap counts, the tier words a program leaves unset, the text sizes a program
  * may ask for and the line boxes they stand in. Nothing here invents a scale
  * adwaita already owns: the sizes are its `type` keys, the radius and padding
- * its `radius` and `space`, and a one-line row is core's `ROW_HEIGHT`.
+ * its `radius` and `space`, and a row of cells is adwaita's own `Table`.
  */
 
 import type { AdwaitaTheme, TextSize } from "adwaita-gpuix";
 
 import {
   INLINE_GLYPH,
-  ROW_HEIGHT,
   emphasisWeight,
   titleWeight,
 } from "../../core/lib/ui/tokens";
@@ -65,9 +64,6 @@ export const programFigureRole: TextSize = "display";
 
 export const programTextRole = (size: ProgramTextSize | undefined): TextSize =>
   TEXT_SIZE[size ?? "md"];
-
-/** The height of every one-line row a program draws — the log's own row. */
-export const programRowHeight: number = ROW_HEIGHT;
 
 /**
  * How far a line stands in when the row above it carries a mark: the mark's own

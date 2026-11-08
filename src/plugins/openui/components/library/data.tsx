@@ -1,17 +1,28 @@
 /**
  * The data area of the language: the rows and figures a program shows.
  *
- * A `Table` is cells of text in equal columns, not a DOM table — the same
- * equal-column measure the log paints its own tables in, so a program's rows
- * and the agent's rows read as one kind of thing.
+ * A `Table` is adwaita's `Table` — the same component a `table-render` answer
+ * paints with — so a program's rows and the agent's rows are one kind of thing:
+ * cells of text in equal columns, one line to a row, rules between them.
  */
 
 import type { JSX } from "react";
 import { defineComponent, type ElementNode } from "@openuidev/lang-core";
-import { Chart as AdwaitaChart, ChartLegend, ProgressBar, T } from "adwaita-gpuix";
+import {
+  Chart as AdwaitaChart,
+  ChartLegend,
+  ProgressBar,
+  Table as AdwaitaTable,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  T,
+} from "adwaita-gpuix";
+import { type StyleDesc } from "@gpuix/react";
 import { z } from "zod/v4";
 
-import { HAIRLINE } from "../../../core/lib/ui/tokens";
 import { mutedText } from "../../../core/lib/ui/theme";
 import {
   CHART_CANVAS_WIDTH,
@@ -30,15 +41,12 @@ import {
 } from "../../../figures/lib/plot";
 import {
   innerGap,
-  programEmphasisWeight,
-  programRowHeight,
   programTextRole,
   programTitleWeight,
   type ProgramTextSize,
 } from "../../lib/tokens";
 import {
   programProgressTone,
-  programRule,
   programTextColor,
   toneOfValue,
   type ProgramTone,
@@ -143,114 +151,57 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const rows = listProp(node.props, "rows");
   const width = Math.max(columns.length, 1);
 
-  const rule = (color: string) => (
-    <div
-      style={{
-        width: "100%",
-        height: HAIRLINE,
-        flexShrink: 0,
-        backgroundColor: color,
-      }}
-    />
-  );
+  const t = ctx.t;
 
-  const cell = (value: unknown, index: number, head: boolean) => {
-    const text = cellText(value);
-    // A column of figures is read down, not across: it stands on the right of its
-    // column and is set in mono, so the digits line up under the header.
-    const figure = !head && isFigure(text);
-    return (
-      <div
-        key={`c-${String(index)}`}
-        style={{
-          flexGrow: 1,
-          flexBasis: 0,
-          minWidth: 0,
-          display: "flex",
-        }}
-      >
-        <T
-          size={head ? "caption" : "list"}
-          color={head ? mutedText(ctx.t) : ctx.t.color.text.primary}
-          weight={head ? programEmphasisWeight(ctx.t) : undefined}
-          align={figure ? "right" : undefined}
-          clamp={2}
-          style={{
-            flexShrink: 1,
-            minWidth: 0,
-            width: "100%",
-            fontFamily: figure ? ctx.t.type.fontFamilyMono : undefined,
-            whiteSpace: figure ? "nowrap" : undefined,
-          }}
-        >
-          {text}
-        </T>
-      </div>
-    );
-  };
+  /** A column of figures is read down, not across: it stands on the right of its
+   *  column and is set in mono, so the digits line up under the header. */
+  const figureStyle = (figure: boolean): StyleDesc | undefined =>
+    figure
+      ? { fontFamily: t.type.fontFamilyMono, whiteSpace: "nowrap" }
+      : undefined;
 
+  /**
+   * adwaita's table, not a column of divs dressed as one: the same component a
+   * `table-render` answer paints with, so a program's rows and the agent's rows
+   * are one kind of thing — one line per row, a rule between rows, a header
+   * divided from what it names, and no box drawn around a block that already
+   * sits inside a pane.
+   */
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-      }}
+    <AdwaitaTable
+      density="compact"
+      frame="bare"
+      style={{ width: "100%", minWidth: 0 }}
     >
       {columns.length === 0 ? null : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            minWidth: 0,
-            gap: innerGap(ctx.t),
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              width: "100%",
-              minWidth: 0,
-              gap: innerGap(ctx.t),
-            }}
-          >
-            {columns.map((entry, index) => cell(entry, index, true))}
-          </div>
-          {rule(programRule(ctx.t))}
-        </div>
+        <TableHeader>
+          {columns.map((column, index) => (
+            <TableHead key={`h-${column}-${String(index)}`}>{column}</TableHead>
+          ))}
+        </TableHeader>
       )}
-      {rows.map((row, rowIndex) => (
-        <div
-          key={`r-${String(rowIndex)}`}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
-            minWidth: 0,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              minHeight: programRowHeight,
-              width: "100%",
-              minWidth: 0,
-              gap: innerGap(ctx.t),
-            }}
-          >
+      <TableBody>
+        {rows.map((row, rowIndex) => (
+          <TableRow key={`r-${String(rowIndex)}`}>
             {cellsOf(row)
               .slice(0, width)
-              .map((entry, index) => cell(entry, index, false))}
-          </div>
-          {rule(programRule(ctx.t))}
-        </div>
-      ))}
-    </div>
+              .map((entry, index) => {
+                const text = cellText(entry);
+                const figure = isFigure(text);
+                return (
+                  <TableCell
+                    key={`c-${String(rowIndex)}-${String(index)}`}
+                    align={figure ? "right" : undefined}
+                    style={figureStyle(figure)}
+                  >
+                    {text}
+                  </TableCell>
+                );
+              })}
+          </TableRow>
+        ))}
+      </TableBody>
+    </AdwaitaTable>
   );
 }
 

@@ -151,7 +151,17 @@ export function TableToolRows({ item }: TableToolRowsProps): JSX.Element {
       <ToolChips cells={view.cells} />
 
       {table.status === "ok" ? (
-        <Table density="dense" style={{ width: "100%", minWidth: 0 }}>
+        /**
+         * The log's own table: `compact` because a row of a log table is one line
+         * of text — the same 24px row every other log row stands on — and `bare`
+         * because the table stands on the log's page, divided by its rules, not
+         * inside a box drawn a second time around it.
+         */
+        <Table
+          density="compact"
+          frame="bare"
+          style={{ width: "100%", minWidth: 0 }}
+        >
           <TableHeader>
             {table.columns.map((column, at) => (
               <TableHead key={`h-${column}-${String(at)}`} align={alignOf(at)}>
