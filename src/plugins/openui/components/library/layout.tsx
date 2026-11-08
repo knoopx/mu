@@ -36,7 +36,7 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { prop } from "./context";
+import { listProp, prop, textProp } from "./context";
 
 export const Screen = defineComponent({
   name: "Screen",
@@ -129,7 +129,7 @@ export function drawScreen(node: ElementNode, ctx: ProgramContext): JSX.Element 
         gap: sectionGap(ctx.t),
       }}
     >
-      {ctx.nodes(prop(node.props, "children", []))}
+      {ctx.nodes(listProp(node.props, "children"))}
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function drawStack(node: ElementNode, ctx: ProgramContext): JSX.Element {
         gap: typeof gap === "number" ? programGap(ctx.t, gap) : groupGap(ctx.t),
       }}
     >
-      {ctx.nodes(prop(node.props, "children", []))}
+      {ctx.nodes(listProp(node.props, "children"))}
     </div>
   );
 }
@@ -167,7 +167,7 @@ export function drawRow(node: ElementNode, ctx: ProgramContext): JSX.Element {
         gap: typeof gap === "number" ? programGap(ctx.t, gap) : groupGap(ctx.t),
       }}
     >
-      {ctx.nodes(prop(node.props, "children", []))}
+      {ctx.nodes(listProp(node.props, "children"))}
     </div>
   );
 }
@@ -185,7 +185,7 @@ function inRows(
 }
 
 export function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "children", []);
+  const items = listProp(node.props, "children");
   const rows = inRows(items, prop(node.props, "columns", 2));
   const gap = node.props.gap;
   const columnGap =
@@ -233,14 +233,14 @@ export function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
 }
 
 export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const title = prop(node.props, "title", "");
+  const title = textProp(node.props, "title");
   const surface = prop<"card" | "sunken" | "plain" | null>(
     node.props,
     "surface",
     "card",
   );
   const tone = toneOfValue(node.props.tone);
-  const trailing = prop<unknown[]>(node.props, "trailing", []);
+  const trailing = listProp(node.props, "trailing");
   const glyph = tone === null ? null : programToneGlyph(tone);
 
   return (
@@ -304,7 +304,7 @@ export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
           )}
         </div>
       )}
-      {ctx.nodes(prop(node.props, "children", []))}
+      {ctx.nodes(listProp(node.props, "children"))}
     </div>
   );
 }

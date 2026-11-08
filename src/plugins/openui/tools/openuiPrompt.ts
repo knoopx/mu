@@ -2,8 +2,11 @@
  * `openui-prompt` — the language reference for this app's library.
  *
  * The syntax rules are lang-core's; the component signatures come from the
- * library this app can actually draw; the rules and examples are mu's. This is
- * what a model reads before it writes a program.
+ * library this app can actually draw; the screen rules are mu's. This is what a
+ * model reads before it writes a program. The reference carries no worked
+ * example of its own — a hand-written one is data, and data gets copied — so
+ * only snippets the call passes in appear, and a call that passes none gets a
+ * reference with nothing but the rules and the signatures to work from.
  */
 
 import type {
@@ -32,7 +35,7 @@ const PromptParametersSchema = Type.Object({
   examples: Type.Optional(
     Type.Array(Type.String({ maxLength: 4_000 }), {
       maxItems: 8,
-      description: "OpenUI Lang snippets to show in the reference.",
+      description: "OpenUI Lang snippets to show in the reference — the only examples it carries.",
     }),
   ),
   editMode: Type.Optional(
@@ -71,7 +74,7 @@ export const openUIPromptTool: ToolDefinition<
       components: componentCount(),
       groups: libraryGroups().map((group) => group.name),
       tools,
-      examples: examples.length === 0 ? 2 : examples.length,
+      examples: examples.length,
       editMode,
     };
 

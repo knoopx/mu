@@ -45,7 +45,7 @@ import {
   toneOfValue,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { prop, textOf } from "./context";
+import { listProp, prop, textOf } from "./context";
 import {
   cellOf,
   figureOf,
@@ -90,10 +90,8 @@ function treeNodeOf(row: unknown): FileTreeNode {
 }
 
 export function drawTree(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "items", []);
-  const expanded = prop<unknown[]>(node.props, "expanded", []).map((path) =>
-    String(path),
-  );
+  const items = listProp(node.props, "items");
+  const expanded = listProp(node.props, "expanded").map((path) => String(path));
 
   return (
     <FileTree
@@ -136,7 +134,7 @@ function timelineStatus(value: unknown): TimelineStatus {
 }
 
 export function drawTimeline(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "items", []);
+  const items = listProp(node.props, "items");
   const rows: TimelineItem[] = items.map((row, index) => ({
     at: textCell(row, TIMELINE_NAMES, 0) ?? String(index + 1),
     title: textCell(row, TIMELINE_NAMES, 1) ?? "",
@@ -173,7 +171,7 @@ export const Trace = defineComponent({
 });
 
 export function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const rows = prop<unknown[]>(node.props, "spans", []);
+  const rows = listProp(node.props, "spans");
   const spans: TraceSpan[] = rows.map((row) => ({
     label: textCell(row, SPAN_NAMES, 0) ?? "",
     offset: numberCell(row, SPAN_NAMES, 1),
@@ -272,12 +270,10 @@ function heatWeeks(
 }
 
 export function drawHeatmap(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const values = heatValues(prop<unknown[]>(node.props, "values", []));
-  const months = prop<unknown[]>(node.props, "months", []).map((month) =>
-    String(month),
-  );
-  const dayLabels = prop<unknown[]>(node.props, "dayLabels", DAY_LABELS).map(
-    (label) => String(label),
+  const values = heatValues(listProp(node.props, "values"));
+  const months = listProp(node.props, "months").map((month) => String(month));
+  const dayLabels = listProp(node.props, "dayLabels", DAY_LABELS).map((label) =>
+    String(label),
   );
 
   return (
@@ -312,8 +308,8 @@ export function drawBreakdown(
   node: ElementNode,
   ctx: ProgramContext,
 ): JSX.Element {
-  const segmentRows = prop<unknown[]>(node.props, "segments", []);
-  const figureRows = prop<unknown[]>(node.props, "rows", []);
+  const segmentRows = listProp(node.props, "segments");
+  const figureRows = listProp(node.props, "rows");
   const caption = textOf(node.props.caption);
   const trailing = textOf(node.props.trailing);
   const total = node.props.total;

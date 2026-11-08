@@ -33,7 +33,7 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { prop, textOf } from "./context";
+import { listProp, prop, textOf } from "./context";
 import type { ProgramStatus } from "../../types";
 import { cellOf, statusOf, textCell } from "./rows";
 
@@ -61,7 +61,7 @@ export const Sections = defineComponent({
  * the same rule the screen's other lists wear.
  */
 export function drawSections(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "items", []);
+  const items = listProp(node.props, "items");
 
   return (
     <div
@@ -209,7 +209,7 @@ export const Todos = defineComponent({
 const SETTLED: ProgramStatus[] = ["done", "skipped", "error"];
 
 export function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "items", []);
+  const items = listProp(node.props, "items");
 
   return (
     <div
@@ -303,7 +303,7 @@ export const Steps = defineComponent({
 });
 
 export function drawSteps(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const rows = prop<unknown[]>(node.props, "steps", []);
+  const rows = listProp(node.props, "steps");
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
   const note = textOf(node.props.note);
 

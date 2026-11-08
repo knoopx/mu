@@ -109,7 +109,7 @@ export function componentInfo(name: string): OpenUIComponentInfo | null {
   );
 }
 
-/** The library's groups, with the notes the prompt teaches them with. */
+/** The library's groups. The `notes` a group carries are empty: see `registry.ts`. */
 export function libraryGroups(): OpenUIGroupInfo[] {
   return programGroups;
 }

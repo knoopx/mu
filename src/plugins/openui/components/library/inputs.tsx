@@ -24,7 +24,7 @@ import { mutedText } from "../../../core/lib/ui/theme";
 import { innerGap, programEmphasisWeight } from "../../lib/tokens";
 import { programButtonVariant, type ProgramTone } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { ProgramFigureRow, prop } from "./context";
+import { ProgramFigureRow, listProp, prop, textProp } from "./context";
 
 /** Mark a prop reactive: the parser then lets a `$variable` bind to it. */
 const reactive = <T extends z.ZodType>(schema: T): T => {
@@ -107,7 +107,7 @@ export const Stepper = defineComponent({
 /* ------------------------------------------------------------------ draws */
 
 export function drawButton(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
 
   return (
@@ -122,7 +122,7 @@ export function drawButton(node: ElementNode, ctx: ProgramContext): JSX.Element 
 }
 
 export function drawToggle(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, false);
 
   return (
@@ -161,10 +161,10 @@ export function drawToggle(node: ElementNode, ctx: ProgramContext): JSX.Element 
 }
 
 export function drawChoice(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const options = prop<unknown[]>(node.props, "options", []).map((option) =>
+  const options = listProp(node.props, "options").map((option) =>
     String(option ?? ""),
   );
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, options[0] ?? "");
 
   return (
@@ -216,7 +216,7 @@ export function drawChoice(node: ElementNode, ctx: ProgramContext): JSX.Element 
 export function drawSliderInput(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const min = prop(node.props, "min", 0);
   const max = prop(node.props, "max", 100);
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, min);
 
   return (
@@ -257,7 +257,7 @@ export function drawSliderInput(node: ElementNode, ctx: ProgramContext): JSX.Ele
 }
 
 export function drawField(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, "");
 
   return (
@@ -277,7 +277,7 @@ export function drawField(node: ElementNode, ctx: ProgramContext): JSX.Element {
       )}
       <Entry
         value={binding.value}
-        placeholder={prop(node.props, "placeholder", "")}
+        placeholder={textProp(node.props, "placeholder")}
         surface="control"
         onChange={(next: string) => {
           binding.set(next);
@@ -298,7 +298,7 @@ export function drawField(node: ElementNode, ctx: ProgramContext): JSX.Element {
 export function drawStepper(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const min = prop<number | null>(node.props, "min", null) ?? 0;
   const max = prop<number | null>(node.props, "max", null) ?? 99;
-  const label = prop(node.props, "label", "");
+  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, min);
   const current = Number.isFinite(binding.value) ? binding.value : min;
 

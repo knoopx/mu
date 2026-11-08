@@ -98,23 +98,31 @@ export const programDrawers: Record<string, ProgramDrawer> = Object.fromEntries(
   programDefinitions.map((definition) => [definition.name, definition.component]),
 );
 
-/** How the library is taught: what belongs together, and what each group obeys. */
+/**
+ * How the library is grouped: which components belong together.
+ *
+ * `notes` is empty for every group, and stays that way. Each group used to
+ * carry a paragraph of style doctrine ("a GNOME screen, not a web page", "never
+ * nest a Pane inside a Pane", "a count is coloured, not plain"), and that prose
+ * was neither checked against the drawers nor stated by any code: it was
+ * invented here and then read back as if the library enforced it. What a group
+ * is made of is the fact; the shape of a screen is the reader's decision.
+ *
+ * The field remains because `OpenUIGroupInfo` and `openui-library` print it.
+ * A note worth keeping is one a drawer actually implements — and then it belongs
+ * in that component's own `description`, where the parser and the renderer both
+ * have to agree with it.
+ */
 export const programGroups: OpenUIGroupInfo[] = [
   {
     name: "Screen",
     components: ["Screen", "Header", "StatusLine"],
-    notes: [
-      "root is always a Screen: a header bar, the blocks it operates on, and one inert status line at the foot.",
-      "A screen is a GNOME screen, not a web page — no wall of cards, no strip of figures with nothing to operate.",
-    ],
+    notes: [],
   },
   {
     name: "Layout",
     components: ["Stack", "Row", "Grid", "Pane", "Divider", "Spacer"],
-    notes: [
-      "gap counts 4px steps: 1 is 4px, 3 is 12px, 6 is 24px. Leave it unset on a Stack and a Pane and the app uses its own tier.",
-      "Pane groups one block of the screen. Never nest a Pane inside a Pane.",
-    ],
+    notes: [],
   },
   {
     name: "Text",
@@ -128,45 +136,26 @@ export const programGroups: OpenUIGroupInfo[] = [
       "Note",
       "Code",
     ],
-    notes: [
-      'Title "lg" and "xl" are for the screen, "sm" inside a Pane. Badge is one short fact, never a paragraph.',
-      "KeyValue is one line; Details is the list of them — a spec sheet, a model's card — with a rule between the rows and the values on the right.",
-    ],
+    notes: [],
   },
   {
     name: "Data",
     components: ["Table", "Stat", "Bar", "Chart"],
-    notes: [
-      "A Table is text cells in equal columns; a row is a list of cells. Stat and Bar are figures the screen reads out, not controls.",
-      "Chart is the many-values-on-one-canvas primitive: Chart(points, \"bar\" | \"line\", height, width, grid, markers, fill, labels, tone, dash, emphasis). A point is [label, value], {label, value} or a bare number; more than one value on a row makes it multi-series. Reach for Chart when the set is the point, Bar when one figure is.",
-      "A line that is a plan, not a measurement, is dashed (dash 7); `emphasis` is the index of the point the reader stands at. Bar takes `weight` (×N, when a figure counts more than the others) and `caption` (the line under it).",
-      "A cell that reads as a number is set in mono and stands on the right of its column: write the figure, do not pad it.",
-    ],
+    notes: [],
   },
   {
     name: "Figures",
     components: ["Tree", "Timeline", "Trace", "Heatmap", "Breakdown"],
-    notes: [
-      "These draw a shape rather than cells: the files of a change, the spans of a run, the days of a period, the parts a total is made of.",
-      "A row is a list of cells or an object of named fields — both read the same way, and the field names are in each signature.",
-      "A figure needs the count that frames it: put it in the Pane's `trailing`, not in a Caption of its own above it.",
-      "A count of what moved is coloured, not plain: Row([Text(\"+78\", \"sm\", \"success\"), Text(\"-9\", \"sm\", \"danger\")], 1). A Tree colours each path's own counts.",
-    ],
+    notes: [],
   },
   {
     name: "Status",
     components: ["Sections", "Todos", "Steps"],
-    notes: [
-      "The states a row may name: done, running, current, pending, skipped, error — and their common words (complete, wip, todo, cancelled, failed) reach the same mark.",
-      "A line the work is behind is struck through, not removed: a screen says what happened, including what was skipped.",
-    ],
+    notes: [],
   },
   {
     name: "Inputs",
     components: ["Button", "Toggle", "Choice", "Slider", "Field", "Stepper"],
-    notes: [
-      "An input's bound argument is a $variable the screen writes with @Set or a binding — every input must change something on the page or ask the agent something with @ToAssistant.",
-      "Every interaction is recorded and waits for the agent to read it with openui-events.",
-    ],
+    notes: [],
   },
 ];

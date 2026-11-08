@@ -13,7 +13,7 @@ import { HAIRLINE } from "../../../core/lib/ui/tokens";
 import { mutedText } from "../../../core/lib/ui/theme";
 import { groupGap, innerGap, programTitleWeight } from "../../lib/tokens";
 import type { ProgramContext } from "./context";
-import { ProgramText, prop } from "./context";
+import { ProgramText, listProp, prop, textProp } from "./context";
 
 export const Header = defineComponent({
   name: "Header",
@@ -38,9 +38,9 @@ export const StatusLine = defineComponent({
 });
 
 export function drawHeader(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const title = prop(node.props, "title", "");
-  const subtitle = prop(node.props, "subtitle", "");
-  const chips = prop<unknown[]>(node.props, "chips", []);
+  const title = textProp(node.props, "title");
+  const subtitle = textProp(node.props, "subtitle");
+  const chips = listProp(node.props, "chips");
 
   return (
     <div
@@ -110,7 +110,7 @@ export function drawHeader(node: ElementNode, ctx: ProgramContext): JSX.Element 
 }
 
 export function drawStatusLine(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const items = prop<unknown[]>(node.props, "items", []);
+  const items = listProp(node.props, "items");
   if (items.length === 0) return <ProgramText value="" ctx={ctx} size="caption" />;
 
   return (

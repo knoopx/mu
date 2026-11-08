@@ -24,7 +24,7 @@ import {
   programTextColor,
 } from "../lib/theme";
 import type { ProgramBinding, ProgramContext } from "./library/context";
-import { isElementNode, textOf } from "./library/context";
+import { isElementNode, listOf, textOf } from "./library/context";
 import { programDrawers } from "./library/registry";
 
 /** One drawn component, keyed by the statement it came from. */
@@ -59,8 +59,10 @@ export function ProgramScreen(props: { name: string }): JSX.Element | null {
   const ctx: ProgramContext = {
     t,
     node: (value: unknown) => draw(value, 0),
-    nodes: (list: readonly unknown[] | undefined) =>
-      (list ?? []).map((entry, index) => draw(entry, index)).filter((entry) => entry !== null),
+    nodes: (values: unknown) =>
+      listOf(values)
+        .map((entry, index) => draw(entry, index))
+        .filter((entry) => entry !== null),
     binding: <Value,>(value: unknown, fallback: Value): ProgramBinding<Value> => {
       if (isReactiveAssign(value)) {
         const target = value.target;

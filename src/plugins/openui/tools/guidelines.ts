@@ -9,7 +9,6 @@
 
 export const PROMPT_GUIDELINES: readonly string[] = [
   "Call openui-prompt once before authoring an OpenUI Lang program, then follow it — the component list it prints is the whole truth about what will draw.",
-  "A program is a GNOME screen, not a web page: a header bar, one operated list, an inert status line — no card grids, no KPI strip with nothing to operate.",
   "A component absent from the library cannot be drawn, however obvious its name looks.",
 ];
 

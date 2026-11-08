@@ -33,8 +33,9 @@ export interface ProgramContext {
   t: AdwaitaTheme;
   /** Draw one child of a children/items array. */
   node(value: unknown): JSX.Element | null;
-  /** Draw every child of an array, skipping what the parse left null. */
-  nodes(values: readonly unknown[] | undefined): JSX.Element[];
+  /** Draw every child of an array, skipping what the parse left null. A value
+   *  that is not an array is drawn as the one child it is. */
+  nodes(values: unknown): JSX.Element[];
   /** Read a reactive prop: its value as the human left it, and a setter that writes it back. */
   binding<Value>(value: unknown, fallback: Value): ProgramBinding<Value>;
   /** Report what the human did, in the words a later `openui-events` read prints. */
@@ -174,4 +175,47 @@ export function ProgramFigureRow(props: {
 export function prop<T>(props: Record<string, unknown>, key: string, fallback: T): T {
   const value = props[key];
   return value === undefined || value === null ? fallback : (value as T);
+}
+
+/**
+ * One evaluated value, as the list its prop is declared to be.
+ *
+ * A program that names a single thing where the component takes a list means
+ * one item: `Pane(title, blocks, surface, tone, Caption("biggest 412"))` puts
+ * one element in a prop the library declares an array, and the parser says
+ * nothing about it. A definition that then reached for `.map` killed the whole
+ * screen with a gpuix runtime error — one such prop takes down every other
+ * block of the program — so the list is settled here, once: an array is
+ * itself, nothing is the fallback, and any other value is a list of one.
+ */
+export function listOf(value: unknown, fallback: unknown[] = []): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null || value === "") return fallback;
+  return [value];
+}
+
+/**
+ * The text one prop of a drawn element is declared to be.
+ *
+ * A definition that puts a prop straight into text dies when the program writes
+ * a component in that slot — React refuses an object as a child, and the screen
+ * goes down with it — so a text slot is read here: what prints is a string, a
+ * number or a boolean, and anything else the program put there is the fallback,
+ * which for every text slot is nothing.
+ */
+export function textProp(
+  props: Record<string, unknown>,
+  key: string,
+  fallback = "",
+): string {
+  return textOf(props[key]) ?? fallback;
+}
+
+/** The list one prop of a drawn element is declared to be. */
+export function listProp(
+  props: Record<string, unknown>,
+  key: string,
+  fallback: unknown[] = [],
+): unknown[] {
+  return listOf(props[key], fallback);
 }

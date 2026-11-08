@@ -31,7 +31,13 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { ProgramFigureRow, prop, textOf } from "./context";
+import {
+  ProgramFigureRow,
+  listProp,
+  prop,
+  textOf,
+  textProp,
+} from "./context";
 import { cellText, isFigure, numberOf } from "./rows";
 
 export const Table = defineComponent({
@@ -112,8 +118,8 @@ const cellsOf = (row: unknown): unknown[] =>
   Array.isArray(row) ? row : [row];
 
 export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const columns = prop<unknown[]>(node.props, "columns", []).map(cellText);
-  const rows = prop<unknown[]>(node.props, "rows", []);
+  const columns = listProp(node.props, "columns").map(cellText);
+  const rows = listProp(node.props, "rows");
   const width = Math.max(columns.length, 1);
 
   const rule = (color: string) => (
@@ -241,7 +247,7 @@ export function drawStat(node: ElementNode, ctx: ProgramContext): JSX.Element {
       }}
     >
       <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
-        {textOf(node.props.label) ?? ""}
+        {textProp(node.props, "label")}
       </T>
       <T
         size={programTextRole(prop<ProgramTextSize>(node.props, "size", "lg"))}
@@ -250,7 +256,7 @@ export function drawStat(node: ElementNode, ctx: ProgramContext): JSX.Element {
         clamp={1}
         style={{ minWidth: 0 }}
       >
-        {textOf(node.props.value) ?? ""}
+        {textProp(node.props, "value")}
       </T>
       {delta === null ? null : (
         <T
@@ -297,7 +303,7 @@ const pointOf = (entry: unknown, index: number): ChartDataPoint | ChartSeriesPoi
 export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const kind = prop<"bar" | "line">(node.props, "kind", "bar");
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
-  const data = prop<unknown[]>(node.props, "points", []).map(pointOf);
+  const data = listProp(node.props, "points").map(pointOf);
 
   return (
     <div
@@ -338,7 +344,7 @@ export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <ProgramFigureRow
       ctx={ctx}
-      label={textOf(node.props.label) ?? ""}
+      label={textProp(node.props, "label")}
       figure={figure}
       figureColor={programTextColor(ctx.t, tone === null ? "ink" : tone)}
       figureMono

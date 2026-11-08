@@ -28,7 +28,7 @@ import {
   type ProgramTextSize,
 } from "../../lib/tokens";
 import type { ProgramContext } from "./context";
-import { ProgramText, prop, textOf } from "./context";
+import { ProgramText, listProp, prop, textProp } from "./context";
 import { cellOf, isFigure, textCell } from "./rows";
 
 const SIZE_WORD = z.enum(["sm", "md", "lg", "xl"]);
@@ -128,7 +128,7 @@ export function drawTitle(node: ElementNode, ctx: ProgramContext): JSX.Element {
       clamp={3}
       style={{ flexShrink: 1, minWidth: 0 }}
     >
-      {textOf(node.props.text) ?? ""}
+      {textProp(node.props, "text")}
     </T>
   );
 }
@@ -143,7 +143,7 @@ export function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
       clamp={8}
       style={{ flexShrink: 1, minWidth: 0 }}
     >
-      {textOf(node.props.text) ?? ""}
+      {textProp(node.props, "text")}
     </T>
   );
 }
@@ -156,7 +156,7 @@ export function drawCaption(node: ElementNode, ctx: ProgramContext): JSX.Element
       clamp={4}
       style={{ flexShrink: 1, minWidth: 0 }}
     >
-      {textOf(node.props.text) ?? ""}
+      {textProp(node.props, "text")}
     </T>
   );
 }
@@ -165,14 +165,14 @@ export function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
   return (
     <AdwaitaBadge variant={programBadgeVariant(tone)} size="sm">
-      {textOf(node.props.text) ?? ""}
+      {textProp(node.props, "text")}
     </AdwaitaBadge>
   );
 }
 
 export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const tone = toneOfValue(node.props.tone);
-  const value = textOf(node.props.value) ?? "";
+  const value = textProp(node.props, "value");
   return (
     <div
       style={{
@@ -206,7 +206,7 @@ export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Elemen
  * — mono when it is a figure, so a column of them lines up on its digits.
  */
 export function drawDetails(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const rows = prop<unknown[]>(node.props, "rows", []);
+  const rows = listProp(node.props, "rows");
 
   return (
     <div
@@ -299,7 +299,7 @@ export function drawNote(node: ElementNode, ctx: ProgramContext): JSX.Element {
       clamp={4}
       style={{ flexShrink: 1, minWidth: 0 }}
     >
-      {prop(node.props, "text", "")}
+      {textProp(node.props, "text")}
     </T>
   );
 }
@@ -322,7 +322,7 @@ export function drawCode(node: ElementNode, ctx: ProgramContext): JSX.Element {
         clamp={20}
         style={{ fontFamily: ctx.t.type.fontFamilyMono, flexShrink: 1, minWidth: 0 }}
       >
-        {prop(node.props, "text", "")}
+        {textProp(node.props, "text")}
       </T>
     </div>
   );
