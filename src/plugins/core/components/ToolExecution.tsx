@@ -11,6 +11,7 @@ import type { StyleDesc } from "@gpuix/react";
 
 import { Markdown } from "./Markdown";
 import { PatchDiff } from "./PatchDiff";
+import { StateSpinner } from "./StateSpinner";
 import {
   ReadPreview,
   isReadTool,
@@ -393,6 +394,7 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
         title={item.name}
         args={look.args}
         icon={toolIconOf(item.name)}
+        spinnerSlot={<StateSpinner />}
       />
       {ownedPanelsOf(item)}
       {look.readPreview !== undefined ? (
