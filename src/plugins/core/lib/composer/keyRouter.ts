@@ -73,9 +73,6 @@ export interface ComposerKeyContext {
   /** Tab in a draft: complete the path the draft is typing. */
   onComplete?: () => void;
 
-  /** Enter in the completion panel: send the draft and drop the suggestions. */
-  onSendDraft?: () => void;
-
   /** A keystroke in a panel whose query is the draft, so the draft follows it. */
   onDraft?: (text: string) => void;
 
@@ -225,17 +222,11 @@ function completionKey(
 }
 
 /**
- * What Enter does in a panel. Every panel takes the highlighted row, except the
- * completion panel: its query is the draft, so Enter stays the draft's Enter —
- * it sends the message and the suggestions go away with it. Tab is the key that
- * completes, and the only one that does.
+ * What Enter does in a panel: it takes the highlighted row. That includes the
+ * completion panel — a panel is a choice, never a send, and the draft goes to
+ * the conversation only from a draft. With nothing to take, Enter is inert;
+ * Escape closes the panel and leaves the draft, and Enter there sends.
  */
-function enterActionOf(ctx: ComposerKeyContext): () => void {
-  return isCompletionMode(ctx.mode) && ctx.onSendDraft !== undefined
-    ? ctx.onSendDraft
-    : ctx.pickActive;
-}
-
 function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
   handleListKey(event, {
     onUp: () => ctx.send({ type: "move", delta: -1, count: ctx.count }),
@@ -254,7 +245,7 @@ function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
         pageSize: ctx.maxVisible,
         count: ctx.count,
       }),
-    onEnter: enterActionOf(ctx),
+    onEnter: ctx.pickActive,
     onEscape: () => ctx.send({ type: "close" }),
   });
 }

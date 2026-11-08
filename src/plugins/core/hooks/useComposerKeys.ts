@@ -40,9 +40,6 @@ export interface ComposerKeyOptions {
   onClear?(): void;
   onPaste?(): void;
   onComplete?(): void;
-
-  /** Enter in the completion panel: the draft is sent, the panel is closed. */
-  onSendDraft?(): void;
 }
 
 export interface ComposerKeyHandlers {
@@ -123,7 +120,6 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
     send,
     pickActive,
     onComplete: opts.onComplete,
-    onSendDraft: opts.onSendDraft,
     onDraft: draftIsQuery ? opts.onChange : undefined,
     onDelete: panel?.onDelete === undefined ? undefined : deleteActive,
     onClear: opts.onClear,

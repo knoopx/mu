@@ -47,9 +47,10 @@ export function pathCompletionShortcuts(): Shortcut[] {
       desc: "complete",
     },
     ...navShortcuts({ select: "move" }),
-    // Enter is not a second way to take a name: the completion panel is the
-    // draft, so Enter sends the draft and the panel goes with it.
-    { id: "send", kbds: ["enter"], desc: "send" },
+    // Enter takes the highlighted name like every other panel: a completion is
+    // a choice, never a send, so the draft only reaches the conversation once
+    // the suggestions are closed.
+    { id: "choose", kbds: ["enter"], desc: "use" },
     { id: "close", kbds: ["escape"], desc: "close" },
   ];
 }
