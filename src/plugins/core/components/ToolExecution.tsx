@@ -62,6 +62,11 @@ import {
   QualityToolRows,
   qualityToolPreviewOf,
 } from "../../code-quality/components/QualityToolRows";
+import {
+  isOpenuiTool,
+  OpenuiToolRows,
+  openuiToolPreviewOf,
+} from "../../openui/components/OpenuiToolRows";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -180,6 +185,7 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isGuardrailsTool(item.name) ||
     isVcsTool(item.name) ||
     isCodeQualityTool(item.name) ||
+    isOpenuiTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -205,6 +211,7 @@ function argsLineOf(
   if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
+  if (isOpenuiTool(item.name)) return openuiToolPreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
 }
@@ -278,6 +285,12 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="code-quality" open>
         <QualityToolRows item={item} />
+      </ToolContent>,
+    );
+  if (isOpenuiTool(item.name))
+    panels.push(
+      <ToolContent key="openui" open>
+        <OpenuiToolRows item={item} />
       </ToolContent>,
     );
   return panels;

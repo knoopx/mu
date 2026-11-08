@@ -36,6 +36,18 @@ import { codeReviewTool } from "../../../code-quality/tools/codeReview";
 import { codeSymbolInspectTool } from "../../../code-quality/tools/codeSymbolInspect";
 import { codeSymbolReferencesTool } from "../../../code-quality/tools/codeSymbolReferences";
 import { webSearchTool } from "../../../web-search/tools/webSearch";
+import { OPENUI_TOOL_NAMES } from "../../../openui/constants";
+import { openuiClearTool } from "../../../openui/tools/openuiClear";
+import { openuiEventsTool } from "../../../openui/tools/openuiEvents";
+import { openuiLibraryTool } from "../../../openui/tools/openuiLibrary";
+import { openuiListTool } from "../../../openui/tools/openuiList";
+import { openuiPromptTool } from "../../../openui/tools/openuiPrompt";
+import { openuiRenderTool } from "../../../openui/tools/openuiRender";
+import { openuiStateTool } from "../../../openui/tools/openuiState";
+import { openuiStreamTool } from "../../../openui/tools/openuiStream";
+import { openuiSwitchTool } from "../../../openui/tools/openuiSwitch";
+import { openuiToolsTool } from "../../../openui/tools/openuiTools";
+import { openuiValidateTool } from "../../../openui/tools/openuiValidate";
 import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
 import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
 import { guardrailsFixtureUpdateTool } from "../../../guardrails/tools/guardrailsFixtureUpdate";
@@ -83,6 +95,7 @@ const APP_TOOL_NAMES = [
   "guardrails-coverage",
   ...VCS_TOOL_NAMES,
   ...CODE_QUALITY_TOOL_NAMES,
+  ...OPENUI_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -184,6 +197,17 @@ export async function createAgentSessionHandle(
         codeReviewTool,
         codeSymbolInspectTool,
         codeSymbolReferencesTool,
+        openuiPromptTool,
+        openuiLibraryTool,
+        openuiValidateTool,
+        openuiRenderTool,
+        openuiStreamTool,
+        openuiStateTool,
+        openuiEventsTool,
+        openuiToolsTool,
+        openuiListTool,
+        openuiSwitchTool,
+        openuiClearTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

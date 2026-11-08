@@ -26,6 +26,17 @@ export const TOOL_ICONS: Record<string, IconName> = {
   "code-review": "rateReview",
   "code-symbol-inspect": "category",
   "code-symbol-references": "accountTree",
+  "openui-prompt": "libraryBooks",
+  "openui-library": "category",
+  "openui-validate": "factCheck",
+  "openui-render": "widgets",
+  "openui-stream": "stream",
+  "openui-state": "visibility",
+  "openui-events": "touchApp",
+  "openui-tools": "inventory",
+  "openui-list": "viewArray",
+  "openui-switch": "browseGallery",
+  "openui-clear": "clearAll",
 };
 
 export function toolIconOf(name: string): IconName {
