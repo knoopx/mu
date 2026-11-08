@@ -462,7 +462,12 @@ export function ToastLayer(props: {
           style={{
             pointerEvents: "auto",
             maxWidth: maxWidth ?? "100%",
-            backgroundColor: t.color.surface.button,
+            // A typed toast wears its type as the fill, which is the
+            // library's tone; only an untyped one needs a surface picked
+            // here, and it picks one lighter than the log's own fill.
+            ...(item.type && item.type !== "default"
+              ? {}
+              : { backgroundColor: t.color.surface.button }),
             boxShadow: elevatedShadow(),
           }}
         />
