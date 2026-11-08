@@ -30,7 +30,6 @@ import type { ToolImage } from "../lib/agent/content";
 import { type TurnStats } from "../lib/agent/turnStats";
 import { ChatTranscript } from "../components/ChatTranscript";
 import { ChatComposerSlot } from "../components/ChatComposerSlot";
-import type { CancellableLoaderHandle } from "../components/CancellableLoader";
 import { AssistantMessage } from "../components/AssistantMessage";
 import { ToolExecution } from "../components/ToolExecution";
 import {
@@ -155,12 +154,6 @@ const followTopOf = (
   showProjectSummary: boolean,
   followTail: boolean,
 ): boolean => showProjectSummary || !followTail;
-
-/** A running session with nothing on screen yet is waiting, not empty. */
-const loaderShowsOf = (
-  isStreaming: boolean,
-  preview: SessionPreviewData | null,
-): boolean => isStreaming && preview === null;
 
 /** Either the tree node or the session row the log is showing instead of the run. */
 const previewOf = (
@@ -532,7 +525,6 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     promptPills,
   } = panels;
 
-  const loaderRef = useRef<CancellableLoaderHandle | null>(null);
   const transcriptListRef = useRef<PublicInstance | null>(null);
 
   const newWindow = useNewWindow(
@@ -619,9 +611,6 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
           followTop={followTopOf(showProjectSummary, followTail)}
           summaryRows={summaryRows}
           transcriptRows={transcriptRows}
-          showLoader={loaderShowsOf(isStreaming, preview)}
-          loaderRef={loaderRef}
-          onAbort={chat.abort}
         />
         <ChatComposerSlot
           gap={composerGap(t)}
