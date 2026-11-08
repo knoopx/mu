@@ -90,7 +90,13 @@ export type TranscriptAction =
       args: Record<string, unknown>;
       startTs?: number;
     }
-  | { type: "tool_update"; toolCallId: string; delta: string }
+  | {
+      type: "tool_update";
+      toolCallId: string;
+      delta: string;
+
+      details?: unknown;
+    }
   | {
       type: "tool_end";
       toolCallId: string;
@@ -327,7 +333,11 @@ const toolUpdate = (
     state,
     (item) =>
       item.toolCallId === action.toolCallId && item.status === "running",
-    (item) => ({ ...item, output: item.output + action.delta }),
+    (item) => ({
+      ...item,
+      output: item.output + action.delta,
+      ...(action.details === undefined ? {} : { details: action.details }),
+    }),
   );
 
 const toolEnd = (

@@ -27,17 +27,28 @@ export function outputModeFor(name: string): OutputMode {
   return "markdown";
 }
 
+/** Which end a bounded body keeps: a shell's tail holds the result a command ended on, a script's head holds the answer it printed first. */
+export type OutputKeep = "head" | "tail";
+
 export function plainOutputOf(
   output: string,
   max: number = MAX_OUTPUT_LINES,
+  keep: OutputKeep = "tail",
 ): string {
   const lines = output.split("\n");
   while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
   if (lines.length <= max) return lines.join("\n");
 
   const elided = lines.length - max;
+  const word = elided === 1 ? "line" : "lines";
+  if (keep === "head")
+    return [
+      ...lines.slice(0, max),
+      `… ${elided} later ${word} (${lines.length} total)`,
+    ].join("\n");
+
   return [
-    `… ${elided} earlier ${elided === 1 ? "line" : "lines"} (${lines.length} total)`,
+    `… ${elided} earlier ${word} (${lines.length} total)`,
     ...lines.slice(-max),
   ].join("\n");
 }

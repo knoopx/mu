@@ -39,6 +39,14 @@ const asRecord = (v: unknown): Record<string, unknown> =>
 const asNumber = (v: unknown): number =>
   typeof v === "number" && Number.isFinite(v) ? v : 0;
 
+/**
+ * Whether the session ran this call on behalf of another tool — a codemode
+ * script's own tool calls. They never reach the model as tool calls, so the log
+ * keeps them out of the transcript: pi records them on the parent's result and
+ * draws them inside its row.
+ */
+const isNestedCall = (e: AnyEvent): boolean => asString(e.parentToolCallId) !== "";
+
 function assistantUsageOf(
   message: Record<string, unknown>,
   endTs: number,
@@ -192,6 +200,7 @@ function messageEnd(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
 }
 
 function toolStart(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
+  if (isNestedCall(e)) return [];
   const toolCallId = asString(e.toolCallId);
   toolTextOf(ctx).set(toolCallId, "");
   return [
@@ -206,8 +215,9 @@ function toolStart(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
 }
 
 function toolUpdate(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
+  if (isNestedCall(e)) return [];
   const toolCallId = asString(e.toolCallId);
-  const text = resultParts(e.partialResult).output;
+  const { output: text, details } = resultParts(e.partialResult);
   const ledger = toolTextOf(ctx);
   const prev = ledger.get(toolCallId) ?? "";
   ledger.set(toolCallId, text);
@@ -216,10 +226,21 @@ function toolUpdate(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
     : text === prev
       ? ""
       : text;
-  return delta ? [{ type: "tool_update", toolCallId, delta }] : [];
+  // A call can publish only details — a codemode script answers with its nested
+  // calls as it makes them and no output until it ends.
+  if (delta === "" && details === undefined) return [];
+  return [
+    {
+      type: "tool_update",
+      toolCallId,
+      delta,
+      ...(details === undefined ? {} : { details }),
+    },
+  ];
 }
 
 function toolEnd(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
+  if (isNestedCall(e)) return [];
   const toolCallId = asString(e.toolCallId);
   const { output, details, image } = resultParts(e.result);
   toolTextOf(ctx).set(toolCallId, output);

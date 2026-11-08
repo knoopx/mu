@@ -67,6 +67,8 @@ import {
   OpenuiToolRows,
   openuiToolPreviewOf,
 } from "../../openui/components/OpenuiToolRows";
+import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
+import { codemodePreviewOf } from "../lib/codemode/script";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -186,6 +188,7 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isVcsTool(item.name) ||
     isCodeQualityTool(item.name) ||
     isOpenuiTool(item.name) ||
+    isCodemodeTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -212,6 +215,7 @@ function argsLineOf(
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
   if (isOpenuiTool(item.name)) return openuiToolPreviewOf(item);
+  if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
 }
@@ -291,6 +295,15 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="openui" open>
         <OpenuiToolRows item={item} />
+      </ToolContent>,
+    );
+  // The script's own rows, its printed output and its timing: pi answers with a
+  // header plus text and records the nested calls in details, and none of that
+  // is a table the shared output panel could draw.
+  if (isCodemodeTool(item.name))
+    panels.push(
+      <ToolContent key="codemode" open>
+        <CodemodeToolRows item={item} />
       </ToolContent>,
     );
   return panels;
