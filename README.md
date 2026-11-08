@@ -26,6 +26,7 @@ Every screen below is shown as it looks in a real window, with a session in it.
 | Changes        | the project's history, the files of a change, its diff                                         |
 | Changes        | a split asked of the agent, the diff it read, the two changes it made                          |
 | Web search     | a search, the pages it read, a search that got nothing                                         |
+| GitHub         | an upstream repo read, one of its files as text, a pull request that merged, a path GitHub refused |
 | Code quality   | what the project says about itself: thresholds, unused code, clones, a change's reach          |
 | Generative UI  | an answer that is a working screen: a filter picked, a stepper moved, one press waiting        |
 | Figures        | numbers plotted in the log: bars over a year, their axis and peak read back, a value refused  |
@@ -119,6 +120,14 @@ jj keeps a log of every change it has made to the repo, and `Ctrl+O` opens it: t
 When the agent needs something your project does not know, it searches the web, and you watch it search. The pages it found are in the log with the answer they produced, so you can check its sources; a search that got nothing is shown as got nothing.
 
 ![It went and looked](stories/WebSearch/results.png)
+
+## GitHub
+
+When the question is about somebody else's code, the agent reads GitHub itself: `github-repo` for what a repository is and what its default branch is called, `github-tree` for the shape of a project before any of its files are read, `github-file` for one file's text, `github-pr` and `github-issue` for the conversation and the diff, `github-release` for what shipped, `github-commit` for why a line moved, `github-search` for finding any of it, and `github-user` for who stands behind a dependency. Every one is a single REST read — no CLI in between, signed with `GITHUB_TOKEN` when the environment holds one — and every one is read-only: nothing here merges, comments or pushes.
+
+The log draws them the way it draws everything else: chips for the scope a call resolved, a one-line reading of what it found, ranked rows for the list it carried, and the body as itself — a file's text in mono, a pull request's description as the markdown it was written in. The bounds are stated instead of discovered: a folder answers with 200 entries and says how many more there were, a body is cut at its budget with the cut counted, and a file that is not text answers `binary` rather than as noise. A read is kept for a day so a research session does not spend its rate limit rereading the same page — the row says it came from the cache, and `refresh` is the way back to a live one. And a 404 says what was wrong (`no such repository, ref, path, number or tag`) rather than that something failed, because the usual cause is a path guessed rather than listed.
+
+The scene is the `Github/checked` story; its PNG is not in the tree — capture needs a test-support build of `@gpuix/native`.
 
 ## Code quality
 

@@ -26,6 +26,10 @@ export const muStateDir = (env: NodeJS.ProcessEnv = process.env): string =>
 export const muDataDir = (env: NodeJS.ProcessEnv = process.env): string =>
   fromEnv(env, "XDG_DATA_HOME", join(home(env), ".local", "share"));
 
+/** What mu keeps only to avoid doing it again — a day's worth of API answers, not state the user would miss. */
+export const muCacheDir = (env: NodeJS.ProcessEnv = process.env): string =>
+  fromEnv(env, "XDG_CACHE_HOME", join(home(env), ".cache"));
+
 export const muPathUnder = (base: string, ...parts: string[]): string =>
   join(base, ...parts);
 

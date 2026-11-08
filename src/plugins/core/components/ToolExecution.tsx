@@ -46,6 +46,11 @@ import {
   SearchResults,
 } from "../../web-search/components/SearchResults";
 import {
+  GithubToolRows,
+  githubToolPreviewOf,
+  isGithubTool,
+} from "../../github/components/GithubToolRows";
+import {
   GuardrailBlockRows,
   guardrailBlockOf,
 } from "../../guardrails/components/GuardrailBlockRows";
@@ -180,6 +185,7 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
   return (
     isAskTool(item.name) ||
     isSearchTool(item.name) ||
+    isGithubTool(item.name) ||
     isGuardrailsTool(item.name) ||
     isVcsTool(item.name) ||
     isCodeQualityTool(item.name) ||
@@ -211,6 +217,7 @@ function argsLineOf(
 ): string {
   if (isAskTool(item.name)) return askPreview(item);
   if (isSearchTool(item.name)) return searchPreviewOf(item);
+  if (isGithubTool(item.name)) return githubToolPreviewOf(item);
   if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
@@ -269,6 +276,14 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="search" open>
         <SearchResults item={item} />
+      </ToolContent>,
+    );
+  // A GitHub read answers with a record, a list and often a body: chips for what
+  // it resolved, ranked rows for what it listed, and the file or prose itself.
+  if (isGithubTool(item.name))
+    panels.push(
+      <ToolContent key="github" open>
+        <GithubToolRows item={item} />
       </ToolContent>,
     );
   if (block !== null)

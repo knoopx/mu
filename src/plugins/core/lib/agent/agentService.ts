@@ -36,6 +36,16 @@ import { codeReviewTool } from "../../../code-quality/tools/codeReview";
 import { codeSymbolInspectTool } from "../../../code-quality/tools/codeSymbolInspect";
 import { codeSymbolReferencesTool } from "../../../code-quality/tools/codeSymbolReferences";
 import { webSearchTool } from "../../../web-search/tools/webSearch";
+import { GITHUB_TOOL_NAMES } from "../../../github/constants";
+import { githubCommitTool } from "../../../github/tools/githubCommit";
+import { githubFileTool } from "../../../github/tools/githubFile";
+import { githubIssueTool } from "../../../github/tools/githubIssue";
+import { githubPrTool } from "../../../github/tools/githubPr";
+import { githubReleaseTool } from "../../../github/tools/githubRelease";
+import { githubRepoTool } from "../../../github/tools/githubRepo";
+import { githubSearchTool } from "../../../github/tools/githubSearch";
+import { githubTreeTool } from "../../../github/tools/githubTree";
+import { githubUserTool } from "../../../github/tools/githubUser";
 import { OPENUI_TOOL_NAMES } from "../../../openui/constants";
 import { openUIPromptTool } from "../../../openui/tools/openuiPrompt";
 import { openUILibraryTool } from "../../../openui/tools/openuiLibrary";
@@ -97,6 +107,7 @@ const APP_TOOL_NAMES = [
   "codemode",
   "ask-user",
   "search-duckduckgo",
+  ...GITHUB_TOOL_NAMES,
   "guardrails-test",
   "guardrails-fixture-update",
   "guardrails-coverage",
@@ -191,6 +202,15 @@ export async function createAgentSessionHandle(
       customTools: [
         askUserTool,
         webSearchTool,
+        githubRepoTool,
+        githubFileTool,
+        githubTreeTool,
+        githubPrTool,
+        githubIssueTool,
+        githubReleaseTool,
+        githubCommitTool,
+        githubSearchTool,
+        githubUserTool,
         guardrailsTestTool,
         guardrailsFixtureUpdateTool,
         guardrailsCoverageTool,

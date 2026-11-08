@@ -27,6 +27,15 @@ export const TOOL_ICONS: Record<string, IconName> = {
   "code-symbol-inspect": "category",
   "code-symbol-references": "accountTree",
   "mermaid-render": "schema",
+  "github-repo": "book",
+  "github-file": "description",
+  "github-tree": "folderOpen",
+  "github-pr": "pullRequest",
+  "github-issue": "circleOutline",
+  "github-release": "tagOutline",
+  "github-commit": "history",
+  "github-search": "search",
+  "github-user": "accountCircleOutline",
 };
 
 export function toolIconOf(name: string): IconName {
