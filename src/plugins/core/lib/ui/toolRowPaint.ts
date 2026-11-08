@@ -23,7 +23,10 @@ import {
   MARK_HANG,
   METER_MIN_FILL,
   METER_TRACK_WIDTH,
+  badgeWidth,
+  figureGap,
   idColumn,
+  textWidth,
 } from "./tokens";
 import { toolGapColumn, toolLine } from "./toolRows";
 
@@ -146,6 +149,60 @@ export const toolChip = (t: AdwaitaTheme): StyleDesc => ({
   flexShrink: 0,
 });
 
+/**
+ * The columns a list of rows reserves for the figures its rows trail. A badge
+ * hugs its own word and a meter is only there on the rows that carry a score,
+ * so a column that exists on some rows and not others is the same column at a
+ * different x — the list decides the columns once, over every row it holds,
+ * and each row stands a slot in each of them whether or not it has anything to
+ * put there.
+ */
+export interface ToolRowFigureColumns {
+  meter: number;
+  trailing: number;
+  badge: number;
+}
+
+/** The columns a list of rows needs, measured off the widest thing each column holds. */
+export function figureColumnsOf(
+  rows: readonly ToolPaintRow[],
+  t: AdwaitaTheme,
+): ToolRowFigureColumns {
+  let badgeChars = 0;
+  let trailingChars = 0;
+  let meter = 0;
+  for (const row of rows) {
+    badgeChars = Math.max(badgeChars, row.badge.trim().length);
+    trailingChars = Math.max(trailingChars, (row.trailing ?? "").trim().length);
+    if (row.meter !== null && row.meter !== undefined) meter = METER_TRACK_WIDTH;
+  }
+  return {
+    meter,
+    trailing: trailingChars === 0 ? 0 : textWidth(t, trailingChars),
+    badge: badgeChars === 0 ? 0 : badgeWidth(t, badgeChars),
+  };
+}
+
+/** The cluster of figures one row trails: its own gap, tighter than the row's,
+ *  so a meter, a count and a badge read as one group rather than loose ink. */
+export const toolFigureRow = (t: AdwaitaTheme): StyleDesc => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  gap: figureGap(t),
+  flexShrink: 0,
+});
+
+/** One figure's column: a fixed width, and the ink stands at its left edge so
+ *  every row's figure starts at the same x. */
+export const toolFigureSlot = (width: number): StyleDesc => ({
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  width,
+  flexShrink: 0,
+});
+
 /** One row of a table of rows: padded to the column edge, divided from the one above. */
 export function toolDataRow(
   t: AdwaitaTheme,
@@ -163,7 +220,9 @@ export function toolDataRow(
     paddingRight: t.space.sm,
     borderRadius: t.radius.sm,
     borderTopWidth: first ? 0 : HAIRLINE,
-    borderColor: t.color.divider.faint,
+    // A rule over the log's own surface takes the default divider: `faint` is
+    // the nightsky window colour, so a faint rule there draws nothing.
+    borderColor: t.color.divider.default,
     hover: { backgroundColor: rowHoverBg(t) },
   };
   return pressable

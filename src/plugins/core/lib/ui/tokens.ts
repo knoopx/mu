@@ -60,6 +60,30 @@ export const idColumn = (t: AdwaitaTheme): number =>
 export const subLineIndent = (t: AdwaitaTheme): number =>
   idColumn(t) + t.space.md;
 
+/** How far one character of the app's *proportional* text advances, as a
+ *  fraction of the size it is set at — the sibling of `MONO_ADVANCE`, and
+ *  measured off the app's own badges (the pill for "moderate" prints 63px at
+ *  the micro measure for eight characters). A budget, not a promise: a column
+ *  sized with it stays a column whatever the font's own advance turns out to be. */
+const PROPORTIONAL_ADVANCE = 0.62;
+
+/** adwaita's own inline padding inside a small badge — 6 on each side, so a
+ *  badge is wider than the word it holds by exactly this. */
+const BADGE_INLINE_PAD = 12;
+
+/** What `chars` of proportional text print at `size`. */
+export const textWidth = (
+  t: AdwaitaTheme,
+  chars: number,
+  size: number = t.type.micro,
+): number => Math.round(chars * size * PROPORTIONAL_ADVANCE);
+
+/** How wide a small badge reading `chars` characters is — the word plus the
+ *  pill's own padding. A row's state column is sized with this so a longer
+ *  word cannot drag the figures beside it out of line. */
+export const badgeWidth = (t: AdwaitaTheme, chars: number): number =>
+  textWidth(t, chars) + BADGE_INLINE_PAD;
+
 /* Leading -------------------------------------------------------------- */
 
 /**

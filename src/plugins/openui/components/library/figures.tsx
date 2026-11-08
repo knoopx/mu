@@ -40,6 +40,7 @@ import {
 } from "../../lib/tokens";
 import {
   programProgressTone,
+  programRule,
   programStatusToTimeline,
   programTextColor,
   toneOfValue,
@@ -482,7 +483,7 @@ function BreakdownRow({
             width: "100%",
             height: HAIRLINE,
             flexShrink: 0,
-            backgroundColor: ctx.t.color.divider.faint,
+            backgroundColor: programRule(ctx.t),
           }}
         />
       )}

@@ -38,6 +38,7 @@ import {
 } from "../../lib/tokens";
 import {
   programProgressTone,
+  programRule,
   programTextColor,
   toneOfValue,
   type ProgramTone,
@@ -218,7 +219,7 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
           >
             {columns.map((entry, index) => cell(entry, index, true))}
           </div>
-          {rule(ctx.t.color.divider.default)}
+          {rule(programRule(ctx.t))}
         </div>
       )}
       {rows.map((row, rowIndex) => (
@@ -246,7 +247,7 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
               .slice(0, width)
               .map((entry, index) => cell(entry, index, false))}
           </div>
-          {rule(ctx.t.color.divider.faint)}
+          {rule(programRule(ctx.t))}
         </div>
       ))}
     </div>

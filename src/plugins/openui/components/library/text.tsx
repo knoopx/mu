@@ -17,6 +17,7 @@ import { mutedText } from "../../../core/lib/ui/theme";
 import { innerGap } from "../../lib/tokens";
 import {
   programBadgeVariant,
+  programRule,
   programTextColor,
   toneOfValue,
   type ProgramTone,
@@ -279,7 +280,7 @@ export function drawDetails(node: ElementNode, ctx: ProgramContext): JSX.Element
                   width: "100%",
                   height: HAIRLINE,
                   flexShrink: 0,
-                  backgroundColor: ctx.t.color.divider.faint,
+                  backgroundColor: programRule(ctx.t),
                 }}
               />
             )}

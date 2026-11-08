@@ -41,12 +41,15 @@ import {
   toolText,
 } from "../lib/ui/toolRows";
 import {
+  figureColumnsOf,
   meterFill,
   toolBadgeVariant,
   toolBodyStack,
   toolChip,
   toolChipLine,
   toolDataRow,
+  toolFigureRow,
+  toolFigureSlot,
   toolIdText,
   toolKeyColumn,
   toolMonoGrow,
@@ -56,6 +59,7 @@ import {
   type ToolPaintRow,
   type ToolPaintSection,
   type ToolRowCell,
+  type ToolRowFigureColumns,
   type ToolRowMeter,
   type ToolRowTone,
 } from "../lib/ui/toolRowPaint";
@@ -117,7 +121,9 @@ function ToolMeterBar({
         style={{
           height: METER_RULE_HEIGHT,
           borderRadius: METER_RULE_RADIUS,
-          backgroundColor: t.color.divider.faint,
+          // The track is the column: an invisible one leaves a score reading as
+          // a dash of no particular length, floating where nothing anchors it.
+          backgroundColor: t.color.divider.default,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -198,6 +204,63 @@ function ToolRowBody({
 }
 
 /**
+ * The figures a row trails, standing in the columns its list reserved: a score
+ * meter, a trailing count, a state badge. A row stands a slot in every column
+ * the list has, empty when it has nothing for it, so the meter of the row under
+ * a `high` is not shoved half a badge to the left of it by a `widespread`.
+ */
+function ToolRowFigures({
+  row,
+  columns,
+  variants,
+}: {
+  row: ToolPaintRow;
+  columns: ToolRowFigureColumns;
+  variants: Readonly<Record<string, BadgeVariant>>;
+}): JSX.Element | null {
+  const t = useAdwaita();
+  if (columns.meter === 0 && columns.trailing === 0 && columns.badge === 0) {
+    return null;
+  }
+  const badge = row.badge.trim();
+  const trailing = row.trailing ?? "";
+  const meter = row.meter;
+
+  return (
+    <div style={toolFigureRow(t)}>
+      {columns.meter === 0 ? null : (
+        <div style={toolFigureSlot(columns.meter)}>
+          {meter === null || meter === undefined ? null : (
+            <ToolMeterBar
+              meter={meter}
+              color={toolToneColor(t, row.tone ?? "neutral")}
+            />
+          )}
+        </div>
+      )}
+      {columns.trailing === 0 ? null : (
+        <div style={toolFigureSlot(columns.trailing)}>
+          {trailing === "" ? null : (
+            <T size="micro" color={mutedText(t)}>
+              {trailing}
+            </T>
+          )}
+        </div>
+      )}
+      {columns.badge === 0 ? null : (
+        <div style={toolFigureSlot(columns.badge)}>
+          {badge === "" ? null : (
+            <Badge size="sm" variant={toolBadgeVariant(badge, variants)}>
+              {badge}
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * One data row: the id in a mono key column, the thing the row is about, a
  * muted secondary line, the member lines under it, how far its score fills a
  * meter, and a Badge when it carries a state. The badge variants and whether
@@ -207,19 +270,18 @@ function ToolRowBody({
 function ToolDataRow({
   row,
   first,
+  columns,
   variants = {},
   pressable = true,
 }: {
   row: ToolPaintRow;
   first: boolean;
+  columns: ToolRowFigureColumns;
   variants?: Readonly<Record<string, BadgeVariant>>;
   pressable?: boolean;
 }): JSX.Element {
   const t = useAdwaita();
-  const tone = row.tone ?? "neutral";
   const members = row.members ?? [];
-  const badge = row.badge.trim();
-  const meter = row.meter;
 
   return (
     <div
@@ -236,23 +298,7 @@ function ToolDataRow({
         secondary={row.secondary}
         members={members}
       />
-      {meter === null || meter === undefined ? null : (
-        <ToolMeterBar meter={meter} color={toolToneColor(t, tone)} />
-      )}
-      {row.trailing === undefined || row.trailing === "" ? null : (
-        <T size="micro" color={mutedText(t)} style={{ flexShrink: 0 }}>
-          {row.trailing}
-        </T>
-      )}
-      {badge === "" ? null : (
-        <Badge
-          size="sm"
-          variant={toolBadgeVariant(badge, variants)}
-          style={{ flexShrink: 0 }}
-        >
-          {badge}
-        </Badge>
-      )}
+      <ToolRowFigures row={row} columns={columns} variants={variants} />
     </div>
   );
 }
@@ -349,16 +395,22 @@ export function ToolRowList({
   rows,
   variants = {},
   pressable = true,
+  columns,
 }: {
   rows: readonly ToolPaintRow[];
   variants?: Readonly<Record<string, BadgeVariant>>;
   pressable?: boolean;
+  /** The figure columns, when a wider block than this list already decided them. */
+  columns?: ToolRowFigureColumns;
 }): JSX.Element[] {
+  const t = useAdwaita();
+  const cols = columns ?? figureColumnsOf(rows, t);
   return rows.map((row, index) => (
     <ToolDataRow
       key={`${row.key}-${String(index)}`}
       row={row}
       first={index === 0}
+      columns={cols}
       variants={variants}
       pressable={pressable}
     />
@@ -376,6 +428,12 @@ export function ToolSections({
   pressable?: boolean;
 }): JSX.Element[] {
   const t = useAdwaita();
+  // Every section of one answer stands in the same figure columns, or a head
+  // divides the table into columns that only agree with themselves.
+  const columns = figureColumnsOf(
+    sections.flatMap((section) => [...section.rows]),
+    t,
+  );
   return sections.map((section, index) => (
     <div
       key={`${section.title || "rows"}-${String(index)}`}
@@ -386,6 +444,7 @@ export function ToolSections({
         rows={section.rows}
         variants={variants}
         pressable={pressable}
+        columns={columns}
       />
     </div>
   ));

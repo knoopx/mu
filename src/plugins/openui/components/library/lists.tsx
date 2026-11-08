@@ -24,6 +24,7 @@ import {
 } from "../../lib/tokens";
 import {
   programProgressTone,
+  programRule,
   programStatusColor,
   programStatusGlyph,
   programTextColor,
@@ -147,7 +148,7 @@ export function drawSections(node: ElementNode, ctx: ProgramContext): JSX.Elemen
                   width: "100%",
                   height: HAIRLINE,
                   flexShrink: 0,
-                  backgroundColor: ctx.t.color.divider.faint,
+                  backgroundColor: programRule(ctx.t),
                 }}
               />
             )}

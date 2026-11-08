@@ -42,7 +42,10 @@ export function programTextColor(
     case "muted":
       return mutedText(t);
     case "faint":
-      return t.color.divider.faint;
+      // Not `divider.faint`: in dark and nightsky that is the card's own colour,
+      // and a faint tone would then print nothing at all. A faded ink is the ink
+      // of a block's own words, held back rather than erased.
+      return withAlpha(t.color.text.secondary, 0.6);
     case "accent":
     case "info":
       return t.color.accent.base;
@@ -238,17 +241,23 @@ export function programSurfaceFill(
   return t.color.surface.card;
 }
 
+/** The rule between the rows of a program's own block. A rule is painted with
+ *  the default divider and never the faint one: in dark and nightsky `faint` is
+ *  the card's own colour, so a faint rule draws nothing and a table loses the
+ *  lines that make it a table. */
+export const programRule = (t: AdwaitaTheme): string => t.color.divider.default;
+
 /** A hairline in the tone a block's edge is drawn with. */
 export function programEdge(
   t: AdwaitaTheme,
   tone: ProgramTone | null | undefined,
 ): string {
-  if (tone === undefined || tone === null) return t.color.divider.faint;
+  if (tone === undefined || tone === null) return programRule(t);
   if (tone === "accent" || tone === "info")
     return withAlpha(t.color.accent.base, 0.4);
   if (tone === "danger") return withAlpha(t.color.functional.destructive, 0.4);
   if (tone === "warning") return withAlpha(t.color.functional.warning, 0.4);
   if (tone === "success") return withAlpha(t.color.functional.success, 0.4);
-  return t.color.divider.faint;
+  return programRule(t);
 }
 

@@ -105,13 +105,15 @@ export function toolLineFlush(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-/** One cell of a table of rows, divided from the one above it unless it is first. */
+/** One cell of a table of rows, divided from the one above it unless it is first.
+ *  The rule is the default divider because a cell sits on the log's own surface,
+ *  where `faint` is that surface's colour and draws nothing. */
 export function toolCell(t: AdwaitaTheme, first: boolean): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
     borderTopWidth: first ? 0 : HAIRLINE,
-    borderColor: t.color.divider.faint,
+    borderColor: t.color.divider.default,
     minWidth: 0,
     flexShrink: 0,
   };
