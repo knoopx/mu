@@ -40,7 +40,10 @@ import {
   outputPanel,
   previewLineHeight,
 } from "../../core/lib/ui/transcriptLayout";
-import { plainOutputOf } from "../../core/lib/ui/toolOutputMode";
+import {
+  MAX_OUTPUT_LINES,
+  plainOutputOf,
+} from "../../core/lib/ui/toolOutputMode";
 import {
   VCS_BADGE_VARIANTS,
   VCS_CONFLICTS_TOOL,
@@ -232,7 +235,7 @@ function VcsFileBody({
         path={path}
         theme={buildNativeTheme(t)}
         style={{
-          maxHeight: 40 * lineHeight,
+          maxHeight: MAX_OUTPUT_LINES * lineHeight,
           overflow: "hidden",
           flexShrink: 0,
           fontSize: t.type.caption,

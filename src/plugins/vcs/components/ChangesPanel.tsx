@@ -11,6 +11,7 @@ import {
   VirtualListPanel,
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
+import { ROW_HEIGHT } from "../../core/lib/ui/tokens";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { iconForFile } from "../../core/lib/composer/options";
 import { relativeAge } from "../../core/lib/utils/time";
@@ -65,7 +66,7 @@ export function ChangesPanel({
   const t = useAdwaita();
   const s = usePanelChrome();
   const renderer = useGpuixRequired();
-  const rowHeight = t.control.rowHeight;
+  const rowHeight = ROW_HEIGHT;
   const stack = panel.rows.slice(0, LIST_CAP);
   const files = panel.files.slice(0, LIST_CAP);
   const file = panel.files[panel.fileSel];

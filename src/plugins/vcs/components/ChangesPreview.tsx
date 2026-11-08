@@ -6,6 +6,11 @@
  * to the table widget, which lines the rows up against each other; the two
  * pictures of an image change are painted side by side, since no patch says
  * what changed in a picture.
+ *
+ * The diff widget is asked for no file header of its own: the preview pane
+ * shows one file at a time and that file is already named, picked, in the file
+ * list above it, so a header row would only spend a row saying which file the
+ * row it sits over belongs to.
  */
 import { useMemo, type JSX } from "react";
 import type { PublicInstance } from "@gpuix/react";
@@ -19,6 +24,7 @@ import {
   type TabularSides,
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
+import { emphasisWeight } from "../../core/lib/ui/tokens";
 import type { StyleDesc } from "@gpuix/react";
 import { filePreviewOf } from "../lib/preview";
 import type { ChangeImage } from "../hooks/useChangeFiles";
@@ -86,7 +92,11 @@ function ImageTile({
           flexShrink: 0,
         }}
       >
-        <T size="caption" weight={t.type.weight.semibold} color={mutedText(t)}>
+        <T
+          size="caption"
+          weight={emphasisWeight(t)}
+          color={mutedText(t)}
+        >
           {label}
         </T>
         {bytes > 0 ? (
@@ -171,7 +181,7 @@ function TextDiff({
 
   diffRef: { current: PublicInstance | null };
 }): JSX.Element {
-  return <DiffPanel patch={patch} diffRef={diffRef} />;
+  return <DiffPanel patch={patch} diffRef={diffRef} fileHeader={false} />;
 }
 
 function TableDiff({

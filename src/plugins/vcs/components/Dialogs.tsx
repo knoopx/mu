@@ -16,6 +16,7 @@ import {
   groupHints,
   useAdwaita,
   windowCandidates,
+  type AdwaitaTheme,
   type IconName,
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
@@ -30,8 +31,20 @@ import { REVSETS } from "../constants";
 import type { RevsetDef } from "../types";
 import { bookmarkNames, listBookmarks } from "../lib/repo";
 import { bareKeyArgs } from "../../core/lib/ui/keyEvents";
+import { mutedText } from "../../core/lib/ui/theme";
+import {
+  ACTION_GLYPH,
+  INLINE_GLYPH,
+  ROW_HEIGHT,
+  emphasisWeight,
+  plainWeight,
+  titleWeight,
+} from "../../core/lib/ui/tokens";
 
-const ROW_H = 24;
+/** A picker dialog's width: one width for every picker, so a filter field and a candidate list always get the same room. */
+const PICKER_WIDTH = 560;
+
+/** How many candidates a picker shows before it scrolls. */
 const MAX_ROWS = 6;
 
 function DialogHeading({
@@ -51,8 +64,12 @@ function DialogHeading({
         gap: t.space.sm,
       }}
     >
-      <Icon name={icon} size={18} color={t.color.accent.base} />
-      <T size="title2" weight={700} color={t.color.text.primary}>
+      <Icon name={icon} size={ACTION_GLYPH} color={t.color.accent.base} />
+      <T
+        size="title2"
+        weight={titleWeight(t)}
+        color={t.color.text.primary}
+      >
         {title}
       </T>
     </div>
@@ -104,12 +121,12 @@ function pickerHints(shortcuts: Shortcut[], empty: boolean): Shortcut[] {
   return hints(empty ? shortcuts.filter((s) => s.id !== "forget") : shortcuts);
 }
 
-function candidateListStyle(visible: number): StyleDesc {
+function candidateListStyle(t: AdwaitaTheme, visible: number): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
-    gap: 2,
-    height: candidateListHeight(visible, ROW_H),
+    gap: t.space.xs,
+    height: candidateListHeight(visible, ROW_HEIGHT),
   };
 }
 
@@ -141,7 +158,7 @@ export function RevsetDialog({
   };
 
   return (
-    <DialogFrame width={560} dim>
+    <DialogFrame width={PICKER_WIDTH} dim>
       <DialogHeading icon="list" title="Revset" />
       <OverlayInput
         value={value}
@@ -156,9 +173,9 @@ export function RevsetDialog({
           onCancel,
         })}
       />
-      <div style={candidateListStyle(win.end - win.start)}>
+      <div style={candidateListStyle(t, win.end - win.start)}>
         {rows.length === 0 ? (
-          <T size="body" color={t.color.text.dim}>
+          <T size="body" color={mutedText(t)}>
             {`No revset matches "${value}"`}
           </T>
         ) : (
@@ -174,16 +191,16 @@ export function RevsetDialog({
               >
                 <Icon
                   name={isCurrent ? "taskAlt" : "list"}
-                  size={14}
+                  size={INLINE_GLYPH}
                   color={
                     isCurrent || isActive
                       ? t.color.accent.base
-                      : t.color.text.dim
+                      : mutedText(t)
                   }
                 />
                 <T
                   size="body"
-                  weight={isActive ? 600 : 400}
+                  weight={isActive ? emphasisWeight(t) : plainWeight(t)}
                   color={isActive ? t.color.accent.base : t.color.text.primary}
                   style={{ minWidth: 0, whiteSpace: "nowrap" }}
                 >
@@ -199,7 +216,7 @@ export function RevsetDialog({
                 >
                   <T
                     size="caption"
-                    color={t.color.text.dim}
+                    color={mutedText(t)}
                     style={{ whiteSpace: "nowrap" }}
                   >
                     {row.revset}
@@ -276,7 +293,7 @@ export function BookmarkDialog({
   };
 
   return (
-    <DialogFrame width={520} dim>
+    <DialogFrame width={PICKER_WIDTH} dim>
       <DialogHeading
         icon="bookmark"
         title={`Bookmark ${changeId.slice(0, 8)}`}
@@ -295,13 +312,13 @@ export function BookmarkDialog({
           onForget: forgetActive,
         })}
       />
-      <div style={candidateListStyle(win.end - win.start)}>
+      <div style={candidateListStyle(t, win.end - win.start)}>
         {loading ? (
-          <T size="body" color={t.color.text.dim}>
+          <T size="body" color={mutedText(t)}>
             Loading bookmarks…
           </T>
         ) : candidates.length === 0 ? (
-          <T size="body" color={t.color.text.dim}>
+          <T size="body" color={mutedText(t)}>
             No bookmarks yet. Type to create one.
           </T>
         ) : (
@@ -325,12 +342,12 @@ export function BookmarkDialog({
               >
                 <Icon
                   name={isCreate ? "plus" : "bookmark"}
-                  size={14}
-                  color={rowColor ?? t.color.text.dim}
+                  size={INLINE_GLYPH}
+                  color={rowColor ?? mutedText(t)}
                 />
                 <T
                   size="body"
-                  weight={isActive ? 600 : 400}
+                  weight={isActive ? emphasisWeight(t) : plainWeight(t)}
                   color={rowColor ?? t.color.text.primary}
                 >
                   {name}
@@ -346,7 +363,7 @@ export function BookmarkDialog({
                   >
                     <T
                       size="caption"
-                      color={t.color.text.dim}
+                      color={mutedText(t)}
                       style={{ whiteSpace: "nowrap" }}
                     >
                       new bookmark
