@@ -1,133 +1,36 @@
+import { useEffect, useState, type JSX } from "react";
 import {
-  useEffect,
-  useState,
-  type Dispatch,
-  type JSX,
-  type SetStateAction,
-} from "react";
-import {
+  bookmarkNames,
+  CandidateList,
+  CandidateRow,
   DialogFrame,
+  DialogHeading,
   DialogHintBar,
-  Icon,
-  OverlayInput,
-  T,
-  candidateListHeight,
-  candidateRowStyle,
   groupHints,
-  useAdwaita,
+  labeledCandidates,
+  nameCandidates,
+  OverlayInput,
+  useCandidatePicker,
   windowCandidates,
-  type AdwaitaTheme,
-  type IconName,
 } from "adwaita-gpuix";
-import type { StyleDesc } from "@gpuix/react";
 import {
   BOOKMARK_PICKER_SHORTCUTS,
   PICKER_SHORTCUTS,
   hints,
-  matchShortcut,
   type Shortcut,
 } from "../lib/shortcuts";
 import { REVSETS } from "../constants";
-import type { RevsetDef } from "../types";
-import { bookmarkNames, listBookmarks } from "../lib/repo";
-import { bareKeyArgs } from "../../core/lib/ui/keyEvents";
-import { mutedText } from "../../core/lib/ui/theme";
-import {
-  ACTION_GLYPH,
-  INLINE_GLYPH,
-  ROW_HEIGHT,
-  emphasisWeight,
-  plainWeight,
-  titleWeight,
-} from "../../core/lib/ui/tokens";
+import { listBookmarks } from "../lib/repo";
 
 /** A picker dialog's width: one width for every picker, so a filter field and a candidate list always get the same room. */
 const PICKER_WIDTH = 560;
 
-/** How many candidates a picker shows before it scrolls. */
+/** How many candidates a picker shows before the window moves. */
 const PICKER_ROWS = 6;
-
-function DialogHeading({
-  icon,
-  title,
-}: {
-  icon: IconName;
-  title: string;
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: t.space.sm,
-      }}
-    >
-      <Icon name={icon} size={ACTION_GLYPH} color={t.color.accent.base} />
-      <T
-        size="title2"
-        weight={titleWeight(t)}
-        color={t.color.text.primary}
-      >
-        {title}
-      </T>
-    </div>
-  );
-}
-
-function usePicker(): {
-  value: string;
-  active: number;
-  setActive: Dispatch<SetStateAction<number>>;
-  onQuery: (next: string) => void;
-} {
-  const [value, setValue] = useState("");
-  const [active, setActive] = useState(0);
-  return {
-    value,
-    active,
-    setActive,
-    onQuery: (next: string) => {
-      setValue(next);
-      setActive(0);
-    },
-  };
-}
-
-function pickerKeys(opts: {
-  shortcuts: Shortcut[];
-  count: number;
-  setActive: Dispatch<SetStateAction<number>>;
-  onApply: () => void;
-  onCancel: () => void;
-  onForget?: () => void;
-}): (event: { key?: string }) => void {
-  return (event: { key?: string }): void => {
-    const { key, mods } = bareKeyArgs(event);
-    const m = matchShortcut(opts.shortcuts, key, mods);
-    if (m === null) return;
-    if (m.id === "nav-up") opts.setActive((i) => Math.max(0, i - 1));
-    if (m.id === "nav-down")
-      opts.setActive((i) => Math.min(i + 1, Math.max(opts.count - 1, 0)));
-    if (m.id === "apply") opts.onApply();
-    if (m.id === "cancel") opts.onCancel();
-    if (m.id === "forget") opts.onForget?.();
-  };
-}
 
 /** The keys a picker answers with, minus the ones an empty list cannot use. */
 function pickerHints(shortcuts: Shortcut[], empty: boolean): Shortcut[] {
   return hints(empty ? shortcuts.filter((s) => s.id !== "forget") : shortcuts);
-}
-
-function candidateListStyle(t: AdwaitaTheme, visible: number): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: t.space.xs,
-    height: candidateListHeight(visible, ROW_HEIGHT),
-  };
 }
 
 export function RevsetDialog({
@@ -139,17 +42,15 @@ export function RevsetDialog({
   onApply: (revset: string) => void;
   onCancel: () => void;
 }): JSX.Element {
-  const t = useAdwaita();
-  const { value, active, setActive, onQuery } = usePicker();
+  const picker = useCandidatePicker({
+    shortcuts: PICKER_SHORTCUTS,
+    count: () => rows.length,
+    onApply: () => applyActive(),
+    onCancel,
+  });
 
-  const query = value.trim().toLowerCase();
-  const rows = REVSETS.filter(
-    (r: RevsetDef) =>
-      query.length === 0 ||
-      r.label.toLowerCase().includes(query) ||
-      r.revset.toLowerCase().includes(query),
-  );
-  const win = windowCandidates(rows, active, PICKER_ROWS);
+  const rows = labeledCandidates(REVSETS, picker.value);
+  const win = windowCandidates(rows, picker.activeIndex, PICKER_ROWS);
 
   const applyActive = (): void => {
     const row = rows[win.activeIdx];
@@ -161,72 +62,33 @@ export function RevsetDialog({
     <DialogFrame width={PICKER_WIDTH} dim>
       <DialogHeading icon="list" title="Revset" />
       <OverlayInput
-        value={value}
+        value={picker.value}
         placeholder="filter revsets"
-        onChange={onQuery}
-        onSubmit={applyActive}
-        onKeyDown={pickerKeys({
-          shortcuts: PICKER_SHORTCUTS,
-          count: rows.length,
-          setActive,
-          onApply: applyActive,
-          onCancel,
-        })}
+        onChange={picker.onQuery}
+        onSubmit={() => applyActive()}
+        onKeyDown={picker.onKeyDown}
       />
-      <div style={candidateListStyle(t, win.end - win.start)}>
-        {rows.length === 0 ? (
-          <T size="body" color={mutedText(t)}>
-            {`No revset matches "${value}"`}
-          </T>
-        ) : (
-          rows.slice(win.start, win.end).map((row, off) => {
-            const index = win.start + off;
-            const isActive = index === win.activeIdx;
-            const isCurrent = row.revset === current;
-            return (
-              <div
-                key={row.revset}
-                onClick={() => onApply(row.revset)}
-                style={candidateRowStyle(t, isActive)}
-              >
-                <Icon
-                  name={isCurrent ? "taskAlt" : "list"}
-                  size={INLINE_GLYPH}
-                  color={
-                    isCurrent || isActive
-                      ? t.color.accent.base
-                      : mutedText(t)
-                  }
-                />
-                <T
-                  size="body"
-                  weight={isActive ? emphasisWeight(t) : plainWeight(t)}
-                  color={isActive ? t.color.accent.base : t.color.text.primary}
-                  style={{ minWidth: 0, whiteSpace: "nowrap" }}
-                >
-                  {row.label}
-                </T>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    flexGrow: 1,
-                    minWidth: 0,
-                  }}
-                >
-                  <T
-                    size="caption"
-                    color={mutedText(t)}
-                    style={{ whiteSpace: "nowrap" }}
-                  >
-                    {row.revset}
-                  </T>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+      <CandidateList
+        visible={win.end - win.start}
+        placeholder={`No revset matches "${picker.value}"`}
+      >
+        {rows.slice(win.start, win.end).map((row, off) => {
+          const index = win.start + off;
+          const isCurrent = row.revset === current;
+          return (
+            <CandidateRow
+              key={row.revset}
+              label={row.label}
+              active={index === win.activeIdx}
+              icon={isCurrent ? "taskAlt" : "list"}
+              iconTone={isCurrent ? "accent" : undefined}
+              trailing={row.revset}
+              trailingMono
+              onSelect={() => onApply(row.revset)}
+            />
+          );
+        })}
+      </CandidateList>
       <DialogHintBar
         groups={groupHints(pickerHints(PICKER_SHORTCUTS, rows.length === 0))}
       />
@@ -245,10 +107,16 @@ export function BookmarkDialog({
   onForget: (name: string) => void;
   onCancel: () => void;
 }): JSX.Element {
-  const t = useAdwaita();
-  const { value, active, setActive, onQuery } = usePicker();
   const [names, setNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const picker = useCandidatePicker({
+    shortcuts: BOOKMARK_PICKER_SHORTCUTS,
+    count: () => candidates.length,
+    onApply: () => applyActive(),
+    onCancel,
+    onForget: () => forgetActive(),
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -268,18 +136,10 @@ export function BookmarkDialog({
     };
   }, []);
 
-  const query = value.trim().toLowerCase();
-  const filtered =
-    query.length === 0
-      ? names
-      : names.filter((n) => n.toLowerCase().includes(query));
   // A typed name no bookmark has is a bookmark to create, and is drawn as one
   // so it never reads as an existing bookmark.
-  const candidates =
-    query.length > 0 && !names.some((n) => n.toLowerCase() === query)
-      ? [...filtered, value.trim()]
-      : filtered;
-  const win = windowCandidates(candidates, active, PICKER_ROWS);
+  const candidates = nameCandidates(names, picker.value);
+  const win = windowCandidates(candidates, picker.activeIndex, PICKER_ROWS);
   const activeName = candidates[win.activeIdx] ?? null;
 
   const applyActive = (): void => {
@@ -294,87 +154,41 @@ export function BookmarkDialog({
 
   return (
     <DialogFrame width={PICKER_WIDTH} dim>
-      <DialogHeading
-        icon="bookmark"
-        title={`Bookmark ${changeId.slice(0, 8)}`}
-      />
+      <DialogHeading icon="bookmark" title={`Bookmark ${changeId.slice(0, 8)}`} />
       <OverlayInput
-        value={value}
+        value={picker.value}
         placeholder="bookmark name"
-        onChange={onQuery}
-        onSubmit={applyActive}
-        onKeyDown={pickerKeys({
-          shortcuts: BOOKMARK_PICKER_SHORTCUTS,
-          count: candidates.length,
-          setActive,
-          onApply: applyActive,
-          onCancel,
-          onForget: forgetActive,
-        })}
+        onChange={picker.onQuery}
+        onSubmit={() => applyActive()}
+        onKeyDown={picker.onKeyDown}
       />
-      <div style={candidateListStyle(t, win.end - win.start)}>
-        {loading ? (
-          <T size="body" color={mutedText(t)}>
-            Loading bookmarks…
-          </T>
-        ) : candidates.length === 0 ? (
-          <T size="body" color={mutedText(t)}>
-            No bookmarks yet. Type to create one.
-          </T>
-        ) : (
-          candidates.slice(win.start, win.end).map((name, off) => {
-            const index = win.start + off;
-            const isActive = index === win.activeIdx;
-            const isCreate = !names.includes(name);
-            const rowColor = isActive
-              ? t.color.accent.base
-              : isCreate
-                ? t.color.functional.warning
-                : null;
-            return (
-              <div
-                key={name}
-                onClick={() => {
-                  setActive(index);
-                  onSet(name);
-                }}
-                style={candidateRowStyle(t, isActive)}
-              >
-                <Icon
-                  name={isCreate ? "plus" : "bookmark"}
-                  size={INLINE_GLYPH}
-                  color={rowColor ?? mutedText(t)}
-                />
-                <T
-                  size="body"
-                  weight={isActive ? emphasisWeight(t) : plainWeight(t)}
-                  color={rowColor ?? t.color.text.primary}
-                >
-                  {name}
-                </T>
-                {isCreate ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      flexGrow: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <T
-                      size="caption"
-                      color={mutedText(t)}
-                      style={{ whiteSpace: "nowrap" }}
-                    >
-                      new bookmark
-                    </T>
-                  </div>
-                ) : null}
-              </div>
-            );
-          })
-        )}
-      </div>
+      <CandidateList
+        visible={win.end - win.start}
+        placeholder={
+          loading ? "Loading bookmarks…" : "No bookmarks yet. Type to create one."
+        }
+      >
+        {candidates.slice(win.start, win.end).map((name, off) => {
+          const index = win.start + off;
+          const isActive = index === win.activeIdx;
+          const isCreate = !names.includes(name);
+          return (
+            <CandidateRow
+              key={name}
+              label={name}
+              active={isActive}
+              icon={isCreate ? "plus" : "bookmark"}
+              iconTone={isCreate && !isActive ? "warning" : undefined}
+              labelTone={isCreate && !isActive ? "warning" : undefined}
+              trailing={isCreate ? "new bookmark" : undefined}
+              onSelect={() => {
+                picker.setActiveIndex(index);
+                onSet(name);
+              }}
+            />
+          );
+        })}
+      </CandidateList>
       <DialogHintBar
         groups={groupHints(
           pickerHints(BOOKMARK_PICKER_SHORTCUTS, candidates.length === 0),
