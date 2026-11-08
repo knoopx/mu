@@ -1,6 +1,5 @@
 import { useRef, type JSX } from "react";
 import {
-  Icon,
   Message,
   MessageContent,
   T,
@@ -22,8 +21,7 @@ import {
   paneFill,
   userBandFill,
 } from "../lib/ui/theme";
-import { STATE_GLYPH } from "../lib/ui/tokens";
-import { toolMark, toolText } from "../lib/ui/toolRows";
+import { ToolStateLine } from "../components/ToolStateLine";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { AgentSnapshot } from "../lib/agent/agentService";
 import type { ToolImage } from "../lib/agent/content";
@@ -368,26 +366,32 @@ export function UserRow({
   );
 }
 
+/** A log row that is a lone line: it carries the page inset the log's columns
+ *  leave, so its mark can hang into the header's gutter. */
+const insetRow: StyleDesc = {
+  display: "flex",
+  flexDirection: "column",
+  width: "100%",
+  minWidth: 0,
+  flexShrink: 0,
+  paddingLeft: PAGE_INSET,
+  paddingRight: PAGE_INSET,
+};
+
+/**
+ * A note the run itself had to say — a compaction, a retry.
+ *
+ * It is a log note like every other one, so it is drawn by the log's own note
+ * row: the mark hangs `MARK_HANG` into the page inset and stands on the same
+ * centred line box as the caption, and mark and caption wear one muted ink — a
+ * comment on the conversation, not a line of it.
+ */
 export function SystemRow({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
-    <Message style={{ paddingLeft: PAGE_INSET, paddingRight: PAGE_INSET }}>
-      <Icon
-        name="info"
-        size={STATE_GLYPH}
-        color={mutedText(t)}
-        style={toolMark}
-      />
-      <MessageContent>
-        <T
-          size="caption"
-          color={t.color.text.primary}
-          style={toolText(t)}
-        >
-          {text}
-        </T>
-      </MessageContent>
-    </Message>
+    <div style={insetRow}>
+      <ToolStateLine icon="info" text={text} color={mutedText(t)} />
+    </div>
   );
 }
 
