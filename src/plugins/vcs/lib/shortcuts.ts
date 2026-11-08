@@ -24,6 +24,12 @@ const FOCUS_LEFT: Shortcut = {
   desc: "stack",
   hidden: true,
 };
+/** An operation's files offer nothing to act on, so what the hint line has left to say is the way back. */
+const FOCUS_OPS: Shortcut = {
+  id: "focus-left",
+  kbds: ["tab"],
+  desc: "operations",
+};
 
 export const STACK_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
@@ -63,8 +69,43 @@ export const FILES_SHORTCUTS: Shortcut[] = [
   { id: "discard", kbds: ["d"], desc: "discard" },
 ];
 
+/**
+ * The op log's left half: an operation is read, and rewound to.
+ *
+ * `r` restores the operation under the cursor, `u` and `U` take jj's own undo
+ * and redo — the same three the standalone changes app runs, because an
+ * operation rewinds the whole workspace rather than one change.
+ */
+export const OPLOG_SHORTCUTS: Shortcut[] = [
+  ...PAGED_NAV,
+  FOCUS_RIGHT,
+  { id: "restore", kbds: ["r"], desc: "restore" },
+  { id: "undo", kbds: ["u"], desc: "undo" },
+  { id: "redo", kbds: [["shift", "u"]], desc: "redo" },
+];
+
+/** An operation's files are history: they are read and scrolled, never split. */
+export const OPLOG_FILE_SHORTCUTS: Shortcut[] = [
+  ...PAGED_NAV,
+  FOCUS_OPS,
+  {
+    id: "scroll-up",
+    kbds: [["shift", "pageup"]],
+    desc: "scroll",
+    hidden: true,
+  },
+  {
+    id: "scroll-down",
+    kbds: [["shift", "pagedown"]],
+    desc: "scroll",
+    hidden: true,
+  },
+];
+
 export const STACK_HINTS = hints(STACK_SHORTCUTS);
 export const FILES_HINTS = hints(FILES_SHORTCUTS);
+export const OPLOG_HINTS = hints(OPLOG_SHORTCUTS);
+export const OPLOG_FILE_HINTS = hints(OPLOG_FILE_SHORTCUTS);
 
 export const PICKER_SHORTCUTS: Shortcut[] = [
   { id: "type", kbds: ["type"], desc: "filter", hidden: true },

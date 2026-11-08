@@ -65,7 +65,7 @@ Nothing runs while it waits on you, and the bar at the bottom of the window says
 
 The composer is how you talk to the agent and how you drive the app. The card grows with the draft, keeps the attachments you pasted above it, and while the draft is still blank it carries the active model, the thinking level, and how full the conversation is as pills. Start typing and the pills step out — the question is asked, and the row is yours.
 
-A keystroke opens a panel above it: every command (`Ctrl+Shift+P`), the files of the project (`Ctrl+P`), your own past prompts (`Ctrl+R`), the model (`Ctrl+L`), the thinking level (`Ctrl+T`), the sessions (`Ctrl+H`), the conversation tree (`Ctrl+Shift+T`), the project's changes (`Ctrl+K`). You type to narrow the list, Enter applies, Esc closes, and the keys that do it are printed under the panel. Tab is the keystroke that completes a path you are typing in the draft, and [Paths](#paths) is that story.
+A keystroke opens a panel above it: every command (`Ctrl+Shift+P`), the files of the project (`Ctrl+P`), your own past prompts (`Ctrl+R`), the model (`Ctrl+L`), the thinking level (`Ctrl+T`), the sessions (`Ctrl+H`), the conversation tree (`Ctrl+Shift+T`), the project's changes (`Ctrl+K`), the repo's operation log (`Ctrl+O`). You type to narrow the list, Enter applies, Esc closes, and the keys that do it are printed under the panel. Tab is the keystroke that completes a path you are typing in the draft, and [Paths](#paths) is that story.
 
 How full the conversation is shows on the composer's own border: it runs along the edge, turns orange, then red.
 
@@ -106,6 +106,8 @@ The agent's work is your project's history. The changes panel shows the stack of
 Naming a change and splitting it are asked of the agent. Press describe, or split on the change or on one of its files, or split hunks, and the panel hands over the change, the files and the hunks you named: the agent reads the diff, writes the message itself, makes the write, and leaves a row in the log with the change ids it ended up with and which half holds what, so you can check it against the history it came from.
 
 Squash, revert, drop, bookmark and push happen in the panel.
+
+jj keeps a log of every change it has made to the repo, and `Ctrl+O` opens it: the operations on the left, the files the selected operation moved on the right, and its patch under them. So a mistake is readable before it is undone — stand on the operation you want back and read what it did, then restore to it. Undo and redo are jj's own, and the panel re-reads every list afterwards, because an operation moves the whole workspace rather than one change.
 
 ![Your project's history](stories/Changes/panel.png)
 

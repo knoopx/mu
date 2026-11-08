@@ -202,6 +202,7 @@ function panelDataOf(
     userMessagesLoading: userMessages.loading,
     userMessagesError: userMessages.error,
     changes: panels.changesPanel,
+    oplog: panels.oplogPanel,
     tree: panels.tree,
     guardrails: panels.guardrails,
     previewFor: panels.previewFor,

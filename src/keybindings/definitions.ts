@@ -74,6 +74,11 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
     ),
     def("composer.changes", "ctrl+k", "Open the changes composer panel"),
     def(
+      "composer.oplog",
+      "ctrl+o",
+      "Open the repo operation log composer panel",
+    ),
+    def(
       "composer.guardrails",
       "ctrl+shift+g",
       "Open the guardrails composer panel",

@@ -81,6 +81,36 @@ export function hasNoDescription(description: string): boolean {
 /** A change id is shown short in the log and in every instruction. */
 export const SHORT_CHANGE_ID = 8;
 
+/** An operation id is shown short the same way, in the op log panel and its toasts. */
+export const SHORT_OP_ID = 8;
+
+/** How many rows a panel draws before it stops counting what it left out. */
+export const PANEL_LIST_CAP = 200;
+
+/** How many file rows the right half of a vcs panel keeps above its preview. */
+export const PANEL_FILE_ROWS = 6;
+
+/** How many operations the op log panel reads; jj's whole history is nobody's list. */
+export const OPLOG_PANEL_ROWS = 200;
+
+/**
+ * How much of an operation's time a row prints.
+ *
+ * jj prints it as a range of two stamps — opened, closed — and the row shows the
+ * opening one, `2024-05-14 09:12`, which is also the shape the change stack's
+ * rows print and what `relativeAge` reads.
+ */
+export const OPLOG_TIME_CHARS = 16;
+
+/**
+ * How many operations keep their patch in memory.
+ *
+ * An operation is immutable, so a patch that has been read is never re-read —
+ * but the whole history of a busy repo does not fit, so the panel drops them all
+ * rather than managing an eviction order for a preview.
+ */
+export const OP_PATCH_CACHE = 32;
+
 /** How a vcs badge is painted: the two roles of a split and the copy a call resolved. */
 export const VCS_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
   selected: "default",

@@ -99,7 +99,11 @@ export interface VcsHunkListDetails {
   error: string;
 }
 
+/** Which half of a two-half panel holds the cursor: its list, or the files in it. */
 export type FilePanelFocus = "stack" | "files";
+
+/** The panels the plugin draws in the composer slot that have a list and files. */
+export type VcsPanelKind = "changes" | "oplog";
 
 export type NavDirection = "up" | "down" | "pageUp" | "pageDown";
 

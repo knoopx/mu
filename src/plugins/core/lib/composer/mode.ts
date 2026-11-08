@@ -8,6 +8,7 @@ export type ComposerTarget =
   | "file"
   | "path"
   | "changes"
+  | "oplog"
   | "tree"
   | "theme"
   | "accent"

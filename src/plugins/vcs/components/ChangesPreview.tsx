@@ -30,18 +30,10 @@ import { paneGap, panelGap } from "../../core/lib/composer/chrome";
 import type { StyleDesc } from "@gpuix/react";
 import { useDiffTokens } from "../../core/hooks/useDiffTokens";
 import { filePreviewOf } from "../lib/preview";
+import { PaneCaption } from "./PaneCaption";
 import type { ChangeImage } from "../hooks/useChangeFiles";
 
 type FileStatus = FileChange["status"];
-
-function PaneCaption({ text }: { text: string }): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <T size="caption" color={mutedText(t)}>
-      {text}
-    </T>
-  );
-}
 
 function PreviewNote({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();

@@ -26,6 +26,7 @@ const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
     event: { type: "openPick", target: "userMessageHistory" },
   },
   { id: "composer.changes", event: { type: "openChanges" } },
+  { id: "composer.oplog", event: { type: "openPick", target: "oplog" } },
   {
     id: "composer.guardrails",
     event: { type: "openPick", target: "guardrails" },
@@ -35,10 +36,21 @@ const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
   { id: "composer.accent", event: { type: "openPick", target: "accent" } },
 ];
 
+/**
+ * The hotkey that opens each wide panel.
+ *
+ * While a wide panel is open only its own hotkey is a candidate, so pressing it
+ * again closes the panel instead of opening a second one.
+ */
+const WIDE_HOTKEYS: Record<string, string> = {
+  changes: "composer.changes",
+  oplog: "composer.oplog",
+  tree: "composer.tree",
+};
+
 function wideHotkeyId(mode: ComposerMode): string {
-  return mode.kind === "pick" && mode.target === "tree"
-    ? "composer.tree"
-    : "composer.changes";
+  if (mode.kind !== "pick") return "composer.changes";
+  return WIDE_HOTKEYS[mode.target] ?? "composer.changes";
 }
 
 const NAV_KEYS = new Set([

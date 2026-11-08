@@ -734,3 +734,71 @@ export async function runOplog(
 
 const truncate = (text: string, max: number): string =>
   text.length > max ? `${text.slice(0, max)}…` : text;
+
+/**
+ * The whole patch one operation introduced, in git format and flush left.
+ *
+ * `jj operation diff` wraps its patch in a report and indents the patch under
+ * it, so the indent is taken back off here: the diff rows adwaita parses key off
+ * a `diff --git` that starts a line, and one operation is a diff of the whole
+ * repo, which is why it is read in one piece and cut up per file by
+ * `opPatchFiles` rather than one call per file.
+ */
+export interface OpPatchOutcome {
+  status: "ok" | "empty" | "failed";
+  patch: string;
+  error: string;
+}
+
+const OP_DIFF_HEAD = /^\s+diff --git /;
+
+/** The first and last line of the indented patch block, or neither. */
+function patchSpan(lines: readonly string[]): [number, number] | null {
+  const first = lines.findIndex((line) => OP_DIFF_HEAD.test(line));
+  if (first < 0) return null;
+  let last = first;
+  for (let i = lines.length - 1; i > first; i--) {
+    if ((lines[i] ?? "").startsWith(" ")) {
+      last = i;
+      break;
+    }
+  }
+  return [first, last];
+}
+
+export async function runOpPatch(op: string): Promise<OpPatchOutcome> {
+  const wanted = op.trim();
+  if (wanted.length === 0)
+    return { status: "empty", patch: "", error: "" };
+
+  const res = await vcs([
+    "operation",
+    "diff",
+    "--op",
+    wanted,
+    "--git",
+    "--color",
+    "never",
+  ]);
+  if (res.code !== 0)
+    return { status: "failed", patch: "", error: cliFailure("jj op diff", res) };
+
+  const lines = res.stdout.split("\n");
+  const span = patchSpan(lines);
+  if (span === null) return { status: "empty", patch: "", error: "" };
+
+  const [first, last] = span;
+  const head = lines[first] ?? "";
+  const indent = head.length - head.trimStart().length;
+  const strip = (line: string): string =>
+    indent > 0 && line.startsWith(" ".repeat(indent))
+      ? line.slice(indent)
+      : line;
+  const patch = lines.slice(first, last + 1).map(strip).join("\n");
+
+  return {
+    status: patch.trim().length === 0 ? "empty" : "ok",
+    patch,
+    error: "",
+  };
+}

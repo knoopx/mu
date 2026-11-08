@@ -8,11 +8,14 @@ import {
 import { navDirectionOf } from "./nav";
 import {
   FILES_SHORTCUTS,
+  OPLOG_FILE_SHORTCUTS,
+  OPLOG_SHORTCUTS,
   STACK_SHORTCUTS,
   matchShortcut,
   type KeyMods,
+  type Shortcut,
 } from "./shortcuts";
-import type { FilePanelFocus, NavDirection } from "../types";
+import type { FilePanelFocus, NavDirection, VcsPanelKind } from "../types";
 
 export const STACK_ACTION_IDS = new Set([
   "new",
@@ -35,6 +38,14 @@ export const FILES_ACTION_IDS = new Set([
   "discard",
 ]);
 
+/**
+ * What the op log's left half runs. Restoring an operation rewinds the whole
+ * workspace, so these three are the only writes the panel makes for itself: a
+ * change's own writes are the changes panel's, and its describes and splits go
+ * to the agent.
+ */
+export const OPLOG_ACTION_IDS = new Set(["restore", "undo", "redo"]);
+
 export const STACK_MUTATIONS: Record<
   string,
   (changeId: string) => Promise<string>
@@ -49,16 +60,26 @@ export const STACK_MUTATIONS: Record<
 export const isBareKey = (mods: KeyMods): boolean =>
   mods.ctrl !== true && mods.alt !== true && mods.cmd !== true;
 
+/** The two halves of each panel that has them, in one table: a key means what its panel says it means. */
+const PANEL_KEY_SETS: Record<
+  VcsPanelKind,
+  Record<FilePanelFocus, readonly Shortcut[]>
+> = {
+  changes: { stack: STACK_SHORTCUTS, files: FILES_SHORTCUTS },
+  oplog: { stack: OPLOG_SHORTCUTS, files: OPLOG_FILE_SHORTCUTS },
+};
+
 export function matchPanelKey(
+  panel: VcsPanelKind,
   focus: FilePanelFocus,
   key: string,
   mods: KeyMods,
 ): string {
-  const set = focus === "stack" ? STACK_SHORTCUTS : FILES_SHORTCUTS;
-  return matchShortcut(set, key, mods)?.id ?? "";
+  return matchShortcut([...PANEL_KEY_SETS[panel][focus]], key, mods)?.id ?? "";
 }
 
-export interface StackKeys {
+/** A panel's left half: a list of things, a cursor, and the actions its own key set opens. */
+export interface ListKeys {
   rowCount: number;
   actionsOpen: boolean;
   canFocusFiles: boolean;
@@ -70,7 +91,11 @@ export interface StackKeys {
   run: (id: string) => boolean;
 }
 
-export function runStackKey(id: string, keys: StackKeys): boolean {
+function runListKey(
+  id: string,
+  actions: ReadonlySet<string>,
+  keys: ListKeys,
+): boolean {
   const direction = navDirectionOf(id);
   if (direction !== null) {
     keys.nav(direction);
@@ -88,8 +113,16 @@ export function runStackKey(id: string, keys: StackKeys): boolean {
     keys.last();
     return true;
   }
-  if (keys.actionsOpen && STACK_ACTION_IDS.has(id)) return keys.run(id);
+  if (keys.actionsOpen && actions.has(id)) return keys.run(id);
   return false;
+}
+
+export function runStackKey(id: string, keys: ListKeys): boolean {
+  return runListKey(id, STACK_ACTION_IDS, keys);
+}
+
+export function runOplogKey(id: string, keys: ListKeys): boolean {
+  return runListKey(id, OPLOG_ACTION_IDS, keys);
 }
 
 export interface FileKeys {

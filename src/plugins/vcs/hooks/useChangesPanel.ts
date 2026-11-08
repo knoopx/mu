@@ -26,9 +26,9 @@ import type { ChangeImage } from "./useChangeFiles";
 import { useChangeStackData } from "./useChangeStackData";
 import { useChangeWrites } from "./useChangeWrites";
 import { useChangesActions } from "./useChangesActions";
-import { useChangesNav } from "./useChangesNav";
+import { usePanelNav, type PanelNavSource } from "./usePanelNav";
 import { useChangesOverlay, type PanelOverlay } from "./useChangesOverlay";
-import { useChangesPanelRefs } from "./useChangesPanelRefs";
+import { usePanelListRefs } from "./usePanelListRefs";
 import { useChangesSelection } from "./useChangesSelection";
 
 /**
@@ -93,7 +93,7 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
   const renderer = useGpuixRequired();
   const rowHeight = useAdwaita().control.rowHeight;
 
-  const refs = useChangesPanelRefs(renderer);
+  const refs = usePanelListRefs(renderer);
   const data = useChangeStackData({ cwd, enabled });
   const selection = useChangesSelection(data.files.length);
   const writes = useChangeWrites({ toast, data });
@@ -102,9 +102,16 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     runMutation: writes.runMutation,
   });
   const { graph, laneCount } = useChangeGraph(data.rows);
-  const nav = useChangesNav({
-    data,
-    stackListRef: refs.stackListRef,
+  const nav = usePanelNav({
+    source: {
+      rowCount: () => data.live().allChanges.length,
+      rowSel: () => data.live().sel,
+      selectRow: data.selectChange,
+      fileCount: () => data.live().files.length,
+      fileSel: () => data.live().fileSel,
+      selectFile: data.selectFile,
+    } satisfies PanelNavSource,
+    listRef: refs.stackListRef,
     renderer,
     rowHeight,
   });
@@ -151,13 +158,13 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
       }
 
       const actionsOpen = isBareKey(mods);
-      const id = matchPanelKey(selection.focus, key, mods);
+      const id = matchPanelKey("changes", selection.focus, key, mods);
       if (selection.focus === "stack")
         return runStackKey(id, {
           rowCount: data.rows.length,
           actionsOpen,
           canFocusFiles: data.live().files.length > 0,
-          nav: nav.goStack,
+          nav: nav.goList,
           focusFiles: () => selection.setFocus("files"),
           first: () => data.selectChange(0),
           last: () => data.selectChange(data.rows.length - 1),

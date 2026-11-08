@@ -1,14 +1,15 @@
 /**
- * Writing to the repo, and telling the reader what just happened.
+ * The changes panel's half of a write: which change it stands on.
  *
- * Every write goes through the same three steps: run it, say what it answered,
- * and re-read the panel so what is on screen is what jj now holds. Writes the
- * agent makes are not run here at all — the panel only says what it asked for.
+ * Running the write, answering it and re-reading the panel are the same for
+ * every panel — see useRepoWrites. What is specific here is knowing the change
+ * the cursor is on at the moment a key is handled, which is the row a describe,
+ * a squash or a drop names.
  */
 import { useCallback, useRef } from "react";
 import type { ToastFn } from "adwaita-gpuix";
-import { failMessage } from "../lib/repo";
 import { type Change } from "adwaita-gpuix";
+import { useRepoWrites } from "./useRepoWrites";
 import type { StackData } from "./useChangeStackData";
 
 export interface ChangeWritesOptions {
@@ -27,39 +28,27 @@ export interface ChangeWrites {
 }
 
 export function useChangeWrites(options: ChangeWritesOptions): ChangeWrites {
-  const { toast } = options;
-
   const latest = useRef(options);
   latest.current = options;
 
-  const selectedChange = useCallback((): Change | undefined => {
-    const live = latest.current.data.live();
-    return live.allChanges[live.sel];
-  }, []);
+  const writes = useRepoWrites({
+    toast: options.toast,
+    refresh: () => latest.current.data.refresh(),
+    setError: (message: string | null): void =>
+      latest.current.data.setError(message),
+  });
 
-  const runMutation = useCallback(
-    async (fn: () => Promise<string>): Promise<void> => {
-      const data = latest.current.data;
-      try {
-        const message = await fn();
-        toast(message, { type: "success" });
-        data.setError(null);
-        await data.refresh();
-      } catch (e) {
-        const failure = failMessage(e);
-        data.setError(failure);
-        toast(failure, { type: "error" });
-      }
+  const selectedChange = useCallback(
+    (): Change | undefined => {
+      const live = latest.current.data.live();
+      return live.allChanges[live.sel];
     },
-    [toast],
+    [],
   );
 
-  const sentToAgent = useCallback(
-    (what: string): void => {
-      toast(`${what} — sent to the agent`, { type: "info" });
-    },
-    [toast],
-  );
-
-  return { selectedChange, runMutation, sentToAgent };
+  return {
+    selectedChange,
+    runMutation: writes.runMutation,
+    sentToAgent: writes.sentToAgent,
+  };
 }

@@ -18,3 +18,7 @@ export const panel = chromeStory("panel", () =>
 export const instructed = chromeStory("instructed", () =>
   chat({ items: CHANGES_ITEMS, initialMode: pickMode("changes") }),
 );
+
+export const oplog = chromeStory("oplog", () =>
+  chat({ items: SESSION_ITEMS, initialMode: pickMode("oplog") }),
+);

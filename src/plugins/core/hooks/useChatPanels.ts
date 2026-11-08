@@ -3,8 +3,8 @@
  *
  * Every panel the composer can drop under the draft reads its own list — the
  * sessions on disk, the messages this project has sent, the theme, the guardrails,
- * the change stack, the conversation tree — and each is only read while its panel
- * is the one that is open. The actions the panels answer with are wired here too,
+ * the change stack, the operation log, the conversation tree — and each is only
+ * read while its panel is the one that is open. The actions the panels answer with are wired here too,
  * because they are the actions of one panel on another: pick a session row and
  * the log previews it, tick a change and the composer asks for it.
  */
@@ -28,6 +28,10 @@ import {
   useChangesPanel,
   type ChangesPanelState,
 } from "../../vcs/hooks/useChangesPanel";
+import {
+  useOplogPanel,
+  type OplogPanelState,
+} from "../../vcs/hooks/useOplogPanel";
 import { useGuardrailsPanel } from "../../guardrails/hooks/useGuardrails";
 import type { GuardrailsPanelApi } from "../../guardrails/types";
 import { useFilePreview } from "./useFilePreview";
@@ -66,6 +70,7 @@ export interface ChatPanels {
   themePanel: ThemePanelState;
   guardrails: GuardrailsPanelApi;
   changesPanel: ChangesPanelState;
+  oplogPanel: OplogPanelState;
   composerActions: ChatComposerActions;
   previewFor(path: string): ComposerPreviewSpec;
 
@@ -137,6 +142,12 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     onInstruction: composerActions.sendInstruction,
   });
 
+  const oplogPanel = useOplogPanel({
+    cwd,
+    toast,
+    enabled: target === "oplog",
+  });
+
   const treeSnapshot = useMemo(
     () => treeSnapshotOf(target === "tree", session),
     [target, session, items.length],
@@ -159,6 +170,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     themePanel,
     guardrails,
     changesPanel,
+    oplogPanel,
     composerActions,
     previewFor,
     treeSnapshot,

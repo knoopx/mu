@@ -1,8 +1,19 @@
+import type { ReactNode } from "react";
+import type { EventPayload } from "@gpuix/native";
 import type { AdwaitaTheme, IconName } from "adwaita-gpuix";
 import type { SlashCommand } from "../../../../autocomplete";
 import { ChangesPanel } from "../../../vcs/components/ChangesPanel";
-import { FILES_HINTS, STACK_HINTS } from "../../../vcs/lib/shortcuts";
+import { OplogPanel } from "../../../vcs/components/OplogPanel";
+import {
+  FILES_HINTS,
+  OPLOG_FILE_HINTS,
+  OPLOG_HINTS,
+  STACK_HINTS,
+} from "../../../vcs/lib/shortcuts";
+import { operationAge } from "../../../vcs/lib/rowText";
+import { SHORT_OP_ID } from "../../../vcs/constants";
 import type { ChangesPanelState } from "../../../vcs/hooks/useChangesPanel";
+import type { OplogPanelState } from "../../../vcs/hooks/useOplogPanel";
 import { SessionTreePanel } from "../SessionTreePanel";
 import { TREE_HINTS } from "../../lib/session/shortcuts";
 import type { SessionTreeApi } from "../../hooks/useSessionTree";
@@ -123,6 +134,7 @@ export interface ComposerPanelData {
   userMessagesLoading: boolean;
   userMessagesError: string | null;
   changes: ChangesPanelState;
+  oplog: OplogPanelState;
   tree: SessionTreeApi;
   guardrails: GuardrailsPanelApi;
   previewFor(path: string): ComposerPreviewSpec;
@@ -301,6 +313,19 @@ function changesStatus(changes: ChangesPanelState): ComposerPanelStatusSpec {
   };
 }
 
+function oplogStatus(oplog: OplogPanelState): ComposerPanelStatusSpec {
+  const operation = oplog.rows[oplog.sel];
+  const files = `${oplog.files.length} files`;
+  const at =
+    operation === undefined
+      ? ""
+      : ` · ${operation.op.slice(0, SHORT_OP_ID)} · ${operationAge(operation.time)}`;
+  return {
+    message: `${oplog.rows.length} operations${at} · ${files}`,
+    hints: oplog.focus === "stack" ? OPLOG_HINTS : OPLOG_FILE_HINTS,
+  };
+}
+
 const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   message: `${tree.rows.length} of ${tree.total} points · ${tree.filterLabel}`,
   hints: TREE_HINTS,
@@ -309,40 +334,69 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
 /** A wide panel draws its list and its status line, and no draft above them. */
 const WIDE_SLOTS: PanelSlots = { field: false, statusBar: true };
 
-function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
-  const { theme: t, tree, windowHeight } = data;
-  if (isChanges) return composerPanelHeight(windowHeight);
-  return composerPanelFitHeight(
-    t,
-    windowHeight,
-    Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * ROW_HEIGHT,
-    WIDE_SLOTS,
+type WideTarget = "changes" | "oplog" | "tree";
+
+/**
+ * The wide panels that size themselves to their rows.
+ *
+ * The two repo panels are not among them: a preview hangs under the file list,
+ * and a preview that is a row tall is not a preview, so they take the whole
+ * band the way the log leaves it to them.
+ */
+const WIDE_FIT_ROWS: readonly WideTarget[] = ["tree"];
+
+function wideNode(data: ComposerPanelData, target: WideTarget): ReactNode {
+  if (target === "changes") return <ChangesPanel panel={data.changes} />;
+  if (target === "oplog") return <OplogPanel panel={data.oplog} />;
+  return (
+    <SessionTreePanel
+      model={data.tree}
+      sel={data.tree.sel}
+      listRef={data.tree.listRef}
+      onSelect={data.tree.select}
+    />
   );
+}
+
+function wideOnKey(
+  data: ComposerPanelData,
+  target: WideTarget,
+): (event: EventPayload) => boolean {
+  if (target === "changes") return data.changes.onKey;
+  if (target === "oplog") return data.oplog.onKey;
+  return data.tree.onKey;
+}
+
+function wideStatus(
+  data: ComposerPanelData,
+  target: WideTarget,
+): ComposerPanelStatusSpec {
+  if (target === "changes") return changesStatus(data.changes);
+  if (target === "oplog") return oplogStatus(data.oplog);
+  return treeStatus(data.tree);
 }
 
 function widePanelSpec(
   data: ComposerPanelData,
-  isChanges: boolean,
+  target: WideTarget,
 ): ComposerPanelSpec {
-  const { theme: t, changes, tree, windowHeight } = data;
-  const height = wideHeight(data, isChanges);
+  const { theme: t, tree, windowHeight } = data;
+  const height = WIDE_FIT_ROWS.includes(target)
+    ? composerPanelFitHeight(
+        t,
+        windowHeight,
+        Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * ROW_HEIGHT,
+        WIDE_SLOTS,
+      )
+    : composerPanelHeight(windowHeight);
   return {
-    status: isChanges ? changesStatus(changes) : treeStatus(tree),
+    status: wideStatus(data, target),
     rows: [],
     height,
     maxVisible: panelRowsFor(t, composerPanelHeight(windowHeight), WIDE_SLOTS),
     wide: {
-      node: isChanges ? (
-        <ChangesPanel panel={changes} />
-      ) : (
-        <SessionTreePanel
-          model={tree}
-          sel={tree.sel}
-          listRef={tree.listRef}
-          onSelect={tree.select}
-        />
-      ),
-      onKey: isChanges ? changes.onKey : tree.onKey,
+      node: wideNode(data, target),
+      onKey: wideOnKey(data, target),
       height,
     },
     onPick: () => {},
@@ -415,8 +469,8 @@ export function composerPanelSpec(
   rows: ComposerPanelRow[],
 ): ComposerPanelSpec | undefined {
   const target = data.mode.kind === "pick" ? data.mode.target : null;
-  if (target === "changes") return widePanelSpec(data, true);
-  if (target === "tree") return widePanelSpec(data, false);
+  if (target === "changes" || target === "oplog" || target === "tree")
+    return widePanelSpec(data, target);
   if (data.mode.kind === "draft") return undefined;
   return listPanelSpec(data, rows);
 }

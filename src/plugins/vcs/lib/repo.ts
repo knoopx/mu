@@ -12,6 +12,7 @@ import {
   type CliResult,
 } from "adwaita-gpuix";
 import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
+import { SHORT_OP_ID } from "../constants";
 
 const pExecFile = promisify(execFile);
 
@@ -409,6 +410,28 @@ export async function squashChange(changeId: string): Promise<string> {
 export async function revertChange(changeId: string): Promise<string> {
   await vcsOk(["revert", changeId]);
   return `Reverted change ${changeId.slice(0, 8)}`;
+}
+
+/**
+ * Rewinding the repo itself, which is what jj's operation log is for.
+ *
+ * These three are the op log panel's keys, and they move the whole workspace,
+ * not one change — which is why the panel says what it did and re-reads every
+ * list after them. jj names the operation it restored to in its own words.
+ */
+export async function undoOperation(): Promise<string> {
+  await vcsOk(["undo"]);
+  return "Undid the last operation";
+}
+
+export async function redoOperation(): Promise<string> {
+  await vcsOk(["redo"]);
+  return "Redid the last undone operation";
+}
+
+export async function restoreOperation(opId: string): Promise<string> {
+  await vcsOk(["op", "restore", opId]);
+  return `Restored to operation ${opId.slice(0, SHORT_OP_ID)}`;
 }
 
 export async function restoreFile(
