@@ -19,10 +19,16 @@ import {
   type IconName,
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
-import { PICKER_SHORTCUTS, hints, matchShortcut } from "../lib/shortcuts";
+import {
+  BOOKMARK_PICKER_SHORTCUTS,
+  PICKER_SHORTCUTS,
+  hints,
+  matchShortcut,
+  type Shortcut,
+} from "../lib/shortcuts";
 import { REVSETS } from "../constants";
 import type { RevsetDef } from "../types";
-import { listBookmarks } from "../lib/repo";
+import { bookmarkNames, listBookmarks } from "../lib/repo";
 import { bareKeyArgs } from "../../core/lib/ui/keyEvents";
 
 const ROW_H = 24;
@@ -73,21 +79,29 @@ function usePicker(): {
 }
 
 function pickerKeys(opts: {
+  shortcuts: Shortcut[];
   count: number;
   setActive: Dispatch<SetStateAction<number>>;
   onApply: () => void;
   onCancel: () => void;
+  onForget?: () => void;
 }): (event: { key?: string }) => void {
   return (event: { key?: string }): void => {
     const { key, mods } = bareKeyArgs(event);
-    const m = matchShortcut(PICKER_SHORTCUTS, key, mods);
+    const m = matchShortcut(opts.shortcuts, key, mods);
     if (m === null) return;
     if (m.id === "nav-up") opts.setActive((i) => Math.max(0, i - 1));
     if (m.id === "nav-down")
       opts.setActive((i) => Math.min(i + 1, Math.max(opts.count - 1, 0)));
     if (m.id === "apply") opts.onApply();
     if (m.id === "cancel") opts.onCancel();
+    if (m.id === "forget") opts.onForget?.();
   };
+}
+
+/** The keys a picker answers with, minus the ones an empty list cannot use. */
+function pickerHints(shortcuts: Shortcut[], empty: boolean): Shortcut[] {
+  return hints(empty ? shortcuts.filter((s) => s.id !== "forget") : shortcuts);
 }
 
 function candidateListStyle(visible: number): StyleDesc {
@@ -135,6 +149,7 @@ export function RevsetDialog({
         onChange={onQuery}
         onSubmit={applyActive}
         onKeyDown={pickerKeys({
+          shortcuts: PICKER_SHORTCUTS,
           count: rows.length,
           setActive,
           onApply: applyActive,
@@ -195,7 +210,9 @@ export function RevsetDialog({
           })
         )}
       </div>
-      <DialogHintBar groups={groupHints(hints(PICKER_SHORTCUTS))} />
+      <DialogHintBar
+        groups={groupHints(pickerHints(PICKER_SHORTCUTS, rows.length === 0))}
+      />
     </DialogFrame>
   );
 }
@@ -203,25 +220,31 @@ export function RevsetDialog({
 export function BookmarkDialog({
   changeId,
   onSet,
+  onForget,
   onCancel,
 }: {
   changeId: string;
   onSet: (name: string) => void;
+  onForget: (name: string) => void;
   onCancel: () => void;
 }): JSX.Element {
   const t = useAdwaita();
   const { value, active, setActive, onQuery } = usePicker();
   const [names, setNames] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     listBookmarks()
       .then((bms) => {
         if (cancelled) return;
-        setNames(Array.from(new Set(bms.map((b) => b.name).sort())));
+        setNames(bookmarkNames(bms));
       })
       .catch(() => {
         if (!cancelled) setNames([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
       });
     return () => {
       cancelled = true;
@@ -233,6 +256,8 @@ export function BookmarkDialog({
     query.length === 0
       ? names
       : names.filter((n) => n.toLowerCase().includes(query));
+  // A typed name no bookmark has is a bookmark to create, and is drawn as one
+  // so it never reads as an existing bookmark.
   const candidates =
     query.length > 0 && !names.some((n) => n.toLowerCase() === query)
       ? [...filtered, value.trim()]
@@ -243,6 +268,11 @@ export function BookmarkDialog({
   const applyActive = (): void => {
     if (activeName !== null) onSet(activeName);
     else onCancel();
+  };
+
+  const forgetActive = (): void => {
+    // Only a name jj answered with is forgettable — never the one being typed.
+    if (activeName !== null && names.includes(activeName)) onForget(activeName);
   };
 
   return (
@@ -257,39 +287,82 @@ export function BookmarkDialog({
         onChange={onQuery}
         onSubmit={applyActive}
         onKeyDown={pickerKeys({
+          shortcuts: BOOKMARK_PICKER_SHORTCUTS,
           count: candidates.length,
           setActive,
           onApply: applyActive,
           onCancel,
+          onForget: forgetActive,
         })}
       />
       <div style={candidateListStyle(win.end - win.start)}>
-        {candidates.slice(win.start, win.end).map((name, off) => {
-          const index = win.start + off;
-          const isActive = index === win.activeIdx;
-          return (
-            <div
-              key={name}
-              onClick={() => onSet(name)}
-              style={candidateRowStyle(t, isActive)}
-            >
-              <Icon
-                name="bookmark"
-                size={14}
-                color={isActive ? t.color.accent.base : t.color.text.dim}
-              />
-              <T
-                size="body"
-                weight={isActive ? 600 : 400}
-                color={isActive ? t.color.accent.base : t.color.text.primary}
+        {loading ? (
+          <T size="body" color={t.color.text.dim}>
+            Loading bookmarks…
+          </T>
+        ) : candidates.length === 0 ? (
+          <T size="body" color={t.color.text.dim}>
+            No bookmarks yet. Type to create one.
+          </T>
+        ) : (
+          candidates.slice(win.start, win.end).map((name, off) => {
+            const index = win.start + off;
+            const isActive = index === win.activeIdx;
+            const isCreate = !names.includes(name);
+            const rowColor = isActive
+              ? t.color.accent.base
+              : isCreate
+                ? t.color.functional.warning
+                : null;
+            return (
+              <div
+                key={name}
+                onClick={() => {
+                  setActive(index);
+                  onSet(name);
+                }}
+                style={candidateRowStyle(t, isActive)}
               >
-                {name}
-              </T>
-            </div>
-          );
-        })}
+                <Icon
+                  name={isCreate ? "plus" : "bookmark"}
+                  size={14}
+                  color={rowColor ?? t.color.text.dim}
+                />
+                <T
+                  size="body"
+                  weight={isActive ? 600 : 400}
+                  color={rowColor ?? t.color.text.primary}
+                >
+                  {name}
+                </T>
+                {isCreate ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      flexGrow: 1,
+                      minWidth: 0,
+                    }}
+                  >
+                    <T
+                      size="caption"
+                      color={t.color.text.dim}
+                      style={{ whiteSpace: "nowrap" }}
+                    >
+                      new bookmark
+                    </T>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })
+        )}
       </div>
-      <DialogHintBar groups={groupHints(hints(PICKER_SHORTCUTS))} />
+      <DialogHintBar
+        groups={groupHints(
+          pickerHints(BOOKMARK_PICKER_SHORTCUTS, candidates.length === 0),
+        )}
+      />
     </DialogFrame>
   );
 }

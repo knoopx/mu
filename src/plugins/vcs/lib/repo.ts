@@ -167,6 +167,21 @@ export async function listBookmarks(): Promise<Bookmark[]> {
   return parseBookmarkList(await vcsOk([...BOOKMARK_LIST_ARGS]));
 }
 
+/**
+ * The names offered when a bookmark is written: the ones jj answered with a
+ * target change, deduped and sorted. A row without a target is not a bookmark
+ * a name can be written to, so it never reaches the picker.
+ */
+export function bookmarkNames(bookmarks: Bookmark[]): string[] {
+  return Array.from(
+    new Set(
+      bookmarks
+        .filter((b) => b.change_id.length > 0 && b.name.length > 0)
+        .map((b) => b.name),
+    ),
+  ).sort();
+}
+
 export function bookmarkNamesFor(
   bookmarks: Bookmark[],
   changeId: string,

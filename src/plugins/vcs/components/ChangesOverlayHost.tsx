@@ -21,6 +21,7 @@ export function ChangesOverlayHost({
       <BookmarkDialog
         changeId={panel.overlayChangeId ?? ""}
         onSet={panel.applyBookmark}
+        onForget={panel.forgetBookmark}
         onCancel={panel.closeOverlay}
       />
     );

@@ -81,5 +81,10 @@ export const PICKER_SHORTCUTS: Shortcut[] = [
   { id: "nav-down", kbds: ["down"], desc: "nav", hidden: true },
   { id: "apply", kbds: ["enter"], desc: "apply" },
   { id: "cancel", kbds: ["escape"], desc: "cancel" },
+];
+
+/** A bookmark can be forgotten from its picker; a revset cannot. */
+export const BOOKMARK_PICKER_SHORTCUTS: Shortcut[] = [
+  ...PICKER_SHORTCUTS,
   { id: "forget", kbds: ["delete"], desc: "forget" },
 ];
