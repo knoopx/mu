@@ -14,6 +14,7 @@ import type { StyleDesc } from "@gpuix/react";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
+import { INLINE_GLYPH, STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
 import {
   toolCell,
   toolColumn,
@@ -148,7 +149,7 @@ function Summary({
     <ToolCaptionLine
       text={parts.join(" · ")}
       color={tone === "bad" ? t.color.functional.destructive : mutedText(t)}
-      weight={600}
+      weight={emphasisWeight(t)}
     />
   );
 }
@@ -157,7 +158,11 @@ function Running({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <div style={toolLine(t)}>
-      <Spinner size={16} color="accent" style={{ flexShrink: 0 }} />
+      <Spinner
+        size={STATE_GLYPH}
+        color="accent"
+        style={{ flexShrink: 0 }}
+      />
       <T size="caption" color={mutedText(t)} style={toolGrow}>
         {text}
       </T>
@@ -277,7 +282,7 @@ function FixtureRows({
             <div style={toolLine(t)}>
               <Icon
                 name={entry.op === "write" ? "noteAdd" : "delete"}
-                size={t.control.navIconSize}
+                size={INLINE_GLYPH}
                 color={
                   entry.status === "ok"
                     ? mutedText(t)

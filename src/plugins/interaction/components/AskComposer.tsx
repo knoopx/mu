@@ -36,6 +36,11 @@ import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { addInputListener } from "../../../window/window";
 import { fuzzyFilter } from "../../../fuzzy";
 import { Markdown } from "../../core/components/Markdown";
+import {
+  HAIRLINE,
+  emphasisWeight,
+  lineBox,
+} from "../../core/lib/ui/tokens";
 import { digitOf, keyOf, modsOf } from "../../core/lib/ui/keyEvents";
 import {
   createFreeformResponse,
@@ -66,6 +71,13 @@ interface FieldFocus {
   onBlur: () => void;
 }
 
+/** How the question's two panes share the width: the options first, the detail wider. */
+const PANE_GROW = { list: 4, detail: 6 } as const;
+
+/** How tall the free-form field may stand, in rows — taller when it is the only thing asked. */
+const FREEFORM_FIELD = { min: 4, max: 8 } as const;
+const OPTION_FIELD = { min: 2, max: 6 } as const;
+
 function splitRow(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",
@@ -82,7 +94,7 @@ function listPane(t: AdwaitaTheme): StyleDesc {
     display: "flex",
     flexDirection: "column",
     gap: 0,
-    flexGrow: 4,
+    flexGrow: PANE_GROW.list,
     flexBasis: 0,
     minWidth: t.control.sidebarMinWidth,
     minHeight: 0,
@@ -94,7 +106,7 @@ function detailPane(t: AdwaitaTheme): StyleDesc {
     display: "flex",
     flexDirection: "column",
     gap: t.space.sm,
-    flexGrow: 6,
+    flexGrow: PANE_GROW.detail,
     flexBasis: 0,
     minWidth: t.control.sidebarMinWidth,
     minHeight: 0,
@@ -112,12 +124,12 @@ function dividerRule(t: AdwaitaTheme, tone: ComposerTone): StyleDesc {
 }
 
 const paneRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc => ({
-  width: t.control.dividerThickness,
+  width: HAIRLINE,
   ...dividerRule(t, tone),
 });
 
 const hintRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc => ({
-  height: t.control.dividerThickness,
+  height: HAIRLINE,
   ...dividerRule(t, tone),
 });
 
@@ -162,16 +174,16 @@ function AskDetailPane({
     <div style={detailPane(t)}>
       <T
         size="caption"
-        weight={600}
+        weight={emphasisWeight(t)}
         color={t.color.accent.base}
-        style={{ flexShrink: 0, lineHeight: t.type.caption * 1.4 }}
+        style={{ flexShrink: 0, lineHeight: lineBox(t, "caption") }}
       >
         {title}
       </T>
       <T
         size="micro"
         color={t.color.text.primary}
-        style={{ flexShrink: 0, lineHeight: t.type.micro * 1.5 }}
+        style={{ flexShrink: 0, lineHeight: lineBox(t, "micro") }}
       >
         {body}
       </T>
@@ -309,7 +321,11 @@ function AskDraftPane({
   const freeform = mode === "freeform";
   return (
     <div style={stacked(t)}>
-      <T size="caption" weight={600} color={t.color.accent.base}>
+      <T
+        size="caption"
+        weight={emphasisWeight(t)}
+        color={t.color.accent.base}
+      >
         {freeform ? "Custom response" : "Extra context"}
       </T>
       {mode === "comment" && selections.length > 0 && (
@@ -319,8 +335,8 @@ function AskDraftPane({
       )}
       <textarea
         autoFocus
-        minRows={freeformOnly ? 4 : 2}
-        maxRows={freeformOnly ? 8 : 6}
+        minRows={freeformOnly ? FREEFORM_FIELD.min : OPTION_FIELD.min}
+        maxRows={freeformOnly ? FREEFORM_FIELD.max : OPTION_FIELD.max}
         theme={fieldTheme}
         value={value}
         placeholder={
@@ -598,7 +614,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     metrics: {
       ...fieldTheme.metrics,
       mdTextSize: t.type.micro,
-      mdLineHeight: Math.round(t.type.micro * 1.5),
+      mdLineHeight: lineBox(t, "micro"),
     },
   };
   const fieldStyle: StyleDesc = composerFieldLineStyle(t);
@@ -625,7 +641,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     <div style={root}>
       <T
         size="caption"
-        weight={600}
+        weight={emphasisWeight(t)}
         color={t.color.text.primary}
         style={{ flexShrink: 0 }}
       >

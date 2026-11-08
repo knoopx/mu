@@ -3,6 +3,7 @@ import { Icon, T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "../../core/lib/ui/theme";
+import { INLINE_GLYPH } from "../../core/lib/ui/tokens";
 import {
   toolGapColumn,
   toolGrow,
@@ -39,7 +40,7 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="cancel"
-            size={t.control.navIconSize}
+            size={INLINE_GLYPH}
             color={t.color.functional.destructive}
             style={{ flexShrink: 0 }}
           />
@@ -67,7 +68,7 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="schedule"
-            size={t.control.navIconSize}
+            size={INLINE_GLYPH}
             color={mutedText(t)}
             style={{ flexShrink: 0 }}
           />
@@ -90,7 +91,7 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="block"
-            size={t.control.navIconSize}
+            size={INLINE_GLYPH}
             color={t.color.functional.warning}
             style={{ flexShrink: 0 }}
           />
@@ -112,11 +113,11 @@ export function AskResultRows({
         const prefix =
           answers.length > 1 ? `${i + 1}. [${answer.id}] ` : `[${answer.id}] `;
         return (
-          <div key={`${answer.id}-${i}`} style={answerColumn}>
+          <div key={`${answer.id}-${i}`} style={answerColumn(t)}>
             <div style={toolLineFlush(t)}>
               <Icon
                 name={answer.selected.length > 0 ? "checkCircle" : "edit"}
-                size={t.control.navIconSize}
+                size={INLINE_GLYPH}
                 color={t.color.functional.success}
                 style={{ flexShrink: 0 }}
               />
@@ -139,18 +140,19 @@ export function AskResultRows({
   );
 }
 
-const answerColumn: StyleDesc = {
+/** An answer's lines: the chosen options, then anything the reader typed. */
+const answerColumn = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "column",
-  gap: 2,
+  gap: t.space.xs,
   minWidth: 0,
   flexShrink: 1,
-};
+});
 
 /** The spacer that holds an answer's typed text under the chosen options. */
 function indent(t: AdwaitaTheme): StyleDesc {
   return {
-    width: t.control.navIconSize,
+    width: INLINE_GLYPH,
     flexShrink: 0,
     pointerEvents: "none",
   };

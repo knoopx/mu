@@ -3,6 +3,7 @@ import { Icon, T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "../../core/lib/ui/theme";
+import { INLINE_GLYPH } from "../../core/lib/ui/tokens";
 import {
   toolGapColumn,
   toolGrow,
@@ -14,7 +15,7 @@ import type { GuardrailHit } from "../types";
 
 /** The spacer that holds a continuation line under the text beside the icon. */
 function indent(t: AdwaitaTheme): StyleDesc {
-  return { width: t.control.navIconSize, flexShrink: 0 };
+  return { width: INLINE_GLYPH, flexShrink: 0 };
 }
 
 /**
@@ -65,7 +66,7 @@ export function GuardrailBlockRows({
       <div style={toolLineFlush(t)}>
         <Icon
           name="block"
-          size={t.control.navIconSize}
+          size={INLINE_GLYPH}
           color={t.color.functional.destructive}
           style={{ flexShrink: 0 }}
         />

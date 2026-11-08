@@ -12,6 +12,7 @@ import type { StyleDesc } from "@gpuix/react";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
+import { STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
 import {
   toolBodyColumn,
   toolCell,
@@ -136,7 +137,11 @@ function ResultRow({
           {String(row.rank).padStart(2, "0")}
         </T>
         <div style={toolBodyColumn}>
-          <T size="list" weight={600} style={lineText(t.color.text.primary)}>
+          <T
+            size="list"
+            weight={emphasisWeight(t)}
+            style={lineText(t.color.text.primary)}
+          >
             {title}
           </T>
           <T
@@ -217,7 +222,7 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
     return (
       <div style={toolColumn(t)}>
         <div style={toolLine(t)}>
-          <Spinner size={16} color="accent" />
+          <Spinner size={STATE_GLYPH} color="accent" />
           <T size="caption" color={mutedText(t)} style={{ minWidth: 0 }}>
             {query === ""
               ? "Searching the web"
