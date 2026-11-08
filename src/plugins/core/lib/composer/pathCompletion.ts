@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fuzzyFilter } from "../../../../fuzzy";
 import type { ComposerPanelRow } from "../../components/composer/Composer";
-import { iconForFile } from "./options";
+import { iconForFile } from "../files/fileIcons";
 
 /**
  * Path completion: the draft's trailing token becomes a directory listing.

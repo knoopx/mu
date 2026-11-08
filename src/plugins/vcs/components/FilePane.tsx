@@ -11,7 +11,7 @@ import { useAdwaita, DiffHistogram, DiffStats, fileRowStats, type FileChange } f
 import type { PublicInstance } from "@gpuix/react";
 import { figureGap } from "../../core/lib/ui/tokens";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
-import { iconForFile } from "../../core/lib/composer/options";
+import { iconForFile } from "../../core/lib/files/fileIcons";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
 import { PanelList } from "./PanelList";
 import { PANEL_FILE_ROWS } from "../constants";

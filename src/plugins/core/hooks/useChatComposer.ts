@@ -12,7 +12,7 @@ import {
   type PickIntent,
 } from "../lib/composer/mode";
 import {
-  deleteSessionRow,
+  deletePanelRow,
   pickComposerRow,
   runChatCommand,
   submitThemeCommand,
@@ -21,6 +21,7 @@ import {
 import { pathTokenOf, stripTrailingTab } from "../lib/composer/pathCompletion";
 import type { ToolImage } from "../lib/agent/content";
 import type { SessionDeleteResult } from "../lib/agent/agentService";
+import type { FileDeleteResult } from "../lib/files/deleteFile";
 import type { ChatSession } from "../lib/session/chatSession";
 import { useClipboardPaste } from "./useClipboardPaste";
 import type { ComposerState } from "./useComposerState";
@@ -39,6 +40,8 @@ export interface ChatComposerOptions {
 
   removeSession(path: string): SessionDeleteResult;
 
+  removeFile(path: string): FileDeleteResult;
+
   guardrails: GuardrailsPanelApi;
 
   composer: ComposerState;
@@ -56,7 +59,11 @@ export interface ChatComposerActions {
   /** Tab: open the path completion panel over the path the draft is typing. */
   completePath(): void;
 
-  removeSessionRow(row: ComposerPanelRow): void;
+  /**
+   * The delete key: the panel under the cursor says what its row is, and the
+   * row is taken off the disk.
+   */
+  deleteRow(row: ComposerPanelRow): void;
 
   runCommand(name: string): void;
 
@@ -91,6 +98,7 @@ export function useChatComposer(
     themePanel,
     session,
     removeSession,
+    removeFile,
     guardrails,
     composer,
   } = opts;
@@ -174,11 +182,13 @@ export function useChatComposer(
   const pickRow = (row: ComposerPanelRow, intent: PickIntent): void =>
     pickComposerRow(row, actions, intent);
 
-  const removeSessionRow = (row: ComposerPanelRow): void =>
-    deleteSessionRow(row, {
+  const deleteRow = (row: ComposerPanelRow): void =>
+    deletePanelRow(row, {
       toast,
+      mode,
       openSessionFile: () => session?.sessionFile(),
-      remove: removeSession,
+      removeSession,
+      removeFile,
     });
 
   const seedPrompt = (text: string): void => {
@@ -218,7 +228,7 @@ export function useChatComposer(
     pickRow,
     pickChangesPath,
     completePath,
-    removeSessionRow,
+    deleteRow,
     runCommand,
     startNewSession,
     seedPrompt,

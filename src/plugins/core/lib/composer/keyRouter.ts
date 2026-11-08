@@ -10,7 +10,7 @@ import {
   type ComposerMode,
   type PickIntent,
 } from "./mode";
-import { isDeleteSessionKey } from "./shortcuts";
+import { isDeleteRowKey } from "./shortcuts";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
@@ -278,7 +278,7 @@ function panelNavKey(
   if (!ctx.panelOpen || ctx.mode.kind === "draft") return false;
   const key = lowerKey(event);
 
-  if (ctx.onDelete !== undefined && isDeleteSessionKey(event)) {
+  if (ctx.onDelete !== undefined && isDeleteRowKey(event)) {
     ctx.onDelete();
     return true;
   }

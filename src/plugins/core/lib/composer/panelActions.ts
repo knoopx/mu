@@ -19,6 +19,7 @@ import { asThinkingLevel } from "./options";
 import type { ComposerPanelRow } from "../../components/composer/Composer";
 import type { ThemePanelState } from "../../hooks/useThemePanel";
 import type { SessionDeleteResult, ThinkingLevel } from "../agent/agentService";
+import type { FileDeleteResult } from "../files/deleteFile";
 
 const COMMAND_TARGETS: Record<string, ComposerTarget> = {
   model: "model",
@@ -201,25 +202,48 @@ export interface DeleteSessionContext {
   toast: ToastFn;
 
   openSessionFile(): string | undefined;
-  remove(path: string): SessionDeleteResult;
+  removeSession(path: string): SessionDeleteResult;
 }
 
-export function deleteSessionRow(
+export interface DeleteFileContext {
+  toast: ToastFn;
+
+  removeFile(path: string): FileDeleteResult;
+}
+
+/**
+ * What one delete key is handed: the panel under the cursor decides what its
+ * row is, so a session row and a file row answer with their own remove.
+ */
+export type PanelDeleteContext = DeleteSessionContext &
+  DeleteFileContext & {
+    mode: ComposerMode;
+  };
+
+/** Every panel answers a failed delete the same way, with the reason it got. */
+function deleteFailed(a: { toast: ToastFn }, error?: string): void {
+  a.toast(`Delete failed: ${error ?? "unknown error"}`, {
+    type: "destructive",
+  });
+}
+
+const rowName = (row: { label: string }): string =>
+  truncateToWidth(row.label, 48);
+
+function deleteSessionRow(
   row: ComposerPanelRow,
   a: DeleteSessionContext,
 ): void {
   if (row.kind !== "option") return;
-  const name = truncateToWidth(row.label, 48);
+  const name = rowName(row);
   const open = a.openSessionFile();
   if (open !== undefined && resolve(open) === resolve(row.key)) {
     a.toast("Cannot delete the session that is open", { type: "warning" });
     return;
   }
-  const result = a.remove(row.key);
+  const result = a.removeSession(row.key);
   if (!result.ok) {
-    a.toast(`Delete failed: ${result.error ?? "unknown error"}`, {
-      type: "destructive",
-    });
+    deleteFailed(a, result.error);
     return;
   }
   a.toast(
@@ -227,4 +251,32 @@ export function deleteSessionRow(
       ? `Session moved to trash · ${name}`
       : `Session deleted · ${name}`,
   );
+}
+
+/**
+ * Delete the file the row names, off the project and out of the list.
+ *
+ * The toast names the file rather than the folder it sat in: the row already
+ * said the path, and the list that no longer holds it is the proof.
+ */
+function deleteFileRow(row: ComposerPanelRow, a: DeleteFileContext): void {
+  if (row.kind !== "option") return;
+  const result = a.removeFile(row.key);
+  if (!result.ok) {
+    deleteFailed(a, result.error);
+    return;
+  }
+  a.toast(`File deleted · ${rowName(row)}`);
+}
+
+export function deletePanelRow(
+  row: ComposerPanelRow,
+  a: PanelDeleteContext,
+): void {
+  if (a.mode.kind !== "pick") return;
+  if (a.mode.target === "session") {
+    deleteSessionRow(row, a);
+    return;
+  }
+  if (a.mode.target === "file") deleteFileRow(row, a);
 }

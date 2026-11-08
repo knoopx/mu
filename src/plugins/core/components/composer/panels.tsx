@@ -39,9 +39,9 @@ import {
   type PanelSlots,
 } from "../../lib/composer/panelHeight";
 import {
+  panelCanDelete,
   panelHints,
   pathCompletionHints,
-  sessionPanelHints,
   userMessageHistoryHints,
 } from "../../lib/composer/shortcuts";
 import {
@@ -54,7 +54,6 @@ import {
 import {
   cappedPanelStatusText,
   commandRows,
-  fileRows,
   matchesQuery,
   panelPlaceholder,
   panelStatusText,
@@ -70,6 +69,7 @@ import {
   pathCompletionRows,
   pathStatusText,
 } from "../../lib/composer/pathCompletion";
+import { fileRows } from "../../lib/files/fileList";
 import { SESSION_ROWS_CAP } from "../../lib/session/sessionList";
 import type { GuardrailsPanelApi } from "../../../guardrails/types";
 import { ROW_HEIGHT } from "../../lib/ui/tokens";
@@ -251,7 +251,7 @@ function listStatus(
   if (source === "session")
     return {
       message: sessionStatusText(data.sessionRows.length, query, rows.length),
-      hints: sessionPanelHints(),
+      hints: panelHints("session"),
     };
   if (source === "userMessageHistory")
     return {
@@ -453,9 +453,7 @@ function listPanelSpec(
     ...(BUSY_TEXT[source] !== undefined ? { busyText: BUSY_TEXT[source] } : {}),
     error,
     status: listStatus(data, source, rows, query, total),
-    ...(source === "session" ? { onDelete: data.onDelete } : {}),
-    
-    
+    ...(panelCanDelete(source) ? { onDelete: data.onDelete } : {}),
     emptyText:
       source === "guardrails"
         ? data.guardrails.emptyText

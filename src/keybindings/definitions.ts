@@ -52,9 +52,9 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
       "Open the project session history composer",
     ),
     def(
-      "composer.deleteSession",
+      "composer.deleteRow",
       "delete",
-      "Delete the selected session in the session history composer",
+      "Delete the highlighted row in a composer panel that can delete one",
     ),
     def("composer.files", "ctrl+p", "Open the file composer"),
     def(

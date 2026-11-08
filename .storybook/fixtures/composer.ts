@@ -10,10 +10,10 @@ import {
 } from "../../src/plugins/core/components/composer/attachments";
 import {
   commandRows,
-  iconForFile,
   modelRows,
   thinkingRows,
 } from "../../src/plugins/core/lib/composer/options";
+import { iconForFile } from "../../src/plugins/core/lib/files/fileIcons";
 import {
   userMessageHistoryRows,
   type UserMessage,

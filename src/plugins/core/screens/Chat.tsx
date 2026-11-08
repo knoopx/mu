@@ -209,7 +209,7 @@ function panelDataOf(
     previewFor: panels.previewFor,
     windowHeight: panels.windowHeight,
     onPick: composerActions.pickRow,
-    onDelete: composerActions.removeSessionRow,
+    onDelete: composerActions.deleteRow,
     onHover: composerActions.onHover,
   };
 }

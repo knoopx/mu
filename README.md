@@ -77,7 +77,7 @@ How full the conversation is shows on the composer's own border: it runs along t
 
 Type a path in the draft — `~/`, `./src/`, `../notes/`, an absolute path, an `@` mention — and press Tab: a panel opens over the draft with that folder's names, directories first with a slash on the end, and the list narrows as you keep typing. Tab takes the highlighted name and leaves the list where it is: a folder stays open so the next Tab goes a level deeper, and a file writes the path and adds the space. Enter commits the highlighted name and closes the panel, folder or not — the draft is left holding the path, and a Tab opens the list again over it. Neither key sends: the panel is the draft in another shape, but a panel is a choice and never a send, so completion cannot put a message in the conversation. Escape closes the suggestions and leaves every character you typed in the draft, and Enter there sends what you have. The highlighted name is read, so the panel puts the file open beside the list and you complete to the file you mean. Tab in ordinary prose does nothing, because there is nothing to complete there, and a URL is left alone.
 
-`Ctrl+P` is the other half: it searches the whole project by name and inserts what you pick, while Tab completes the path your hands are already typing.
+`Ctrl+P` is the other half: it searches the whole project by name and inserts what you pick, while Tab completes the path your hands are already typing. Stand on a row and press `Delete` and that file leaves the project — the row goes with it, the cursor takes its neighbour, and the toast says which file went. A file is unlinked rather than moved to trash, so what a delete took comes back only through whatever history the project itself keeps.
 
 ![Tab completing a path, with the folder's names listed](stories/Paths/completing.png)
 
@@ -221,7 +221,7 @@ Three themes (Light, Dark, Nightsky) and nine accent colours, picked from the co
 | `Ctrl` + `Shift` + `P`         | Commands                           |
 | `Ctrl` + `L`                   | Models                             |
 | `Ctrl` + `T`                   | Thinking level                     |
-| `Ctrl` + `P`                   | Files                              |
+| `Ctrl` + `P`                   | Files (insert, delete)             |
 | `Ctrl` + `H`                   | Session history (resume, delete)   |
 | `Ctrl` + `R`                   | Search your past messages          |
 | `Ctrl` + `K`                   | Project changes                    |

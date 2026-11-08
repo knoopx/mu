@@ -35,6 +35,7 @@ import {
 } from "../../vcs/hooks/useOplogPanel";
 import { useGuardrailsPanel } from "../../guardrails/hooks/useGuardrails";
 import type { GuardrailsPanelApi } from "../../guardrails/types";
+import { useFileList } from "./useFileList";
 import { useFilePreview } from "./useFilePreview";
 import { useSessionList, type SessionListState } from "./useSessionList";
 import { useThemePanel, type ThemePanelState } from "./useThemePanel";
@@ -117,9 +118,12 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     items,
     sessionNameOf(session),
   );
+  const files = useFileList(cwd);
+
   noteReloadAll((): void => {
     sessions.reload();
     userMessages.reload();
+    files.reload();
   });
 
   const themePanel = useThemePanel(mode);
@@ -132,6 +136,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     themePanel,
     session,
     removeSession: sessions.remove,
+    removeFile: files.remove,
     guardrails,
     composer,
   });
