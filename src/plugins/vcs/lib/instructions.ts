@@ -6,8 +6,6 @@ import {
   VCS_HUNK_SPLIT_TOOL,
 } from "../constants";
 
-const PANEL = "[changes panel]";
-
 const authoring =
   "Author the message yourself from the diff you read: a conventional-commit subject under 72 characters, and body bullets when the change does more than one thing.";
 
@@ -58,7 +56,8 @@ export function describeInstruction(
       ? `change ${ids[0] ?? ""}`
       : `these changes: ${shortIds(targets)}`;
   return [
-    `${PANEL} The user pressed describe on ${asked}. This write is their explicit request.`,
+    `Describe ${asked}.`,
+
     ...targets.map(
       (id, index) =>
         `- read it with \`${jjDiff(id)}\` — currently ${described(currentDescriptions[index] ?? "")}`,
@@ -88,7 +87,7 @@ export function splitFilesInstruction(
   const read = `Read the change first with \`${jjDiff(changeId)}\` — it is ${described(description)}, and the split must name files it actually changes.`;
   if (named.length > 0)
     return [
-      `${PANEL} The user pressed split on \`${named[0] ?? ""}\` in change ${id}. This write is their explicit request.`,
+      `Split \`${named[0] ?? ""}\` in change ${id}.`,
       read,
       `Move exactly ${named.length === 1 ? "that file" : "those files"} out with \`${VCS_FILE_SPLIT_TOOL}(rev="${id}", files=[${listed(named)}], message)\`: the named files go to the first/bottom commit and take the message you give; the remaining files stay in the second/top commit and keep the description above.`,
       authoring,
@@ -96,7 +95,7 @@ export function splitFilesInstruction(
       bounds,
     ].join("\n");
   return [
-    `${PANEL} The user pressed split on change ${id}. This write is their explicit request.`,
+    `Split change ${id}.`,
     read,
     `Split it into coherent commits by file: group the files it changes so each commit does one thing, then call \`${VCS_FILE_SPLIT_TOOL}(rev, files, message)\` once per group — the named files go to the first/bottom commit with your message, everything else stays in the second/top commit with the description above.`,
     `Chain the calls: each \`rev\` is the remaining change id the previous call reported, and stop when one group is left.`,
@@ -119,7 +118,7 @@ export function splitHunksInstruction(
 ): string {
   const id = shortId(changeId);
   return [
-    `${PANEL} The user pressed split-hunk on \`${path}\` in change ${id}. This write is their explicit request.`,
+    `Split hunks on \`${path}\` in change ${id}.`,
     `List that file's hunks first with \`${VCS_HUNK_LIST_TOOL}(rev="${id}", files="${path}")\`, and read the change with \`${jjDiff(changeId)}\` — it is ${described(description)}.`,
     `Pick the hunks that form one coherent change and call \`${VCS_HUNK_SPLIT_TOOL}(rev="${id}", hunks=["${path}=hunk-..."], message)\`, using the full \`hunk-\` ids from that listing — a stale or truncated id matches nothing.`,
     `${authoring} ${noInsertAfter}`,
