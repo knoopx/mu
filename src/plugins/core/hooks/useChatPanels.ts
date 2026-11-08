@@ -8,10 +8,11 @@
  * because they are the actions of one panel on another: pick a session row and
  * the log previews it, tick a change and the composer asks for it.
  */
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import type { ToastFn } from "adwaita-gpuix";
 import { useWindowSize } from "@gpuix/react";
 import {
+  draftMode,
   panelQuery,
   panelTarget,
   type ComposerTarget,
@@ -41,6 +42,7 @@ import { useUserMessages, type UserMessagesState } from "./useUserMessages";
 import { useWorkspaceStatus } from "./useWorkspaceStatus";
 import type { WorkspaceStatus } from "../lib/workspace/workspaceStatus";
 import { useSessionTree, type SessionTreeApi } from "./useSessionTree";
+import type { TreeRow } from "../lib/session/sessionTree";
 import { useTreePreview } from "./useTreePreview";
 import type { ComposerPreviewSpec } from "../components/composer/Composer";
 import type { SessionPreviewData } from "../lib/session/sessionList";
@@ -97,7 +99,7 @@ const treeSnapshotOf = (
 export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
   const { cwd, toast, chat, composer, sessionList, noteReloadAll } = options;
   const { items, session, navigateTree } = chat;
-  const { mode } = composer;
+  const { mode, setMode } = composer;
 
   const windowSize = useWindowSize();
   const workspace = useWorkspaceStatus(cwd);
@@ -152,11 +154,22 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     () => treeSnapshotOf(target === "tree", session),
     [target, session, items.length],
   );
+  // Jumping back is a decision, not a browse: the panel closes so what the jump
+  // leaves behind — a user node hands its text back to the composer — is the
+  // next thing the window shows, not a draft hidden under the tree.
+  const jumpTree = useCallback(
+    (row: TreeRow): void => {
+      navigateTree(row);
+      setMode(draftMode());
+    },
+    [navigateTree, setMode],
+  );
+
   const tree = useSessionTree({
     data: treeSnapshot,
     enabled: target === "tree",
     query,
-    onNavigate: navigateTree,
+    onNavigate: jumpTree,
   });
   const treePreview = useTreePreview(treeSnapshot, tree.selected);
 

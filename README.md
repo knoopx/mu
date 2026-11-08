@@ -74,7 +74,7 @@ How full the conversation is shows on the composer's own border: it runs along t
 
 ## Paths
 
-Type a path in the draft — `~/`, `./src/`, `../notes/`, an absolute path, an `@` mention — and press Tab: a panel opens over the draft with that folder's names, directories first with a slash on the end, and the list narrows as you keep typing. Tab takes the highlighted name: a folder keeps the panel open so you go a level deeper with the next Tab, and a file writes the path, adds the space, and closes the panel. Enter takes the highlighted name too: the panel is the draft in another shape, but a panel is a choice and never a send, so completion cannot put a message in the conversation. Escape closes the suggestions and leaves every character you typed in the draft, and Enter there sends what you have. The highlighted name is read, so the panel puts the file open beside the list and you complete to the file you mean. Tab in ordinary prose does nothing, because there is nothing to complete there, and a URL is left alone.
+Type a path in the draft — `~/`, `./src/`, `../notes/`, an absolute path, an `@` mention — and press Tab: a panel opens over the draft with that folder's names, directories first with a slash on the end, and the list narrows as you keep typing. Tab takes the highlighted name and leaves the list where it is: a folder stays open so the next Tab goes a level deeper, and a file writes the path and adds the space. Enter commits the highlighted name and closes the panel, folder or not — the draft is left holding the path, and a Tab opens the list again over it. Neither key sends: the panel is the draft in another shape, but a panel is a choice and never a send, so completion cannot put a message in the conversation. Escape closes the suggestions and leaves every character you typed in the draft, and Enter there sends what you have. The highlighted name is read, so the panel puts the file open beside the list and you complete to the file you mean. Tab in ordinary prose does nothing, because there is nothing to complete there, and a URL is left alone.
 
 `Ctrl+P` is the other half: it searches the whole project by name and inserts what you pick, while Tab completes the path your hands are already typing.
 
@@ -96,7 +96,7 @@ Sessions are saved per project. Open the list to see each one on a single line �
 
 ## History
 
-A conversation is a tree, not a line. Open the history to see every point you have been at — your prompts, the agent's calls, labels, compactions, and the branches off them. Jump to a point and the conversation rewinds to it; the branch you left stays in the tree. Filter it by what was said.
+A conversation is a tree, not a line. Open the history to see every point you have been at — your prompts, the agent's calls, labels, compactions, and the branches off them. Enter jumps to a point and the panel closes on it: the conversation rewinds, the branch you left stays in the tree, and jumping back over one of your own prompts hands it back to the draft — which a panel still open would have hidden, since the tree takes the whole slot. Filter it by what was said.
 
 ![The conversation as a tree](stories/History/tree.png)
 

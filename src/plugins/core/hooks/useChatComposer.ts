@@ -9,6 +9,7 @@ import {
   pickMode,
   transition,
   type ComposerMode,
+  type PickIntent,
 } from "../lib/composer/mode";
 import {
   deleteSessionRow,
@@ -48,7 +49,7 @@ export interface ChatComposerActions {
 
   onSubmit(value: string): void;
 
-  pickRow(row: ComposerPanelRow): void;
+  pickRow(row: ComposerPanelRow, intent: PickIntent): void;
 
   pickChangesPath(path: string): void;
 
@@ -170,8 +171,8 @@ export function useChatComposer(
     chat.send(text, images, userImages);
   };
 
-  const pickRow = (row: ComposerPanelRow): void =>
-    pickComposerRow(row, actions);
+  const pickRow = (row: ComposerPanelRow, intent: PickIntent): void =>
+    pickComposerRow(row, actions, intent);
 
   const removeSessionRow = (row: ComposerPanelRow): void =>
     deleteSessionRow(row, {

@@ -32,6 +32,15 @@ export type ComposerMode =
   | { kind: "commands"; index: number; query: string }
   | { kind: "pick"; target: ComposerTarget; index: number; query: string };
 
+/**
+ * How a row under the cursor was taken.
+ *
+ * Tab completes and leaves the panel where it was, so the next segment can keep
+ * growing; Enter commits the row and dismisses the panel. A panel with one
+ * answer for both keys ignores the intent — only path completion splits them.
+ */
+export type PickIntent = "complete" | "commit";
+
 export const draftMode = (): ComposerMode => ({ kind: "draft" });
 
 export const commandsMode = (query = ""): ComposerMode => ({

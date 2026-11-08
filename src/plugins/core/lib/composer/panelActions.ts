@@ -12,6 +12,7 @@ import {
   pickMode,
   type ComposerMode,
   type ComposerTarget,
+  type PickIntent,
 } from "./mode";
 import { applyCompletion } from "./pathCompletion";
 import { asThinkingLevel } from "./options";
@@ -76,7 +77,11 @@ function pickCommandRow(row: ComposerPanelRow, a: ComposerActionContext): void {
   a.runCommand(row.name);
 }
 
-function pickPanelRow(row: ComposerPanelRow, a: ComposerActionContext): void {
+function pickPanelRow(
+  row: ComposerPanelRow,
+  a: ComposerActionContext,
+  intent: PickIntent,
+): void {
   if (row.kind !== "option") return;
   if (a.mode.kind !== "pick") return;
   switch (a.mode.target) {
@@ -96,11 +101,14 @@ function pickPanelRow(row: ComposerPanelRow, a: ComposerActionContext): void {
       a.setMode(draftMode());
       break;
     case "path": {
-      // The query is the draft: the completion is written over the path token,
-      // and a directory keeps the panel open so the path can keep growing.
+      // The query is the draft, so the completion is written over the path
+      // token. Tab completes and stays in the folder so the path can keep
+      // growing; Enter commits the path and dismisses the panel, and the draft
+      // is left holding it.
       const done = applyCompletion(a.mode.query, row.key);
       a.setInput(done.text);
-      a.setMode(done.isDirectory ? pickMode("path", done.query) : draftMode());
+      const completes = done.isDirectory && intent === "complete";
+      a.setMode(completes ? pickMode("path", done.query) : draftMode());
       break;
     }
     case "userMessageHistory":
@@ -118,6 +126,7 @@ function pickPanelRow(row: ComposerPanelRow, a: ComposerActionContext): void {
 export function pickComposerRow(
   row: ComposerPanelRow,
   a: ComposerActionContext,
+  intent: PickIntent,
 ): void {
   if (row.kind === "theme") {
     pickThemeRow(row, a);
@@ -127,7 +136,7 @@ export function pickComposerRow(
     pickCommandRow(row, a);
     return;
   }
-  pickPanelRow(row, a);
+  pickPanelRow(row, a, intent);
 }
 
 export interface ChatCommandContext {

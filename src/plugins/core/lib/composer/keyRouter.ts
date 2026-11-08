@@ -8,6 +8,7 @@ import {
   isCycleTarget,
   type ComposerEvent,
   type ComposerMode,
+  type PickIntent,
 } from "./mode";
 import { isDeleteSessionKey } from "./shortcuts";
 
@@ -80,7 +81,9 @@ export interface ComposerKeyContext {
   maxVisible: number;
 
   send: (event: ComposerEvent) => void;
-  pickActive: () => void;
+
+  /** Take the row under the cursor: Tab completes, Enter commits. */
+  pickActive: (intent: PickIntent) => void;
 
   /** Tab in a draft: complete the path the draft is typing. */
   onComplete?: () => void;
@@ -210,7 +213,9 @@ function pasteKey(event: EventPayload, ctx: ComposerKeyContext): boolean {
 
 /**
  * Tab completes a path: in a draft it opens the completion panel over the path
- * the draft ends with, and in that panel it takes the highlighted completion.
+ * the draft ends with, and in that panel it takes the highlighted completion
+ * and leaves the panel open, so a folder can be entered and the next Tab goes
+ * deeper.
  *
  * `cycle` says which listener runs the key: the field and the panel each get
  * their own key event and the window listener sees the same press, so taking a
@@ -225,7 +230,7 @@ function completionKey(
   if (!isAutocompleteKey(event)) return false;
   if (ctx.panelOpen === true) {
     if (isCompletionMode(ctx.mode) === false || cycle === true) return false;
-    ctx.pickActive();
+    ctx.pickActive("complete");
     return true;
   }
   if (ctx.mode.kind !== "draft" || ctx.onComplete === undefined) return false;
@@ -234,10 +239,13 @@ function completionKey(
 }
 
 /**
- * What Enter does in a panel: it takes the highlighted row. That includes the
- * completion panel — a panel is a choice, never a send, and the draft goes to
- * the conversation only from a draft. With nothing to take, Enter is inert;
- * Escape closes the panel and leaves the draft, and Enter there sends.
+ * What Enter does in a panel: it commits the highlighted row, and the panel
+ * closes on it. That includes the completion panel — Enter takes the path the
+ * draft is typing and dismisses the suggestions whether the row is a file or a
+ * folder, and only Tab stays to complete the next segment. A panel is still a
+ * choice and never a send, so Enter here cannot put the draft in the log. With
+ * nothing to take Enter is inert; Escape closes the panel and leaves the draft,
+ * and Enter there sends.
  */
 function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
   handleListKey(event, {
@@ -257,7 +265,7 @@ function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
         pageSize: ctx.maxVisible,
         count: ctx.count,
       }),
-    onEnter: ctx.pickActive,
+    onEnter: () => ctx.pickActive("commit"),
     onEscape: () => ctx.send({ type: "close" }),
   });
 }

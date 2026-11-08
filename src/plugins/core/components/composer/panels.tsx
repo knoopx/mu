@@ -49,6 +49,7 @@ import {
   windowRows,
   type ComposerMode,
   type ComposerTarget,
+  type PickIntent,
 } from "../../lib/composer/mode";
 import {
   cappedPanelStatusText,
@@ -139,7 +140,7 @@ export interface ComposerPanelData {
   guardrails: GuardrailsPanelApi;
   previewFor(path: string): ComposerPreviewSpec;
   windowHeight: number | undefined;
-  onPick: (row: ComposerPanelRow) => void;
+  onPick: (row: ComposerPanelRow, intent: PickIntent) => void;
   onDelete: (row: ComposerPanelRow) => void;
   onHover: (mode: ComposerMode, index: number, count: number) => void;
 }

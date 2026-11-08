@@ -8,6 +8,7 @@ import {
   transition,
   type ComposerEvent,
   type ComposerMode,
+  type PickIntent,
 } from "../lib/composer/mode";
 import {
   composerFieldKey,
@@ -46,7 +47,7 @@ export interface ComposerKeyHandlers {
   onText(next: string): void;
   onFieldKey(event: EventPayload): void;
   onListKey(event: EventPayload): void;
-  pickActive(): void;
+  pickActive(intent: PickIntent): void;
   captureField(node: PublicInstance | null): void;
   capturePanel(node: PublicInstance | null): void;
 }
@@ -79,10 +80,10 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
     send({ type: "setQuery", query: next });
   };
 
-  const pickActive = (): void => {
+  const pickActive = (intent: PickIntent): void => {
     if (panel === undefined) return;
     const row = rowUnderCursor(panel, mode);
-    if (row !== undefined) panel.onPick(row);
+    if (row !== undefined) panel.onPick(row, intent);
   };
 
   const deleteActive = (): void => {

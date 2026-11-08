@@ -55,6 +55,7 @@ import {
   windowRows,
   type ComposerEvent,
   type ComposerMode,
+  type PickIntent,
 } from "../../lib/composer/mode";
 import {
   CONTEXT_RING_WIDTH,
@@ -150,7 +151,7 @@ export interface ComposerPanelSpec {
   maxVisible?: number;
 
   status?: ComposerPanelStatusSpec;
-  onPick: (row: ComposerPanelRow) => void;
+  onPick: (row: ComposerPanelRow, intent: PickIntent) => void;
   onHover: (index: number) => void;
 
   onDelete?: (row: ComposerPanelRow) => void;
@@ -529,7 +530,9 @@ function ComposerPanel({
                 row={row}
                 active={index === active}
                 checkColumn={checkColumn}
-                onPick={() => panel.onPick(row)}
+                // A click completes the way Tab does, so a folder stays open
+                // for the next segment; Enter is the key that commits.
+                onPick={() => panel.onPick(row, "complete")}
                 onHover={() => panel.onHover(index)}
               />
             );
@@ -658,7 +661,7 @@ function ComposerField(props: {
   onSubmit: (value: string) => void;
   onFieldKey: (event: EventPayload) => void;
   captureField: (node: PublicInstance | null) => void;
-  pickActive: () => void;
+  pickActive: (intent: PickIntent) => void;
 }): JSX.Element {
   const { styles, t } = props;
   const oneRow = fitsOneRow(props.fieldText);
@@ -677,10 +680,11 @@ function ComposerField(props: {
         theme={buildNativeTheme(t)}
         onChange={(e) => props.onText(e.value ?? "")}
         onSubmit={(e) => {
-          // An open panel owns Enter: it takes the highlighted row. A path
-          // completion never sends the draft — Escape closes the panel first.
+          // An open panel owns Enter: it commits the highlighted row and closes
+          // the panel. A path completion never sends the draft — Enter takes the
+          // path, and a draft sends only once the suggestions are gone.
           if (props.panelOpen) {
-            props.pickActive();
+            props.pickActive("commit");
             return;
           }
           props.onSubmit(e.value ?? "");
