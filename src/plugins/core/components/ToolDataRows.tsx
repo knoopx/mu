@@ -38,6 +38,8 @@ import {
   toolGapColumn,
   toolGrow,
   toolLine,
+  toolMark,
+  toolText,
 } from "../lib/ui/toolRows";
 import {
   meterFill,
@@ -268,16 +270,21 @@ export function ToolUnknownResult({
   item: ToolTranscriptItem;
   tool: string;
 }): JSX.Element {
+  const t = useAdwaita();
   const line = firstLineOf(item.output);
-  if (item.status === "error")
-    return (
+  const note =
+    item.status === "error" ? (
       <ToolStateNote
         icon="cancel"
         tone="bad"
         text={line === "" ? `${tool} failed` : line}
       />
+    ) : (
+      <ToolStateNote icon="info" text={line} />
     );
-  return <ToolStateNote icon="info" text={line} />;
+  /** A mark hangs into the inset from the log's body column, so a lone note
+   *  still has to sit in that column to land in the header's mark gutter. */
+  return <div style={toolBodyStack(t)}>{note}</div>;
 }
 
 /** The count line above a table of rows — how much the call read. */
@@ -326,7 +333,7 @@ function ToolSectionHead({ text }: { text: string }): JSX.Element | null {
         size="caption"
         color={mutedText(t)}
         weight={emphasisWeight(t)}
-        style={toolGrow}
+        style={toolText(t)}
       >
         {text}
       </T>
@@ -445,9 +452,9 @@ export function ToolRunning({
         <Spinner
           size={STATE_GLYPH}
           color="accent"
-          style={{ flexShrink: 0 }}
+          style={toolMark}
         />
-        <T size="caption" color={mutedText(t)} style={toolGrow}>
+        <T size="caption" color={mutedText(t)} style={toolText(t)}>
           {text}
         </T>
       </div>

@@ -12,6 +12,7 @@ import type { StyleDesc } from "@gpuix/react";
 import { Spinner, T, useAdwaita } from "adwaita-gpuix";
 import { mutedText } from "../lib/ui/theme";
 import { STATE_GLYPH } from "../lib/ui/tokens";
+import { toolLine, toolMark, toolText } from "../lib/ui/toolRows";
 
 export interface CancellableLoaderHandle {
   readonly signal: AbortSignal;
@@ -80,17 +81,9 @@ export function CancellableLoader(props: CancellableLoaderProps): JSX.Element {
   return (
     <div style={style} tabIndex={0} onKeyDown={onKeyDown}>
       {running ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: t.space.sm,
-            flexShrink: 0,
-          }}
-        >
-          <Spinner size={STATE_GLYPH} label={false} />
-          <T size="caption" color={mutedText(t)}>
+        <div style={toolLine(t)}>
+          <Spinner size={STATE_GLYPH} label={false} style={toolMark} />
+          <T size="caption" color={mutedText(t)} style={toolText(t)}>
             {props.message ?? "Loading…"}
           </T>
         </div>

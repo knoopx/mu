@@ -2,7 +2,6 @@ import { useRef, type JSX } from "react";
 import {
   Icon,
   Message,
-  MessageAvatar,
   MessageContent,
   T,
   Toast,
@@ -23,7 +22,8 @@ import {
   paneFill,
   userBandFill,
 } from "../lib/ui/theme";
-import { INLINE_GLYPH } from "../lib/ui/tokens";
+import { STATE_GLYPH } from "../lib/ui/tokens";
+import { toolMark, toolText } from "../lib/ui/toolRows";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { AgentSnapshot } from "../lib/agent/agentService";
 import type { ToolImage } from "../lib/agent/content";
@@ -379,11 +379,18 @@ export function SystemRow({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <Message style={{ paddingLeft: PAGE_INSET, paddingRight: PAGE_INSET }}>
-      <MessageAvatar>
-        <Icon name="info" size={INLINE_GLYPH} color={mutedText(t)} />
-      </MessageAvatar>
+      <Icon
+        name="info"
+        size={STATE_GLYPH}
+        color={mutedText(t)}
+        style={toolMark}
+      />
       <MessageContent>
-        <T size="caption" color={t.color.text.primary}>
+        <T
+          size="caption"
+          color={t.color.text.primary}
+          style={toolText(t)}
+        >
           {text}
         </T>
       </MessageContent>

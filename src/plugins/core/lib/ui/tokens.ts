@@ -103,11 +103,23 @@ export const plainWeight = (t: AdwaitaTheme): number => t.type.weight.regular;
 /** A small mark set beside text: a tree's role icon, a warning on a feed row. */
 export const MARKER_GLYPH = CONTROL.compactIconSize;
 
-/** The mark set inside a line of caption text: a system row's icon, a picker's row, a retry. */
+/** The mark set inside a line of caption text: a picker's row, a retry. */
 export const INLINE_GLYPH = CONTROL.navIconSize;
 
-/** The glyph of a line that reports state: a running tool's spinner, a note's icon. */
+/**
+ * The mark every row of the log carries: the tool header's glyph, a running
+ * tool's spinner, a note's icon, a system row's mark. adwaita's `Tool` header
+ * draws its glyph at this size (`GUTTER_GLYPH` in its own file, which it does
+ * not export), so a log mark and a header glyph are the same mark by number.
+ */
 export const STATE_GLYPH = 16;
+
+/**
+ * How far the header's glyph hangs into the page inset (`GUTTER_GLYPH_HANG` =
+ * glyph + gap in adwaita's `Tool`). Every mark in the log hangs this far too,
+ * so the marks of a header, a running line and a note stand in one column.
+ */
+export const MARK_HANG = STATE_GLYPH + 8;
 
 /** A mark a pointer takes: a row's action, a dialog's heading. */
 export const ACTION_GLYPH = CONTROL.rowActionIconSize;

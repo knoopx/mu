@@ -1,22 +1,17 @@
 import type { JSX } from "react";
-import { Icon, T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
-import type { StyleDesc } from "@gpuix/react";
+import { Icon, T, useAdwaita } from "adwaita-gpuix";
 
 import { mutedText } from "../../core/lib/ui/theme";
-import { INLINE_GLYPH } from "../../core/lib/ui/tokens";
+import { STATE_GLYPH } from "../../core/lib/ui/tokens";
 import {
   toolGapColumn,
-  toolGrow,
   toolLineFlush,
+  toolMark,
+  toolText,
 } from "../../core/lib/ui/toolRows";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { guardrailsStore } from "../lib/store";
 import type { GuardrailHit } from "../types";
-
-/** The spacer that holds a continuation line under the text beside the icon. */
-function indent(t: AdwaitaTheme): StyleDesc {
-  return { width: INLINE_GLYPH, flexShrink: 0 };
-}
 
 /**
  * The guardrail that stopped this tool call, when one did.
@@ -33,10 +28,11 @@ export function guardrailBlockOf(
 }
 
 /**
- * A line hanging under the one above it, held in step with the icon column so
- * the block reads as one statement with the rule named first.
+ * A line hanging under the one that names the rule. The mark of that first
+ * line hangs into the page inset rather than taking a column of its own, so
+ * every line of the block already starts at the log's text column.
  */
-function Indented({
+function Detail({
   text,
   color,
 }: {
@@ -46,8 +42,7 @@ function Indented({
   const t = useAdwaita();
   return (
     <div style={toolLineFlush(t)}>
-      <div style={indent(t)} aria-hidden />
-      <T size="caption" color={color} style={toolGrow}>
+      <T size="caption" color={color} style={toolText(t)}>
         {text}
       </T>
     </div>
@@ -66,20 +61,20 @@ export function GuardrailBlockRows({
       <div style={toolLineFlush(t)}>
         <Icon
           name="block"
-          size={INLINE_GLYPH}
+          size={STATE_GLYPH}
           color={t.color.functional.destructive}
-          style={{ flexShrink: 0 }}
+          style={toolMark}
         />
         <T
           size="caption"
           color={t.color.functional.destructive}
-          style={toolGrow}
+          style={toolText(t)}
         >
           {`Guardrail ${hit.ruleId} · ${hit.domain}`}
         </T>
       </div>
-      <Indented text={hit.message} color={t.color.text.primary} />
-      <Indented
+      <Detail text={hit.message} color={t.color.text.primary} />
+      <Detail
         text={`read ${String(hit.engineMs)}ms · disarmed in /guardrails`}
         color={mutedText(t)}
       />

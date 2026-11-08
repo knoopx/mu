@@ -19,6 +19,8 @@ import {
   toolColumn,
   toolGrow,
   toolLine,
+  toolMark,
+  toolText,
 } from "../../core/lib/ui/toolRows";
 import { openExternal } from "../../../window/openLink";
 import { SEARCH_TOOL_NAME } from "../constants";
@@ -172,7 +174,7 @@ function ResultRow({
 function SearchSkeleton(): JSX.Element {
   const t = useAdwaita();
   return (
-    <div style={{ ...toolColumn(t), paddingLeft: 0, paddingTop: t.space.xs }}>
+    <div style={{ ...toolColumn(t), paddingTop: t.space.xs }}>
       {[0, 1, 2].map((i) => (
         <div key={i} style={toolCell(t, i === 0)}>
           <div style={skeletonRow(t)}>
@@ -210,11 +212,13 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
   if (item.status === "error") {
     const message = item.output.trim();
     return (
-      <ToolStateLine
-        icon="cancel"
-        color={t.color.functional.destructive}
-        text={message === "" ? "Search failed" : message}
-      />
+      <div style={toolColumn(t)}>
+        <ToolStateLine
+          icon="cancel"
+          color={t.color.functional.destructive}
+          text={message === "" ? "Search failed" : message}
+        />
+      </div>
     );
   }
 
@@ -222,8 +226,8 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
     return (
       <div style={toolColumn(t)}>
         <div style={toolLine(t)}>
-          <Spinner size={STATE_GLYPH} color="accent" />
-          <T size="caption" color={mutedText(t)} style={{ minWidth: 0 }}>
+          <Spinner size={STATE_GLYPH} color="accent" style={toolMark} />
+          <T size="caption" color={mutedText(t)} style={toolText(t)}>
             {query === ""
               ? "Searching the web"
               : `Searching the web for “${query}”`}
@@ -237,10 +241,12 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
   const results = details?.results ?? [];
   if (results.length === 0) {
     return (
-      <ToolCaptionLine
-        color={mutedText(t)}
-        text={query === "" ? "No results" : `No results for “${query}”`}
-      />
+      <div style={toolColumn(t)}>
+        <ToolCaptionLine
+          color={mutedText(t)}
+          text={query === "" ? "No results" : `No results for “${query}”`}
+        />
+      </div>
     );
   }
 

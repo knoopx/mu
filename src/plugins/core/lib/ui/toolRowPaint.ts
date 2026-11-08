@@ -21,6 +21,7 @@ import {
   CHIP_INSET,
   CHIP_PAD_Y,
   HAIRLINE,
+  MARK_HANG,
   METER_MIN_FILL,
   METER_TRACK_WIDTH,
   idColumn,
@@ -155,9 +156,11 @@ export function toolDataRow(
   const row: StyleDesc = {
     ...toolLine(t),
     gap: t.space.md,
-    marginLeft: -t.space.sm,
+    // The fill bleeds to the mark gutter, so the mark a row leads with sits
+    // inside the highlight rather than outside it.
+    marginLeft: -MARK_HANG,
     marginRight: -t.space.sm,
-    paddingLeft: t.space.sm,
+    paddingLeft: MARK_HANG,
     paddingRight: t.space.sm,
     borderRadius: t.radius.sm,
     borderTopWidth: first ? 0 : HAIRLINE,

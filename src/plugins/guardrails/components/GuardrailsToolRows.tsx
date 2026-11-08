@@ -14,12 +14,17 @@ import type { StyleDesc } from "@gpuix/react";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
-import { INLINE_GLYPH, STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
+import {
+  STATE_GLYPH,
+  emphasisWeight,
+} from "../../core/lib/ui/tokens";
 import {
   toolCell,
   toolColumn,
   toolGrow,
   toolLine,
+  toolMark,
+  toolText,
 } from "../../core/lib/ui/toolRows";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
@@ -158,12 +163,8 @@ function Running({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <div style={toolLine(t)}>
-      <Spinner
-        size={STATE_GLYPH}
-        color="accent"
-        style={{ flexShrink: 0 }}
-      />
-      <T size="caption" color={mutedText(t)} style={toolGrow}>
+      <Spinner size={STATE_GLYPH} color="accent" style={toolMark} />
+      <T size="caption" color={mutedText(t)} style={toolText(t)}>
         {text}
       </T>
     </div>
@@ -282,13 +283,13 @@ function FixtureRows({
             <div style={toolLine(t)}>
               <Icon
                 name={entry.op === "write" ? "noteAdd" : "delete"}
-                size={INLINE_GLYPH}
+                size={STATE_GLYPH}
                 color={
                   entry.status === "ok"
                     ? mutedText(t)
                     : t.color.functional.destructive
                 }
-                style={{ flexShrink: 0 }}
+                style={toolMark}
               />
               <T size="list" style={mono(t)}>
                 {entry.id}

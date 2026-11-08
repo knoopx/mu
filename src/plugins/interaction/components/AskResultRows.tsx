@@ -3,11 +3,12 @@ import { Icon, T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "../../core/lib/ui/theme";
-import { INLINE_GLYPH } from "../../core/lib/ui/tokens";
+import { STATE_GLYPH } from "../../core/lib/ui/tokens";
 import {
   toolGapColumn,
-  toolGrow,
   toolLineFlush,
+  toolMark,
+  toolText,
 } from "../../core/lib/ui/toolRows";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ASK_TOOL_NAME } from "../constants";
@@ -40,14 +41,14 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="cancel"
-            size={INLINE_GLYPH}
+            size={STATE_GLYPH}
             color={t.color.functional.destructive}
-            style={{ flexShrink: 0 }}
+            style={toolMark}
           />
           <T
             size="caption"
             color={t.color.functional.destructive}
-            style={toolGrow}
+            style={toolText(t)}
           >
             {item.output.trim() === ""
               ? "Ask was rejected"
@@ -68,11 +69,11 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="schedule"
-            size={INLINE_GLYPH}
+            size={STATE_GLYPH}
             color={mutedText(t)}
-            style={{ flexShrink: 0 }}
+            style={toolMark}
           />
-          <T size="caption" color={mutedText(t)}>
+          <T size="caption" color={mutedText(t)} style={toolText(t)}>
             Waiting for the answer in the composer
           </T>
         </div>
@@ -91,11 +92,15 @@ export function AskResultRows({
         <div style={toolLineFlush(t)}>
           <Icon
             name="block"
-            size={INLINE_GLYPH}
+            size={STATE_GLYPH}
             color={t.color.functional.warning}
-            style={{ flexShrink: 0 }}
+            style={toolMark}
           />
-          <T size="caption" color={t.color.functional.warning}>
+          <T
+            size="caption"
+            color={t.color.functional.warning}
+            style={toolText(t)}
+          >
             {`Cancelled${note}`}
           </T>
         </div>
@@ -117,18 +122,21 @@ export function AskResultRows({
             <div style={toolLineFlush(t)}>
               <Icon
                 name={answer.selected.length > 0 ? "checkCircle" : "edit"}
-                size={INLINE_GLYPH}
+                size={STATE_GLYPH}
                 color={t.color.functional.success}
-                style={{ flexShrink: 0 }}
+                style={toolMark}
               />
-              <T size="caption" color={t.color.text.primary} style={toolGrow}>
+              <T
+                size="caption"
+                color={t.color.text.primary}
+                style={toolText(t)}
+              >
                 {`${prefix}${chosen}`}
               </T>
             </div>
             {answer.custom !== undefined && (
               <div style={toolLineFlush(t)}>
-                <div style={indent(t)} aria-hidden />
-                <T size="caption" color={mutedText(t)} style={toolGrow}>
+                <T size="caption" color={mutedText(t)} style={toolText(t)}>
                   {answer.custom}
                 </T>
               </div>
@@ -148,12 +156,3 @@ const answerColumn = (t: AdwaitaTheme): StyleDesc => ({
   minWidth: 0,
   flexShrink: 1,
 });
-
-/** The spacer that holds an answer's typed text under the chosen options. */
-function indent(t: AdwaitaTheme): StyleDesc {
-  return {
-    width: INLINE_GLYPH,
-    flexShrink: 0,
-    pointerEvents: "none",
-  };
-}

@@ -8,6 +8,7 @@ import {
   previewLineHeight,
   toolPreviewWrap,
 } from "../lib/ui/transcriptLayout";
+import { toolText } from "../lib/ui/toolRows";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -130,7 +131,7 @@ export function WritePreview({
       <T
         size="caption"
         color={mutedText(t)}
-        style={{ flexShrink: 0, pointerEvents: "none" }}
+        style={{ ...toolText(t), pointerEvents: "none" }}
       >
         {preview.caption}
       </T>

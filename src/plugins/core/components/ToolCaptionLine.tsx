@@ -7,7 +7,7 @@
 import { T, useAdwaita } from "adwaita-gpuix";
 import type { JSX } from "react";
 
-import { toolGrow, toolLine } from "../lib/ui/toolRows";
+import { toolLine, toolText } from "../lib/ui/toolRows";
 
 export interface ToolCaptionLineProps {
   text: string;
@@ -23,7 +23,7 @@ export function ToolCaptionLine({
   const t = useAdwaita();
   return (
     <div style={toolLine(t)}>
-      <T size="caption" weight={weight} color={color} style={toolGrow}>
+      <T size="caption" weight={weight} color={color} style={toolText(t)}>
         {text}
       </T>
     </div>
