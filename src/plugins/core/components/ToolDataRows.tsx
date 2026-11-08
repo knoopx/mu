@@ -10,7 +10,6 @@ import type { JSX } from "react";
 import {
   Badge,
   Skeleton,
-  Spinner,
   T,
   useAdwaita,
   type AdwaitaTheme,
@@ -20,6 +19,7 @@ import {
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 import { firstLine } from "../../../utils/truncate";
+import { StateSpinner } from "./StateSpinner";
 import { ToolCaptionLine } from "./ToolCaptionLine";
 import { ToolStateLine } from "./ToolStateLine";
 import { mutedText } from "../lib/ui/theme";
@@ -28,7 +28,6 @@ import {
   METER_RULE_RADIUS,
   METER_TRACK_WIDTH,
   MARKER_GLYPH,
-  STATE_GLYPH,
   emphasisWeight,
   lineBox,
   subLineIndent,
@@ -449,11 +448,7 @@ export function ToolRunning({
   return (
     <div style={toolGapColumn(t)}>
       <div style={{ ...toolLine(t), paddingTop: t.space.xs }}>
-        <Spinner
-          size={STATE_GLYPH}
-          color="accent"
-          style={toolMark}
-        />
+        <StateSpinner style={toolMark} />
         <T size="caption" color={mutedText(t)} style={toolText(t)}>
           {text}
         </T>

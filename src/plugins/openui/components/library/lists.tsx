@@ -10,14 +10,11 @@
 
 import type { JSX } from "react";
 import { defineComponent, type ElementNode } from "@openuidev/lang-core";
-import { Icon, ProgressBar, Spinner, T } from "adwaita-gpuix";
+import { Icon, ProgressBar, T } from "adwaita-gpuix";
 import { z } from "zod/v4";
 
-import {
-  HAIRLINE,
-  INLINE_GLYPH,
-  STATE_GLYPH,
-} from "../../../core/lib/ui/tokens";
+import { StateSpinner } from "../../../core/components/StateSpinner";
+import { HAIRLINE, INLINE_GLYPH } from "../../../core/lib/ui/tokens";
 import { mutedText } from "../../../core/lib/ui/theme";
 import {
   groupGap,
@@ -169,14 +166,7 @@ function StatusMark({
   status: ProgramStatus;
   ctx: ProgramContext;
 }): JSX.Element {
-  if (status === "running")
-    return (
-      <Spinner
-        size={STATE_GLYPH}
-        label={false}
-        style={{ flexShrink: 0 }}
-      />
-    );
+  if (status === "running") return <StateSpinner />;
   const glyph = programStatusGlyph(status);
   if (glyph === null)
     return <div style={{ width: INLINE_GLYPH, flexShrink: 0 }} />;

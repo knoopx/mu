@@ -5,7 +5,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import {
   Icon,
-  Spinner,
   isRenderableImage,
   useAdwaita,
   type AdwaitaTheme,
@@ -16,7 +15,8 @@ import type { StyleDesc } from "@gpuix/react";
 import type { ToolImage } from "../../lib/agent/content";
 import { row } from "../../lib/ui/layout";
 import { mediaKind } from "../../lib/ui/media";
-import { HAIRLINE, STATE_GLYPH } from "../../lib/ui/tokens";
+import { HAIRLINE } from "../../lib/ui/tokens";
+import { StateSpinner } from "../StateSpinner";
 
 export interface ComposerAttachment {
   id: string;
@@ -246,7 +246,7 @@ export function ComposerAttachments(
       ))}
       {busy === true ? (
         <div style={thumbCenter(t, size)}>
-          <Spinner size={STATE_GLYPH} animated label={false} />
+          <StateSpinner />
         </div>
       ) : null}
     </div>

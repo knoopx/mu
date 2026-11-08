@@ -2,7 +2,6 @@ import type { JSX } from "react";
 import {
   Badge,
   Icon,
-  Spinner,
   T,
   useAdwaita,
   type AdwaitaTheme,
@@ -11,6 +10,7 @@ import {
 } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
+import { StateSpinner } from "../../core/components/StateSpinner";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
@@ -163,7 +163,7 @@ function Running({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <div style={toolLine(t)}>
-      <Spinner size={STATE_GLYPH} color="accent" style={toolMark} />
+      <StateSpinner style={toolMark} />
       <T size="caption" color={mutedText(t)} style={toolText(t)}>
         {text}
       </T>

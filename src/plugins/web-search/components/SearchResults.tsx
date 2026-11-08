@@ -1,6 +1,5 @@
 import {
   Skeleton,
-  Spinner,
   T,
   rowHoverBg,
   useAdwaita,
@@ -9,10 +8,11 @@ import {
 import { useState, type JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
+import { StateSpinner } from "../../core/components/StateSpinner";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
-import { STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
+import { emphasisWeight } from "../../core/lib/ui/tokens";
 import {
   toolBodyColumn,
   toolCell,
@@ -238,7 +238,7 @@ export function SearchResults({ item }: SearchResultsProps): JSX.Element {
     return (
       <div style={toolColumn(t)}>
         <div style={toolLine(t)}>
-          <Spinner size={STATE_GLYPH} color="accent" style={toolMark} />
+          <StateSpinner style={toolMark} />
           <T size="caption" color={mutedText(t)} style={toolText(t)}>
             {query === ""
               ? "Searching the web"

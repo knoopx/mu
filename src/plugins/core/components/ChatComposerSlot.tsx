@@ -1,7 +1,8 @@
 import { type JSX } from "react";
-import { Spinner, useAdwaita } from "adwaita-gpuix";
+import { useAdwaita } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 import { Composer, type ComposerProps } from "./composer/Composer";
+import { StateSpinner } from "./StateSpinner";
 import {
   ComposerAttachments,
   type ComposerAttachment,
@@ -77,7 +78,7 @@ function ComposerWithBusyMark(props: {
   if (composer.isStreaming === false) return <Composer {...composer} />;
   return (
     <div style={busyRow}>
-      <Spinner size={STATE_GLYPH} label={false} style={busyMark} />
+      <StateSpinner style={busyMark} />
       <Composer {...composer} style={{ ...composer.style, ...busyBox }} />
     </div>
   );
