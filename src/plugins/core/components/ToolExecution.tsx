@@ -227,7 +227,7 @@ function toolRowLookOf(
   return {
     state,
     args: argsLineOf(item, readPreview),
-    outputMode: outputModeFor(item.name, item.output),
+    outputMode: outputModeFor(item.name),
     ...(readPreview === undefined ? {} : { readPreview }),
     ...(writePreview === undefined ? {} : { writePreview }),
     ...(patch === undefined ? {} : { patch }),
