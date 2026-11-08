@@ -537,10 +537,7 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
 
   const transcriptListRef = useRef<PublicInstance | null>(null);
 
-  const newWindow = useNewWindow(
-    (message: string) => toast(message),
-    chat.system,
-  );
+  const newWindow = useNewWindow(chat.system);
   useWindowHandlers({
     newSession: composerActions.startNewSession,
     newWindow,
