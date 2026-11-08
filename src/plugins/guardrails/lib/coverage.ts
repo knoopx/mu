@@ -91,44 +91,77 @@ const domainOf = (text: string): string | null => {
   return rest.slice(0, end).trim();
 };
 
-const scanFile = (path: string, observed: Map<string, Observed>): number => {
-  let text: string;
+/** A transcript line that is a tool result, with its text blocks and its stamp. */
+interface ToolResultLine {
+  blocks: readonly ContentBlock[];
+  when: number;
+}
+
+interface ContentBlock {
+  type?: string;
+  text?: string;
+}
+
+const readTranscript = (path: string): string | null => {
   try {
-    text = readFileSync(path, "utf8");
+    return readFileSync(path, "utf8");
   } catch {
-    return 0;
+    return null;
   }
+};
+
+const stampOf = (record: unknown): number => {
+  const stamp = (record as { timestamp?: string }).timestamp;
+  return (stamp === undefined ? 0 : Date.parse(stamp)) || 0;
+};
+
+/**
+ * The text blocks of a tool result, or null when the line is not one. Only a
+ * tool result carries a block result text, so prose that quotes a reason in the
+ * user's own message never counts.
+ */
+const toolResultOf = (line: string): ToolResultLine | null => {
+  let record: unknown;
+  try {
+    record = JSON.parse(line);
+  } catch {
+    return null;
+  }
+  const message = (record as { message?: { role?: string; content?: unknown } })
+    .message;
+  if (message?.role !== "toolResult") return null;
+  return {
+    blocks: Array.isArray(message.content)
+      ? (message.content as ContentBlock[])
+      : [],
+    when: stampOf(record),
+  };
+};
+
+const observeBlock = (
+  block: ContentBlock,
+  when: number,
+  observed: Map<string, Observed>,
+): void => {
+  if (block.type !== "text" || typeof block.text !== "string") return;
+  const domain = domainOf(block.text);
+  if (domain === null) return;
+  const seen = observed.get(domain) ?? { blocks: 0, lastMs: 0 };
+  seen.blocks += 1;
+  seen.lastMs = Math.max(seen.lastMs, when);
+  observed.set(domain, seen);
+};
+
+const scanFile = (path: string, observed: Map<string, Observed>): number => {
+  const text = readTranscript(path);
+  if (text === null) return 0;
   let lines = 0;
   for (const line of text.split("\n")) {
     if (line.indexOf(BLOCK_MARK) === -1) continue;
     lines += 1;
-    let record: unknown;
-    try {
-      record = JSON.parse(line);
-    } catch {
-      continue;
-    }
-    const message = (
-      record as {
-        message?: { role?: string; content?: unknown };
-        timestamp?: string;
-      }
-    ).message;
-    if (message?.role !== "toolResult") continue;
-    const blocks = Array.isArray(message.content)
-      ? (message.content as { type?: string; text?: string }[])
-      : [];
-    for (const block of blocks) {
-      if (block.type !== "text" || typeof block.text !== "string") continue;
-      const domain = domainOf(block.text);
-      if (domain === null) continue;
-      const stamp = (record as { timestamp?: string }).timestamp;
-      const when = (stamp === undefined ? 0 : Date.parse(stamp)) || 0;
-      const seen = observed.get(domain) ?? { blocks: 0, lastMs: 0 };
-      seen.blocks += 1;
-      seen.lastMs = Math.max(seen.lastMs, when);
-      observed.set(domain, seen);
-    }
+    const result = toolResultOf(line);
+    if (result === null) continue;
+    for (const block of result.blocks) observeBlock(block, result.when, observed);
   }
   return lines;
 };
@@ -161,6 +194,7 @@ export function guardrailCoverage(
   const scanned = files.slice(0, MAX_COVERAGE_FILES);
   let lines = 0;
   for (const path of scanned) lines += scanFile(path, observed);
+  const dirExists = existsSync(dir);
 
   const rules = guardrailRules();
   const domains = [...new Set(rules.map((rule) => rule.domain))].sort();
@@ -188,12 +222,12 @@ export function guardrailCoverage(
   }
   return {
     dir,
-    dirExists: existsSync(dir),
+    dirExists,
     files: scanned.length,
     scanned: lines,
     windowDays: days,
     rows,
     truncated: files.length > MAX_COVERAGE_FILES,
-    error: existsSync(dir) ? null : `no session directory at ${dir}`,
+    error: dirExists ? null : `no session directory at ${dir}`,
   };
 }

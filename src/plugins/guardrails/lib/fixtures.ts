@@ -272,8 +272,18 @@ export async function runFixture(
     toolCallId: fixture.event.toolCallId ?? fixture.id,
     input: fixture.event.input ?? {},
   });
-  const primary = outcome.primary;
-  const got = primary !== null;
+  // `primary` is the hit the app would act on, and a hit carries `blocked` only
+  // while its domain is armed in the panel. A suite proves the rule, not the
+  // arming — a domain the user disarmed would otherwise fail its own block case
+  // and pass its ok case, so an unarmed match still counts as a match and the
+  // row says the switch is off.
+  const match = outcome.primary ?? outcome.hits[0] ?? null;
+  const armed = outcome.primary !== null;
+  const disarmedNote =
+    match !== null && !armed
+      ? `${match.domain} is disarmed — the rule matched, the app would release it`
+      : "";
+  const got = match !== null;
   if (got !== fixture.expected.block)
     return {
       domain,
@@ -282,15 +292,15 @@ export async function runFixture(
       got,
       status: "FAIL",
       detail: got
-        ? `blocked by ${primary?.ruleId ?? "?"} — the suite wants it released`
+        ? `matched by ${match?.ruleId ?? "?"}${armed ? "" : " (disarmed)"} — the suite wants it released`
         : `released by ${outcome.skip ?? "no rule"} — the suite wants it blocked`,
       engineMs: outcome.engineMs,
       command,
       field,
     };
   const wants = fixture.expected.reason_contains;
-  if (wants !== undefined && got && primary !== null) {
-    const reason = blockReasonOf(primary);
+  if (wants !== undefined && got && match !== null) {
+    const reason = blockReasonOf(match);
     if (!reason.includes(wants))
       return {
         domain,
@@ -310,7 +320,7 @@ export async function runFixture(
     want: fixture.expected.block,
     got,
     status: "PASS",
-    detail: "",
+    detail: disarmedNote,
     engineMs: outcome.engineMs,
     command,
     field,

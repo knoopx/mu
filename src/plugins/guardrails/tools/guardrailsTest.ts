@@ -55,6 +55,19 @@ const suiteNote = (suites: readonly GuardrailFixtureSuite[]): string => {
 const missingSuitesNote = (): string =>
   `no suite directory at ${fixturesDirLabel()} — write <domain>.json there, or point MU_GUARDRAILS_FIXTURES at one`;
 
+/**
+ * Domains of this run that the panel has disarmed. A suite grades the rule, so
+ * these rows pass or fail on their query; the note keeps the run from reading as
+ * "this domain is armed and blocking" when the app would release the same hit.
+ */
+const disarmedNote = (suites: readonly GuardrailFixtureSuite[]): string => {
+  const off = guardrailsStore
+    .getSnapshot()
+    .disarmed.filter((domain) => suites.some((suite) => suite.domain === domain));
+  if (off.length === 0) return "";
+  return `disarmed in this run: ${off.join(", ")} — the suite proves the rule, not the arming; the app would release these hits`;
+};
+
 type TestRow = GuardrailsTestDetails["rows"][number];
 
 /** The details of a run that never started: nothing ran, one note says why. */
@@ -206,7 +219,7 @@ function runNote(
         ? "no suites in the directory — a domain's suite is `fixtures/<domain>.json`"
         : "the suites hold no fixtures — every rule needs a block-* case and an ok-* case"
       : "";
-  return [missing, empty, suiteNote(suites)]
+  return [missing, empty, suiteNote(suites), disarmedNote(suites)]
     .filter((line) => line !== "")
     .join("\n");
 }
@@ -308,6 +321,7 @@ export const guardrailsTestTool: ToolDefinition<
     "Every rule needs one block-* fixture and one ok-* fixture: the first proves the rule fires, the second proves it does not fire on a command that only looks alike.",
     "A suite is a `<domain>.json` file in mu's own guardrails directory under the user's config, next to the rules it proves; run one suite with `domain`, one case with `domain` and `fixture`.",
     "A file-domain fixture is a `write`/`edit` call: its `path` names the grammar the text is parsed in, so a `.py` fixture is checked against python rules and a `.json` path is released unread.",
+    "A suite grades the rule, never the arming: a disarmed domain still passes its block-* case, and the run names those domains so a green suite is not read as \"this domain is blocking\".",
   ],
 
   executionMode: "sequential",

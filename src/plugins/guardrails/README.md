@@ -121,6 +121,12 @@ read. `guardrails-fixture-update` writes suites and `guardrails-coverage` reads 
 session transcripts for the blocks each domain has really stopped — a domain that has
 never fired is a domain nobody has proved.
 
+A fixture is graded on its rule, never on the arming: an unarmed match still counts as
+a match, so a domain the panel disarms keeps passing its own `block-*` case instead of
+failing it, and its `ok-*` case cannot pass just because the switch is off. The run
+names the disarmed domains and its rows say so — a green suite proves the query fires,
+not that this app is stopping that call today.
+
 ## Checking
 
 There is no CLI entry: the three tools are agent tools, and they run inside a

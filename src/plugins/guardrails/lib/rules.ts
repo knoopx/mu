@@ -2,42 +2,70 @@ import { COMMAND_INPUT_KEYS } from "../constants";
 import { GRAMMAR_ASSETS } from "./treeSitter/grammar";
 import { invalidateQueries } from "./treeSitter/queries";
 import type { GuardedSource } from "./treeSitter/source";
-import type { GuardrailLanguage, GuardrailRule } from "../types";
+import type {
+  GuardrailFilter,
+  GuardrailLanguage,
+  GuardrailRule,
+} from "../types";
 
 let rules: GuardrailRule[] = [];
 let version = 0;
 
-export function assertUsableRule(rule: GuardrailRule, seen: Set<string>): void {
-  if (rule.id.trim() === "") throw new Error("guardrail rule id is empty");
+const noId = (): Error => new Error("guardrail rule id is empty");
+
+/** The id is the key every later message is written with, so it is checked first. */
+function assertIdentity(rule: GuardrailRule, seen: Set<string>): void {
+  if (rule.id.trim() === "") throw noId();
   if (seen.has(rule.id))
     throw new Error(`guardrail rule id ${rule.id} is twice`);
-  if (rule.domain.trim() === "")
-    throw new Error(`guardrail rule ${rule.id} has no domain`);
-  if (rule.message.trim() === "")
-    throw new Error(`guardrail rule ${rule.id} has no message`);
-  if (rule.query.trim() === "")
-    throw new Error(`guardrail rule ${rule.id} has no query`);
+}
+
+function assertTextIsSet(
+  rule: GuardrailRule,
+  value: string,
+  field: string,
+): void {
+  if (value.trim() === "")
+    throw new Error(`guardrail rule ${rule.id} has no ${field}`);
+}
+
+function assertGrammarIsShipped(rule: GuardrailRule): void {
   if (GRAMMAR_ASSETS[rule.language] === undefined)
     throw new Error(
       `guardrail rule ${rule.id} names ${rule.language}, which ships no grammar`,
     );
+}
+
+/** A present-but-empty `tools`/`fields` means the author meant to restrict and named nothing. */
+function assertScopeIsNotEmpty(rule: GuardrailRule): void {
   if (rule.tools !== undefined && rule.tools.length === 0)
     throw new Error(`guardrail rule ${rule.id} names no tool in \`tools\``);
   if (rule.fields !== undefined && rule.fields.length === 0)
     throw new Error(`guardrail rule ${rule.id} names no field in \`fields\``);
-  for (const filter of rule.filters ?? []) {
-    if (filter.regex.trim() === "")
-      throw new Error(`guardrail rule ${rule.id} has a filter with no regex`);
-    try {
-      new RegExp(filter.regex, filter.flags);
-    } catch (error) {
-      throw new Error(
-        `guardrail rule ${rule.id} has a filter that is not a regular expression: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-      );
-    }
+}
+
+function assertFilterCompiles(rule: GuardrailRule, filter: GuardrailFilter): void {
+  if (filter.regex.trim() === "")
+    throw new Error(`guardrail rule ${rule.id} has a filter with no regex`);
+  try {
+    new RegExp(filter.regex, filter.flags);
+  } catch (error) {
+    throw new Error(
+      `guardrail rule ${rule.id} has a filter that is not a regular expression: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
   }
+}
+
+export function assertUsableRule(rule: GuardrailRule, seen: Set<string>): void {
+  assertIdentity(rule, seen);
+  assertTextIsSet(rule, rule.domain, "domain");
+  assertTextIsSet(rule, rule.message, "message");
+  assertTextIsSet(rule, rule.query, "query");
+  assertGrammarIsShipped(rule);
+  assertScopeIsNotEmpty(rule);
+  for (const filter of rule.filters ?? []) assertFilterCompiles(rule, filter);
   seen.add(rule.id);
 }
 
