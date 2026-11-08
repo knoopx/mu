@@ -12,6 +12,7 @@
 
 import type { AdwaitaTheme } from "adwaita-gpuix";
 
+import { paneFill } from "../../core/lib/ui/theme";
 import { DIAGRAM_FONT_SIZE, DIAGRAM_TITLE_RATIO } from "../constants";
 
 /** The variables Pele reads, in the order it lists them. */
@@ -37,19 +38,26 @@ const PELE_VARS = [
 /**
  * What each of Pele's roles means in this app.
  *
- * A diagram is drawn on the card it sits in, so its page colour is that card's
- * and a node that has to cover an edge behind it covers it in the same ink.
- * Series colours come from the chart ramp, which is why a pie and a bar chart
- * in the same app agree with each other.
+ * **A diagram paints no page of its own** — Pele draws no canvas-filling rect,
+ * and the picture carries no backdrop, so its ink stands directly on the log.
+ * That makes the log's own page the only surface there is, and it is the colour
+ * every masking shape has to be: `--pele-bg` is the plate under an edge label,
+ * `--pele-surface` is a node's interior and a gantt's section band, and both
+ * exist to cover what passes behind them. Either of them a different colour
+ * from the page turns the picture into a darker card with holes in it, which is
+ * why this reads the page from core rather than picking a surface. A group
+ * still gets a band, one step up from the page. Series colours come from the
+ * chart ramp, which is why a pie and a bar chart in the same app agree.
  */
 function diagramVars(t: AdwaitaTheme): Record<string, string> {
   const series = t.color.chart.series;
+  const page = paneFill(t);
   const vars: Record<string, string> = {
-    "--pele-bg": t.color.surface.card,
+    "--pele-bg": page,
     "--pele-fg": t.color.text.primary,
     "--pele-muted": t.color.text.secondary,
     "--pele-line": t.color.text.secondary,
-    "--pele-surface": t.color.surface.card,
+    "--pele-surface": page,
     "--pele-surface-alt": t.color.surface.hover,
     "--pele-border": t.color.border.default,
     "--pele-accent": t.color.accent.base,
@@ -123,5 +131,3 @@ export function paintDiagram(svg: string, t: AdwaitaTheme): string {
   return drawText(painted, t, vars["--pele-fg"]);
 }
 
-/** The card colour a picture sits on, so the box behind it matches the ink. */
-export const diagramBackdrop = (t: AdwaitaTheme): string => t.color.surface.card;

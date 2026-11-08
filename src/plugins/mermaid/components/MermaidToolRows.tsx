@@ -4,8 +4,10 @@
  *
  * The chips, the notes and the running block are core's. This file owns two
  * things: the words a diagram answer has that no other answer has, and the box
- * a picture is scaled into. The markup is painted in the colours the app is
- * wearing right now, which is why the picture is drawn here and not in the tool.
+ * a picture is scaled into. That box is a *size* only: a picture gets no fill of
+ * its own, so its ink sits on the log like every other row's text does. The
+ * markup is painted in the colours the app is wearing right now, which is why
+ * the picture is drawn here and not in the tool.
  */
 
 import type { JSX } from "react";
@@ -41,7 +43,7 @@ import {
   MERMAID_TOOL_NAMES,
 } from "../constants";
 import { diagramName, diagramFailureLine, mermaidToolViewOf } from "../lib/toolView";
-import { diagramBackdrop, paintDiagram } from "../lib/palette";
+import { paintDiagram } from "../lib/palette";
 import type { MermaidToolView } from "../lib/toolView";
 
 const RUNNING_TEXT: Record<string, string> = {
@@ -174,8 +176,6 @@ export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
             height: box.h,
             maxWidth: "100%",
             flexShrink: 0,
-            borderRadius: t.radius.sm,
-            backgroundColor: diagramBackdrop(t),
           }}
         />
       )}

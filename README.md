@@ -147,7 +147,7 @@ When the figure has to be operated — a filter that changes what is plotted, a 
 
 ## Diagrams
 
-Some explanations are a picture. `mermaid-render` takes Mermaid source and draws it in the log: flowcharts, sequence, state and class diagrams, ER, gantt, pie, git graphs, mindmaps, C4, timelines, kanban. The picture is painted from the SVG the engine produced, in the colours the window is currently wearing, and it is scaled to the log rather than to the diagram's own canvas — so `path` also writes the `.svg` next to your project, which is the full-size one you can commit or open.
+Some explanations are a picture. `mermaid-render` takes Mermaid source and draws it in the log: flowcharts, sequence, state and class diagrams, ER, gantt, pie, git graphs, mindmaps, C4, timelines, kanban. The picture is painted from the SVG the engine produced, in the colours the window is currently wearing, with no card behind it — the ink stands on the log's own page, the way the prose around it does — and it is scaled to the log rather than to the diagram's own canvas — so `path` also writes the `.svg` next to your project, which is the full-size one you can commit or open.
 
 The model cannot see the picture, so its answer is a reading of it: the kind that came out, the canvas it was laid out on, how long it took, and every label the diagram says. That is what makes a wrong diagram visible to something without eyes — a label that is missing is a node that was never parsed. A source the parser refuses answers with its code, its line, its column and the line it stopped on, which is a fixable thing; the row shows the same snippet with its caret.
 
