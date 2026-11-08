@@ -15,6 +15,12 @@ import { addInputListener } from "../../../../window/window";
 
 export type JumpDirection = -1 | 1;
 
+/**
+ * How a key asks to move the log: to the point before or after the one showing,
+ * or to one of the two ends of it.
+ */
+export type JumpMove = JumpDirection | "start" | "end";
+
 const SETTLE_PASSES = 2;
 
 function jumpTargetRow(
@@ -45,20 +51,38 @@ function matchesBinding(event: EventPayload, id: string): boolean {
   );
 }
 
+export interface ListJumpBindings {
+  prev: string;
+
+  next: string;
+
+  /** The key that sends the log to its first row, when it has one. */
+  start?: string;
+
+  /** The key that sends the log to its last row, when it has one. */
+  end?: string;
+}
+
 export interface ListJumpOptions {
   listRef: { current: PublicInstance | null };
 
   targets: readonly number[];
 
+  /**
+   * The last row the list draws, which is where an end jump lands: 0 when the
+   * log has nothing past its first row, and then has no end to jump to.
+   */
+  lastRow: number;
+
   enabled: boolean;
 
-  bindings: { prev: string; next: string };
+  bindings: ListJumpBindings;
 
   onJump?: (target: number, isEnd: boolean) => void;
 }
 
 export interface ListJump {
-  jump: (direction: JumpDirection) => boolean;
+  jump: (move: JumpMove) => boolean;
 
   onVisibleRange: (event: EventPayload) => void;
 }
@@ -132,22 +156,26 @@ function useJumpTracker() {
 const isLastStop = (stops: readonly number[], target: number): boolean =>
   target >= (stops[stops.length - 1] as number);
 
-/** Which way a key asks to jump, when it is one of the two jump bindings. */
-function jumpDirectionOf(
+/** Which way a key asks to move, when it is one of the jump bindings. */
+function jumpMoveOf(
   event: EventPayload,
-  bindings: { prev: string; next: string },
-): JumpDirection | null {
+  bindings: ListJumpBindings,
+): JumpMove | null {
+  if (bindings.start !== undefined && matchesBinding(event, bindings.start))
+    return "start";
+  if (bindings.end !== undefined && matchesBinding(event, bindings.end))
+    return "end";
   if (matchesBinding(event, bindings.prev)) return -1;
   if (matchesBinding(event, bindings.next)) return 1;
   return null;
 }
 
 export function useListJump(options: ListJumpOptions): ListJump {
-  const { listRef, targets, enabled, bindings, onJump } = options;
+  const { listRef, targets, lastRow, enabled, bindings, onJump } = options;
   const renderer = useGpuixRequired();
 
-  const live = useRef({ targets, enabled, onJump });
-  live.current = { targets, enabled, onJump };
+  const live = useRef({ targets, enabled, onJump, lastRow });
+  live.current = { targets, enabled, onJump, lastRow };
 
   const tracker = useJumpTracker();
   const [request, setRequest] = useState<{
@@ -173,21 +201,50 @@ export function useListJump(options: ListJumpOptions): ListJump {
     return anchor != null && anchor.length > 0 ? (anchor[0] ?? 0) : 0;
   }, [listRef, renderer]);
 
-  const jump = useCallback(
-    (direction: JumpDirection): boolean => {
-      if (live.current.enabled === false) return false;
-      const stops = live.current.targets;
-      if (stops.length < 2) return false;
-      const from = tracker.base() ?? anchorRow();
-      const target = jumpTargetRow(stops, from, direction);
-      if (target === null) return false;
-      tracker.arm(target);
-      live.current.onJump?.(target, isLastStop(stops, target));
+  /**
+   * Send the list to a row, and say whether the log is now at its end.
+   *
+   * `chase` is whether the row is one the list can be nudged onto: a jump
+   * between points asks again until the report agrees, because the heights on
+   * the way there may still be estimates.
+   */
+  const moveTo = useCallback(
+    (target: number, isEnd: boolean, chase: boolean): boolean => {
+      if (chase === true) tracker.arm(target);
+      live.current.onJump?.(target, isEnd);
       seqRef.current += 1;
       setRequest({ target, seq: seqRef.current });
       return true;
     },
-    [anchorRow, tracker],
+    [tracker],
+  );
+
+  const jump = useCallback(
+    (move: JumpMove): boolean => {
+      if (live.current.enabled === false) return false;
+      const stops = live.current.targets;
+
+      if (move === "start" || move === "end") {
+        const last = live.current.lastRow;
+        if (last <= 0) return false;
+        // Asking the list for the last row of the log is a request that runs
+        // past what fits, so it shows the bottom it has and the report that
+        // follows can never name the row that was asked for: there is nothing
+        // to chase. The first row is a row the list can be nudged onto.
+        return moveTo(
+          move === "start" ? 0 : last,
+          move === "end",
+          move === "start",
+        );
+      }
+
+      if (stops.length < 2) return false;
+      const from = tracker.base() ?? anchorRow();
+      const target = jumpTargetRow(stops, from, move);
+      if (target === null) return false;
+      return moveTo(target, isLastStop(stops, target), true);
+    },
+    [anchorRow, moveTo, tracker],
   );
 
   const jumpRef = useRef(jump);
@@ -221,10 +278,10 @@ export function useListJump(options: ListJumpOptions): ListJump {
   useEffect(
     () =>
       addInputListener((event) => {
-        const direction = jumpDirectionOf(event, bindings);
-        if (direction !== null) jumpRef.current(direction);
+        const move = jumpMoveOf(event, bindings);
+        if (move !== null) jumpRef.current(move);
       }),
-    [bindings.prev, bindings.next],
+    [bindings.prev, bindings.next, bindings.start, bindings.end],
   );
 
   return { jump, onVisibleRange };

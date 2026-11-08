@@ -24,3 +24,16 @@ export function transcriptPointRows(
   });
   return [...rows].sort((a, b) => a - b);
 }
+
+/**
+ * The row the last item starts on: the end of the log.
+ *
+ * A streaming run hangs a loader below the items, but asking the list for the
+ * row of its last item is already a request past what fits, so the list lands
+ * on its bottom either way and the end stays the items'.
+ *
+ * A log with a single row has no end past its first row and answers 0.
+ */
+export function transcriptLastRow(items: readonly TranscriptItem[]): number {
+  return items.length === 0 ? 0 : (items.length - 1) * TRANSCRIPT_ROW_STRIDE;
+}

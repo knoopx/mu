@@ -182,6 +182,7 @@ Three themes (Light, Dark, Nightsky) and nine accent colours, picked from the co
 | `Ctrl` + `N`                   | New session                        |
 | `Ctrl` + `Shift` + `N`         | New window                         |
 | `Ctrl` + `PageUp` / `PageDown` | Previous / next conversation point |
+| `Ctrl` + `Home` / `End`        | Start / end of the conversation    |
 | `Ctrl` + `U`                   | Delete to line start               |
 | `Ctrl` + `W`                   | Delete word                        |
 | `Ctrl` + `A` / `Ctrl` + `E`    | Line start / line end              |

@@ -11,7 +11,10 @@ import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { SessionPreviewData } from "../lib/session/sessionList";
 import type { ComposerMode } from "../lib/composer/mode";
 import { useListJump } from "../lib/ui/listJump";
-import { transcriptPointRows } from "../lib/ui/transcriptPoints";
+import {
+  transcriptLastRow,
+  transcriptPointRows,
+} from "../lib/ui/transcriptPoints";
 
 /**
  * What the log is showing, and how to move through it.
@@ -60,12 +63,19 @@ export function useTranscriptView(
 
   const stats = useMemo(() => turnStatsById(source), [source]);
   const pointRows = useMemo(() => transcriptPointRows(source), [source]);
+  const lastRow = transcriptLastRow(source);
 
   const jump = useListJump({
     listRef,
     targets: pointRows,
-    enabled: jumpingIsOpen(mode, askOpen, pointRows.length),
-    bindings: { prev: "transcript.prevPoint", next: "transcript.nextPoint" },
+    lastRow,
+    enabled: jumpingIsOpen(mode, askOpen, pointRows.length, lastRow),
+    bindings: {
+      prev: "transcript.prevPoint",
+      next: "transcript.nextPoint",
+      start: "transcript.start",
+      end: "transcript.end",
+    },
     onJump: (_target, isEnd) => followTail(isEnd),
   });
 
@@ -80,13 +90,15 @@ export function useTranscriptView(
 
 /**
  * Jumping belongs to the log itself: a draft is being written (not a command
- * or a panel), no question is waiting in the composer slot, and there is more
- * than one point to walk between.
+ * or a panel), no question is waiting in the composer slot, and the log has
+ * somewhere to move — more than one point to walk between, or more than one row
+ * to jump an end of.
  */
 function jumpingIsOpen(
   mode: ComposerMode,
   askOpen: boolean,
   pointCount: number,
+  lastRow: number,
 ): boolean {
-  return mode.kind === "draft" && !askOpen && pointCount > 1;
+  return mode.kind === "draft" && !askOpen && (pointCount > 1 || lastRow > 0);
 }

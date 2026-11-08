@@ -101,6 +101,8 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
       "ctrl+pagedown",
       "Scroll to the next conversation point",
     ),
+    def("transcript.start", "ctrl+home", "Scroll to the start of the log"),
+    def("transcript.end", "ctrl+end", "Scroll to the end of the log"),
   ],
   ui: [
     def(
