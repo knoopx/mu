@@ -50,8 +50,8 @@
       adwaitaSrc = pkgs.fetchFromGitHub {
         owner = "knoopx";
         repo = "adwaita-gpuix";
-        rev = "1fe1f1e0a53d5d73dcdc14ebc22a959f4d1940f5";
-        hash = "sha256-oDx18LVECwJqPAfmomm2O/5GeXDLLeV3VJZUFw2EoJ8=";
+        rev = "b4908cf45aa7cf8a33fe0d80cd0a05eb001e59ae";
+        hash = "sha256-jY4xWvR6WolpNivzoo9rnmHg2pdFFd+Oqgzd0/eE8iw=";
       };
 
       # Every npm (registry) dependency, direct and transitive, of the bundle
