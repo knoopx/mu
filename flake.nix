@@ -510,7 +510,16 @@
             mkdir -p node_modules/yaml && tar xzf ${npmDeps.yaml} -C node_modules/yaml --strip-components=1
             mkdir -p node_modules/zod && tar xzf ${npmDeps.zod} -C node_modules/zod --strip-components=1
 
-            bun build --compile app.tsx --outfile $out/lib/mu
+            # codemode's worker is a second entrypoint, not an import: in a
+            # bun --compile binary pi spawns it at the literal path
+            # ./src/extensions/codemode/worker.ts (resolveCodemodeWorkerSpecifier
+            # in dist/config.js), and a compiled executable can only start a
+            # worker it embedded as an entrypoint. The shim sits at that path in
+            # mu's tree — pi's path, so it cannot move — and `bun dev` needs it
+            # there too, which is why @earendil-works/pi-codemode is a direct
+            # dependency.
+            bun build --compile app.tsx ./src/extensions/codemode/worker.ts \
+              --outfile $out/lib/mu
 
             # A bun --compile binary cannot resolve the NAPI-RS platform
             # package from disk, so ship the .node beside the binary and point
@@ -518,6 +527,28 @@
             mkdir -p $out/lib/mu-native
             cp node_modules/@gpuix/native-linux-x64-gnu/gpuix-native.linux-x64-gnu.node \
               $out/lib/mu-native/
+
+            # Photon (pi's image resizer) is bundled as JS only: its glue reads
+            # photon_rs_bg.wasm with fs.readFileSync(__dirname + "/photon_rs_bg.wasm"),
+            # so a bun --compile binary asks the build directory for it and gets
+            # ENOENT. pi's loader then falls back to dirname(process.execPath),
+            # so ship the wasm beside the binary — the same thing pi's own
+            # release does next to dist/pi. Without it every image read answers
+            # "could not be resized below the inline image size limit".
+            cp node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm $out/lib/
+
+            # QuickJS is the VM codemode scripts run in, and pi reads its wasm
+            # off disk. pi's own bun entry embeds the file and passes pi the path;
+            # that setter is not exported, so a third-party binary falls back to
+            # require.resolve("quickjs-wasi/quickjs.wasm"), which inside a compiled
+            # executable searches NODE_PATH and the process cwd — never the
+            # executable's directory. Ship the wasm under lib/node_modules and
+            # point NODE_PATH at it from the wrapper, so codemode works however mu
+            # is launched (from a desktop entry the cwd is the home directory).
+            mkdir -p $out/lib/node_modules/quickjs-wasi
+            cp node_modules/quickjs-wasi/package.json \
+              node_modules/quickjs-wasi/quickjs.wasm \
+              $out/lib/node_modules/quickjs-wasi/
 
             # XDG icon and desktop entry: the scalable mark (μι) and the
             # generated .desktop file, in the hicolor layout a desktop
@@ -533,6 +564,7 @@
             makeWrapper $out/lib/mu $out/bin/mu \
               --set LD_LIBRARY_PATH "${libs}" \
               --set NAPI_RS_NATIVE_LIBRARY_PATH "$out/lib/mu-native/gpuix-native.linux-x64-gnu.node" \
+              --set NODE_PATH "$out/lib/node_modules" \
               --prefix XDG_DATA_DIRS : "$out/share"
           '';
         };

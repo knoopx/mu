@@ -1,31 +1,24 @@
 import { SettingsManager } from "@earendil-works/pi-coding-agent";
 
 /**
- * mu sends images to the model whole, with pi's auto-resize switched off.
+ * The SettingsManager mu hands pi for a session. mu overrides nothing in it.
  *
- * pi resizes every image before it is sent, and every resize path in mu's
- * shipped binary fails: the resize worker cannot start from an embedded bundle,
- * and the in-process fallback needs photon's `photon_rs_bg.wasm`, which the
- * binary's own resolver cannot find next to the executable. `resizeImage`
- * returns null, so `processImage` reports
- * "[Image omitted: could not be resized below the inline image size limit]" for
- * every image, at every size — the read tool can never show a picture.
- * (The same wasm rule that keeps guardrails' grammars embedded: see AGENTS.md.)
- *
- * With auto-resize off the pipeline is `normalizeImage` alone, which passes
- * PNG, JPEG, GIF and WebP through as they are, with no wasm in sight.
- *
- * The override is in memory (`applyOverrides` merges and never writes), so mu
- * does not rewrite the user's settings file: the pi CLI, where photon does
- * load, keeps downscaling large images.
+ * pi resizes every image before it sends one: the bytes are converted to a
+ * supported format, corrected for EXIF orientation and brought under the
+ * provider's inline limit, and a note tells the model the coordinate scale.
+ * That work runs on Photon's wasm, which photon-node reads **from disk** and
+ * which pi's resize worker cannot reach from an embedded bundle, so for a time
+ * mu switched `images.autoResize` off to dodge a resize path that could never
+ * run inside a `bun build --compile` binary. The dodge was both unnecessary and
+ * inert — pi's `SettingsManager.reload()` during resource loading rebuilds the
+ * merged settings and drops any `applyOverrides` — and the shipped binary can
+ * run the resize path once the package installs `photon_rs_bg.wasm` beside the
+ * executable, which `flake.nix` does. So the settings stay pi's own, and the
+ * wasm is a packaging obligation, not a settings one.
  */
 export function agentSettingsManager(
   cwd: string,
   agentDir: string,
 ): SettingsManager {
-  const settings = SettingsManager.create(cwd, agentDir);
-  settings.applyOverrides({
-    images: { ...settings.getSettings().images, autoResize: false },
-  });
-  return settings;
+  return SettingsManager.create(cwd, agentDir);
 }

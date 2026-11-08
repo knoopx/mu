@@ -1,6 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
+    "src/extensions/codemode/worker.ts",
     ".storybook/main.tsx",
     ".storybook/story-helpers.tsx",
     "stories/**/*.stories.tsx",
