@@ -22,7 +22,10 @@ const CONTEXT_RING_ANGLE = 90;
  * finish line unpainted. */
 export const CONTEXT_RING_FADE = 0.1;
 
-export const CONTEXT_WARN_FRACTION = 0.7;
+/** Where the ring's ink turns from green to yellow: half the context spent. */
+export const CONTEXT_WARN_FRACTION = 0.5;
+
+/** And from yellow to red: the last tenth of the context. */
 export const CONTEXT_DANGER_FRACTION = 0.9;
 
 function pillBox(t: AdwaitaTheme): StyleDesc {
@@ -80,12 +83,16 @@ export function ComposerPill(props: ComposerPillProps): JSX.Element {
 export const contextFraction = (used: number, total: number): number =>
   total > 0 ? Math.max(0, Math.min(1, used / total)) : 0;
 
+/** The ring says how much of the context is spent, so it wears the theme's three
+ * functional colours rather than its accent: green while there is room, yellow
+ * past half, red in the last tenth. The accent would say "the app's colour", not
+ * "how close the window is to compacting". */
 export const contextRingColor = (t: AdwaitaTheme, fraction: number): string =>
   fraction >= CONTEXT_DANGER_FRACTION
     ? t.color.functional.destructive
     : fraction >= CONTEXT_WARN_FRACTION
       ? t.color.functional.warning
-      : t.color.accent.base;
+      : t.color.functional.success;
 
 /** Where the fill ends along the gradient line. */
 export const contextRingEdge = (fraction: number): number =>
