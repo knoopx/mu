@@ -7,6 +7,7 @@
  */
 
 import type { JSX } from "react";
+import type { StyleDesc } from "@gpuix/react";
 import {
   Badge,
   Skeleton,
@@ -35,9 +36,10 @@ import {
 import {
   toolBodyColumn,
   toolGapColumn,
-  toolGrow,
   toolLine,
   toolMark,
+  toolMonoOneLine,
+  toolOneLine,
   toolText,
 } from "../lib/ui/toolRows";
 import {
@@ -52,7 +54,6 @@ import {
   toolFigureSlot,
   toolIdText,
   toolKeyColumn,
-  toolMonoGrow,
   toolStatusIcon,
   toolStatusTone,
   toolToneColor,
@@ -143,6 +144,13 @@ function ToolMeterBar({
   );
 }
 
+/** A trailing figure is a set of numbers and words measured in mono, so its
+ *  digits line up down the column the way the id column's do. */
+const toolFigureText = (t: AdwaitaTheme): StyleDesc => ({
+  fontFamily: t.type.fontFamilyMono,
+  flexShrink: 0,
+});
+
 /** The body of a row: what it is about, where it is, and the lines under it. */
 function ToolRowBody({
   primary,
@@ -154,17 +162,20 @@ function ToolRowBody({
   members: readonly string[];
 }): JSX.Element {
   const t = useAdwaita();
+  // Two lines of text per row and never more: each line is one line of text with
+  // a marked cut, so no row of the table stands taller than its neighbours and
+  // the figures stay level down the list.
   const lines = (
     <>
       <T
         size="list"
         color={primary === "" ? mutedText(t) : t.color.text.primary}
-        style={toolGrow}
+        style={toolOneLine}
       >
         {primary === "" ? "—" : primary}
       </T>
       {secondary === "" ? null : (
-        <T size="caption" color={mutedText(t)} style={toolMonoGrow(t)}>
+        <T size="caption" color={mutedText(t)} style={toolMonoOneLine(t)}>
           {secondary}
         </T>
       )}
@@ -193,7 +204,7 @@ function ToolRowBody({
             key={member}
             size="caption"
             color={mutedText(t)}
-            style={toolMonoGrow(t)}
+            style={toolMonoOneLine(t)}
           >
             {`↳ ${member}`}
           </T>
@@ -229,7 +240,7 @@ function ToolRowFigures({
   return (
     <div style={toolFigureRow(t)}>
       {columns.meter === 0 ? null : (
-        <div style={toolFigureSlot(columns.meter)}>
+        <div style={toolFigureSlot(columns.meter, "start")}>
           {meter === null || meter === undefined ? null : (
             <ToolMeterBar
               meter={meter}
@@ -239,16 +250,16 @@ function ToolRowFigures({
         </div>
       )}
       {columns.trailing === 0 ? null : (
-        <div style={toolFigureSlot(columns.trailing)}>
+        <div style={toolFigureSlot(columns.trailing, "end")}>
           {trailing === "" ? null : (
-            <T size="micro" color={mutedText(t)}>
+            <T size="micro" color={mutedText(t)} style={toolFigureText(t)}>
               {trailing}
             </T>
           )}
         </div>
       )}
       {columns.badge === 0 ? null : (
-        <div style={toolFigureSlot(columns.badge)}>
+        <div style={toolFigureSlot(columns.badge, "end")}>
           {badge === "" ? null : (
             <Badge size="sm" variant={toolBadgeVariant(badge, variants)}>
               {badge}

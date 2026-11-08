@@ -148,15 +148,19 @@ const rowOfComplexity = (record: JsonRecord): ComplexityRow => ({
   meter: { score: 0, worst: 0 },
 });
 
-/** Each row's own score, against the worst score in the same answer — the pair a meter is drawn from. */
+/**
+ * Each row's own score, against the worst score in the same answer — the pair a
+ * meter is drawn from. The score is CRAP, the largest figure the row prints, on
+ * purpose: a bar must be a reading of a number the reader can see, so two rows
+ * that both say `CRAP 110` draw the same bar. Scoring the row on its worst
+ * complexity figure instead leaves a bar that measures something no line of the
+ * row says, and equal numbers draw unequal bars.
+ */
 function metered(rows: readonly ComplexityRow[]): ComplexityRow[] {
-  const worst = rows.reduce(
-    (top, row) => Math.max(top, row.cyclomatic, row.cognitive),
-    0,
-  );
+  const worst = rows.reduce((top, row) => Math.max(top, Math.round(row.crap)), 0);
   return rows.map((row) => ({
     ...row,
-    meter: { score: Math.max(row.cyclomatic, row.cognitive), worst },
+    meter: { score: Math.round(row.crap), worst },
   }));
 }
 

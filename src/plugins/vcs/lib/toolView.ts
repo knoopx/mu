@@ -267,8 +267,9 @@ function rowOf(
   primary: string,
   secondary: string,
   badge: string,
+  trailing = "",
 ): VcsRowView {
-  return { key, primary, secondary, badge };
+  return { key, primary, secondary, badge, trailing };
 }
 
 /** "12 commits" / "1 commit" — the count a headline opens with. */
@@ -309,7 +310,7 @@ function logView(
     ["format", args.format === "full" ? "full" : ""],
   );
   v.headline =
-    commits.length === 0 ? "" : tail(counted(commits.length, "commit"), scope);
+    commits.length === 0 ? "" : counted(commits.length, "commit");
   v.rows = commits.map((row) =>
     rowOf(
       row.change,
@@ -349,9 +350,7 @@ function diffView(details: Details, itemStatus: string): VcsToolView {
     ["path", label],
   );
   v.headline =
-    status === "ok" && lines > 0
-      ? tail(`${counted(lines, "line")} of patch`, label)
-      : "";
+    status === "ok" && lines > 0 ? `${counted(lines, "line")} of patch` : "";
   v.patch = typeof details.diff === "string" ? details.diff : "";
   v.note = noteFor(
     status,
@@ -369,10 +368,10 @@ function historyView(details: Details, itemStatus: string): VcsToolView {
   const revisions = rowsOf<HistoryRow>(details.rows);
 
   v.cells = cellsOf(["path", path], ["vcs", textOf(details.vcs)]);
+  // The count only: the path is a chip and the header already says it, and a
+  // headline that repeats it spends the line on nothing new.
   v.headline =
-    revisions.length === 0
-      ? ""
-      : tail(counted(revisions.length, "revision"), path);
+    revisions.length === 0 ? "" : counted(revisions.length, "revision");
   v.rows = revisions.map((row, index) =>
     rowOf(
       row.change === "" ? row.hash : row.change,
@@ -380,6 +379,9 @@ function historyView(details: Details, itemStatus: string): VcsToolView {
         ? NO_DESCRIPTION
         : firstLineOf(row.subject),
       tail(row.hash, row.author, row.date),
+      // A position, not a state: it stands in the mono figure column, not in a
+      // status pill, or an ordinal wears the face of a word like `conflicted`.
+      "",
       `#${String(index + 1)}`,
     ),
   );
@@ -400,7 +402,7 @@ function showView(details: Details, itemStatus: string): VcsToolView {
     ["path", path],
     ["lines", lines === 0 ? "" : String(lines)],
   );
-  v.headline = status === "ok" ? tail(counted(lines, "line"), path) : "";
+  v.headline = status === "ok" ? counted(lines, "line") : "";
   v.content =
     status === "binary"
       ? ""
@@ -564,7 +566,7 @@ function hunkListView(
     ["files", files.size === 0 ? "" : counted(files.size, "file")],
   );
   v.headline =
-    hunks.length === 0 ? "" : tail(counted(hunks.length, "hunk"), rev);
+    hunks.length === 0 ? "" : counted(hunks.length, "hunk");
   // The badge says the hunk's type, so the muted line does not say it twice.
   v.rows = hunks.map((row) =>
     rowOf(row.hunk, row.file, `${row.before} → ${row.after}`, row.type),

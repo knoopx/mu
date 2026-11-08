@@ -119,6 +119,28 @@ export function toolCell(t: AdwaitaTheme, first: boolean): StyleDesc {
   };
 }
 
+/**
+ * A row's text is one line, and a cut is marked.
+ *
+ * A row of a table is one line of text. A line that wraps makes that row taller
+ * than its neighbours, drops its figures out of the row's pitch and gives the
+ * whole table two rhythms, so wrapping is off here and the engine truncates with
+ * its own ellipsis. That also puts the cut at the column's real right edge: a
+ * wrapped line stops at whatever width an earlier pass settled on, which is how a
+ * title was seen to break a couple of hundred pixels short of the space it had.
+ */
+export const toolOneLine: StyleDesc = {
+  ...toolGrow,
+  whiteSpace: "nowrap",
+  textOverflow: "ellipsis",
+};
+
+/** The same line in mono — a path, a hash, a set of figures. */
+export const toolMonoOneLine = (t: AdwaitaTheme): StyleDesc => ({
+  ...toolOneLine,
+  fontFamily: t.type.fontFamilyMono,
+});
+
 /** The body of a data row: it takes the width the id column and the badge leave. */
 export const toolBodyColumn: StyleDesc = {
   display: "flex",

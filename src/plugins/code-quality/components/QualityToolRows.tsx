@@ -38,7 +38,7 @@ import {
   CODE_SYMBOL_REFERENCES_TOOL,
   QUALITY_BADGE_VARIANTS,
 } from "../constants";
-import { qualityCellOf, qualityRowsOf, qualityToolViewOf } from "../lib/toolView";
+import { qualityCellOf, qualityToolViewOf } from "../lib/toolView";
 import type { QualityToolStatus, QualityToolView } from "../types";
 
 const RUNNING_TEXT: Record<string, string> = {
@@ -109,16 +109,11 @@ export const qualityToolPreviewOf = (item: ToolTranscriptItem): string =>
     headOf,
   );
 
+/** The header says which project the call read, and nothing else: the counts are
+ *  the rows' to say, and saying them twice put one copy where it would be cut
+ *  mid-word by the header's own budget. */
 function headOf(tool: string, view: QualityToolView): string {
-  const scope = qualityCellOf(view, SCOPE_LABELS[tool] ?? "scope");
-  const rows = qualityRowsOf(view).length;
-  const parts = [scope];
-
-  if (view.headline !== "") parts.push(view.headline);
-  if (tool === CODE_SYMBOL_REFERENCES_TOOL && view.headline === "")
-    parts.push(`${String(rows)} edges`);
-
-  return parts.filter((part) => part !== "").join(" · ");
+  return qualityCellOf(view, SCOPE_LABELS[tool] ?? "scope");
 }
 
 export interface QualityToolRowsProps {
@@ -151,7 +146,7 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
       <ToolSections sections={view.sections} variants={QUALITY_BADGE_VARIANTS} />
       <ToolTruncated
         count={view.omitted}
-        text={`${String(view.omitted)} more not shown — raise \`limit\` to read them`}
+        text={`${String(view.omitted)} more not shown — widen limit to read them`}
       />
       <ToolStatusNote
         status={status}

@@ -31,7 +31,7 @@ const COMPLEXITY_ROWS = [
     exceeded: "crap",
     severity: "high",
     fixable: false,
-    meter: { score: 18, worst: 18 },
+    meter: { score: 342, worst: 342 },
   },
   {
     path: "src/plugins/core/lib/agent/transcriptState.ts",
@@ -44,7 +44,7 @@ const COMPLEXITY_ROWS = [
     exceeded: "crap",
     severity: "high",
     fixable: false,
-    meter: { score: 17, worst: 18 },
+    meter: { score: 306, worst: 342 },
   },
   {
     path: "src/plugins/guardrails/lib/panelRows.ts",
@@ -57,7 +57,7 @@ const COMPLEXITY_ROWS = [
     exceeded: "cognitive crap",
     severity: "moderate",
     fixable: false,
-    meter: { score: 19, worst: 18 },
+    meter: { score: 272, worst: 342 },
   },
 ];
 

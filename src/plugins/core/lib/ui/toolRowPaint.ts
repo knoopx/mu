@@ -22,11 +22,12 @@ import {
   HAIRLINE,
   MARK_HANG,
   METER_MIN_FILL,
+  METER_TRACK_REMAINDER,
   METER_TRACK_WIDTH,
   badgeWidth,
   figureGap,
   idColumn,
-  textWidth,
+  monoTextWidth,
 } from "./tokens";
 import { toolGapColumn, toolLine } from "./toolRows";
 
@@ -163,7 +164,12 @@ export interface ToolRowFigureColumns {
   badge: number;
 }
 
-/** The columns a list of rows needs, measured off the widest thing each column holds. */
+/**
+ * The columns a list of rows needs, measured off the widest thing each column
+ * holds. The trailing figure is a set of numbers, so it is budgeted in the mono
+ * it is drawn in — a proportional budget leaves the widest figure spilling out
+ * of its column and the column below it out of step.
+ */
 export function figureColumnsOf(
   rows: readonly ToolPaintRow[],
   t: AdwaitaTheme,
@@ -178,7 +184,7 @@ export function figureColumnsOf(
   }
   return {
     meter,
-    trailing: trailingChars === 0 ? 0 : textWidth(t, trailingChars),
+    trailing: trailingChars === 0 ? 0 : monoTextWidth(t, trailingChars, t.type.micro),
     badge: badgeChars === 0 ? 0 : badgeWidth(t, badgeChars),
   };
 }
@@ -193,12 +199,24 @@ export const toolFigureRow = (t: AdwaitaTheme): StyleDesc => ({
   flexShrink: 0,
 });
 
-/** One figure's column: a fixed width, and the ink stands at its left edge so
- *  every row's figure starts at the same x. */
-export const toolFigureSlot = (width: number): StyleDesc => ({
+/**
+ * One figure's column: a fixed width, and the ink pinned to one named edge of
+ * it. A meter grows from the column's start, so every bar in a list opens at the
+ * same x and the only thing that moves is where it stops; a count or a pill reads
+ * against the column's end, so a column of words of different lengths keeps one
+ * edge instead of a ragged one. A slot that names no edge lets the word decide
+ * the column, and the column of every row under it moves with it.
+ */
+export type ToolFigureAlign = "start" | "end";
+
+export const toolFigureSlot = (
+  width: number,
+  align: ToolFigureAlign = "start",
+): StyleDesc => ({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
+  justifyContent: align === "end" ? "flex-end" : "flex-start",
   width,
   flexShrink: 0,
 });
@@ -251,11 +269,16 @@ export const toolMonoGrow = (t: AdwaitaTheme): StyleDesc => ({
   fontFamily: t.type.fontFamilyMono,
 });
 
-/** How far a score fills its meter track — never a sliver too thin to see. */
+/** How far a score fills its meter track — never a sliver too thin to see, and
+ *  never the whole plate, so the plate stays the thing the bar is measured by. */
 export const meterFill = (meter: ToolRowMeter): number => {
   if (meter.worst <= 0) return 0;
-  return Math.max(
-    METER_MIN_FILL,
-    Math.round(Math.min(1, meter.score / meter.worst) * METER_TRACK_WIDTH),
+  const room = METER_TRACK_WIDTH - METER_TRACK_REMAINDER;
+  return Math.min(
+    room,
+    Math.max(
+      METER_MIN_FILL,
+      Math.round(Math.min(1, meter.score / meter.worst) * room),
+    ),
   );
 };

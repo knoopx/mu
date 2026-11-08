@@ -192,12 +192,18 @@ export const HAIRLINE = CONTROL.dividerThickness;
 
 /** A score's meter: how wide its track is, and the rule that fills it. The rule
  *  is a pill, so its radius is half its height rather than a second number. */
-export const METER_TRACK_WIDTH = 84;
-export const METER_RULE_HEIGHT = 4;
+export const METER_TRACK_WIDTH = 96;
+export const METER_RULE_HEIGHT = 10;
 export const METER_RULE_RADIUS = METER_RULE_HEIGHT / 2;
 
 /** The least a meter shows of a non-zero score, so a small finding is still visible. */
-export const METER_MIN_FILL = 3;
+export const METER_MIN_FILL = 6;
+
+/** How much of the plate the fullest bar leaves showing. A bar that covers its
+ *  track entirely has no edge left to measure itself against, so the run's worst
+ *  score reads as a bar of no particular length; two pixels of plate is the
+ *  scale's own granularity, well under one point of score. */
+export const METER_TRACK_REMAINDER = 2;
 
 /** A dot that carries a colour role inside a line of text — a language, a state. */
 export const STATUS_DOT = 8;

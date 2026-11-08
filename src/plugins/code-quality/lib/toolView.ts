@@ -142,7 +142,10 @@ const meterOf = (details: unknown): ToolRowMeter | null => {
   return worst === 0 ? null : { score: numberOf(meter, "score"), worst };
 };
 
-/** One finding: a location in the key column, the thing and where it is, and how severe it is. */
+/** One finding: a location in the key column, the thing and where it is, the
+ *  figures it trails, and how severe it is. The figures go in the trailing
+ *  column rather than running on after the path, because a long path pushed
+ *  them onto a second line and left one row of the list taller than the rest. */
 function findingRow(
   key: string,
   primary: string,
@@ -150,17 +153,22 @@ function findingRow(
   badge: string,
   tone: ToolRowTone,
   meter: ToolRowMeter | null,
+  trailing = "",
 ): ToolPaintRow {
-  return { key, primary, secondary, badge, tone, meter };
+  return { key, primary, secondary, badge, tone, meter, trailing };
 }
 
-const complexityText = (row: ComplexityRow, withPath: boolean): string =>
+/** Where a complexity finding is. */
+const complexityWhere = (row: ComplexityRow): string => row.path;
+
+/** What a complexity finding measures — the figures a reader scans down a column,
+ *  and the `CRAP` the row's meter is drawn against. */
+const complexityFigures = (row: ComplexityRow): string =>
   partsLine(
-    withPath ? row.path : "",
     `CC ${String(row.cyclomatic)}`,
     `cog ${String(row.cognitive)}`,
     `CRAP ${String(Math.round(row.crap))}`,
-    withPath ? `${String(row.lines)} ln` : "",
+    `${String(row.lines)} ln`,
   );
 
 
@@ -192,9 +200,6 @@ function complexityView(
       ? ""
       : partsLine(
           `${counted(numberOf(details, "above_threshold"), "function")} over threshold`,
-          rows.length < numberOf(details, "above_threshold")
-            ? `showing ${String(rows.length)}`
-            : "",
         );
   v.sections = section(
     "",
@@ -202,10 +207,11 @@ function complexityView(
       findingRow(
         row.at,
         row.symbol === "" ? "(anonymous)" : row.symbol,
-        complexityText(row, true),
+        complexityWhere(row),
         row.severity,
         severityTone(row.severity),
         meterOf(row.meter),
+        complexityFigures(row),
       ),
     ),
   );
@@ -247,7 +253,6 @@ function deadCodeView(
       ? ""
       : partsLine(
           counted(numberOf(details, "total_issues"), "issue"),
-          v.omitted > 0 ? `showing ${String(rows.length)}` : "",
         );
   v.sections = section(
     "",
@@ -301,7 +306,6 @@ function duplicatesView(
       : partsLine(
           counted(rows.length, "clone group"),
           percentage === 0 ? "" : `${percentage.toFixed(2)}% duplicated`,
-          v.omitted > 0 ? `showing ${String(rows.length)}` : "",
         );
 
   v.sections = section(
@@ -356,7 +360,6 @@ function reviewView(
       : partsLine(
           `${counted(numberOf(details, "entities_changed"), "entity")} changed`,
           ...risks.map((risk) => `${String(risk.count)} ${risk.kind}`),
-          v.omitted > 0 ? `showing ${String(rows.length)}` : "",
         );
   v.sections = section(
     "",
@@ -367,13 +370,15 @@ function reviewView(
         partsLine(
           row.type,
           row.file,
-          row.dependents > 0 ? `${String(row.dependents)} deps in` : "",
           row.public_api ? "public api" : "",
-          `blast ${String(row.blast)}`,
         ),
         row.risk === "" ? row.change : `${row.risk} ${row.change}`,
         severityTone(row.risk),
         meterOf(row.meter),
+        partsLine(
+          row.dependents > 0 ? `${String(row.dependents)} deps in` : "",
+          `blast ${String(row.blast)}`,
+        ),
       ),
     ),
   );
@@ -413,7 +418,6 @@ function surfaceView(
           numberOf(details, "duplicates") > 0
             ? `${String(numberOf(details, "duplicates"))} clone matches`
             : "",
-          v.omitted > 0 ? `showing ${String(rows.length)}` : "",
         );
 
   const surface: ToolPaintRow[] = rows.map((row) => ({
@@ -428,10 +432,11 @@ function surfaceView(
     findingRow(
       row.at,
       row.symbol,
-      complexityText(row, false),
+      "",
       row.severity,
       severityTone(row.severity),
       meterOf(row.meter),
+      complexityFigures(row),
     ),
   );
 

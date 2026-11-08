@@ -9,6 +9,8 @@
  * finding belong to the plugin that owns them.
  */
 
+import { isAbsolute, relative } from "node:path";
+
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
 import { reportTable } from "../../../guardrails/lib/report";
@@ -62,9 +64,21 @@ export const partsLine = (...parts: readonly (string | number)[]): string =>
     .filter((part) => part !== "")
     .join(" · ");
 
-/** A scope the call never named is the working copy. */
-export const scopeLabel = (path: string): string =>
-  path === "" ? "(cwd)" : path;
+/**
+ * The scope a call was pointed at, written the shortest way that is still
+ * findable, and `(cwd)` when the call never named one. A path inside the project
+ * is written from the project, not from the filesystem root: an absolute path
+ * spends the whole of a tool header's one-line budget on directories the reader
+ * already stands in, and spends it again in the chip under it.
+ */
+export const scopeLabel = (path: string, cwd: string = process.cwd()): string => {
+  const clean = path.trim();
+  if (clean === "") return "(cwd)";
+  if (!isAbsolute(clean)) return clean;
+  const rel = relative(cwd, clean);
+  if (rel === "") return "(cwd)";
+  return rel.startsWith("..") || isAbsolute(rel) ? clean : rel;
+};
 
 /** A tool header's preview is one line, so it is clipped inside its budget. */
 export const clipText = (text: string, max: number): string =>
