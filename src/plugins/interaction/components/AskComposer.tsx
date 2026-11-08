@@ -20,7 +20,6 @@ import {
 
 import {
   buildNativeTheme,
-  composerFill,
   tintedBorder,
   tintedChipText,
   tintedDivider,
@@ -33,6 +32,14 @@ import {
   composerFieldLineStyle,
   composerFieldRow,
 } from "../../core/lib/composer/field";
+import {
+  panelBox,
+  panelChrome,
+  panelGap,
+  panelInset,
+  ruleH,
+  ruleV,
+} from "../../core/lib/composer/chrome";
 import { ownsFocus } from "../../core/lib/composer/keyRouter";
 import {
   composerPanelHeight,
@@ -43,11 +50,7 @@ import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { addInputListener } from "../../../window/window";
 import { fuzzyFilter } from "../../../fuzzy";
 import { Markdown } from "../../core/components/Markdown";
-import {
-  HAIRLINE,
-  emphasisWeight,
-  lineBox,
-} from "../../core/lib/ui/tokens";
+import { emphasisWeight, lineBox } from "../../core/lib/ui/tokens";
 import { digitOf, keyOf, modsOf } from "../../core/lib/ui/keyEvents";
 import {
   createFreeformResponse,
@@ -89,65 +92,32 @@ const PANE_GROW = { list: 4, detail: 6 } as const;
 const FREEFORM_FIELD = { min: 4, max: 8 } as const;
 const OPTION_FIELD = { min: 2, max: 6 } as const;
 
-function splitRow(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "row",
-    gap: t.space.md,
-    flexGrow: 1,
-    minHeight: 0,
-    minWidth: 0,
-  };
-}
+/**
+ * The question panel is framed by the composer's chrome — the same box, the same
+ * ink column, the same rules — and adds only what is its own: two panes that
+ * share the width, the options first and the detail beside them wider.
+ */
+const splitRow = (t: AdwaitaTheme): StyleDesc => panelChrome(t).splitRow;
 
-function listPane(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-    flexGrow: PANE_GROW.list,
-    flexBasis: 0,
-    minWidth: t.control.sidebarMinWidth,
-    minHeight: 0,
-  };
-}
+const listPane = (t: AdwaitaTheme): StyleDesc =>
+  panelChrome(t).flexPane(PANE_GROW.list);
 
-function detailPane(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: t.space.sm,
-    flexGrow: PANE_GROW.detail,
-    flexBasis: 0,
-    minWidth: t.control.sidebarMinWidth,
-    minHeight: 0,
-    paddingTop: t.space.xs,
-  };
-}
-
-function dividerRule(t: AdwaitaTheme, tone: ComposerTone): StyleDesc {
-  return {
-    alignSelf: "stretch",
-    flexShrink: 0,
-    backgroundColor: tintedDivider(t, tone),
-    pointerEvents: "none",
-  };
-}
-
-const paneRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc => ({
-  width: HAIRLINE,
-  ...dividerRule(t, tone),
+const detailPane = (t: AdwaitaTheme): StyleDesc => ({
+  ...panelChrome(t).flexPane(PANE_GROW.detail),
+  gap: t.space.sm,
+  paddingTop: panelGap(t),
 });
 
-const hintRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc => ({
-  height: HAIRLINE,
-  ...dividerRule(t, tone),
-});
+/** The question panel's rules carry its tone, which is the one thing chrome cannot know. */
+const paneRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc =>
+  ruleV(t, tintedDivider(t, tone));
+
+const hintRule = (t: AdwaitaTheme, tone: ComposerTone): StyleDesc =>
+  ruleH(t, tintedDivider(t, tone));
 
 const stacked = (t: AdwaitaTheme): StyleDesc => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: t.space.xs,
+  ...panelChrome(t).column,
+  gap: panelGap(t),
   flexShrink: 0,
   minWidth: 0,
 });
@@ -157,7 +127,7 @@ const hintRow = (t: AdwaitaTheme): StyleDesc => ({
   flexDirection: "row",
   alignItems: "center",
   gap: t.space.md,
-  paddingTop: t.space.xs,
+  paddingTop: panelGap(t),
 });
 
 function AskDetailPane({
@@ -268,7 +238,7 @@ function AskOptionsPane({
           <T
             size="caption"
             color={t.color.functional.warning}
-            style={{ paddingLeft: t.space.sm }}
+            style={{ paddingLeft: panelInset(t) }}
           >
             {emptyText}
           </T>
@@ -459,7 +429,10 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
 
   const windowSize = useWindowSize();
   const panelBand = composerPanelHeight(windowSize?.height);
-  const maxVisibleRows = composerPanelRowsForHeight(t, panelBand);
+  /** The question charges the field it stands the list under and the hint bar that closes it. */
+  const maxVisibleRows = composerPanelRowsForHeight(t, panelBand, {
+    statusBar: true,
+  });
 
   const checkedCount = checked.size;
   const activeIndex = rows.length === 0 ? 0 : Math.min(cursor, rows.length - 1);
@@ -628,20 +601,10 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
   const fieldStyle: StyleDesc = composerFieldLineStyle(t);
 
   const root: StyleDesc = {
-    display: "flex",
-    flexDirection: "column",
+    ...panelBox(t, tone),
+    flexGrow: 0,
     flexShrink: 0,
-    minWidth: 0,
     maxHeight: panelBand,
-    paddingLeft: t.space.lg,
-    paddingRight: t.space.lg,
-    paddingTop: t.space.lg,
-    paddingBottom: t.space.sm,
-    gap: t.space.xs,
-    borderRadius: t.radius.md,
-    borderWidth: 0,
-    overflow: "hidden",
-    backgroundColor: composerFill(t, tone),
     ...props.style,
   };
 

@@ -14,8 +14,18 @@ export function fieldLineBox(t: AdwaitaTheme): number {
   return codeLineBox(t, composerFieldSize(t));
 }
 
+/**
+ * How far one line of the field breathes inside a row's height. Floored, so a
+ * one-row field plus its breathing stays inside `ROW_HEIGHT` rather than
+ * spilling a pixel past the row every one-line row of the app is built on.
+ */
 export function fieldPadY(t: AdwaitaTheme): number {
-  return Math.max(0, Math.round((ROW_HEIGHT - fieldLineBox(t)) / 2));
+  return Math.max(0, Math.floor((ROW_HEIGHT - fieldLineBox(t)) / 2));
+}
+
+/** What the field costs a panel for its first row: one line and its breathing. */
+export function fieldFirstRowHeight(t: AdwaitaTheme): number {
+  return fieldLineBox(t) + 2 * fieldPadY(t);
 }
 
 /**
@@ -45,6 +55,7 @@ export function composerFieldRows(value: string): number {
   return Math.max(FIELD_MIN_ROWS, Math.min(FIELD_MAX_ROWS, wrapped));
 }
 
+/** What the field costs a panel beyond its first row. */
 export function composerFieldExtraHeight(
   t: AdwaitaTheme,
   value: string,

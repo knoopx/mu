@@ -25,13 +25,6 @@ const LIST_CAP = 200;
 
 export const FILES_ROWS = 6;
 
-const ROW_SLOT: StyleDesc = {
-  display: "flex",
-  flexDirection: "column",
-  width: "100%",
-  flexShrink: 0,
-};
-
 function firstLine(text: string): string {
   const line = text.split("\n")[0] ?? "";
   return line.length === 0 ? NO_DESCRIPTION : line;
@@ -116,7 +109,7 @@ export function ChangesPanel({
             {stackWin.slice(stack).map((entry, off) => {
               const i = stackWin.at(off);
               return (
-                <div key={entry.change_id} style={ROW_SLOT}>
+                <div key={entry.change_id} style={s.rowSlot}>
                   <ComposerOptionRow
                     label={firstLine(entry.description)}
                     description={relativeAge(entry.timestamp)}
@@ -153,7 +146,7 @@ export function ChangesPanel({
                 {filesWin.slice(files).map((entry, off) => {
                   const i = filesWin.at(off);
                   return (
-                    <div key={`${entry.path}-${i}`} style={ROW_SLOT}>
+                    <div key={`${entry.path}-${i}`} style={s.rowSlot}>
                       <ComposerOptionRow
                         label={entry.path}
                         icon={iconForFile(entry.path)}

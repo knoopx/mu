@@ -133,15 +133,7 @@ export function SessionTreePanel({
   return (
     <div style={s.fillColumn}>
       {rows.length === 0 ? (
-        <div
-          style={{
-            display: "flex",
-            flexGrow: 1,
-            minHeight: 0,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        <div style={s.emptyPane}>
           <EmptyDescription>
             {model.total === 0
               ? "This session has no history yet"
@@ -163,10 +155,7 @@ export function SessionTreePanel({
             const node = model.graph[index];
             if (node === undefined) return null;
             return (
-              <div
-                key={row.id}
-                style={{ display: "flex", width: "100%", flexShrink: 0 }}
-              >
+              <div key={row.id} style={s.rowSlot}>
                 <TreeRowView
                   row={row}
                   node={node}

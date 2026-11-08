@@ -19,12 +19,13 @@ import {
 import { composerFieldExtraHeight } from "../../lib/composer/fieldRows";
 import { composerFigureColumnWidth, composerPanelRowHeight } from "./rows";
 import {
-  composerPanelChrome,
   composerPanelFitHeight,
   composerPanelFitRows,
   composerPanelHeight,
   composerPanelRowsForHeight as panelRowsFor,
+  panelChromeHeight,
   PANEL_FIT_MIN_ROWS,
+  type PanelSlots,
 } from "../../lib/composer/panelHeight";
 import {
   panelHints,
@@ -305,6 +306,8 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   hints: TREE_HINTS,
 });
 
+/** A wide panel draws its list and its status line, and no draft above them. */
+const WIDE_SLOTS: PanelSlots = { field: false, statusBar: true };
 
 function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
   const { theme: t, tree, windowHeight } = data;
@@ -313,7 +316,7 @@ function wideHeight(data: ComposerPanelData, isChanges: boolean): number {
     t,
     windowHeight,
     Math.max(PANEL_FIT_MIN_ROWS, tree.rows.length) * ROW_HEIGHT,
-    true,
+    WIDE_SLOTS,
   );
 }
 
@@ -327,7 +330,7 @@ function widePanelSpec(
     status: isChanges ? changesStatus(changes) : treeStatus(tree),
     rows: [],
     height,
-    maxVisible: panelRowsFor(t, composerPanelHeight(windowHeight)),
+    maxVisible: panelRowsFor(t, composerPanelHeight(windowHeight), WIDE_SLOTS),
     wide: {
       node: isChanges ? (
         <ChangesPanel panel={changes} />
@@ -363,26 +366,17 @@ function listPanelSpec(
   const rowsHeightOf = (list: readonly ComposerPanelRow[]): number =>
     list.reduce((sum, row) => sum + composerPanelRowHeight(t, row), 0);
 
-  const fieldExtra = tallList ? composerFieldExtraHeight(t, query) : 0;
-  const statusBar = true;
+  const slots: PanelSlots = {
+    statusBar: true,
+    fieldExtra: tallList ? composerFieldExtraHeight(t, query) : 0,
+  };
   const statusLine =
     busy || error !== undefined || rows.length === 0 ? ROW_HEIGHT : 0;
   const listHeight = rowsHeightOf(rows) + statusLine;
-  const fitHeight = composerPanelFitHeight(
-    t,
-    windowHeight,
-    listHeight,
-    statusBar,
-    fieldExtra,
-  );
-  
-  
-  
-  
   const maxVisible = composerPanelFitRows(
     t,
     rows,
-    panelBand - composerPanelChrome(t, statusBar, fieldExtra),
+    panelBand - panelChromeHeight(t, slots),
   );
   const windowedHeight =
     rowsHeightOf(
@@ -397,8 +391,7 @@ function listPanelSpec(
       t,
       windowHeight,
       tallList ? windowedHeight : listHeight,
-      statusBar,
-      fieldExtra,
+      slots,
     ),
     maxVisible,
     busy,

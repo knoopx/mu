@@ -11,6 +11,7 @@ import {
 import type { StyleDesc } from "@gpuix/react";
 import { centerRow } from "../../lib/ui/layout";
 import { mutedText } from "../../lib/ui/theme";
+import { panelInset } from "../../lib/composer/chrome";
 import {
   HAIRLINE,
   INLINE_GLYPH,
@@ -59,8 +60,8 @@ function panelRowStyle(
 ): StyleDesc {
   return {
     ...centerRow(t.space.sm, { height, ...extra }),
-    paddingLeft: t.space.sm,
-    paddingRight: t.space.sm,
+    paddingLeft: panelInset(t),
+    paddingRight: panelInset(t),
     borderRadius: t.radius.sm,
     cursor: "pointer",
     userSelect: "none",
@@ -444,9 +445,9 @@ function swatchStyle(t: AdwaitaTheme, swatch: ComposerSwatchSpec): StyleDesc {
     width: SWATCH_WIDTH,
     height: SWATCH_HEIGHT,
     flexShrink: 0,
+    justifyContent: "center",
     paddingLeft: t.space.xs,
     paddingRight: t.space.xs,
-    paddingTop: t.space.xs,
     borderRadius: t.radius.xs,
     borderWidth: HAIRLINE,
     borderColor: hexToRgba(swatch.text, 0.34),
@@ -532,8 +533,8 @@ export function ComposerStatus(props: {
         flexDirection: "row",
         alignItems: "center",
         height: ROW_HEIGHT,
-        paddingLeft: t.space.sm,
-        paddingRight: t.space.sm,
+        paddingLeft: panelInset(t),
+        paddingRight: panelInset(t),
         userSelect: "none",
       }}
     >

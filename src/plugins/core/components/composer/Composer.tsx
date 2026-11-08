@@ -17,27 +17,28 @@ import {
 
 import {
   buildNativeTheme,
-  composerFill,
   mutedText,
   type ComposerTone,
 } from "../../lib/ui/theme";
 import { addInputListener } from "../../../../window/window";
 import { truncateToWidth } from "../../../../utils/truncate";
-import {
-  HAIRLINE,
-  PILL_HEIGHT,
-  ROW_HEIGHT,
-  codeLineBox,
-} from "../../lib/ui/tokens";
+import { PILL_HEIGHT, ROW_HEIGHT, codeLineBox } from "../../lib/ui/tokens";
 import {
   composerFieldRows,
-  composerFieldSize,
   draftIsBlank,
-  fieldLineBox,
-  fieldPadY,
   FIELD_MAX_ROWS,
   fitsOneRow,
 } from "../../lib/composer/fieldRows";
+import {
+  composerFieldBox,
+  composerFieldLineStyle,
+  composerFieldRow,
+} from "../../lib/composer/field";
+import {
+  panelBox,
+  panelChrome,
+  type PanelChrome,
+} from "../../lib/composer/chrome";
 import {
   composerFieldKey,
   composerGlobalKey,
@@ -212,19 +213,12 @@ function previewLinesOf(
 interface ComposerStyles {
   root: StyleDesc;
   box: StyleDesc;
+  /** The composer's own panel: its box, panes, rules and status line. */
+  panel: PanelChrome;
   fieldRow: StyleDesc;
   metaSlot: StyleDesc;
   metaLabelSlot: StyleDesc;
   metaLabel: StyleDesc;
-  column: StyleDesc;
-  splitRow: StyleDesc;
-  fillColumn: StyleDesc;
-  listPane: StyleDesc;
-  widePane: StyleDesc;
-  statusBar: StyleDesc;
-  paneRule: StyleDesc;
-  previewPane: StyleDesc;
-  previewCode: StyleDesc;
   field: StyleDesc;
   fieldOneRow: StyleDesc;
 }
@@ -233,30 +227,14 @@ function composerStyles(
   t: AdwaitaTheme,
   tone: ComposerTone,
   extra?: Partial<StyleDesc>,
-  framed = false,
   panelHeight?: number,
   ringFraction: number | null = null,
 ): ComposerStyles {
-  const column: StyleDesc = { display: "flex", flexDirection: "column" };
-  const rowHeight = ROW_HEIGHT;
   const ring = ringFraction !== null;
   const ringWidth = ring ? CONTEXT_RING_WIDTH : 0;
-
-  const fieldPad = fieldPadY(t);
-  const lineBox = fieldLineBox(t);
-  const field: StyleDesc = {
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 0,
-    minWidth: 0,
-    lineHeight: lineBox,
-    paddingLeft: t.space.xs,
-    fontSize: composerFieldSize(t),
-    fontFamily: t.type.fontFamily,
-    color: t.color.text.primary,
-    backgroundColor: "transparent",
-    borderWidth: 0,
-  };
+  const chrome = panelChrome(t);
+  /** Without a panel the composer hugs its draft instead of filling a band. */
+  const grows = panelHeight !== undefined;
   return {
     root: {
       display: "flex",
@@ -276,35 +254,8 @@ function composerStyles(
       ...extra,
     },
 
-    box: {
-      display: "flex",
-      flexDirection: "column",
-      flexGrow: 1,
-      minHeight: 0,
-      minWidth: 0,
-      paddingLeft: framed ? 0 : t.space.lg,
-      paddingRight: framed ? 0 : t.space.lg,
-      paddingTop: framed ? 0 : t.space.sm,
-      paddingBottom: framed ? 0 : t.space.sm,
-      gap: framed ? 0 : t.space.xs,
-      position: "relative",
-      borderRadius: t.radius.md,
-      borderWidth: 0,
-      overflow: "hidden",
-
-      backgroundColor: framed ? "transparent" : composerFill(t, tone),
-    },
-    fieldRow: {
-      display: "flex",
-      flexDirection: "row",
-      flexWrap: "nowrap",
-      alignItems: "center",
-      alignContent: "center",
-      alignSelf: "stretch",
-      gap: t.space.md,
-      minHeight: rowHeight,
-      minWidth: 0,
-    },
+    box: panelBox(t, tone),
+    fieldRow: composerFieldRow(t),
     metaSlot: {
       display: "flex",
       flexDirection: "row",
@@ -339,69 +290,13 @@ function composerStyles(
       maxWidth: META_LABEL_MAX_WIDTH,
       userSelect: "none",
     },
-    column,
-    fillColumn: {
-      ...column,
-      flexGrow: panelHeight === undefined ? 0 : 1,
-      minHeight: 0,
+    panel: {
+      ...chrome,
+      fillColumn: { ...chrome.fillColumn, flexGrow: grows ? 1 : 0 },
+      splitRow: { ...chrome.splitRow, flexGrow: grows ? 1 : 0 },
     },
-    splitRow: {
-      display: "flex",
-      flexDirection: "row",
-      gap: t.space.md,
-      flexGrow: panelHeight === undefined ? 0 : 1,
-      minHeight: 0,
-    },
-    listPane: {
-      ...column,
-      width: t.control.sidebarWidth,
-      flexShrink: 0,
-    },
-    statusBar: {
-      flexShrink: 0,
-      height: t.control.statusBarHeight,
-      paddingLeft: 0,
-      paddingRight: 0,
-      backgroundColor: "transparent",
-    },
-    widePane: {
-      ...column,
-      flexGrow: 1,
-      flexBasis: 0,
-      minHeight: 0,
-      minWidth: 0,
-    },
-    paneRule: {
-      width: HAIRLINE,
-      alignSelf: "stretch",
-      flexShrink: 0,
-      backgroundColor: t.color.divider.default,
-      pointerEvents: "none",
-    },
-    previewPane: {
-      ...column,
-      flexGrow: 1,
-      flexBasis: 0,
-      minWidth: 0,
-      minHeight: 0,
-    },
-    previewCode: {
-      flexGrow: 1,
-      minHeight: 0,
-      overflow: "hidden",
-      fontSize: t.type.caption,
-      lineHeight: codeLineBox(t),
-      fontFamily: t.type.fontFamilyMono,
-      color: t.color.text.primary,
-    },
-    field,
-    fieldOneRow: {
-      ...field,
-      height: rowHeight,
-      minHeight: rowHeight,
-      paddingTop: fieldPad,
-      paddingBottom: fieldPad,
-    },
+    field: composerFieldBox(t),
+    fieldOneRow: composerFieldLineStyle(t),
   };
 }
 
@@ -524,7 +419,7 @@ function PanelImagePreview({
   return (
     <div
       style={{
-        ...styles.previewPane,
+        ...styles.panel.previewPane,
         alignItems: "center",
         justifyContent: "center",
       }}
@@ -559,20 +454,20 @@ function PanelPreview({
   
   if (lines.length === 0)
     return (
-      <div style={styles.previewPane}>
+      <div style={styles.panel.previewPane}>
         <T size="caption" color={mutedText(t)}>
           {preview.note ?? "No preview"}
         </T>
       </div>
     );
   return (
-    <div style={styles.previewPane}>
+    <div style={styles.panel.previewPane}>
       <code
         code={lines.join("\n")}
         path={preview.path}
         showLineNumbers
         theme={buildNativeTheme(t)}
-        style={styles.previewCode}
+        style={styles.panel.previewCode}
       />
     </div>
   );
@@ -595,7 +490,7 @@ function ComposerPanel({
   if (wide !== undefined)
     return (
       <div
-        style={styles.fillColumn}
+        style={styles.panel.fillColumn}
         tabIndex={0}
         onKeyDown={onKeyDown}
         ref={panelRef}
@@ -603,8 +498,8 @@ function ComposerPanel({
         <div
           style={
             panel.height === undefined
-              ? { ...styles.widePane, height: wide.height }
-              : styles.widePane
+              ? { ...styles.panel.widePane, height: wide.height }
+              : styles.panel.widePane
           }
         >
           {wide.node}
@@ -614,12 +509,12 @@ function ComposerPanel({
 
   return (
     <div
-      style={split ? styles.splitRow : styles.fillColumn}
+      style={split ? styles.panel.splitRow : styles.panel.fillColumn}
       tabIndex={0}
       onKeyDown={onKeyDown}
       ref={panelRef}
     >
-      <div style={split ? styles.listPane : styles.column}>
+      <div style={split ? styles.panel.listPane() : styles.panel.column}>
         <PanelStatus panel={panel} />
         {panel.error === undefined &&
           panel.busy !== true &&
@@ -637,7 +532,7 @@ function ComposerPanel({
             );
           })}
       </div>
-      {split && <div style={styles.paneRule} />}
+      {split && <div style={styles.panel.paneRule} />}
       {split && panel.preview !== undefined && (
         <PanelPreview
           preview={panel.preview}
@@ -743,7 +638,7 @@ function ComposerStatusBar({
     <StatusBar
       message={panel.status.message}
       hints={panel.status.hints}
-      style={styles.statusBar}
+      style={styles.panel.statusBar}
     />
   );
 }
@@ -855,7 +750,6 @@ export function Composer(props: ComposerProps): JSX.Element {
     t,
     props.tone ?? "idle",
     props.style,
-    false,
     panel?.height,
     contextRingOf(panelOpen, props.context ?? null),
   );
