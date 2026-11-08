@@ -5,6 +5,8 @@ import {
 } from "./transcriptState";
 import type { ToolImage } from "./content";
 import { resultParts } from "./toolOutput";
+import { isSnapcompactDetails } from "../../../snapcompact/lib/archive";
+import { detailsNote } from "../../../snapcompact/lib/note";
 
 export interface MapEventContext {
   lastAssistantId?: string;
@@ -265,6 +267,12 @@ function compactionEnd(e: AnyEvent): TranscriptAction[] {
   if (e.aborted) return [{ type: "system", text: "Compaction aborted" }];
   const error = asString(e.errorMessage);
   if (error) return [{ type: "system", text: `Compaction failed: ${error}` }];
+  // A snapcompact pass writes its frames into the entry's details, and what a
+  // reader needs to know is how many pages it just got — not that a summary
+  // exists, which every compaction says.
+  const details = (e.result as { details?: unknown } | undefined)?.details;
+  if (isSnapcompactDetails(details))
+    return [{ type: "system", text: detailsNote(details) }];
   return [{ type: "system", text: "Context compacted" }];
 }
 

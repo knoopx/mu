@@ -1,7 +1,7 @@
 # TODO
 
 - [ ] dsh: cordis-like plugin architecture
-- [ ] implement https://github.com/jaried/omp/blob/main/packages/snapcompact/README.md snapcompact
+- [x] implement https://github.com/jaried/omp/blob/main/packages/snapcompact/README.md snapcompact — shipped as `src/plugins/snapcompact/`: `@oh-my-pi/snapcompact` prints the discarded span into bitmap pages during pi's `session_before_compact`, the frames ride in the compaction entry's `details`, and the `context` hook re-attaches them to every request. The price is `@oh-my-pi/pi-natives` — a 128 MB prebuilt addon `flake.nix` copies beside the binary and `lib/load.ts` dlopens on the first compaction that needs it, never at startup (`src/plugins/snapcompact/README.md`).
 - [ ] subagents
 - [ ] tasks tool
 - [ ] capture `stories/GenerativeUI/rendered.png`, `stories/GenerativeUI/figures.png` and `stories/Mermaid/drawn.png` — `bun storybook . --only GenerativeUI`, which needs the test-support build of `@gpuix/native` (the npm one has no PNG capture, and Linux builds have no test-support at all: wgpu cannot read a rendered image back yet). `figures` is the scene that paints the library's figure blocks — tree with per-path counts, sections, CI stages, spans on one axis. `Mermaid/drawn` paints a diagram in the log, which is the one thing worth seeing; the README's **Diagrams** section therefore ships no picture until this is done.

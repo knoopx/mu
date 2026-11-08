@@ -108,6 +108,42 @@
           url = "https://registry.npmjs.org/@iconify-json/material-symbols/-/material-symbols-1.2.98.tgz";
           hash = "sha256-FC1Qvyjn24U2J5W+M168KdrGEdc8QE/B5vxcwZjis9A=";
         };
+        # snapcompact: bitmap-frame compaction. The package is TypeScript source
+        # (no build step) and the renderer is @oh-my-pi/pi-natives, a native Rust
+        # addon split into a shim plus one platform package per OS/arch; mu pins
+        # the linux-x64 one, the only one the flake's platform needs.
+        ohMyPiOmptype = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/omptype/-/omptype-18.18.1.tgz";
+          hash = "sha256-yPlchQ/VqwVwSX9SrNQxab1PRHmgEH0nfcDin1DEyxQ=";
+        };
+        ohMyPiPiAi = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-ai/-/pi-ai-18.18.1.tgz";
+          hash = "sha256-McEYRRQQZ97xptW9lm6Q84Li4+BoQTlZoXc6uQ+kqwg=";
+        };
+        ohMyPiPiCatalog = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-catalog/-/pi-catalog-18.18.1.tgz";
+          hash = "sha256-gPjuxmdEImtUOWcmjv+u51/1uCfwvz62tLRaYMg4bis=";
+        };
+        ohMyPiPiNatives = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-natives/-/pi-natives-18.18.1.tgz";
+          hash = "sha256-N5cxR45dExAyKqqrrHL4tEwwD8Iwm8SgixRC2w8AqQM=";
+        };
+        ohMyPiPiNativesLinuxX64 = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-natives-linux-x64/-/pi-natives-linux-x64-18.18.1.tgz";
+          hash = "sha256-bGVmQIxdFnh88nerdZmnr35CvfZrqb7YlwYgF7SqOmU=";
+        };
+        ohMyPiPiUtils = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-utils/-/pi-utils-18.18.1.tgz";
+          hash = "sha256-OqHJ587SmZRNOWFI5YLDRQ9WOX4GXm2cmzuyyyoQ92I=";
+        };
+        ohMyPiPiWire = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/pi-wire/-/pi-wire-18.18.1.tgz";
+          hash = "sha256-FPtzocA8GmHKVVisR0o0hBYDOtiKSioW8RhOpXZEYqU=";
+        };
+        ohMyPiSnapcompact = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@oh-my-pi/snapcompact/-/snapcompact-18.18.1.tgz";
+          hash = "sha256-N3frngmQ/ZHQq39Rm0XdQADbRC9jbkueIXSm5RpdTXg=";
+        };
         # OpenUI Lang: the parser (lang-core) and the React renderer
         # (react-lang) the openui plugin is written against, plus react-lang's
         # own deps — the devtools hook and the observability sink it imports
@@ -449,6 +485,14 @@
             mkdir -p node_modules/@gpuix/native-linux-x64-gnu && tar xzf ${npmDeps.gpuixNativeLinuxX64Gnu} -C node_modules/@gpuix/native-linux-x64-gnu --strip-components=1
             mkdir -p node_modules/@gpuix/react && tar xzf ${npmDeps.gpuixReact} -C node_modules/@gpuix/react --strip-components=1
             mkdir -p node_modules/@iconify-json/material-symbols && tar xzf ${npmDeps.iconifyJsonMaterialSymbols} -C node_modules/@iconify-json/material-symbols --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/omptype && tar xzf ${npmDeps.ohMyPiOmptype} -C node_modules/@oh-my-pi/omptype --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-ai && tar xzf ${npmDeps.ohMyPiPiAi} -C node_modules/@oh-my-pi/pi-ai --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-catalog && tar xzf ${npmDeps.ohMyPiPiCatalog} -C node_modules/@oh-my-pi/pi-catalog --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-natives && tar xzf ${npmDeps.ohMyPiPiNatives} -C node_modules/@oh-my-pi/pi-natives --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-natives-linux-x64 && tar xzf ${npmDeps.ohMyPiPiNativesLinuxX64} -C node_modules/@oh-my-pi/pi-natives-linux-x64 --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-utils && tar xzf ${npmDeps.ohMyPiPiUtils} -C node_modules/@oh-my-pi/pi-utils --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/pi-wire && tar xzf ${npmDeps.ohMyPiPiWire} -C node_modules/@oh-my-pi/pi-wire --strip-components=1
+            mkdir -p node_modules/@oh-my-pi/snapcompact && tar xzf ${npmDeps.ohMyPiSnapcompact} -C node_modules/@oh-my-pi/snapcompact --strip-components=1
             mkdir -p node_modules/@openuidev/devtools && tar xzf ${npmDeps.openuiDevtools} -C node_modules/@openuidev/devtools --strip-components=1
             mkdir -p node_modules/@openuidev/lang-core && tar xzf ${npmDeps.openuiLangCore} -C node_modules/@openuidev/lang-core --strip-components=1
             mkdir -p node_modules/@openuidev/observability && tar xzf ${npmDeps.openuiObservability} -C node_modules/@openuidev/observability --strip-components=1
@@ -544,6 +588,14 @@
             # release does next to dist/pi. Without it every image read answers
             # "could not be resized below the inline image size limit".
             cp node_modules/@silvia-odwyer/photon-node/photon_rs_bg.wasm $out/lib/
+
+            # snapcompact draws its frames with @oh-my-pi/pi-natives. Inside a
+            # bun --compile binary that loader looks for the addon beside the
+            # executable (resolveLoaderCandidates → dirname(process.execPath)),
+            # and the tarball carries two x64 builds: ship the baseline one, and
+            # a CPU with AVX2 falls back to it by name rather than failing.
+            cp node_modules/@oh-my-pi/pi-natives-linux-x64/pi_natives.linux-x64-baseline.node \
+              $out/lib/
 
             # QuickJS is the VM codemode scripts run in, and pi reads its wasm
             # off disk. pi's own bun entry embeds the file and passes pi the path;

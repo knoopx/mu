@@ -49,6 +49,7 @@ import { openUIListTool } from "../../../openui/tools/openuiList";
 import { openUISwitchTool } from "../../../openui/tools/openuiSwitch";
 import { openUIClearTool } from "../../../openui/tools/openuiClear";
 import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
+import { snapcompactExtension } from "../../../snapcompact/lib/extension";
 import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
 import { guardrailsFixtureUpdateTool } from "../../../guardrails/tools/guardrailsFixtureUpdate";
 import { guardrailsTestTool } from "../../../guardrails/tools/guardrailsTest";
@@ -112,7 +113,11 @@ const ISOLATED_RESOURCE_LOADER_OPTIONS = {
   noSkills: true,
   noPromptTemplates: true,
   noThemes: true,
-  extensionFactories: [guardrailsExtension, createCodemodeExtension()],
+  extensionFactories: [
+    guardrailsExtension,
+    snapcompactExtension,
+    createCodemodeExtension(),
+  ],
 };
 
 function readDefaultModelRef(agentDir: string): string | undefined {

@@ -10,6 +10,8 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { contentToText } from "../agent/content";
 import { fitOneLine } from "../../../../utils/truncate";
+import { isSnapcompactDetails } from "../../../snapcompact/lib/archive";
+import { detailsNote } from "../../../snapcompact/lib/note";
 import { relativeAge } from "../utils/time";
 import { toolIconOf } from "../ui/toolIcon";
 
@@ -124,7 +126,11 @@ const ENTRY_ROWS: {
 } = {
   compaction: (entry) => ({
     role: "summary",
-    text: `Compacted · ${oneLine(entry.summary)}`,
+    // A snapcompact entry's summary is a reading guide, not a sentence about the
+    // session; its details say what was archived and how many pages it is on.
+    text: isSnapcompactDetails(entry.details)
+      ? detailsNote(entry.details)
+      : `Compacted · ${oneLine(entry.summary)}`,
   }),
   branch_summary: (entry) => ({
     role: "summary",
