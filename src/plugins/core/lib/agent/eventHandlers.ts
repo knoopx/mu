@@ -120,7 +120,10 @@ function messageStart(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
   // rows of the run that continues it can never share a key.
   const id = nextItemId("assistant");
   ctx.lastAssistantId = id;
-  return [{ type: "assistant_start", id }];
+  // The row is timed from the moment pi opened the message, so a decode can be
+  // measured while it runs and not only once its usage lands at its end.
+  const startTs = asNumber(asRecord(e.message).timestamp) || Date.now();
+  return [{ type: "assistant_start", id, startTs }];
 }
 
 function thinkingStart(id: string, ctx: MapEventContext): TranscriptAction[] {
@@ -253,6 +256,7 @@ function toolEnd(e: AnyEvent, ctx: MapEventContext): TranscriptAction[] {
       output,
       details,
       image: image as ToolImage | undefined,
+      endTs: Date.now(),
     },
   ];
 }

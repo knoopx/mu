@@ -5,6 +5,7 @@ import {
   conversationStats,
   turnStatsById,
   type ConversationStats,
+  type SessionClock,
   type TurnStats,
 } from "../lib/agent/turnStats";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
@@ -22,7 +23,9 @@ import {
  * The window draws either the live session or the preview of a session picked
  * out of the list, and everything under the composer — the rows, the figures
  * in the status bar, the points Tab-style jumping walks between — is read from
- * whichever of the two is on screen.
+ * whichever of the two is on screen. The figures are that session's own: its
+ * turns, its tokens and its span, read at the clock the window keeps so the one
+ * in flight keeps moving.
  */
 export interface TranscriptViewOptions {
   items: readonly TranscriptItem[];
@@ -30,6 +33,10 @@ export interface TranscriptViewOptions {
   preview: SessionPreviewData | null;
 
   sessionStart: number | undefined;
+
+  /** The moment the figures are read at, and whether a run is in flight to move
+   * them. A story pins the moment so a scene's numbers never drift. */
+  clock: SessionClock;
 
   mode: ComposerMode;
 
@@ -55,13 +62,31 @@ export interface TranscriptView {
 export function useTranscriptView(
   options: TranscriptViewOptions,
 ): TranscriptView {
-  const { items, preview, sessionStart, mode, askOpen, listRef, followTail } =
-    options;
+  const {
+    items,
+    preview,
+    sessionStart,
+    clock,
+    mode,
+    askOpen,
+    listRef,
+    followTail,
+  } = options;
 
   const source: readonly TranscriptItem[] =
     preview === null ? items : preview.items;
 
   const stats = useMemo(() => turnStatsById(source), [source]);
+  const { now, running } = clock;
+  const conversation = useMemo(
+    () =>
+      conversationStats(
+        source,
+        { now, running },
+        preview?.startTs ?? sessionStart,
+      ),
+    [source, now, running, preview, sessionStart],
+  );
   const pointRows = useMemo(() => transcriptPointRows(source), [source]);
   const lastRow = transcriptLastRow(source);
 
@@ -82,7 +107,7 @@ export function useTranscriptView(
   return {
     source,
     stats,
-    conversation: conversationStats(source, preview?.startTs ?? sessionStart),
+    conversation,
     pointRows,
     onVisibleRange: jump.onVisibleRange,
   };

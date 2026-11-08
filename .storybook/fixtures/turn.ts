@@ -42,15 +42,44 @@ export const usage = (
 export const answer = (
   id: string,
   text: string,
-  opts: { streaming?: boolean; stopReason?: string; reasoning?: string } = {},
+  opts: {
+    streaming?: boolean;
+    stopReason?: string;
+    reasoning?: string;
+    startTs?: number;
+  } = {},
 ): Extract<TranscriptItem, { kind: "assistant" }> => ({
   kind: "assistant",
   id,
   text,
   streaming: opts.streaming === true,
   ...(opts.streaming === true ? {} : { stopReason: opts.stopReason ?? "stop" }),
+  ...(opts.startTs === undefined ? {} : { startTs: opts.startTs }),
   ...(opts.reasoning === undefined ? {} : { reasoning: opts.reasoning }),
 });
+
+/** When a row began, for the scene's own clock. */
+const stampsOf = (item: TranscriptItem): (number | undefined)[] => {
+  if (item.kind === "user") return [item.ts];
+  if (item.kind === "assistant")
+    return [item.startTs, item.usage?.startTs, item.usage?.endTs];
+  if (item.kind === "tool") return [item.startTs, item.usage?.endTs];
+  return [];
+};
+
+/**
+ * The moment a scene's figures are read at: a moment and a half past its last
+ * row. The status bar's elapsed time and live speed are read off a running
+ * clock, so a scene without a pinned one would print a different PNG on every
+ * capture.
+ */
+export const clockOf = (items: readonly TranscriptItem[]): number => {
+  let last = T0;
+  for (const item of items)
+    for (const ts of stampsOf(item))
+      if (ts !== undefined && ts > last) last = ts;
+  return last + 1_500;
+};
 
 export const ran = (
   id: string,

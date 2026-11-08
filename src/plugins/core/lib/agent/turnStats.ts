@@ -5,6 +5,18 @@ export const DOWN = "↓";
 export const DOT = "·";
 export const BAR = "|";
 
+/**
+ * A provider answers with its usage only when a message ends, so a decode in
+ * flight is measured by what it has streamed. Four characters to a token is the
+ * same estimate pi's compaction makes, so the live figures agree with the
+ * settled figures that replace them the moment the message ends.
+ */
+const CHARS_PER_TOKEN = 4;
+
+/** The first instants of a decode have streamed too little to divide by the
+ * time they took; the last measured rate stands until there is. */
+const LIVE_MIN_MS = 250;
+
 export interface StatsFigures {
   input: number;
 
@@ -25,6 +37,19 @@ export interface TurnStats extends StatsFigures {
 
 export interface ConversationStats extends StatsFigures {
   turns: number;
+
+  /** A decode is in flight, so these figures are the run's own and still
+   * moving rather than the last settled turn's. */
+  live: boolean;
+}
+
+/** When the figures of a live session are read, and whether they should move. */
+export interface SessionClock {
+  now: number;
+
+  /** A turn is in flight: its elapsed time keeps growing through the seconds it
+   * spends in its tools, where nothing streams. */
+  running: boolean;
 }
 
 function f1(x: number): string {
@@ -69,8 +94,10 @@ export function formatOutbound(tokens: number): string {
 }
 
 export function formatInboundOutbound(input: number, output: number): string {
-  const inbound = formatTokens(input);
-  const outbound = formatTokens(output);
+  // A figure the session has not spent yet has nothing to say: a run that is
+  // only just streaming answers with its outbound count alone.
+  const inbound = input === 0 ? "" : formatTokens(input);
+  const outbound = output === 0 ? "" : formatTokens(output);
   if (inbound === "" && outbound === "") return "";
   if (inbound === "") return formatOutbound(output);
   if (outbound === "") return `${UP}${inbound}`;
@@ -81,58 +108,188 @@ type UsageItem = { id: string; usage: AssistantUsage };
 
 type AssistantItem = Extract<TranscriptItem, { kind: "assistant" }>;
 
+type ToolItem = Extract<TranscriptItem, { kind: "tool" }>;
+
 function usageOf(item: TranscriptItem): AssistantUsage | undefined {
   return item.kind === "assistant" || item.kind === "tool"
     ? item.usage
     : undefined;
 }
 
+/** The moment a row began, for the span a session is measured over. */
+function startTsOf(item: TranscriptItem): number | undefined {
+  if (item.kind === "user") return item.ts;
+  if (item.kind === "assistant" || item.kind === "tool")
+    return item.startTs ?? item.usage?.startTs;
+  return undefined;
+}
+
 function sumBy<T>(rows: readonly T[], pick: (row: T) => number): number {
   return rows.reduce((acc, row) => acc + pick(row), 0);
 }
 
-function usageItems(items: readonly TranscriptItem[]): UsageItem[] {
-  const out: UsageItem[] = [];
-  for (const item of items) {
-    const usage = usageOf(item);
-    if (usage !== undefined) out.push({ id: item.id, usage });
-  }
-  return out;
+function tokensOf(chars: number): number {
+  return Math.round(chars / CHARS_PER_TOKEN);
 }
 
-function figuresOf(
-  used: readonly UsageItem[],
-): Omit<StatsFigures, "durMs"> & { endTs: number } {
-  const last = used[used.length - 1];
-  return {
-    input: sumBy(used, (a) => a.usage.input),
-    output: sumBy(used, (a) => a.usage.output),
-    cost: sumBy(used, (a) => a.usage.cost),
+/**
+ * A decode in flight: when the streaming message began, and what it has
+ * produced since — its prose, its reasoning, and the arguments of the calls it
+ * is still writing. A call that has finished running is not counted, because
+ * the tokens it was written with already landed in a message's usage.
+ */
+interface LiveDecode {
+  startTs: number | undefined;
 
-    tpsOutput: last.usage.output,
-    genMs: last.usage.genMs,
-    endTs: Math.max(...used.map((a) => a.usage.endTs)),
-  };
+  chars: number;
 }
 
-interface TurnAccumulator {
-  startTs?: number;
+interface Scan {
   used: UsageItem[];
 
-  footerId?: string;
-  streaming: boolean;
+  decode: LiveDecode | null;
+
+  /** The last thing the rows show happening: a provider answering with its
+   * figures, or a call finishing its run. */
+  endTs: number;
+
   runningTools: number;
 }
 
-function newTurn(startTs?: number): TurnAccumulator {
-  return { startTs, used: [], streaming: false, runningTools: 0 };
+/** One pass over rows: the figures a provider has answered with, the decode the
+ * session is still in the middle of, and when the rows last did something. */
+function scan(items: readonly TranscriptItem[]): Scan {
+  const used: UsageItem[] = [];
+  let decode: LiveDecode | null = null;
+  let endTs = 0;
+  let runningTools = 0;
+  for (const item of items) {
+    const usage = usageOf(item);
+    if (usage !== undefined) {
+      used.push({ id: item.id, usage });
+      if (usage.endTs > endTs) endTs = usage.endTs;
+    }
+    if (item.kind === "assistant") {
+      if (item.streaming)
+        decode = { startTs: item.startTs, chars: streamedCharsOf(item) };
+      continue;
+    }
+    if (item.kind !== "tool") continue;
+    if (item.status === "running") {
+      runningTools += 1;
+      if (decode !== null)
+        decode = { ...decode, chars: decode.chars + callCharsOf(item) };
+    } else if (item.endTs !== undefined && item.endTs > endTs) {
+      endTs = item.endTs;
+    }
+  }
+  return { used, decode, endTs, runningTools };
 }
 
-function statsOfTurn(turn: TurnAccumulator): TurnStats | null {
-  if (turn.used.length === 0) return null;
-  const figures = figuresOf(turn.used);
+/** The first row of a log that knows when it happened. */
+function earliestStartOf(
+  items: readonly TranscriptItem[],
+): number | undefined {
+  let earliest: number | undefined;
+  for (const item of items) {
+    const ts = startTsOf(item);
+    if (ts === undefined || ts <= 0) continue;
+    if (earliest === undefined || ts < earliest) earliest = ts;
+  }
+  return earliest;
+}
+
+function streamedCharsOf(item: AssistantItem): number {
+  return item.text.length + (item.reasoning?.length ?? 0);
+}
+
+function callCharsOf(item: ToolItem): number {
+  return JSON.stringify(item.args).length;
+}
+
+/** What a set of rows measures, before anyone asks how long the span was. */
+interface Measured {
+  input: number;
+
+  output: number;
+
+  cost: number;
+
+  tpsOutput: number;
+
+  genMs: number;
+
+  endTs: number;
+
+  live: boolean;
+}
+
+/**
+ * The rate a decode answers with: what it has streamed over how long it has
+ * been streaming. Nothing to divide yet, and the last measured rate stands.
+ */
+function liveRateOf(
+  decode: LiveDecode,
+  now: number,
+): { tpsOutput: number; genMs: number } | null {
+  if (decode.startTs === undefined) return null;
+  const genMs = now - decode.startTs;
+  if (decode.chars === 0 || genMs < LIVE_MIN_MS) return null;
+  return { tpsOutput: tokensOf(decode.chars), genMs };
+}
+
+function measuredOf(rows: Scan, now: number): Measured {
+  const { used, decode } = rows;
+  const last = used[used.length - 1];
+  const rate = decode === null ? null : liveRateOf(decode, now);
+  return {
+    input: sumBy(used, (a) => a.usage.input),
+    output:
+      sumBy(used, (a) => a.usage.output) +
+      (decode === null ? 0 : tokensOf(decode.chars)),
+    cost: sumBy(used, (a) => a.usage.cost),
+    tpsOutput: rate?.tpsOutput ?? (last?.usage.output ?? 0),
+    genMs: rate?.genMs ?? (last?.usage.genMs ?? 0),
+
+    endTs: decode === null ? rows.endTs : Math.max(rows.endTs, now),
+    live: decode !== null,
+  };
+}
+
+/**
+ * A session's span is its own: from the first row of its log that carries a
+ * timestamp to its last activity — not from the moment the window opened, and
+ * to the running clock while a turn is in flight.
+ */
+function sessionSpanOf(
+  items: readonly TranscriptItem[],
+  figures: Measured,
+  clock: SessionClock,
+  sessionStart: number | undefined,
+): number {
+  const startTs = earliestStartOf(items) ?? sessionStart ?? figures.endTs;
+  const endTs = clock.running
+    ? Math.max(figures.endTs, clock.now)
+    : figures.endTs;
+  return Math.max(0, endTs - startTs);
+}
+
+/** One turn of the log: its rows, and the row its figures are painted under. */
+interface Turn {
+  startTs?: number;
+  rows: TranscriptItem[];
+
+  footerId?: string;
+}
+
+function statsOfTurn(turn: Turn): TurnStats | null {
+  const rows = scan(turn.rows);
+  if (rows.used.length === 0) return null;
+  // A turn's figures are painted only once it settles, so a turn never answers
+  // with an estimate: the moving figures belong to the status bar.
+  const figures = measuredOf({ ...rows, decode: null }, 0);
   const startTs =
-    turn.startTs ?? Math.min(...turn.used.map((a) => a.usage.startTs));
+    turn.startTs ?? earliestStartOf(turn.rows) ?? rows.used[0].usage.startTs;
   return {
     input: figures.input,
     output: figures.output,
@@ -141,7 +298,7 @@ function statsOfTurn(turn: TurnAccumulator): TurnStats | null {
     tpsOutput: figures.tpsOutput,
     genMs: figures.genMs,
 
-    settled: !turn.streaming && turn.runningTools === 0,
+    settled: rows.decode === null && rows.runningTools === 0,
   };
 }
 
@@ -149,38 +306,29 @@ export function turnStatsById(
   items: readonly TranscriptItem[],
 ): Map<string, TurnStats> {
   const out = new Map<string, TurnStats>();
-  let turn = newTurn();
+  let turn: Turn = { rows: [] };
   const flush = (): void => {
     const stats = statsOfTurn(turn);
     if (stats !== null && turn.footerId !== undefined)
       out.set(turn.footerId, stats);
-    turn = newTurn();
+    turn = { rows: [] };
   };
   for (const item of items) {
     if (item.kind === "user") {
       flush();
-      turn = newTurn(item.ts);
+      turn = {
+        rows: [],
+        ...(item.ts === undefined ? {} : { startTs: item.ts }),
+      };
       continue;
     }
-    if (item.kind === "assistant") {
-      if (turn.startTs === undefined && item.usage !== undefined)
-        turn.startTs = item.usage.startTs;
-      if (item.streaming) turn.streaming = true;
-      const usage = item.usage;
-      if (usage !== undefined) {
-        turn.used.push({ id: item.id, usage });
-
-        turn.footerId = item.id;
-      }
-      continue;
-    }
-    if (item.kind === "tool") {
-      if (turn.startTs === undefined && item.startTs !== undefined)
-        turn.startTs = item.startTs;
-      if (item.status === "running") turn.runningTools += 1;
-      const usage = item.usage;
-
-      if (usage !== undefined) turn.used.push({ id: item.id, usage });
+    turn.rows.push(item);
+    // The figures stand under the last row a provider answered with.
+    if (item.kind === "assistant" && item.usage !== undefined)
+      turn.footerId = item.id;
+    if (turn.startTs === undefined) {
+      const ts = startTsOf(item);
+      if (ts !== undefined) turn.startTs = ts;
     }
   }
   flush();
@@ -189,30 +337,23 @@ export function turnStatsById(
 
 export function conversationStats(
   items: readonly TranscriptItem[],
-
-  sessionStartTs?: number,
+  clock: SessionClock,
+  sessionStart?: number,
 ): ConversationStats | null {
-  const used = usageItems(items);
-  if (used.length === 0) return null;
-  const starts: number[] = [];
-  for (const item of items) {
-    if (item.kind === "user" && item.ts !== undefined) starts.push(item.ts);
-    if (item.kind === "assistant" && item.usage !== undefined)
-      starts.push(item.usage.startTs);
-    if (item.kind === "tool" && item.startTs !== undefined)
-      starts.push(item.startTs);
-  }
-  const figures = figuresOf(used);
-  const startTs =
-    sessionStartTs ??
-    (starts.length > 0 ? Math.min(...starts) : used[0].usage.startTs);
+  const rows = scan(items);
+  if (rows.used.length === 0 && rows.decode === null) return null;
+  const figures = measuredOf(rows, clock.now);
   return {
-    turns: used.length,
+    // The decode in flight is a turn the session has taken even though its
+    // usage has not landed yet, and lands as one of these a moment later.
+    turns: rows.used.length + (rows.decode === null ? 0 : 1),
     input: figures.input,
     output: figures.output,
     cost: figures.cost,
-    durMs: Math.max(0, figures.endTs - startTs),
+    durMs: sessionSpanOf(items, figures, clock, sessionStart),
     tpsOutput: figures.tpsOutput,
     genMs: figures.genMs,
+
+    live: figures.live,
   };
 }

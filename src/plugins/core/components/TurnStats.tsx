@@ -19,6 +19,10 @@ import {
 interface Segment {
   icon?: IconName;
   text: string;
+
+  /** A figure the run is still moving — a rate read off a decode in flight —
+   * stands in the accent so it reads as the live one, not a settled record. */
+  live?: boolean;
 }
 
 function turnSegments(stats: TurnStats): Segment[] {
@@ -45,6 +49,7 @@ function conversationSegments(stats: ConversationStats): Segment[] {
   segments.push({
     icon: "bolt",
     text: formatTokensPerSecond(stats.tpsOutput, stats.genMs),
+    live: stats.live,
   });
   const cost = formatCost(stats.cost);
   if (cost !== "") segments.push({ text: cost });
@@ -58,6 +63,7 @@ function StatsLine(props: {
 }): JSX.Element {
   const t = useAdwaita();
   const muted = mutedText(t);
+  const live = t.color.accent.base;
   const size = t.type.caption;
   // A mark in a stat line stands beside figures of this size and takes its measure.
   const glyph = glyphForText(size);
@@ -89,18 +95,19 @@ function StatsLine(props: {
           {props.separator}
         </text>,
       );
+    const ink = segment.live === true ? live : muted;
     if (segment.icon !== undefined)
       out.push(
         <Icon
           key={`icon-${i}`}
           name={segment.icon}
           size={glyph}
-          color={muted}
+          color={ink}
           style={{ flexShrink: 0, userSelect: "none" }}
         />,
       );
     out.push(
-      <text key={`text-${i}`} style={figure}>
+      <text key={`text-${i}`} style={{ ...figure, color: ink }}>
         {segment.text}
       </text>,
     );

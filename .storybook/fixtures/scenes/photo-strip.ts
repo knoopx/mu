@@ -260,9 +260,15 @@ export const RELEASE_TURN: TranscriptItem[] = [
   },
 ];
 
+// The decode in flight: it opened a couple of seconds after the prompt, so the
+// status bar's live speed is the rate it has streamed at, and the scene's own
+// clock (clockOf) answers a moment and a half later.
 export const STREAM_TURN: TranscriptItem[] = [
   userTurn("u-stream", "and the same paragraph for the read preview", 33),
-  answer("a-stream", PREVIEW_STREAM, { streaming: true }),
+  answer("a-stream", PREVIEW_STREAM, {
+    streaming: true,
+    startTs: at(min(33) + 2_000),
+  }),
 ];
 
 export const SESSION_ITEMS: TranscriptItem[] = [

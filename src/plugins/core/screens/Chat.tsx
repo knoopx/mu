@@ -77,6 +77,7 @@ import {
 } from "../lib/session/sessionList";
 import type { SessionListState } from "../hooks/useSessionList";
 import { useChatSession } from "../hooks/useChatSession";
+import { useRunningClock } from "../hooks/useRunningClock";
 import type { ChatSessionEffects } from "../lib/session/sessionCommands";
 import {
   useComposerState,
@@ -418,6 +419,10 @@ export interface ChatAppProps {
   initialInput?: string;
 
   initialAttachments?: ComposerAttachment[];
+
+  /** A story pins the moment a session's figures are read at, so the elapsed
+   * time and speed of a running scene are the scene's own and never drift. */
+  now?: number;
 }
 
 const chatLayer: StyleDesc = {
@@ -551,10 +556,16 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     active: showProjectSummary,
   });
 
+  // Only the run in this window moves the figures: a preview of another session
+  // has settled rows and answers with its own, unchanging, totals.
+  const running = preview === null && isStreaming;
+  const tick = useRunningClock(running);
+
   const transcript = useTranscriptView({
     items,
     preview,
     sessionStart,
+    clock: { now: props.now ?? tick, running },
     mode,
     askOpen: ask.request !== null,
     listRef: transcriptListRef,

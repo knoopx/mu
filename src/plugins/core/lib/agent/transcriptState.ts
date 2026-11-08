@@ -35,6 +35,10 @@ export type TranscriptItem =
       id: string;
       text: string;
       streaming: boolean;
+
+      /** When the decode began — the only clock a message streaming has, since
+       * its usage arrives with its end. */
+      startTs?: number;
       stopReason?: string;
       reasoning?: string;
 
@@ -45,6 +49,10 @@ export type TranscriptItem =
       id: string;
       toolCallId: string;
       startTs?: number;
+
+      /** When the call finished running — the last activity of a turn whose
+       * answer came before it. */
+      endTs?: number;
 
       usage?: AssistantUsage;
       name: string;
@@ -63,7 +71,7 @@ export type ToolTranscriptItem = Extract<TranscriptItem, { kind: "tool" }>;
 
 export type TranscriptAction =
   | { type: "user"; text: string; ts?: number; images?: ToolImage[] }
-  | { type: "assistant_start"; id: string }
+  | { type: "assistant_start"; id: string; startTs?: number }
   | { type: "assistant_delta"; id: string; delta: string }
   | { type: "assistant_thinking"; id: string; delta: string }
   | {
@@ -104,6 +112,7 @@ export type TranscriptAction =
       output: string;
       details?: unknown;
       image?: ToolImage;
+      endTs?: number;
     }
   | { type: "tool_usage"; toolCallId: string; usage: AssistantUsage }
   | { type: "system"; text: string }
@@ -239,7 +248,13 @@ const startAssistant = (
   isStreaming: true,
   items: [
     ...state.items,
-    { kind: "assistant", id: action.id, text: "", streaming: true },
+    {
+      kind: "assistant",
+      id: action.id,
+      text: "",
+      streaming: true,
+      ...(action.startTs === undefined ? {} : { startTs: action.startTs }),
+    },
   ],
 });
 
@@ -353,6 +368,7 @@ const toolEnd = (
       output: action.output || item.output,
       details: action.details !== undefined ? action.details : item.details,
       image: action.image !== undefined ? action.image : item.image,
+      ...(action.endTs === undefined ? {} : { endTs: action.endTs }),
     }),
   );
 
@@ -495,6 +511,7 @@ interface ToolResult {
   output: string;
   details?: unknown;
   image?: ToolImage;
+  endTs?: number;
 }
 
 function indexToolResults(
@@ -503,11 +520,13 @@ function indexToolResults(
   const results = new Map<string, ToolResult>();
   for (const m of messages) {
     if (m.role !== "toolResult" || !m.toolCallId) continue;
+    const endTs = num(m.timestamp);
     results.set(m.toolCallId, {
       ok: m.isError !== true,
       output: contentToText(m.content),
       details: m.details,
       image: toolImageOf(m.content),
+      ...(endTs === 0 ? {} : { endTs }),
     });
   }
   return results;
@@ -565,6 +584,7 @@ function toolItems(
       status: result?.ok === false ? "error" : "ok",
       output: result?.output ?? "",
       details: result?.details,
+      ...(result?.endTs === undefined ? {} : { endTs: result.endTs }),
       ...(result?.image === undefined ? {} : { image: result.image }),
     });
   }

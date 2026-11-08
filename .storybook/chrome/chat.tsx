@@ -19,6 +19,7 @@ import type { ComposerAttachment } from "../../src/plugins/core/components/compo
 import { stubChatSession, stubSessionList } from "../chatSource";
 import { contextAtPercent, sceneContext } from "../fixtures/models";
 import { contextUsedOf } from "../fixtures/context";
+import { clockOf } from "../fixtures/turn";
 
 export const STAGE: Parameters = {};
 
@@ -100,6 +101,9 @@ export function chat(props: ChatStoryProps = {}): JSX.Element {
     (context === undefined
       ? sceneContext(contextUsedOf(items ?? []))
       : contextAtPercent(context));
+  // A scene keeps its own clock: the status bar's figures are read at a moment,
+  // and a running scene that read the wall clock would print a new PNG hourly.
+  const stageNow = appProps.now ?? clockOf(items ?? []);
 
   const { session } = stubChatSession({
     items,
@@ -112,6 +116,7 @@ export function chat(props: ChatStoryProps = {}): JSX.Element {
   return (
     <ChatApp
       {...appProps}
+      now={stageNow}
       initialInput={draft}
       initialAttachments={attachments}
       openSession={() => Promise.resolve(session)}
