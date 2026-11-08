@@ -9,12 +9,14 @@ import {
   useListFollow,
   useListWindow,
   VirtualListPanel,
+  type Change,
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
 import { ROW_HEIGHT } from "../../core/lib/ui/tokens";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { iconForFile } from "../../core/lib/composer/options";
 import { relativeAge } from "../../core/lib/utils/time";
+import { hasNoDescription, NO_DESCRIPTION } from "../constants";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
 import { ChangesPreview } from "./ChangesPreview";
 import type { ChangesPanelState } from "../hooks/useChangesPanel";
@@ -32,7 +34,16 @@ const ROW_SLOT: StyleDesc = {
 
 function firstLine(text: string): string {
   const line = text.split("\n")[0] ?? "";
-  return line.length === 0 ? "(no description)" : line;
+  return line.length === 0 ? NO_DESCRIPTION : line;
+}
+
+/**
+ * A change row goes quiet when there is nothing to read on it, or when it is
+ * there to be looked at rather than acted on — an immutable change takes no
+ * describe, split or drop.
+ */
+function changeRowIsDimmed(change: Change): boolean {
+  return change.immutable || hasNoDescription(change.description);
 }
 
 function PaneCaption({ text }: { text: string }): JSX.Element {
@@ -111,6 +122,7 @@ export function ChangesPanel({
                     description={relativeAge(entry.timestamp)}
                     tabular
                     picked={entry.change_id === panel.currentId}
+                    dimmed={changeRowIsDimmed(entry)}
                     active={i === panel.sel}
                     focused={panel.focus === "stack"}
                     onClick={() => panel.selectChange(i)}

@@ -43,6 +43,7 @@ import {
   type ProjectSummaryModel,
 } from "../lib/project/projectSummary";
 import type { PromptPill } from "../lib/project/promptTemplates";
+import { hasNoDescription } from "../../vcs/constants";
 
 /** How many characters a feed row's two fixed columns hold. */
 const ID_COLUMN_CHARS = 6;
@@ -75,10 +76,9 @@ function ChangeFeedRow(props: {
 }): JSX.Element {
   const t = useAdwaita();
   const { change, bookmarks } = props.feed;
-  const descColor =
-    change.description === "(no description)"
-      ? mutedText(t)
-      : t.color.text.primary;
+  const descColor = hasNoDescription(change.description)
+    ? mutedText(t)
+    : t.color.text.primary;
   return (
     <ListRow
       height={ROW_HEIGHT}

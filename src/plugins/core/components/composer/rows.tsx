@@ -73,10 +73,14 @@ function rowStyle(t: AdwaitaTheme, active: boolean, focused = true): StyleDesc {
   return panelRowStyle(t, active, focused, ROW_HEIGHT);
 }
 
-const label = (t: AdwaitaTheme, active: boolean): StyleDesc => ({
+/**
+ * A row's own ink. `dimmed` is the ink of a row there to be read, not acted on:
+ * it takes the row's meta ink, so the whole line reads at one quiet level.
+ */
+const label = (t: AdwaitaTheme, dimmed = false): StyleDesc => ({
   fontSize: t.type.caption,
   fontFamily: t.type.fontFamily,
-  color: t.color.text.primary,
+  color: dimmed ? mutedText(t) : t.color.text.primary,
   userSelect: "none",
   whiteSpace: "nowrap",
 });
@@ -285,7 +289,7 @@ export function ComposerCommandRow(
     >
       <text
         style={{
-          ...label(t, props.active),
+          ...label(t),
           width: monoColumn(t, NAME_COLUMN_CHARS),
           flexShrink: 0,
         }}
@@ -324,6 +328,9 @@ export interface ComposerOptionRowProps {
 
   picked: boolean;
 
+  /** A row there to be read, not acted on: an immutable change, a placeholder. */
+  dimmed?: boolean;
+
   checkColumn?: boolean;
   active: boolean;
 
@@ -357,7 +364,7 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
       <div style={textColumn(t)}>
         <text
           style={{
-            ...label(t, props.active),
+            ...label(t, props.dimmed === true),
             ...rowLine(t, t.type.caption, 1),
           }}
         >
@@ -501,7 +508,7 @@ export function ComposerThemeRow(props: ComposerThemeRowProps): JSX.Element {
     >
       <text
         style={{
-          ...label(t, props.active),
+          ...label(t),
           ...rowLine(t, t.type.caption, 1),
           flexGrow: 1,
         }}

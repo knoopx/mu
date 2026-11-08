@@ -63,6 +63,21 @@ export const VCS_TOOL_LABELS: Record<string, string> = {
   [VCS_HUNK_SPLIT_TOOL]: "VCS hunk split",
 };
 
+/**
+ * How a change with nothing written on it is shown, in every row and every
+ * answer — the placeholder adwaita's `sanitizeDescription` fills a blank with.
+ */
+export const NO_DESCRIPTION = "(no description)";
+
+/**
+ * Whether a change has nothing to read: the placeholder, or a blank first line.
+ * A row that says this is drawn quiet, like an immutable one is.
+ */
+export function hasNoDescription(description: string): boolean {
+  const line = (description.split("\n")[0] ?? "").trim();
+  return line.length === 0 || line === NO_DESCRIPTION;
+}
+
 /** A change id is shown short in the log and in every instruction. */
 export const SHORT_CHANGE_ID = 8;
 

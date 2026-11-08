@@ -7,6 +7,7 @@
  */
 
 import {
+  NO_DESCRIPTION,
   VCS_CONFLICTS_TOOL,
   VCS_DESCRIBE_TOOL,
   VCS_FILE_DIFF_TOOL,
@@ -313,7 +314,7 @@ function logView(
     rowOf(
       row.change,
       firstLineOf(row.description) === ""
-        ? "(no description)"
+        ? NO_DESCRIPTION
         : firstLineOf(row.description),
       tail(row.author, row.date, row.commit),
       [row.bookmarks, row.tags]
@@ -376,7 +377,7 @@ function historyView(details: Details, itemStatus: string): VcsToolView {
     rowOf(
       row.change === "" ? row.hash : row.change,
       firstLineOf(row.subject) === ""
-        ? "(no description)"
+        ? NO_DESCRIPTION
         : firstLineOf(row.subject),
       tail(row.hash, row.author, row.date),
       `#${String(index + 1)}`,
@@ -489,7 +490,7 @@ function describeView(
     ? cellsOf(["change", change], ["commit", commit])
     : cellsOf(["rev", asked], ["change", change], ["commit", commit]);
   v.headline =
-    status === "ok" ? (message === "" ? "(no description)" : message) : "";
+    status === "ok" ? (message === "" ? NO_DESCRIPTION : message) : "";
   // The key column says the row is the state before, so no badge repeats it.
   v.rows = rewritten ? [rowOf("was", previousChange, previousCommit, "")] : [];
   v.note = noteFor(
