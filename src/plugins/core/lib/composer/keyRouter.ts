@@ -6,6 +6,7 @@ import { handleListKey } from "../ui/listNav";
 import {
   isCompletionMode,
   isCycleTarget,
+  isTerminalMode,
   type ComposerEvent,
   type ComposerMode,
   type PickIntent,
@@ -33,6 +34,7 @@ const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
     event: { type: "openPick", target: "guardrails" },
   },
   { id: "composer.tree", event: { type: "openPick", target: "tree" } },
+  { id: "composer.terminal", event: { type: "openPick", target: "terminal" } },
   { id: "composer.theme", event: { type: "openPick", target: "theme" } },
   { id: "composer.accent", event: { type: "openPick", target: "accent" } },
 ];
@@ -47,6 +49,7 @@ const WIDE_HOTKEYS: Record<string, string> = {
   changes: "composer.changes",
   oplog: "composer.oplog",
   tree: "composer.tree",
+  terminal: "composer.terminal",
 };
 
 function wideHotkeyId(mode: ComposerMode): string {
@@ -340,10 +343,25 @@ function composerKey(
   );
 }
 
+/**
+ * Whether the focused panel is allowed to see this key at all.
+ *
+ * A panel's keys reach the app twice — once through the element that has focus and
+ * once through the window listener — and the wide panels answer them in the window
+ * route, where the hotkey that opened the panel is the one key that closes it. The
+ * terminal is the wide panel whose every other key belongs to a shell, so the
+ * element route is shut for it entirely: an Escape taken there would close the panel
+ * on the same keystroke that was handed to an editor as "leave insert mode".
+ */
+function elementTakesKeys(mode: ComposerMode): boolean {
+  return isTerminalMode(mode) === false;
+}
+
 export function composerFieldKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (elementTakesKeys(ctx.mode) === false) return;
   if (completionKey(event, ctx, false)) return;
   if (pasteKey(event, ctx)) return;
   if (clearKey(event, ctx)) return;
@@ -356,6 +374,7 @@ export function composerListKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (elementTakesKeys(ctx.mode) === false) return;
   if (completionKey(event, ctx, false)) return;
   if (composerKey(event, ctx, false)) return;
   handlePanelKey(event, ctx, true);

@@ -94,6 +94,11 @@ import {
   TableToolRows,
   tableToolPreviewOf,
 } from "../../figures/components/TableToolRows";
+import {
+  isPlanTool,
+  PlanToolRows,
+  planToolPreviewOf,
+} from "../../planning/components/PlanToolRows";
 import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
 import { codemodePreviewOf } from "../lib/codemode/script";
 
@@ -195,6 +200,7 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isChartTool(item.name) ||
     isTreeTool(item.name) ||
     isTableTool(item.name) ||
+    isPlanTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -226,6 +232,7 @@ function argsLineOf(
   if (isChartTool(item.name)) return chartToolPreviewOf(item);
   if (isTreeTool(item.name)) return treeToolPreviewOf(item);
   if (isTableTool(item.name)) return tableToolPreviewOf(item);
+  if (isPlanTool(item.name)) return planToolPreviewOf(item);
   if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
@@ -356,6 +363,16 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="table" open>
         <TableToolRows item={item} />
+      </ToolContent>,
+    );
+  // A plan is not a table of findings either: its rows are the list itself, each
+  // step in the colour of where it stands, drawn from the steps the call left in
+  // its details — which is why a session resumed next week still shows the plan
+  // it ended with.
+  if (isPlanTool(item.name))
+    panels.push(
+      <ToolContent key="plan" open>
+        <PlanToolRows item={item} />
       </ToolContent>,
     );
   return panels;

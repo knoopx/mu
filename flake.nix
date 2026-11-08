@@ -421,6 +421,16 @@
           url = "https://registry.npmjs.org/web-tree-sitter/-/web-tree-sitter-0.27.2.tgz";
           hash = "sha256-Cx0bLtzBR2x7FxCipFie75ypz0YbqlD4mVbVdTCWQ2I=";
         };
+        # Terminal: the VT engine behind the composer's terminal panel. Only the
+        # core is used — wterm renders terminal rows as DOM text and mu has no
+        # DOM, so the app paints the cells itself. Its Zig parser sits in a
+        # ~50 KB wasm binary that the package embeds as base64 in its own JS, so
+        # `bun build --compile` carries it and there is no asset to install
+        # beside the executable (unlike photon and quickjs).
+        wtermCore = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@wterm/core/-/core-0.5.9.tgz";
+          hash = "sha256-fPwVD6vwFzjL1CECT2yAD6qvd1fE1hLWE283W1QuUHY=";
+        };
         which = pkgs.fetchurl {
           url = "https://registry.npmjs.org/which/-/which-2.0.2.tgz";
           hash = "sha256-oTrfX93rdpZV7c5VHoH7sRkEucm+dtleQdqMTEmdTtw=";
@@ -500,6 +510,7 @@
             mkdir -p node_modules/@silvia-odwyer/photon-node && tar xzf ${npmDeps.silviaOdwyerPhotonNode} -C node_modules/@silvia-odwyer/photon-node --strip-components=1
             mkdir -p node_modules/@stablelib/base64 && tar xzf ${npmDeps.stablelibBase64} -C node_modules/@stablelib/base64 --strip-components=1
             mkdir -p node_modules/@vscode/tree-sitter-wasm && tar xzf ${npmDeps.vscodeTreeSitterWasm} -C node_modules/@vscode/tree-sitter-wasm --strip-components=1
+            mkdir -p node_modules/@wterm/core && tar xzf ${npmDeps.wtermCore} -C node_modules/@wterm/core --strip-components=1
             mkdir -p node_modules/agent-base && tar xzf ${npmDeps.agentBase} -C node_modules/agent-base --strip-components=1
             mkdir -p node_modules/balanced-match && tar xzf ${npmDeps.balancedMatch} -C node_modules/balanced-match --strip-components=1
             mkdir -p node_modules/base64-js && tar xzf ${npmDeps.base64Js} -C node_modules/base64-js --strip-components=1
@@ -621,10 +632,28 @@
             # path (libxkbcommon + the dlopened wayland/EGL/Vulkan libraries),
             # the native binding path, and this package's share dir so the icon
             # and desktop entry resolve when the binary runs from a shell.
+            #
+            # The two loader paths are mu's own answers, and a wrapper cannot keep
+            # an environment to one process: every child mu starts would inherit
+            # them. That is not cosmetic — every napi-rs generated loader reads
+            # NAPI_RS_NATIVE_LIBRARY_PATH before looking anywhere else and takes
+            # whatever it names without checking what it is, so a project built in
+            # mu's terminal panel or by one of the agent's commands would dlopen
+            # gpuix-native as if it were its own binding and fail with an export
+            # that came back undefined. So the app retires that variable in its own
+            # process once the GPU binding has loaded, and strips NODE_PATH at each
+            # spawn that is not another mu window (`src/plugins/core/lib/utils/
+            # loaderEnv.ts`); only mu itself ever sees either.
+            # The terminal panel starts its shell under `setsid -c` so the shell
+            # becomes a session leader with the pty as its controlling terminal
+            # (job control, Ctrl+C, a pager's screen). A wrapped binary sees the
+            # host's PATH, but a Nix-built mu must not depend on the host having
+            # util-linux, so put this package's setsid on the PATH first.
             makeWrapper $out/lib/mu $out/bin/mu \
               --set LD_LIBRARY_PATH "${libs}" \
               --set NAPI_RS_NATIVE_LIBRARY_PATH "$out/lib/mu-native/gpuix-native.linux-x64-gnu.node" \
               --set NODE_PATH "$out/lib/node_modules" \
+              --prefix PATH : "${pkgs.util-linux}/bin" \
               --prefix XDG_DATA_DIRS : "$out/share"
           '';
         };
@@ -638,7 +667,8 @@
       # library path set explicitly (as the package wrapper does), so that
       # bun dev works inside nix develop.
       devShells.${system}.default = pkgs.mkShell {
-        packages = [ pkgs.bun ];
+        # util-linux: the terminal panel's `setsid`.
+        packages = [ pkgs.bun pkgs.util-linux ];
         LD_LIBRARY_PATH = libs;
       };
     };

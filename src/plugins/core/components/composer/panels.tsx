@@ -16,6 +16,9 @@ import type { ChangesPanelState } from "../../../vcs/hooks/useChangesPanel";
 import type { OplogPanelState } from "../../../vcs/hooks/useOplogPanel";
 import { SessionTreePanel } from "../SessionTreePanel";
 import { TREE_HINTS } from "../../lib/session/shortcuts";
+import { TerminalPanel } from "../../../terminal/components/TerminalPanel";
+import { terminalHints } from "../../../terminal/lib/shortcuts";
+import type { TerminalPanelState } from "../../../terminal/types";
 import type { SessionTreeApi } from "../../hooks/useSessionTree";
 import type { ChatSession } from "../../lib/session/chatSession";
 import type { SessionListRow } from "../../lib/session/sessionList";
@@ -138,6 +141,7 @@ export interface ComposerPanelData {
   oplog: OplogPanelState;
   tree: SessionTreeApi;
   guardrails: GuardrailsPanelApi;
+  terminal: TerminalPanelState;
   previewFor(path: string): ComposerPreviewSpec;
   windowHeight: number | undefined;
   onPick: (row: ComposerPanelRow, intent: PickIntent) => void;
@@ -332,10 +336,18 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
   hints: TREE_HINTS,
 });
 
+/** A terminal says what shell it is running, how big its screen is and how much
+ *  history is above it — and its hint line says the one way out, because every
+ *  other key belongs to the program on the screen. */
+const terminalStatusSpec = (terminal: TerminalPanelState): ComposerPanelStatusSpec => ({
+  message: terminal.status,
+  hints: terminalHints(),
+});
+
 /** A wide panel draws its list and its status line, and no draft above them. */
 const WIDE_SLOTS: PanelSlots = { field: false, statusBar: true };
 
-type WideTarget = "changes" | "oplog" | "tree";
+type WideTarget = "changes" | "oplog" | "tree" | "terminal";
 
 /**
  * The wide panels that size themselves to their rows.
@@ -349,6 +361,14 @@ const WIDE_FIT_ROWS: readonly WideTarget[] = ["tree"];
 function wideNode(data: ComposerPanelData, target: WideTarget): ReactNode {
   if (target === "changes") return <ChangesPanel panel={data.changes} />;
   if (target === "oplog") return <OplogPanel panel={data.oplog} />;
+  if (target === "terminal")
+    return (
+      <TerminalPanel
+        view={data.terminal.view}
+        grid={data.terminal.grid}
+        note={data.terminal.note}
+      />
+    );
   return (
     <SessionTreePanel
       model={data.tree}
@@ -365,6 +385,7 @@ function wideOnKey(
 ): (event: EventPayload) => boolean {
   if (target === "changes") return data.changes.onKey;
   if (target === "oplog") return data.oplog.onKey;
+  if (target === "terminal") return data.terminal.onKey;
   return data.tree.onKey;
 }
 
@@ -374,6 +395,7 @@ function wideStatus(
 ): ComposerPanelStatusSpec {
   if (target === "changes") return changesStatus(data.changes);
   if (target === "oplog") return oplogStatus(data.oplog);
+  if (target === "terminal") return terminalStatusSpec(data.terminal);
   return treeStatus(data.tree);
 }
 
@@ -468,7 +490,12 @@ export function composerPanelSpec(
   rows: ComposerPanelRow[],
 ): ComposerPanelSpec | undefined {
   const target = data.mode.kind === "pick" ? data.mode.target : null;
-  if (target === "changes" || target === "oplog" || target === "tree")
+  if (
+    target === "changes" ||
+    target === "oplog" ||
+    target === "tree" ||
+    target === "terminal"
+  )
     return widePanelSpec(data, target);
   if (data.mode.kind === "draft") return undefined;
   return listPanelSpec(data, rows);

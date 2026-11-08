@@ -85,6 +85,16 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
     ),
     def("composer.tree", "ctrl+shift+t", "Open the session history tree"),
     def(
+      "composer.terminal",
+      "ctrl+shift+enter",
+      "Open the terminal composer panel",
+    ),
+    def(
+      "composer.terminalPaste",
+      "ctrl+shift+v",
+      "Paste text into the terminal composer panel",
+    ),
+    def(
       "composer.theme",
       "ctrl+,",
       "Open the theme composer with a live preview",

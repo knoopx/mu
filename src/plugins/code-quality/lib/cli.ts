@@ -22,6 +22,7 @@ import {
   RUNNER_BINARY,
 } from "../constants";
 import type { QualityToolStatus } from "../types";
+import { withoutMuLoaderEnv } from "../../core/lib/utils/loaderEnv";
 
 const pExecFile = promisify(execFile);
 
@@ -139,7 +140,9 @@ async function run(
       cwd,
       maxBuffer: MAX_BUFFER,
       timeout: ANALYSER_TIMEOUT_MS,
-      env: { ...process.env, NO_COLOR: "1" },
+      // The analyser is a foreign program with its own dependencies: mu's loader
+      // paths must not answer for it.
+      env: withoutMuLoaderEnv({ ...process.env, NO_COLOR: "1" }),
     });
     return { ...base, stdout, stderr, code: 0, status: "ok", error: "" };
   } catch (error: unknown) {

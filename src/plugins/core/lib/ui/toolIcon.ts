@@ -27,6 +27,7 @@ export const TOOL_ICONS: Record<string, IconName> = {
   "code-symbol-inspect": "category",
   "code-symbol-references": "accountTree",
   "mermaid-render": "schema",
+  plan: "taskAlt",
   "github-repo": "book",
   "github-file": "description",
   "github-tree": "folderOpen",

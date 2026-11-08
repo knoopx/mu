@@ -72,6 +72,9 @@ export const PANEL_PLACEHOLDER: Record<
   userMessageHistory:
     "Type to search the user messages of every session in this folder",
   guardrails: "Type to filter the guardrail domains",
+  // A terminal draws a screen, not a list to narrow, so it has nothing to ask the
+  // draft for.
+  terminal: undefined,
 };
 
 export const panelPlaceholder = (

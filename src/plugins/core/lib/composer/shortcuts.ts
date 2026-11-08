@@ -53,7 +53,7 @@ export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
   if (panelCanDelete(panel))
     rows.push({
       id: "delete",
-      kbds: [getKeybindings().get(DELETE_ROW_KEY)],
+      kbds: [getKeybindings().chord(DELETE_ROW_KEY)],
       desc: PANEL_DELETE[panel] ?? "delete",
     });
   rows.push({ id: "close", kbds: ["escape"], desc: "close" });
@@ -69,7 +69,7 @@ export function pathCompletionShortcuts(): Shortcut[] {
   return [
     {
       id: "complete",
-      kbds: [getKeybindings().get(AUTOCOMPLETE_KEY)],
+      kbds: [getKeybindings().chord(AUTOCOMPLETE_KEY)],
       desc: "complete",
     },
     ...navShortcuts({ select: "move" }),
@@ -106,7 +106,7 @@ export function userMessageHistoryShortcuts(): Shortcut[] {
     ...navShortcuts({ select: "move" }),
     {
       id: "older",
-      kbds: [getKeybindings().get(USER_MESSAGE_HISTORY_KEY)],
+      kbds: [getKeybindings().chord(USER_MESSAGE_HISTORY_KEY)],
       desc: "older",
     },
     { id: "use", kbds: ["enter"], desc: "use" },

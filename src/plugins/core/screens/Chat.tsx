@@ -205,6 +205,7 @@ function panelDataOf(
     changes: panels.changesPanel,
     oplog: panels.oplogPanel,
     tree: panels.tree,
+    terminal: panels.terminal,
     guardrails: panels.guardrails,
     previewFor: panels.previewFor,
     windowHeight: panels.windowHeight,

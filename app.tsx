@@ -14,6 +14,13 @@ import { chatProbe } from "./src/plugins/core/lib/agent/chatProbe";
 import { useAdwaitaMuTheme } from "./src/plugins/core/lib/theme/adwaita";
 import { useEffectiveTheme } from "./src/plugins/core/lib/theme/themeStore";
 import { ChatApp } from "./src/plugins/core/screens/Chat";
+import { retireNativeLibraryEnv } from "./src/plugins/core/lib/utils/loaderEnv";
+
+// What mu was launched with to find its own binaries stops being mu's the moment
+// a child reads it. The imports above are what loaded the GPU binding, so the
+// napi-rs override path is now only a trap for the next generated loader to
+// fall into — including one inside a project mu runs a command for.
+retireNativeLibraryEnv();
 
 const probeDir = process.env.MU_PROBE_DIR;
 if (probeDir) {

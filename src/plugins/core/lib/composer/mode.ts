@@ -13,7 +13,8 @@ export type ComposerTarget =
   | "theme"
   | "accent"
   | "userMessageHistory"
-  | "guardrails";
+  | "guardrails"
+  | "terminal";
 
 const CYCLE_TARGETS: ComposerTarget[] = ["userMessageHistory"];
 
@@ -159,6 +160,19 @@ export function isPanelMode(mode: ComposerMode): boolean {
  */
 export function isCompletionMode(mode: ComposerMode): boolean {
   return mode.kind === "pick" && mode.target === "path";
+}
+
+/**
+ * The terminal panel is the draft's opposite: it has no query and takes no keys.
+ *
+ * Every other panel is a list the reader narrows by typing, so a keystroke is a
+ * character of a query and Escape is the way out. The terminal's reader is a shell
+ * on the other end of a pty: the same keystroke is a command, and Escape is what
+ * an editor is left with. So the panel keeps its keys for the shell and gives up
+ * only the chord that opened it.
+ */
+export function isTerminalMode(mode: ComposerMode): boolean {
+  return mode.kind === "pick" && mode.target === "terminal";
 }
 
 export function panelQuery(mode: ComposerMode): string {

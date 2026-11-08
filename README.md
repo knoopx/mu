@@ -25,9 +25,11 @@ Every screen below is shown as it looks in a real window, with a session in it.
 | History        | the conversation as a tree, the cursor on a side branch                                        |
 | Changes        | the project's history, the files of a change, its diff                                         |
 | Changes        | a split asked of the agent, the diff it read, the two changes it made                          |
+| Terminal       | a shell open in the composer slot: its prompt, its colours, its history                        |
 | Web search     | a search, the pages it read, a search that got nothing                                         |
 | GitHub         | an upstream repo read, one of its files as text, a pull request that merged, a path GitHub refused |
 | Code quality   | what the project says about itself: thresholds, unused code, clones, a change's reach          |
+| Planning       | the work written down as steps, the list sent again with the standings moved, one step refused  |
 | Generative UI  | an answer that is a working screen: a filter picked, a stepper moved, one press waiting        |
 | Figures        | numbers plotted in the log: bars over a year, their axis and peak read back, a value refused  |
 | Structures     | a folder tree and a cost table drawn in the log, its columns added up, a row refused for not fitting |
@@ -115,6 +117,18 @@ jj keeps a log of every change it has made to the repo, and `Ctrl+O` opens it: t
 
 ![A split asked of the agent, and the two changes it made](stories/Changes/instructed.png)
 
+## Terminal
+
+`Ctrl+Shift+Enter` opens a shell in the composer slot — a real one, on a real pty, in your project's folder. It is your shell, not the agent's: it reads your rc file, your prompt arrives with your colours, `tty` answers with a `/dev/pts` number, and a program that checks whether it is talking to a terminal believes it is. The panel's size is the shell's size, so `stty size` inside it says what the panel counted, and resizing the window reflows the screen rather than leaving a column of stale cells.
+
+There is no DOM here, so the terminal is one the app draws itself. The part that is genuinely hard — the escape grammar, the scrollback, the alternate screen, the modes a program asks for, wide glyphs and their continuation cells — is [wterm](https://github.com/vercel-labs/wterm)'s: its Zig VT engine, compiled to a 50 KB WASM binary, used as its headless core, with mu painting the cells in the app's own mono and the window's own colours. A 24-bit colour a program asks for is drawn as that colour, and a cell that asked for none stays the theme's, so a light terminal is not painted in dark-mode ink.
+
+Keys belong to the shell. Escape is Escape, Page Up is the pager's, Ctrl+C is Ctrl+C — which is why the way out is the same keystroke that opened the panel, printed in its hint line, and why the panel's own moves take the chords a terminal keeps for itself: `Shift+PageUp` walks 4000 lines of history while the program keeps plain Page Up, `Shift+End` comes back to the prompt, and paste is `Ctrl+Shift+V`, because `Ctrl+V` is readline's *insert this character literally*.
+
+The shell outlives the panel. Close it and a build started inside keeps building; open it again and the screen is where you left it, with the scrollback above it. One window keeps one shell, and the shell is gone when the window is.
+
+The scene is the `Terminal/shell` story; its PNG is not in the tree — capture needs a test-support build of `@gpuix/native`.
+
 ## Web search
 
 When the agent needs something your project does not know, it searches the web, and you watch it search. The pages it found are in the log with the answer they produced, so you can check its sources; a search that got nothing is shown as got nothing.
@@ -134,6 +148,14 @@ The scene is the `Github/checked` story; its PNG is not in the tree — capture 
 Before the agent changes a file it did not write, it asks the project about itself: what sits over the complexity thresholds, what nothing imports, what is copy-pasted, and how far one commit reaches. `code-complexity`, `code-dead-code`, `code-duplicates`, `code-review`, `code-symbol-inspect` and `code-symbol-references` answer in rows the log draws — chips for what was read, a meter showing how a finding ranks against its own run, clone groups listed with every place they appear — and every read is bounded, so surveying a large tree stays a survey instead of a wall of text. Nothing is fixed behind the agent's back: an unused export it found is a row, and deleting it is your call.
 
 ![What the project says about itself](stories/CodeQuality/surveyed.png)
+
+## Planning
+
+When the job has several steps in it, the agent writes them down before it starts: `plan` takes the whole list — one step per concrete thing it is about to do — and the list is drawn in the log, each step numbered in the log's id column and wearing the colour of where it stands: waiting, being worked on, done. Every call replaces the list, so there is no half-applied update to reconcile; three steps in, the agent sends the same six steps back with the standings moved, and the log keeps both rows, so you watch the plan move instead of taking its word for it. A step belongs to the session that wrote it: there is no owner on it and nothing is delegated.
+
+The answer is the plan read back — the counts, then every step with its standing — which is the list the agent re-sends with one word changed rather than rebuilding it from memory. An entry that carries a standing and nothing to do, or a standing outside `pending`, `in_progress`, `completed`, refuses the whole call and names the steps, because a plan that quietly lost its middle step is a different plan and nobody would find out. Past 20 steps the row stops drawing them and says so: a plan that long is a schedule, and the fix is to consolidate. A step is one line — what it produces, not how — and the plan is never the final answer, which is the session's output rather than a step on the way to it.
+
+The scene is the `Planning/planned` story; its PNG is not in the tree — capture needs a test-support build of `@gpuix/native`.
 
 ## Generative UI
 
@@ -226,6 +248,8 @@ Three themes (Light, Dark, Nightsky) and nine accent colours, picked from the co
 | `Ctrl` + `R`                   | Search your past messages          |
 | `Ctrl` + `K`                   | Project changes                    |
 | `Ctrl` + `Shift` + `T`         | Conversation tree                  |
+| `Ctrl` + `Shift` + `Enter`     | Terminal (the same key closes it)  |
+| `Ctrl` + `Shift` + `V`         | Paste into the terminal            |
 | `Ctrl` + `,`                   | Theme                              |
 | `Ctrl` + `Shift` + `,`         | Accent color                       |
 | `Ctrl` + `V`                   | Paste image                        |

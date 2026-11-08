@@ -9,6 +9,11 @@
  * checks the shape rather than trusting it.
  */
 
+import {
+  detailFlag,
+  detailNumber,
+  detailText,
+} from "../../core/lib/agent/toolDetails";
 import { counted } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
 import {
@@ -67,22 +72,13 @@ const EMPTY: ChartFigure = {
   error: "",
 };
 
-const stringOf = (value: unknown, fallback = ""): string =>
-  typeof value === "string" ? value : fallback;
-
-const numberOf = (value: unknown): number =>
-  typeof value === "number" && Number.isFinite(value) ? value : 0;
-
-const flagOf = (value: unknown, fallback: boolean): boolean =>
-  typeof value === "boolean" ? value : fallback;
-
 function figureOf(value: unknown): ChartFigure | null {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
-  const status = stringOf(record["status"]);
+  const status = detailText(record["status"]);
   if (status !== "ok" && status !== "empty" && status !== "invalid") return null;
 
-  const kind = stringOf(record["kind"]);
+  const kind = detailText(record["kind"]);
   const measure = record["measure"];
 
   return {
@@ -92,39 +88,39 @@ function figureOf(value: unknown): ChartFigure | null {
       typeof record["tone"] === "string"
         ? (record["tone"] as ChartFigure["tone"])
         : null,
-    height: numberOf(record["height"]),
-    width: numberOf(record["width"]),
-    grid: flagOf(record["grid"], false),
-    markers: flagOf(record["markers"], true),
-    fill: flagOf(record["fill"], false),
-    labels: flagOf(record["labels"], true),
+    height: detailNumber(record["height"]),
+    width: detailNumber(record["width"]),
+    grid: detailFlag(record["grid"], false),
+    markers: detailFlag(record["markers"], true),
+    fill: detailFlag(record["fill"], false),
+    labels: detailFlag(record["labels"], true),
     dash: typeof record["dash"] === "number" ? record["dash"] : null,
     emphasis: typeof record["emphasis"] === "number" ? record["emphasis"] : null,
-    unit: stringOf(record["unit"]),
-    caption: stringOf(record["caption"]),
+    unit: detailText(record["unit"]),
+    caption: detailText(record["caption"]),
     series: Array.isArray(record["series"])
       ? record["series"].filter((name): name is string => typeof name === "string")
       : [],
     points: Array.isArray(record["points"])
       ? record["points"].map(pointOf).filter((point): point is PlotPoint => point !== null)
       : [],
-    plotted: numberOf(record["plotted"]),
-    omitted: numberOf(record["omitted"]),
+    plotted: detailNumber(record["plotted"]),
+    omitted: detailNumber(record["omitted"]),
     measure:
       typeof measure === "object" && measure !== null
         ? {
-            min: numberOf((measure as Record<string, unknown>)["min"]),
-            max: numberOf((measure as Record<string, unknown>)["max"]),
-            total: numberOf((measure as Record<string, unknown>)["total"]),
-            mean: numberOf((measure as Record<string, unknown>)["mean"]),
-            peak: stringOf((measure as Record<string, unknown>)["peak"]),
-            peakValue: numberOf((measure as Record<string, unknown>)["peakValue"]),
-            first: stringOf((measure as Record<string, unknown>)["first"]),
-            last: stringOf((measure as Record<string, unknown>)["last"]),
+            min: detailNumber((measure as Record<string, unknown>)["min"]),
+            max: detailNumber((measure as Record<string, unknown>)["max"]),
+            total: detailNumber((measure as Record<string, unknown>)["total"]),
+            mean: detailNumber((measure as Record<string, unknown>)["mean"]),
+            peak: detailText((measure as Record<string, unknown>)["peak"]),
+            peakValue: detailNumber((measure as Record<string, unknown>)["peakValue"]),
+            first: detailText((measure as Record<string, unknown>)["first"]),
+            last: detailText((measure as Record<string, unknown>)["last"]),
           }
       : null,
     bad: Array.isArray(record["bad"]) ? record["bad"].map(badOf) : [],
-    error: stringOf(record["error"]),
+    error: detailText(record["error"]),
   };
 }
 
@@ -133,8 +129,8 @@ function pointOf(value: unknown): PlotPoint | null {
   const record = value as Record<string, unknown>;
   if (!Array.isArray(record["values"])) return null;
   return {
-    label: stringOf(record["label"]),
-    values: record["values"].map((entry) => numberOf(entry)),
+    label: detailText(record["label"]),
+    values: record["values"].map((entry) => detailNumber(entry)),
   };
 }
 
@@ -144,9 +140,9 @@ function badOf(value: unknown): PlotBadValue {
   }
   const record = value as Record<string, unknown>;
   return {
-    at: numberOf(record["at"]),
-    label: stringOf(record["label"]),
-    value: stringOf(record["value"]),
+    at: detailNumber(record["at"]),
+    label: detailText(record["label"]),
+    value: detailText(record["value"]),
   };
 }
 
@@ -271,17 +267,17 @@ const EMPTY_TABLE: TableFigure = {
 function nodeOf(value: unknown): StructureNode | null {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
-  const name = stringOf(record["name"]);
+  const name = detailText(record["name"]);
   if (name === "") return null;
   const children = Array.isArray(record["children"])
     ? record["children"].map(nodeOf).filter((node): node is StructureNode => node !== null)
     : [];
   return {
     name,
-    folder: flagOf(record["folder"], children.length > 0),
+    folder: detailFlag(record["folder"], children.length > 0),
     children,
-    added: numberOf(record["added"]),
-    removed: numberOf(record["removed"]),
+    added: detailNumber(record["added"]),
+    removed: detailNumber(record["removed"]),
   };
 }
 
@@ -289,7 +285,7 @@ function treeBadOf(value: unknown): TreeBadNode {
   const record = typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : {};
-  return { under: stringOf(record["under"]), value: stringOf(record["value"]) };
+  return { under: detailText(record["under"]), value: detailText(record["value"]) };
 }
 
 /** The one guard both structure readers open with: a record, and a status word. */
@@ -299,7 +295,7 @@ function detailsOf(details: unknown): {
 } | null {
   if (typeof details !== "object" || details === null) return null;
   const record = details as Record<string, unknown>;
-  const status = stringOf(record["status"]);
+  const status = detailText(record["status"]);
   if (status !== "ok" && status !== "empty" && status !== "invalid") return null;
   return { record, status: status as StructureStatus };
 }
@@ -317,17 +313,17 @@ function treeFigureOf(details: unknown): TreeFigure | null {
     expanded: Array.isArray(record["expanded"])
       ? record["expanded"].filter((path): path is string => typeof path === "string")
       : [],
-    caption: stringOf(record["caption"]),
-    counted: numberOf(record["counted"]),
-    drawn: numberOf(record["drawn"]),
-    omitted: numberOf(record["omitted"]),
-    folders: numberOf(record["folders"]),
-    leaves: numberOf(record["leaves"]),
-    depth: numberOf(record["depth"]),
-    added: numberOf(record["added"]),
-    removed: numberOf(record["removed"]),
+    caption: detailText(record["caption"]),
+    counted: detailNumber(record["counted"]),
+    drawn: detailNumber(record["drawn"]),
+    omitted: detailNumber(record["omitted"]),
+    folders: detailNumber(record["folders"]),
+    leaves: detailNumber(record["leaves"]),
+    depth: detailNumber(record["depth"]),
+    added: detailNumber(record["added"]),
+    removed: detailNumber(record["removed"]),
     bad: Array.isArray(record["bad"]) ? record["bad"].map(treeBadOf) : [],
-    error: stringOf(record["error"]),
+    error: detailText(record["error"]),
   };
 }
 
@@ -395,11 +391,11 @@ function statOf(value: unknown): TableColumnStat {
     ? (value as Record<string, unknown>)
     : {};
   return {
-    name: stringOf(record["name"]),
-    figure: flagOf(record["figure"], false),
-    total: numberOf(record["total"]),
-    min: numberOf(record["min"]),
-    max: numberOf(record["max"]),
+    name: detailText(record["name"]),
+    figure: detailFlag(record["figure"], false),
+    total: detailNumber(record["total"]),
+    min: detailNumber(record["min"]),
+    max: detailNumber(record["max"]),
   };
 }
 
@@ -407,11 +403,11 @@ function tableBadOf(value: unknown): TableBadCell {
   const record = typeof value === "object" && value !== null
     ? (value as Record<string, unknown>)
     : {};
-  const reason = stringOf(record["reason"]);
+  const reason = detailText(record["reason"]);
   return {
-    at: numberOf(record["at"]),
-    column: stringOf(record["column"]),
-    value: stringOf(record["value"]),
+    at: detailNumber(record["at"]),
+    column: detailText(record["column"]),
+    value: detailText(record["value"]),
     reason: reason === "unreadable" ? "unreadable" : "overflow",
   };
 }
@@ -434,12 +430,12 @@ function tableFigureOf(details: unknown): TableFigure | null {
           : [],
       )
       .slice(0, MAX_ROWS),
-    counted: numberOf(record["counted"]),
-    drawn: numberOf(record["drawn"]),
-    omitted: numberOf(record["omitted"]),
-    caption: stringOf(record["caption"]),
+    counted: detailNumber(record["counted"]),
+    drawn: detailNumber(record["drawn"]),
+    omitted: detailNumber(record["omitted"]),
+    caption: detailText(record["caption"]),
     bad: Array.isArray(record["bad"]) ? record["bad"].map(tableBadOf) : [],
-    error: stringOf(record["error"]),
+    error: detailText(record["error"]),
   };
 }
 

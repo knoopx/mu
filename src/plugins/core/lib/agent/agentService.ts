@@ -80,6 +80,8 @@ import { FIGURE_TOOL_NAMES } from "../../../figures/constants";
 import { chartRenderTool } from "../../../figures/tools/chartRender";
 import { treeRenderTool } from "../../../figures/tools/treeRender";
 import { tableRenderTool } from "../../../figures/tools/tableRender";
+import { PLANNING_TOOL_NAMES } from "../../../planning/constants";
+import { planTool } from "../../../planning/tools/plan";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -116,6 +118,7 @@ const APP_TOOL_NAMES = [
   ...OPENUI_TOOL_NAMES,
   ...MERMAID_TOOL_NAMES,
   ...FIGURE_TOOL_NAMES,
+  ...PLANNING_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -245,6 +248,7 @@ export async function createAgentSessionHandle(
         chartRenderTool,
         treeRenderTool,
         tableRenderTool,
+        planTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

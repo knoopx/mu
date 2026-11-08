@@ -1,12 +1,13 @@
 import type { KeybindingConflict, KeybindingDefinitions } from "./definitions";
 import { APP_KEYBINDINGS } from "./definitions";
-import { keyHint, matchesKey, type KeyEvent } from "../keys";
+import { keyCodes, keyHint, matchesKey, type KeyEvent } from "../keys";
 
 export interface KeybindingsConfig {
   bindings?: Record<string, string>;
 }
 export interface Keybindings {
   get: (id: string) => string;
+  chord: (id: string) => string[];
   hint: (id: string) => string;
   matches: (event: KeyEvent, id: string) => boolean;
 }
@@ -32,6 +33,12 @@ export class KeybindingsManager implements Keybindings {
 
   matches(event: KeyEvent, id: string): boolean {
     return matchesKey(event, this.get(id));
+  }
+
+  /** The binding as key caps — one code per key — which is what a hint line
+   *  prints beside its words, so a chord reads as keys and not as its own name. */
+  chord(id: string): string[] {
+    return keyCodes(this.get(id));
   }
 
   hint(id: string): string {

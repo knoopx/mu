@@ -35,6 +35,8 @@ import {
 } from "../../vcs/hooks/useOplogPanel";
 import { useGuardrailsPanel } from "../../guardrails/hooks/useGuardrails";
 import type { GuardrailsPanelApi } from "../../guardrails/types";
+import { useTerminalPanel } from "../../terminal/hooks/useTerminalPanel";
+import type { TerminalPanelState } from "../../terminal/types";
 import { useFileList } from "./useFileList";
 import { useFilePreview } from "./useFilePreview";
 import { useSessionList, type SessionListState } from "./useSessionList";
@@ -74,6 +76,7 @@ export interface ChatPanels {
   guardrails: GuardrailsPanelApi;
   changesPanel: ChangesPanelState;
   oplogPanel: OplogPanelState;
+  terminal: TerminalPanelState;
   composerActions: ChatComposerActions;
   previewFor(path: string): ComposerPreviewSpec;
 
@@ -155,6 +158,16 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     enabled: target === "oplog",
   });
 
+  // The shell is started by the first open and kept for the window: closing the
+  // panel puts the terminal away, it does not stop the program that was running in
+  // it, and the panel that comes back shows the screen where it was left.
+  const terminal = useTerminalPanel({
+    cwd,
+    enabled: target === "terminal",
+    windowWidth: windowSize?.width,
+    windowHeight: windowSize?.height,
+  });
+
   const treeSnapshot = useMemo(
     () => treeSnapshotOf(target === "tree", session),
     [target, session, items.length],
@@ -189,6 +202,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     guardrails,
     changesPanel,
     oplogPanel,
+    terminal,
     composerActions,
     previewFor,
     treeSnapshot,

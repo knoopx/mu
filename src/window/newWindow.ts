@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
+import { withMuLoaderEnv } from "../plugins/core/lib/utils/loaderEnv";
 
 const ENTRY_PATTERN = /\.(?:tsx|ts|jsx|js|mjs|cjs)$/;
 
@@ -24,7 +25,10 @@ export function appLaunch(): AppLaunch {
           ...argv.slice(idx + 1).filter((arg) => !arg.startsWith("-")),
         ];
 
-  const env: NodeJS.ProcessEnv = { ...process.env };
+  // Another mu window needs the loader answers its parent was given — the native
+  // library path was dropped from this process's environment at boot, so put it
+  // back for a child that is itself.
+  const env: NodeJS.ProcessEnv = withMuLoaderEnv({ ...process.env });
   delete env[PROBE_DIR_ENV];
 
   return { cmd: process.execPath, args, env };

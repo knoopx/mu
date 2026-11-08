@@ -103,6 +103,25 @@ const KEY_LABELS: Record<string, string> = {
   right: "Right",
 };
 
+/**
+ * A binding as the keys it is made of: one code per key.
+ *
+ * A keybinding is written as one string — `ctrl+shift+enter` — while a hint cap is
+ * one key, so a chord handed to the screen as it is written arrives as one wide cap
+ * that reads out its own name instead of a row of keys, each wearing the mark it
+ * has on a real keyboard. This is the one place that knows the spelling. A trailing
+ * `+` is the plus key itself (`ctrl++`), the only place a plus is a key rather than
+ * a divider.
+ */
+export function keyCodes(id: KeyId): string[] {
+  const tokens = id.split("+");
+  if (id.endsWith("+")) {
+    tokens.pop();
+    tokens.push("+");
+  }
+  return tokens.filter((token) => token !== "").map((token) => token.toLowerCase());
+}
+
 export function keyHint(id: KeyId): string {
   const parsed = parseKey(id);
   const mods = MODIFIER_ORDER.filter((mod) => parsed[mod] === true).map(

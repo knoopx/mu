@@ -13,6 +13,7 @@ import {
 } from "adwaita-gpuix";
 import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
 import { SHORT_OP_ID } from "../constants";
+import { withoutMuLoaderEnv } from "../../core/lib/utils/loaderEnv";
 
 const pExecFile = promisify(execFile);
 
@@ -465,7 +466,12 @@ export async function pushBookmarks(names: string[]): Promise<string> {
 }
 
 export function spawnDetached(cmd: string, args: string[]): void {
-  const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
+  // An editor is the user's program, not mu's: it resolves its own bindings.
+  const child = spawn(cmd, args, {
+    detached: true,
+    stdio: "ignore",
+    env: withoutMuLoaderEnv(process.env),
+  });
   child.unref();
 }
 
