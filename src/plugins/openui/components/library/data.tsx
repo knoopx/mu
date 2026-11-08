@@ -8,8 +8,7 @@
 
 import type { JSX } from "react";
 import { defineComponent, type ElementNode } from "@openuidev/lang-core";
-import { Chart as AdwaitaChart, ProgressBar, T } from "adwaita-gpuix";
-import type { ChartData, ChartDataPoint, ChartSeriesPoint } from "adwaita-gpuix";
+import { Chart as AdwaitaChart, ChartLegend, ProgressBar, T } from "adwaita-gpuix";
 import { z } from "zod/v4";
 
 import { HAIRLINE } from "../../../core/lib/ui/tokens";
@@ -17,6 +16,19 @@ import { mutedText } from "../../../core/lib/ui/theme";
 import {
   CHART_CANVAS_WIDTH,
   CHART_HEIGHT,
+  MAX_POINTS,
+} from "../../../figures/constants";
+import {
+  capPlot,
+  coercePlot,
+  plotColor,
+  plotData,
+  plotKindOf,
+  plotToneOf,
+  seriesLegend,
+  seriesNamesOf,
+} from "../../../figures/lib/plot";
+import {
   innerGap,
   programEmphasisWeight,
   programRowHeight,
@@ -38,7 +50,7 @@ import {
   textOf,
   textProp,
 } from "./context";
-import { cellText, isFigure, numberOf } from "./rows";
+import { cellText, isFigure } from "./rows";
 
 export const Table = defineComponent({
   name: "Table",
@@ -87,6 +99,10 @@ export const Bar = defineComponent({
  * Many values on one canvas. `Bar` is one figure per row; a `Chart` is the whole
  * set drawn together — bars across a category axis, or a line with markers and
  * an area fill — and it is adwaita's own plot, colours and axis included.
+ *
+ * The points are read by the same contract `chart-render` reads its parameters
+ * by, so a program's plot and a tool's plot are one thing: a point is a label and
+ * one value per series, and a value that is not a number is not plotted.
  */
 export const Chart = defineComponent({
   name: "Chart",
@@ -94,6 +110,10 @@ export const Chart = defineComponent({
     "many values on one canvas: bars across a category axis, or a line with markers and a fill",
   props: z.object({
     points: z.array(z.any()),
+
+    /** Names for the series, in the order their values sit in each point. */
+    series: z.array(z.union([z.string(), z.number()])).nullable().optional(),
+
     kind: z.enum(["bar", "line"]).nullable().optional(),
     height: z.number().nullable().optional(),
     width: z.number().nullable().optional(),
@@ -272,38 +292,15 @@ export function drawStat(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-/** One axis tick: a label with a value, or a label with a bundle of series. */
-const pointOf = (entry: unknown, index: number): ChartDataPoint | ChartSeriesPoint => {
-  if (Array.isArray(entry)) {
-    const label = cellText(entry[0]);
-    const rest = entry.slice(1);
-    if (rest.length <= 1) return { label, value: numberOf(rest[0]) };
-    return {
-      label,
-      values: rest.map((cell, at) => ({ name: `s${String(at + 1)}`, value: numberOf(cell) })),
-    };
-  }
-  if (typeof entry === "object" && entry !== null) {
-    const record = entry as Record<string, unknown>;
-    const label = cellText(record.label ?? record.name ?? record.file);
-    if (Array.isArray(record.values)) {
-      return {
-        label,
-        values: (record.values as Record<string, unknown>[]).map((series) => ({
-          name: cellText(series.name ?? series.label),
-          value: numberOf(series.value),
-        })),
-      };
-    }
-    return { label, value: numberOf(record.value) };
-  }
-  return { label: String(index + 1), value: numberOf(entry) };
-};
-
 export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const kind = prop<"bar" | "line">(node.props, "kind", "bar");
-  const tone = prop<ProgramTone | null>(node.props, "tone", null);
-  const data = listProp(node.props, "points").map(pointOf);
+  const kind = plotKindOf(node.props.kind);
+  const read = coercePlot(listProp(node.props, "points"));
+  const capped = capPlot(read.points, MAX_POINTS);
+
+  const series = seriesNamesOf(
+    listProp(node.props, "series").map((name) => cellText(name)),
+    { ...read, points: capped.points },
+  );
 
   return (
     <div
@@ -312,12 +309,13 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         flexDirection: "column",
         width: "100%",
         minWidth: 0,
+        gap: innerGap(ctx.t),
       }}
     >
       <AdwaitaChart
-        data={data as ChartData}
+        data={plotData(capped.points, series)}
         type={kind}
-        color={programTextColor(ctx.t, tone === null ? "accent" : tone)}
+        color={plotColor(ctx.t, plotToneOf(node.props.tone))}
         height={prop<number>(node.props, "height", CHART_HEIGHT)}
         width={prop<number>(node.props, "width", CHART_CANVAS_WIDTH)}
         grid={prop(node.props, "grid", false)}
@@ -328,6 +326,9 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         emphasis={prop<number | null>(node.props, "emphasis", null) ?? undefined}
         style={{ width: "100%", minWidth: 0 }}
       />
+      {series.length === 0 ? null : (
+        <ChartLegend items={seriesLegend(series, ctx.t)} />
+      )}
     </div>
   );
 }

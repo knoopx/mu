@@ -83,11 +83,6 @@ export const programTitleWeight = (t: AdwaitaTheme): number => titleWeight(t);
 export const programEmphasisWeight = (t: AdwaitaTheme): number =>
   emphasisWeight(t);
 
-/** A chart's geometry: the plot box adwaita draws, and the width of a line's canvas. */
-export const CHART_HEIGHT = 168;
-export const CHART_SPARK_HEIGHT = 128;
-export const CHART_CANVAS_WIDTH = 560;
-
 /** What a `Pane` and the program body stand in. */
 export const panePad = (t: AdwaitaTheme): number => t.space.md;
 export const paneRadius = (t: AdwaitaTheme): number => t.radius.md;

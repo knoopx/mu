@@ -73,6 +73,11 @@ import {
   MermaidToolRows,
   mermaidToolPreviewOf,
 } from "../../mermaid/components/MermaidToolRows";
+import {
+  ChartToolRows,
+  chartToolPreviewOf,
+  isFigureTool,
+} from "../../figures/components/ChartToolRows";
 import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
 import { codemodePreviewOf } from "../lib/codemode/script";
 
@@ -170,6 +175,7 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isCodemodeTool(item.name) ||
     isOpenUITool(item.name) ||
     isMermaidTool(item.name) ||
+    isFigureTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -197,6 +203,7 @@ function argsLineOf(
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
   if (isOpenUITool(item.name)) return openUIToolPreviewOf(item);
   if (isMermaidTool(item.name)) return mermaidToolPreviewOf(item);
+  if (isFigureTool(item.name)) return chartToolPreviewOf(item);
   if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
@@ -296,6 +303,15 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="mermaid" open>
         <MermaidToolRows item={item} />
+      </ToolContent>,
+    );
+  // A plot is not a table of findings either: the row's body is the picture,
+  // drawn from the points the call left in its details, in the theme the window
+  // is wearing — which is why the data travels and a bitmap never does.
+  if (isFigureTool(item.name))
+    panels.push(
+      <ToolContent key="figures" open>
+        <ChartToolRows item={item} />
       </ToolContent>,
     );
   return panels;

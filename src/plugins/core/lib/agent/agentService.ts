@@ -65,6 +65,8 @@ import { vcsLogTool } from "../../../vcs/tools/vcsLog";
 import { vcsOplogTool } from "../../../vcs/tools/vcsOplog";
 import { MERMAID_TOOL_NAMES } from "../../../mermaid/constants";
 import { mermaidRenderTool } from "../../../mermaid/tools/mermaidRender";
+import { FIGURE_TOOL_NAMES } from "../../../figures/constants";
+import { chartRenderTool } from "../../../figures/tools/chartRender";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -99,6 +101,7 @@ const APP_TOOL_NAMES = [
   ...CODE_QUALITY_TOOL_NAMES,
   ...OPENUI_TOOL_NAMES,
   ...MERMAID_TOOL_NAMES,
+  ...FIGURE_TOOL_NAMES,
 ];
 
 const ISOLATED_RESOURCE_LOADER_OPTIONS = {
@@ -212,6 +215,7 @@ export async function createAgentSessionHandle(
         openUISwitchTool,
         openUIClearTool,
         mermaidRenderTool,
+        chartRenderTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

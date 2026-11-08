@@ -58,6 +58,14 @@ so a program's figure wears the colours, ramps and mono columns the app's own
 panels wear, and a status mark is drawn from the one vocabulary in
 `lib/theme.ts` (`done`, `running`, `current`, `pending`, `skipped`, `error`).
 
+`Chart` draws through another plugin's `figures/lib/plot.ts` rather than a
+coercion of its own: the same reader that takes `chart-render`'s points reads a
+program's points, and the plot's geometry and its series ramp live there too, so
+a program's plot and a tool's plot cannot become two pictures. What a program
+keeps that a plot call cannot is state — the filter that changes which points are
+sent — and that is the line between the two: a plot that is the whole answer is a
+call, a figure the human operates is a program.
+
 A row may be written as a list of cells or as an object of named fields, and
 `components/library/rows.ts` is the only reader of both: `cellOf(row, names, at)`
 plus `statusOf` for the state words a program writes loosely ("complete", "wip",

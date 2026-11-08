@@ -28,6 +28,7 @@ Every screen below is shown as it looks in a real window, with a session in it.
 | Web search     | a search, the pages it read, a search that got nothing                                         |
 | Code quality   | what the project says about itself: thresholds, unused code, clones, a change's reach          |
 | Generative UI  | an answer that is a working screen: a filter picked, a stepper moved, one press waiting        |
+| Figures        | numbers plotted in the log: bars over a year, their axis and peak read back, a value refused  |
 | Guardrails     | a command stopped before it ran, the panel of rules that stopped it                            |
 | Guardrails     | the rules tested, the cases written, the coverage read                                         |
 | Status bar     | the counts of one answer and of the whole conversation                                         |
@@ -131,6 +132,16 @@ The program is not a picture of a form. It keeps its own state: the filter, the 
 The program lives in the log, not in the call that wrote it: `openui-render` opens it, `openui-stream` grows it piece by piece while you watch, and every later call edits the same screen in place. `openui-state` says what actually drew, `openui-library` says what may be named at all, `openui-validate` checks a program before it is committed, and `openui-list`, `openui-switch` and `openui-clear` say what is in the log and what is showing. A resumed session keeps its rows and loses its screens, and the row says so instead of inventing one.
 
 ![An answer you can operate](stories/GenerativeUI/rendered.png)
+
+## Figures
+
+Sometimes the answer is a set of numbers and its shape. `chart-render` takes the points and plots them in the log: bars across a category axis, or a line with markers and a fill, one series or several with a legend that names them. What travels in the row is the data of the plot, never a bitmap, so the picture wears whatever theme the window is wearing and a session resumed next month still draws it.
+
+The model cannot see the picture, so its answer is a reading of it: how many points were plotted, the span of the axis, the range, the total, the mean, the peak, and the points themselves as figures. That is what makes a wrong plot catchable by something without eyes — a peak in the wrong month is a month plotted in the wrong order. A value that is not a number (`"1,234"` out of a spreadsheet) refuses the whole call and names the point the cell sat on, rather than drawing a bar that lies; past 64 points the call says how many were not plotted, because a plot that dense is a texture and the fix is to group them.
+
+When the figure has to be operated — a filter that changes what is plotted, a picker, several figures on one screen — it is an OpenUI program instead. `chart-render` is for the plot that is the whole answer.
+
+![The numbers, plotted](stories/Figures/plotted.png)
 
 ## Diagrams
 
