@@ -67,6 +67,8 @@ import { MERMAID_TOOL_NAMES } from "../../../mermaid/constants";
 import { mermaidRenderTool } from "../../../mermaid/tools/mermaidRender";
 import { FIGURE_TOOL_NAMES } from "../../../figures/constants";
 import { chartRenderTool } from "../../../figures/tools/chartRender";
+import { treeRenderTool } from "../../../figures/tools/treeRender";
+import { tableRenderTool } from "../../../figures/tools/tableRender";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -216,6 +218,8 @@ export async function createAgentSessionHandle(
         openUIClearTool,
         mermaidRenderTool,
         chartRenderTool,
+        treeRenderTool,
+        tableRenderTool,
       ] as ToolDefinition[],
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [

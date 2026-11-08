@@ -76,8 +76,18 @@ import {
 import {
   ChartToolRows,
   chartToolPreviewOf,
-  isFigureTool,
+  isChartTool,
 } from "../../figures/components/ChartToolRows";
+import {
+  isTreeTool,
+  TreeToolRows,
+  treeToolPreviewOf,
+} from "../../figures/components/TreeToolRows";
+import {
+  isTableTool,
+  TableToolRows,
+  tableToolPreviewOf,
+} from "../../figures/components/TableToolRows";
 import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
 import { codemodePreviewOf } from "../lib/codemode/script";
 
@@ -175,7 +185,9 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
     isCodemodeTool(item.name) ||
     isOpenUITool(item.name) ||
     isMermaidTool(item.name) ||
-    isFigureTool(item.name) ||
+    isChartTool(item.name) ||
+    isTreeTool(item.name) ||
+    isTableTool(item.name) ||
     guardrailBlockOf(item) !== null
   );
 }
@@ -203,7 +215,9 @@ function argsLineOf(
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
   if (isOpenUITool(item.name)) return openUIToolPreviewOf(item);
   if (isMermaidTool(item.name)) return mermaidToolPreviewOf(item);
-  if (isFigureTool(item.name)) return chartToolPreviewOf(item);
+  if (isChartTool(item.name)) return chartToolPreviewOf(item);
+  if (isTreeTool(item.name)) return treeToolPreviewOf(item);
+  if (isTableTool(item.name)) return tableToolPreviewOf(item);
   if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
@@ -307,11 +321,25 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     );
   // A plot is not a table of findings either: the row's body is the picture,
   // drawn from the points the call left in its details, in the theme the window
-  // is wearing — which is why the data travels and a bitmap never does.
-  if (isFigureTool(item.name))
+  // is wearing — which is why the data travels and a bitmap never does. A tree
+  // and a table are the same kind of call: their body is the widget, drawn from
+  // the shape in the details, so a resumed session still draws it.
+  if (isChartTool(item.name))
     panels.push(
       <ToolContent key="figures" open>
         <ChartToolRows item={item} />
+      </ToolContent>,
+    );
+  if (isTreeTool(item.name))
+    panels.push(
+      <ToolContent key="tree" open>
+        <TreeToolRows item={item} />
+      </ToolContent>,
+    );
+  if (isTableTool(item.name))
+    panels.push(
+      <ToolContent key="table" open>
+        <TableToolRows item={item} />
       </ToolContent>,
     );
   return panels;

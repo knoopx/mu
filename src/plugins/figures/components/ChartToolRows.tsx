@@ -40,7 +40,7 @@ import {
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { mutedText } from "../../core/lib/ui/theme";
-import { CHART_RENDER_TOOL, FIGURE_TOOL_NAMES, MAX_READOUT_POINTS } from "../constants";
+import { CHART_RENDER_TOOL, MAX_READOUT_POINTS } from "../constants";
 import { legendOf, plotColor, plotDataOf } from "../lib/plot";
 import { chartFailureLine, chartToolViewOf } from "../lib/toolView";
 import type { ChartToolView } from "../lib/toolView";
@@ -77,8 +77,9 @@ const CHART_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
   invalid: "destructive",
 };
 
-export function isFigureTool(name: string): boolean {
-  return FIGURE_TOOL_NAMES.includes(name.toLowerCase());
+/** The plugin draws three figures, and each call is painted by its own rows. */
+export function isChartTool(name: string): boolean {
+  return name.toLowerCase() === CHART_RENDER_TOOL;
 }
 
 /** The tool header: what was plotted, over what span, and what fell off the cap. */

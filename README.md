@@ -29,6 +29,7 @@ Every screen below is shown as it looks in a real window, with a session in it.
 | Code quality   | what the project says about itself: thresholds, unused code, clones, a change's reach          |
 | Generative UI  | an answer that is a working screen: a filter picked, a stepper moved, one press waiting        |
 | Figures        | numbers plotted in the log: bars over a year, their axis and peak read back, a value refused  |
+| Structures     | a folder tree and a cost table drawn in the log, its columns added up, a row refused for not fitting |
 | Guardrails     | a command stopped before it ran, the panel of rules that stopped it                            |
 | Guardrails     | the rules tested, the cases written, the coverage read                                         |
 | Status bar     | the counts of one answer and of the whole conversation                                         |
@@ -144,6 +145,14 @@ The model cannot see the picture, so its answer is a reading of it: how many poi
 When the figure has to be operated — a filter that changes what is plotted, a picker, several figures on one screen — it is an OpenUI program instead. `chart-render` is for the plot that is the whole answer.
 
 ![The numbers, plotted](stories/Figures/plotted.png)
+
+## Structures
+
+Sometimes the answer is a shape. `tree-render` takes named things nested in groups and draws them in the log — a package's folders, a module graph, a call chain, a changeset — in the same rows the file tree wears, so its folders still open and close under the cursor, and when the nodes say what moved the `+N −M` columns line up across the whole tree. `table-render` takes a header and its rows: a row is a list of cells or an object keyed by the column names, and a column whose cells are all numbers is set in mono and stands on the right of its column, so the digits line up under the header.
+
+Both answer in readings, because the model has no eyes either. The tree comes back as indented text with its counts and its depth, so a leaf that ended up one level too deep is visible as a nesting mistake; the table comes back as an aligned table with what each figure column sums to and ranges between. A node with no name refuses the call and names the path it hangs under; a row wider than the header, or an object with a key no column names, refuses it and names the cell that had nowhere to stand. Past 80 nodes, or ten levels, or 60 rows, the answer says what was not drawn — a tree that dense is a listing, and the fix is to draw the part that carries the point.
+
+![A tree and a table, drawn](stories/Figures/structured.png)
 
 ## Diagrams
 
