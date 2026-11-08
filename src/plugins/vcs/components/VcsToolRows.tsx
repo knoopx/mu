@@ -8,7 +8,6 @@
 
 import type { JSX, ReactNode } from "react";
 import {
-  ToolDiff,
   useAdwaita,
   type AdwaitaTheme,
   type IconName,
@@ -23,6 +22,7 @@ import {
   ToolSummary,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
+import { PatchDiff } from "../../core/components/PatchDiff";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
   toolPreviewLine,
@@ -237,9 +237,9 @@ export interface VcsToolRowsProps {
 
 /**
  * The result of a vcs call: a running block while it works; a state line when
- * it failed, found no repo, selected nothing or found nothing; the patch
- * through ToolDiff; a file body in mono; a split's two roles; and for the
- * table-shaped tools a row each.
+ * it failed, found no repo, selected nothing or found nothing; the patch read
+ * as code; a file body in mono; a split's two roles; and for the table-shaped
+ * tools a row each.
  */
 export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
   const tool = item.name.toLowerCase();
@@ -259,7 +259,7 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
       <>
         <VcsViewBody view={view} />
         {view.patch === "" ? null : (
-          <ToolDiff patch={view.patch} fileHeader={false} />
+          <PatchDiff patch={view.patch} fileHeader />
         )}
       </>
     );

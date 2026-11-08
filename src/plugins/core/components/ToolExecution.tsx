@@ -2,7 +2,6 @@ import type { JSX } from "react";
 import {
   Tool,
   ToolContent,
-  ToolDiff,
   ToolHeader,
   useAdwaita,
   type AdwaitaTheme,
@@ -11,6 +10,7 @@ import {
 import type { StyleDesc } from "@gpuix/react";
 
 import { Markdown } from "./Markdown";
+import { PatchDiff } from "./PatchDiff";
 import {
   ReadPreview,
   isReadTool,
@@ -341,7 +341,7 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
         <WritePreview preview={look.writePreview} />
       ) : null}
       {look.patch !== undefined ? (
-        <ToolDiff patch={look.patch} fileHeader={false} />
+        <PatchDiff patch={look.patch} />
       ) : null}
       {look.showOutput ? (
         <ToolOutputBody

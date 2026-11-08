@@ -1,11 +1,11 @@
 /**
  * The changes panel's preview pane: what one file of a change is shown as.
  *
- * The patch of a text file is handed to the diff widget, which paints its
- * additions and deletions as tinted rows; the two sides of a table are handed
- * to the table widget, which lines the rows up against each other; the two
- * pictures of an image change are painted side by side, since no patch says
- * what changed in a picture.
+ * The patch of a text file is read into rows and drawn as one line each, tinted
+ * by what happened to it and coloured by what its text is made of; the two sides
+ * of a table are handed to the table widget, which lines the rows up against
+ * each other; the two pictures of an image change are painted side by side,
+ * since no patch says what changed in a picture.
  *
  * The diff widget is asked for no file header of its own: the preview pane
  * shows one file at a time and that file is already named, picked, in the file
@@ -18,6 +18,7 @@ import { formatSize } from "@earendil-works/pi-coding-agent";
 import {
   DiffPanel,
   T,
+  diffRowsOf,
   useAdwaita,
   type AdwaitaTheme,
   type FileChange,
@@ -27,6 +28,7 @@ import { mutedText } from "../../core/lib/ui/theme";
 import { emphasisWeight, figureGap } from "../../core/lib/ui/tokens";
 import { paneGap, panelGap } from "../../core/lib/composer/chrome";
 import type { StyleDesc } from "@gpuix/react";
+import { useDiffTokens } from "../../core/hooks/useDiffTokens";
 import { filePreviewOf } from "../lib/preview";
 import type { ChangeImage } from "../hooks/useChangeFiles";
 
@@ -182,7 +184,17 @@ function TextDiff({
 
   diffRef: { current: PublicInstance | null };
 }): JSX.Element {
-  return <DiffPanel patch={patch} diffRef={diffRef} fileHeader={false} />;
+  const rows = useMemo(() => diffRowsOf(patch), [patch]);
+  const tokenize = useDiffTokens(rows);
+  return (
+    <DiffPanel
+      patch={patch}
+      rows={rows}
+      tokenize={tokenize}
+      diffRef={diffRef}
+      fileHeader={false}
+    />
+  );
 }
 
 function TableDiff({
