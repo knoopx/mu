@@ -41,6 +41,7 @@ import {
   panelInset,
   type PanelChrome,
 } from "../../lib/composer/chrome";
+import { PANEL_DEFAULT_VISIBLE } from "../../lib/composer/panelHeight";
 import {
   composerFieldKey,
   composerGlobalKey,
@@ -198,7 +199,6 @@ export interface ComposerProps {
 
 const META_LABEL_MAX_WIDTH = 420;
 const META_LABEL_MAX_CHARS = 64;
-const DEFAULT_MAX_VISIBLE = 8;
 
 /** How many lines of a preview fit in the band the panel leaves for it. */
 function previewLinesOf(
@@ -757,7 +757,7 @@ export function Composer(props: ComposerProps): JSX.Element {
     panel?.height,
     contextRingOf(panelOpen, props.context ?? null),
   );
-  const maxVisible = panel?.maxVisible ?? DEFAULT_MAX_VISIBLE;
+  const maxVisible = panel?.maxVisible ?? PANEL_DEFAULT_VISIBLE;
   const { win, active } = rowWindowOf(panel, mode, maxVisible);
 
   const keys = useComposerKeys({

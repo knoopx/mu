@@ -66,13 +66,6 @@ export const partsLine = (...parts: readonly (string | number)[]): string =>
 export const scopeLabel = (path: string): string =>
   path === "" ? "(cwd)" : path;
 
-/** The first non-empty line of a blob — all of an error a single-line header can show. */
-export const firstLineOf = (text: string): string =>
-  text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line !== "")[0] ?? "";
-
 /** A tool header's preview is one line, so it is clipped inside its budget. */
 export const clipText = (text: string, max: number): string =>
   text.length <= max ? text : `${text.slice(0, max)}…`;

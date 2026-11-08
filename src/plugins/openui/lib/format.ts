@@ -6,6 +6,10 @@
  * paints, and they have to agree, so they are said once here.
  */
 
+import { TOOL_PREVIEW_MAX } from "../../core/lib/agent/toolPreview";
+import { clipText } from "../../core/lib/agent/toolText";
+import { singleLine } from "../../../utils/truncate";
+
 /** When the human did it, to the second, in the reader's own clock. */
 export const clock = (at: number): string =>
   new Date(at).toLocaleTimeString([], {
@@ -18,11 +22,15 @@ export const clock = (at: number): string =>
 export const valueText = (value: unknown): string =>
   typeof value === "string" ? value : (JSON.stringify(value) ?? String(value));
 
-/** One line, clipped to what a row can hold. */
-export const clip = (text: string, max = 96): string => {
-  const flat = text.replace(/\s+/g, " ");
-  return flat.length <= max ? flat : `${flat.slice(0, max)}…`;
-};
+/**
+ * One line, clipped to what a row can hold. The budget is the log's own — the
+ * one line a tool header shows — and the ellipsis is `clipText`'s, so a plugin
+ * cannot drift from the header its own rows sit under.
+ */
+export const clip = (
+  text: string,
+  max: number = TOOL_PREVIEW_MAX,
+): string => clipText(singleLine(text), max);
 
 /** A bound value, clipped for a row. */
 export const clipValue = (value: unknown): string => clip(valueText(value));

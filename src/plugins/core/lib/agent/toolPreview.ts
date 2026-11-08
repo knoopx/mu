@@ -9,7 +9,8 @@
  */
 
 import type { ToolTranscriptItem } from "./transcriptState";
-import { clipText, firstLineOf } from "./toolText";
+import { clipText } from "./toolText";
+import { firstLine } from "../../../../utils/truncate";
 
 /** How wide a tool header's preview is before it is clipped. */
 export const TOOL_PREVIEW_MAX = 96;
@@ -35,7 +36,7 @@ export function toolPreviewFallback(
   item: ToolTranscriptItem,
   max: number = TOOL_PREVIEW_MAX,
 ): string {
-  const line = firstLineOf(item.output);
+  const line = firstLine(item.output);
   if (item.status === "error")
     return `${item.name.toLowerCase()} · ${line === "" ? "failed" : line}`;
   return line === "" ? item.name.toLowerCase() : clipText(line, max);

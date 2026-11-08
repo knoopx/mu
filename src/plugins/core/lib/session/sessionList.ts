@@ -6,6 +6,7 @@ import {
 import { transcriptItemsFromMessages } from "../agent/transcriptState";
 import type { TranscriptItem } from "../agent/transcriptState";
 import { formatSpan, relativeAge } from "../utils/time";
+import { firstLine } from "../../../../utils/truncate";
 
 export const SESSION_ROWS_CAP = 25;
 
@@ -31,12 +32,6 @@ export interface SessionList {
   remove(path: string): SessionDeleteResult;
 }
 
-const firstLineOf = (text: string): string =>
-  text
-    .split("\n")
-    .map((line) => line.trim())
-    .find((line) => line !== "") ?? "";
-
 export function sessionRows(
   sessions: readonly SessionInfo[],
 ): SessionListRow[] {
@@ -44,7 +39,7 @@ export function sessionRows(
     const spanMs = s.modified.getTime() - s.created.getTime();
     return {
       path: s.path,
-      label: firstLineOf((s.name ?? s.firstMessage).trim()) || "(no message)",
+      label: firstLine((s.name ?? s.firstMessage).trim()) || "(no message)",
       age: relativeAge(s.modified),
       duration: formatSpan(spanMs / 1000),
     };

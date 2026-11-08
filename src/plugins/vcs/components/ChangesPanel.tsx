@@ -12,10 +12,11 @@ import {
   type Change,
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
-import { ROW_HEIGHT } from "../../core/lib/ui/tokens";
+import { figureGap, ROW_HEIGHT } from "../../core/lib/ui/tokens";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { iconForFile } from "../../core/lib/composer/options";
 import { relativeAge } from "../../core/lib/utils/time";
+import { firstLine } from "../../../utils/truncate";
 import { hasNoDescription, NO_DESCRIPTION } from "../constants";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
 import { ChangesPreview } from "./ChangesPreview";
@@ -25,9 +26,9 @@ const LIST_CAP = 200;
 
 export const FILES_ROWS = 6;
 
-function firstLine(text: string): string {
-  const line = text.split("\n")[0] ?? "";
-  return line.length === 0 ? NO_DESCRIPTION : line;
+/** A change with nothing written on it still needs a label on its row. */
+function descriptionLine(description: string): string {
+  return firstLine(description) || NO_DESCRIPTION;
 }
 
 /**
@@ -111,7 +112,7 @@ export function ChangesPanel({
               return (
                 <div key={entry.change_id} style={s.rowSlot}>
                   <ComposerOptionRow
-                    label={firstLine(entry.description)}
+                    label={descriptionLine(entry.description)}
                     description={relativeAge(entry.timestamp)}
                     tabular
                     picked={entry.change_id === panel.currentId}
@@ -155,7 +156,7 @@ export function ChangesPanel({
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              gap: t.space.sm,
+                              gap: figureGap(t),
                               flexShrink: 0,
                             }}
                           >

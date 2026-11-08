@@ -11,6 +11,14 @@ const PANEL_MAX_HEIGHT = 760;
 
 export const PANEL_FIT_MIN_ROWS = 4;
 
+/**
+ * The rows a panel windows when its spec carries no budget of its own. The two
+ * readers of a panel — the composer that draws it and the keys that move through
+ * it — have to window the same slice, so the fallback is one number, not one per
+ * file.
+ */
+export const PANEL_DEFAULT_VISIBLE = 8;
+
 /** Which slots a panel draws, so it is charged chrome only for what it paints. */
 export interface PanelSlots {
   /** A draft field above the list. The wide panels — changes, history — draw none. */

@@ -45,9 +45,10 @@ import {
 import type { PromptPill } from "../lib/project/promptTemplates";
 import { hasNoDescription } from "../../vcs/constants";
 
-/** How many characters a feed row's two fixed columns hold. */
-const ID_COLUMN_CHARS = 6;
-const AGE_COLUMN_CHARS = 7;
+/** How many characters a project feed's own two fixed columns hold — the feed's
+ *  id and age, not the log's id column, which `tokens.ts` sizes for itself. */
+const FEED_ID_CHARS = 6;
+const FEED_AGE_CHARS = 7;
 
 /** The lines a loading header stands in for, in characters: a short title and two meta lines. */
 const SKELETON_TITLE_CHARS = 18;
@@ -94,7 +95,7 @@ function ChangeFeedRow(props: {
         />
         <div
           style={{
-            width: monoColumn(t, ID_COLUMN_CHARS),
+            width: monoColumn(t, FEED_ID_CHARS),
             flexShrink: 0,
             fontFamily: t.type.fontFamilyMono,
             fontSize: t.type.micro,
@@ -125,7 +126,7 @@ function ChangeFeedRow(props: {
         ) : null}
         <div
           style={{
-            width: monoColumn(t, AGE_COLUMN_CHARS),
+            width: monoColumn(t, FEED_AGE_CHARS),
             flexShrink: 0,
             textAlign: "right",
             fontSize: t.type.micro,

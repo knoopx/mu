@@ -19,7 +19,7 @@ import {
 } from "adwaita-gpuix";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
-import { firstLineOf } from "../lib/agent/toolText";
+import { firstLine } from "../../../utils/truncate";
 import { ToolCaptionLine } from "./ToolCaptionLine";
 import { ToolStateLine } from "./ToolStateLine";
 import { mutedText } from "../lib/ui/theme";
@@ -271,7 +271,7 @@ export function ToolUnknownResult({
   tool: string;
 }): JSX.Element {
   const t = useAdwaita();
-  const line = firstLineOf(item.output);
+  const line = firstLine(item.output);
   const note =
     item.status === "error" ? (
       <ToolStateNote

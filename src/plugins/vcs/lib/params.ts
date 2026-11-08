@@ -9,15 +9,15 @@
 
 import { Type } from "typebox";
 
-/** No read answers with the whole repo, and none needs more than this. */
-const MAX_ROWS = 500;
+/** The most a read's `limit` may ask for: no read answers with the whole repo, and none needs more than this. */
+const TOOL_LIMIT_CAP = 500;
 
 /** How many rows a read answers with, newest first unless `oldest_first` says otherwise. */
 export const limitParam = (unit: string, defaults = 25) =>
   Type.Optional(
     Type.Number({
       minimum: 1,
-      maximum: MAX_ROWS,
+      maximum: TOOL_LIMIT_CAP,
       description: `Cap on ${unit} (default ${String(defaults)}).`,
     }),
   );

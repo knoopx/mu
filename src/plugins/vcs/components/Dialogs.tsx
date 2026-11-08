@@ -45,7 +45,7 @@ import {
 const PICKER_WIDTH = 560;
 
 /** How many candidates a picker shows before it scrolls. */
-const MAX_ROWS = 6;
+const PICKER_ROWS = 6;
 
 function DialogHeading({
   icon,
@@ -149,7 +149,7 @@ export function RevsetDialog({
       r.label.toLowerCase().includes(query) ||
       r.revset.toLowerCase().includes(query),
   );
-  const win = windowCandidates(rows, active, MAX_ROWS);
+  const win = windowCandidates(rows, active, PICKER_ROWS);
 
   const applyActive = (): void => {
     const row = rows[win.activeIdx];
@@ -279,7 +279,7 @@ export function BookmarkDialog({
     query.length > 0 && !names.some((n) => n.toLowerCase() === query)
       ? [...filtered, value.trim()]
       : filtered;
-  const win = windowCandidates(candidates, active, MAX_ROWS);
+  const win = windowCandidates(candidates, active, PICKER_ROWS);
   const activeName = candidates[win.activeIdx] ?? null;
 
   const applyActive = (): void => {

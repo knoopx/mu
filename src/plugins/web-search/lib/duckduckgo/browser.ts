@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 
 import { MAX_STDOUT_BYTES, OBSURA_BIN, SEARCH_TIMEOUT_MS } from "./constants";
+import { firstLine } from "../../../../utils/truncate";
 
 export class BrowserMissingError extends Error {
   constructor(bin: string) {
@@ -16,15 +17,6 @@ export class SearchCancelledError extends Error {
     super("The search was cancelled.");
     this.name = "SearchCancelledError";
   }
-}
-
-function firstLine(value: string): string {
-  return (
-    value
-      .split("\n")
-      .map((line) => line.trim())
-      .find((line) => line !== "") ?? ""
-  );
 }
 
 function withTimeout(signal: AbortSignal | undefined, ms: number): AbortSignal {

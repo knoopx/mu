@@ -18,7 +18,7 @@ import {
   textOf,
   type JsonRecord,
 } from "./json";
-import { firstLineOf } from "../../core/lib/agent/toolText";
+import { firstLine } from "../../../utils/truncate";
 import type { CodeReviewDetails, QualityCount, RiskRow } from "../types";
 
 const RISK_ORDER = ["critical", "high", "medium", "low"];
@@ -128,7 +128,7 @@ export async function inspectDiff(
       ...emptyReview(target, repo),
       status: run.status === "ok" ? "failed" : run.status,
       error:
-        run.error !== "" ? run.error : firstLineOf(run.stderr) || "the change analyser failed",
+        run.error !== "" ? run.error : firstLine(run.stderr) || "the change analyser failed",
     };
 
   const stats = recordOf(envelope["stats"]);

@@ -24,7 +24,7 @@ import {
   type TabularSides,
 } from "adwaita-gpuix";
 import { mutedText } from "../../core/lib/ui/theme";
-import { emphasisWeight } from "../../core/lib/ui/tokens";
+import { emphasisWeight, figureGap } from "../../core/lib/ui/tokens";
 import { paneGap, panelGap } from "../../core/lib/composer/chrome";
 import type { StyleDesc } from "@gpuix/react";
 import { filePreviewOf } from "../lib/preview";
@@ -89,7 +89,7 @@ function ImageTile({
         style={{
           display: "flex",
           flexDirection: "row",
-          gap: t.space.sm,
+          gap: figureGap(t),
           flexShrink: 0,
         }}
       >

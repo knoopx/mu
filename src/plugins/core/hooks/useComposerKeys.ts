@@ -17,12 +17,11 @@ import {
   panelOwner,
   type ComposerKeyContext,
 } from "../lib/composer/keyRouter";
+import { PANEL_DEFAULT_VISIBLE } from "../lib/composer/panelHeight";
 import type {
   ComposerPanelRow,
   ComposerPanelSpec,
 } from "../components/composer/Composer";
-
-const DEFAULT_MAX_VISIBLE = 8;
 
 export interface ComposerKeyOptions {
   mode: ComposerMode;
@@ -65,7 +64,7 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
   const renderer = useGpuixRequired();
   const { mode, panel, panelOpen, wideOpen } = opts;
   const count = panel?.rows.length ?? 0;
-  const maxVisible = panel?.maxVisible ?? DEFAULT_MAX_VISIBLE;
+  const maxVisible = panel?.maxVisible ?? PANEL_DEFAULT_VISIBLE;
   // The completion panel's query is the draft, so every keystroke in it writes
   // the draft too: closing the panel keeps what was typed.
   const draftIsQuery = isCompletionMode(mode);

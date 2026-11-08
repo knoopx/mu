@@ -18,10 +18,12 @@ import {
   ROW_HEIGHT,
   SWATCH_HEIGHT,
   SWATCH_WIDTH,
+  figureGap,
   glyphForText,
   lineBox,
   lineBoxAt,
   monoColumn,
+  monoTextWidth,
 } from "../../lib/ui/tokens";
 import type {
   ComposerPanelRow,
@@ -33,23 +35,27 @@ import type {
 const NAME_COLUMN_CHARS = 12;
 const ARGS_COLUMN_CHARS = 16;
 
-/** How much of an em one monospace character takes, for a column of figures. */
-const MONO_ADVANCE = 0.6;
-
 /** A figure's glyph stands beside caption text and takes its measure. */
 const figureGlyph = (t: AdwaitaTheme): number => glyphForText(t.type.caption);
 
+/** The air between one figure's glyph and the digits it labels. */
+const figureGlyphGap = (t: AdwaitaTheme): number => t.space.xs;
 
-export const composerFigureTextWidth = (t: AdwaitaTheme, chars: number): number =>
-  Math.round(chars * t.type.caption * MONO_ADVANCE);
+/** A figure's text is monospace, so its column is measured, not budgeted. */
+export const composerFigureTextWidth = (
+  t: AdwaitaTheme,
+  chars: number,
+): number => monoTextWidth(t, chars);
 
-
-export const composerFigureGlyphWidth = (t: AdwaitaTheme): number => figureGlyph(t);
+export const composerFigureGlyphWidth = (
+  t: AdwaitaTheme,
+): number => figureGlyph(t);
 
 export const composerFigureColumnWidth = (
   t: AdwaitaTheme,
   chars: number,
-): number => figureGlyph(t) + t.space.xs + composerFigureTextWidth(t, chars);
+): number =>
+  figureGlyph(t) + figureGlyphGap(t) + composerFigureTextWidth(t, chars);
 
 function panelRowStyle(
   t: AdwaitaTheme,
@@ -198,7 +204,7 @@ const figureGroup = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
-  gap: t.space.sm,
+  gap: figureGap(t),
   flexShrink: 0,
   pointerEvents: "none",
 });
@@ -208,7 +214,7 @@ const figureCell = (t: AdwaitaTheme, width: number | undefined): StyleDesc => ({
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-end",
-  gap: t.space.xs,
+  gap: figureGlyphGap(t),
   flexShrink: 0,
   ...(width === undefined ? {} : { width }),
 });

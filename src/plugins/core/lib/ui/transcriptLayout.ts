@@ -1,57 +1,19 @@
 import { type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
-import { bandFill, composerFill } from "./theme";
-import { HAIRLINE, ROW_HEIGHT, lineBox } from "./tokens";
+import { bandFill } from "./theme";
+import { lineBox } from "./tokens";
 
 export const PAGE_INSET = 56;
 
-export function growColumn(grow: number): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    flexGrow: grow,
-    flexBasis: 0,
-    minHeight: 0,
-    minWidth: 0,
-  };
-}
-
+/** The air between two blocks of the log — and above the composer, the same step.
+ *  `composerGap` is the role's name for it; neither file may write `space.xl`. */
 export function conversationGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
 
 export function composerGap(t: AdwaitaTheme): number {
   return conversationGap(t);
-}
-
-function hintsRow(t: AdwaitaTheme): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: t.space.sm,
-    flexShrink: 0,
-    minHeight: ROW_HEIGHT,
-    paddingLeft: t.space.sm,
-    paddingRight: t.space.sm,
-    paddingTop: t.space.xs,
-    paddingBottom: t.space.xs,
-    borderTopWidth: HAIRLINE,
-    borderColor: t.color.divider.default,
-    overflow: "hidden",
-  };
-}
-
-function panelShell(t: AdwaitaTheme): StyleDesc {
-  return {
-    ...growColumn(1),
-    gap: 0,
-    padding: 0,
-    borderRadius: t.radius.md,
-    backgroundColor: composerFill(t),
-    overflow: "hidden",
-  };
 }
 
 /** The block a tool shows its own output in: lines read, lines written, a patch. */

@@ -19,7 +19,7 @@ import {
   VCS_LOG_TOOL,
   VCS_OPLOG_TOOL,
 } from "../constants";
-import { firstLineOf as lineOf } from "../../core/lib/agent/toolText";
+import { firstLine } from "../../../utils/truncate";
 import type {
   ConflictRow,
   HistoryRow,
@@ -213,9 +213,9 @@ function rowsOf<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
-/** The first non-empty line, for a description or a one-line summary. */
+/** A cell of a tool's `details` is not always a string; its first line, whatever it is. */
 const firstLineOf = (value: unknown): string =>
-  lineOf(typeof value === "string" ? value : "");
+  firstLine(typeof value === "string" ? value : "");
 
 /** A list read from args (`files`, `hunks`), joined for display. */
 function listArg(args: Args, key: string): string {

@@ -18,8 +18,7 @@ import type { StyleDesc } from "@gpuix/react";
 
 import { mutedText } from "./theme";
 import {
-  CHIP_INSET,
-  CHIP_PAD_Y,
+  CHIP_PAD,
   HAIRLINE,
   MARK_HANG,
   METER_MIN_FILL,
@@ -136,10 +135,10 @@ export const toolChip = (t: AdwaitaTheme): StyleDesc => ({
   flexDirection: "row",
   alignItems: "center",
   gap: t.space.xs,
-  paddingLeft: t.space.xs + CHIP_INSET,
-  paddingRight: t.space.xs + CHIP_INSET,
-  paddingTop: CHIP_PAD_Y,
-  paddingBottom: CHIP_PAD_Y,
+  paddingLeft: t.space.xs + CHIP_PAD,
+  paddingRight: t.space.xs + CHIP_PAD,
+  paddingTop: CHIP_PAD,
+  paddingBottom: CHIP_PAD,
   borderRadius: t.radius.sm,
   borderWidth: HAIRLINE,
   borderColor: t.color.divider.faint,

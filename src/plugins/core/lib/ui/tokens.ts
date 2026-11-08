@@ -28,9 +28,26 @@ export const ROW_HEIGHT = CONTROL.rowHeight;
 /** How wide the id column is, in monospace character-widths at the caption measure. */
 const ID_COLUMN_CHARS = 7.5;
 
-/** A column of `chars` monospace characters, measured at the caption size. */
+/**
+ * A column of `chars` monospace characters: a *budget*, one character-unit per
+ * unit of the caption measure, so a column of ids stays one column whatever the
+ * mono font's own advance turns out to be. `monoTextWidth` is the other measure
+ * — what those characters actually print — and a row that has to fit its figures
+ * inside a column sizes the text with that. Two files spelling one column with
+ * the budget and another one's text with the same budget is how they drift.
+ */
 export const monoColumn = (t: AdwaitaTheme, chars: number): number =>
   t.type.caption * chars;
+
+/** How far one monospace character advances, as a fraction of the size it is set at. */
+const MONO_ADVANCE = 0.6;
+
+/** What `chars` monospace characters print at `size`. */
+export const monoTextWidth = (
+  t: AdwaitaTheme,
+  chars: number,
+  size: number = t.type.caption,
+): number => Math.round(chars * size * MONO_ADVANCE);
 
 /**
  * The id column a tool row and a revision row both open with, so every body
@@ -119,7 +136,10 @@ export const STATE_GLYPH = 16;
  * glyph + gap in adwaita's `Tool`). Every mark in the log hangs this far too,
  * so the marks of a header, a running line and a note stand in one column.
  */
-export const MARK_HANG = STATE_GLYPH + 8;
+/** The air between that glyph and the text it stands beside. */
+const GUTTER_GAP = 8;
+
+export const MARK_HANG = STATE_GLYPH + GUTTER_GAP;
 
 /** A mark a pointer takes: a row's action, a dialog's heading. */
 export const ACTION_GLYPH = CONTROL.rowActionIconSize;
@@ -127,6 +147,19 @@ export const ACTION_GLYPH = CONTROL.rowActionIconSize;
 /** A mark sized to the line of text it stands beside, so the two share a baseline. */
 export const glyphForText = (textSize: number): number =>
   Math.round(textSize * 0.92);
+
+/* Gaps -----------------------------------------------------------------
+ *
+ * A scale says how big a step is, not which step a *role* takes. These are the
+ * roles mu repeats across files, so one cluster is one gap everywhere rather
+ * than one gap per file. */
+
+/**
+ * The air between the figures one row trails — a count with its histogram, a
+ * size beside a label, an age beside a path — so a cluster reads as one group
+ * rather than as loose text. Every plugin that trails a cluster takes this one.
+ */
+export const figureGap = (t: AdwaitaTheme): number => t.space.sm;
 
 /* Rules, meters, dots -------------------------------------------------- */
 
@@ -152,10 +185,10 @@ export const PREVIEW_IMAGE_HEIGHT = CONTROL.mediaTileHeight * 2;
 
 /* Chips and pills ------------------------------------------------------ */
 
-/** The air inside a chip beyond the gap the chip sits in, and the flat sliver
- *  above and below its label: a chip is a tight box, not a padded row. */
-export const CHIP_INSET = 2;
-export const CHIP_PAD_Y = 2;
+/** The air inside a chip: the flat sliver above and below its label, and the same
+ *  sliver added to the gap the chip already sits in on its sides. A chip is a
+ *  tight box, not a padded row, and it pads itself with one measure. */
+export const CHIP_PAD = 2;
 
 /** A composer pill's height — and the line box of its label, which is how the
  *  label sits centred in the box without any padding arithmetic. */
