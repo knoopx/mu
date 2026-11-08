@@ -50,7 +50,6 @@ export interface StackData {
 
   selectChange(index: number): void;
   selectFile(index: number): void;
-  setSel(index: number): void;
   setError(message: string | null): void;
   applyRevset(revset: string): void;
   refresh(): Promise<void>;
@@ -173,7 +172,6 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     live: () => liveRef.current,
     selectChange,
     selectFile,
-    setSel,
     setError,
     applyRevset,
     refresh,

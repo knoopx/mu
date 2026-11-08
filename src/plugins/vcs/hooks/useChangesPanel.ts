@@ -5,8 +5,8 @@
  * one change, the patch of one file — under a keymap that either acts itself
  * or asks the agent to act. What it holds is split by what it holds: the reads
  * in useChangeStackData, the cursor in useChangesSelection, the overlays in
- * useChangesOverlay, move mode in useChangesMove, the action keys in
- * useChangesActions. This file only wires them to one another and to the keys.
+ * useChangesOverlay, the action keys in useChangesActions. This file only wires
+ * them to one another and to the keys.
  */
 import { useCallback } from "react";
 import { useAdwaita, type GraphNode, type ToastFn } from "adwaita-gpuix";
@@ -16,18 +16,16 @@ import {
   isBareKey,
   matchPanelKey,
   runFileKey,
-  runMoveKey,
   runStackKey,
 } from "../lib/keymap";
 import { keyOf, modsOf } from "../../core/lib/ui/keyEvents";
 import { type Change, type FileChange } from "adwaita-gpuix";
-import { FilePanelFocus, PanelMode, RevsetDef } from "../types";
+import { FilePanelFocus, RevsetDef } from "../types";
 import { useChangeGraph } from "./useChangeGraph";
 import type { ChangeImage } from "./useChangeFiles";
 import { useChangeStackData } from "./useChangeStackData";
 import { useChangeWrites } from "./useChangeWrites";
 import { useChangesActions } from "./useChangesActions";
-import { useChangesMove } from "./useChangesMove";
 import { useChangesNav } from "./useChangesNav";
 import { useChangesOverlay, type PanelOverlay } from "./useChangesOverlay";
 import { useChangesPanelRefs } from "./useChangesPanelRefs";
@@ -54,7 +52,6 @@ export interface ChangesPanelState {
   rows: Change[];
   sel: number;
   focus: FilePanelFocus;
-  mode: PanelMode;
 
   graph: readonly GraphNode[];
   laneCount: number;
@@ -104,19 +101,9 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     selectedChange: writes.selectedChange,
     runMutation: writes.runMutation,
   });
-  const move = useChangesMove({
-    toast,
-    rows: () => data.rows,
-    sel: () => data.live().sel,
-    setSel: data.setSel,
-    runMutation: writes.runMutation,
-  });
-  const { graph, laneCount } = useChangeGraph(
-    move.mode === "move" ? move.moveRows : data.rows,
-  );
+  const { graph, laneCount } = useChangeGraph(data.rows);
   const nav = useChangesNav({
     data,
-    move,
     stackListRef: refs.stackListRef,
     renderer,
     rowHeight,
@@ -127,7 +114,6 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     writes,
     overlay,
     checked: selection.checked,
-    enterMoveMode: move.enter,
     toggleChecked: selection.toggleChecked,
     clearChecked: selection.clearChecked,
     onPickPath,
@@ -164,13 +150,6 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
         return true;
       }
 
-      if (move.mode === "move")
-        return runMoveKey(key, mods, {
-          nav: nav.goStack,
-          apply: () => void move.apply(),
-          cancel: move.cancel,
-        });
-
       const actionsOpen = isBareKey(mods);
       const id = matchPanelKey(selection.focus, key, mods);
       if (selection.focus === "stack")
@@ -194,7 +173,7 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
         run: actions.filesAction,
       });
     },
-    [actions, data, move, nav, overlay, refs, runStackAction, selection],
+    [actions, data, nav, overlay, refs, runStackAction, selection],
   );
 
   return {
@@ -203,7 +182,6 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     rows: data.rows,
     sel: data.sel,
     focus: selection.focus,
-    mode: move.mode,
     graph,
     laneCount,
     bookmarks: data.bookmarks,

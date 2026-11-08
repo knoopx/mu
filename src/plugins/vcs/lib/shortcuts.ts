@@ -39,7 +39,6 @@ export const STACK_SHORTCUTS: Shortcut[] = [
   { id: "bookmark", kbds: ["b"], desc: "bookmark" },
   { id: "push", kbds: [["ctrl", "p"]], desc: "push" },
   { id: "revset", kbds: ["/"], desc: "revset", hidden: true },
-  { id: "move", kbds: ["enter"], desc: "move" },
 ];
 
 export const FILES_SHORTCUTS: Shortcut[] = [
@@ -64,16 +63,8 @@ export const FILES_SHORTCUTS: Shortcut[] = [
   { id: "discard", kbds: ["d"], desc: "discard" },
 ];
 
-export const MOVE_SHORTCUTS: Shortcut[] = [
-  { id: "move-up", kbds: ["up"], desc: "move", hidden: true },
-  { id: "move-down", kbds: ["down"], desc: "move", hidden: true },
-  { id: "apply", kbds: ["enter"], desc: "apply" },
-  { id: "cancel", kbds: ["escape"], desc: "cancel" },
-];
-
 export const STACK_HINTS = hints(STACK_SHORTCUTS);
 export const FILES_HINTS = hints(FILES_SHORTCUTS);
-export const MOVE_HINTS = hints(MOVE_SHORTCUTS);
 
 export const PICKER_SHORTCUTS: Shortcut[] = [
   { id: "type", kbds: ["type"], desc: "filter", hidden: true },

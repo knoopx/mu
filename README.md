@@ -102,7 +102,7 @@ The agent's work is your project's history. The changes panel shows the stack of
 
 Naming a change and splitting it are asked of the agent. Press describe, or split on the change or on one of its files, or split hunks, and the panel hands over the change, the files and the hunks you named: the agent reads the diff, writes the message itself, makes the write, and leaves a row in the log with the change ids it ended up with and which half holds what, so you can check it against the history it came from.
 
-Squash, revert, drop, move, bookmark and push happen in the panel.
+Squash, revert, drop, bookmark and push happen in the panel.
 
 ![Your project's history](stories/Changes/panel.png)
 

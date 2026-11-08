@@ -8,7 +8,6 @@ import {
 import { navDirectionOf } from "./nav";
 import {
   FILES_SHORTCUTS,
-  MOVE_SHORTCUTS,
   STACK_SHORTCUTS,
   matchShortcut,
   type KeyMods,
@@ -27,7 +26,6 @@ export const STACK_ACTION_IDS = new Set([
   "bookmark",
   "push",
   "revset",
-  "move",
 ]);
 
 export const FILES_ACTION_IDS = new Set([
@@ -125,30 +123,4 @@ export function runFileKey(id: string, keys: FileKeys): boolean {
   if (id === "pick") return keys.pick();
   if (keys.actionsOpen && FILES_ACTION_IDS.has(id)) return keys.run(id);
   return false;
-}
-
-export interface MoveKeys {
-  nav: (direction: "up" | "down") => void;
-  apply: () => void;
-  cancel: () => void;
-}
-
-const MOVE_HANDLERS: Record<string, (keys: MoveKeys) => void> = {
-  "move-up": (keys) => keys.nav("up"),
-  "move-down": (keys) => keys.nav("down"),
-  apply: (keys) => keys.apply(),
-  cancel: (keys) => keys.cancel(),
-};
-
-export function runMoveKey(
-  key: string,
-  mods: KeyMods,
-  keys: MoveKeys,
-): boolean {
-  const match = matchShortcut(MOVE_SHORTCUTS, key, mods);
-  if (match === null) return false;
-  const handler = MOVE_HANDLERS[match.id];
-  if (handler === undefined) return false;
-  handler(keys);
-  return true;
 }

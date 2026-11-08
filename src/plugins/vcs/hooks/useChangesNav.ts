@@ -9,12 +9,10 @@ import type { PublicInstance } from "@gpuix/react";
 import type { NativeRenderer } from "@gpuix/native/host";
 import { navIndex } from "../lib/nav";
 import type { NavDirection } from "../types";
-import type { ChangesMove } from "./useChangesMove";
 import type { StackData } from "./useChangeStackData";
 
 export interface ChangesNavOptions {
   data: StackData;
-  move: ChangesMove;
 
   stackListRef: { current: PublicInstance | null };
   renderer: NativeRenderer;
@@ -27,7 +25,7 @@ export interface ChangesNav {
 }
 
 export function useChangesNav(options: ChangesNavOptions): ChangesNav {
-  const { data, move, stackListRef, renderer, rowHeight } = options;
+  const { data, stackListRef, renderer, rowHeight } = options;
 
   const pageRows = useCallback((): number => {
     const id = stackListRef.current?.id;
@@ -40,19 +38,14 @@ export function useChangesNav(options: ChangesNavOptions): ChangesNav {
 
   const goStack = useCallback(
     (direction: NavDirection): void => {
-      const source = move.shown();
+      const source = data.rows;
       if (source.length === 0) return;
       const from = data.live().sel;
       const next = navIndex(from, source.length, direction, pageRows());
-      if (move.mode === "move") {
-        move.swap(from, next);
-        data.setSel(next);
-        return;
-      }
       if (next === from) return;
       data.selectChange(next);
     },
-    [data, move, pageRows],
+    [data, pageRows],
   );
 
   const goFile = useCallback(

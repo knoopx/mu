@@ -101,8 +101,6 @@ export interface VcsHunkListDetails {
 
 export type FilePanelFocus = "stack" | "files";
 
-export type PanelMode = "normal" | "move";
-
 export type NavDirection = "up" | "down" | "pageUp" | "pageDown";
 
 export interface LogRow {

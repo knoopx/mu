@@ -1,11 +1,7 @@
 import type { AdwaitaTheme, IconName } from "adwaita-gpuix";
 import type { SlashCommand } from "../../../../autocomplete";
 import { ChangesPanel } from "../../../vcs/components/ChangesPanel";
-import {
-  FILES_HINTS,
-  MOVE_HINTS,
-  STACK_HINTS,
-} from "../../../vcs/lib/shortcuts";
+import { FILES_HINTS, STACK_HINTS } from "../../../vcs/lib/shortcuts";
 import type { ChangesPanelState } from "../../../vcs/hooks/useChangesPanel";
 import { SessionTreePanel } from "../SessionTreePanel";
 import { TREE_HINTS } from "../../lib/session/shortcuts";
@@ -289,11 +285,6 @@ const previewOf = (
 
 function changesStatus(changes: ChangesPanelState): ComposerPanelStatusSpec {
   const change = changes.rows[changes.sel];
-  if (changes.mode === "move")
-    return {
-      message: "Move mode · Enter rebases · Esc cancels",
-      hints: MOVE_HINTS,
-    };
   const files = `${changes.files.length} files`;
   const selected =
     changes.checked.size > 0 ? ` · ${changes.checked.size} selected` : "";

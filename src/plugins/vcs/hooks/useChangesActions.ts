@@ -36,7 +36,6 @@ export interface ChangesActionsOptions {
   /** the changes ticked for a describe */
   checked: ReadonlySet<string>;
 
-  enterMoveMode(): void;
   toggleChecked(changeId: string): void;
   clearChecked(): void;
   onPickPath(path: string): void;
@@ -65,7 +64,6 @@ interface StackActionContext {
   split(): void;
   select(): void;
   push(): void;
-  move(): void;
 }
 
 function stackActionOf(id: string, ctx: StackActionContext): boolean {
@@ -89,10 +87,6 @@ function stackActionOf(id: string, ctx: StackActionContext): boolean {
   }
   if (id === "push") {
     ctx.push();
-    return true;
-  }
-  if (id === "move") {
-    ctx.move();
     return true;
   }
   return false;
@@ -142,7 +136,6 @@ export function useChangesActions(
     writes,
     overlay,
     checked,
-    enterMoveMode,
     toggleChecked,
     clearChecked,
     onPickPath,
@@ -219,11 +212,9 @@ export function useChangesActions(
         push: (): void => {
           void pushBookmarks();
         },
-        move: enterMoveMode,
       });
     },
     [
-      enterMoveMode,
       onInstruction,
       overlay.openBookmark,
       pushBookmarks,

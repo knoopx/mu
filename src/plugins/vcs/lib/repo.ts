@@ -456,21 +456,6 @@ export async function pushBookmarks(names: string[]): Promise<string> {
   return `Pushed ${names.length} bookmark(s)`;
 }
 
-export async function rebaseChange(
-  changeId: string,
-  targetChangeId: string,
-  after: boolean,
-): Promise<string> {
-  let onto = targetChangeId;
-  if (!after) {
-    const parent = await parentChangeId(targetChangeId);
-    if (parent === null) throw new Error("Target change has no parent");
-    onto = parent;
-  }
-  await vcsOk(["rebase", "-r", changeId, "-o", onto]);
-  return `Rebased change ${changeId.slice(0, 8)}`;
-}
-
 export function spawnDetached(cmd: string, args: string[]): void {
   const child = spawn(cmd, args, { detached: true, stdio: "ignore" });
   child.unref();

@@ -2,8 +2,7 @@
  * The lane diagram beside the stack.
  *
  * The graph is drawn from the rows the panel is showing, so a filtered revset
- * gets its own picture and move mode's reordered list follows the lanes it
- * would rebase into.
+ * gets its own picture of the lanes it holds.
  */
 import { useMemo } from "react";
 import {
