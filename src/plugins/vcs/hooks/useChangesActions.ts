@@ -11,10 +11,11 @@ import { useCallback } from "react";
 import type { ToastFn } from "adwaita-gpuix";
 import {
   bookmarkNamesFor,
+  findWorkspaceRoot,
   listBookmarks,
-  openFileInEditor,
   restoreFile,
 } from "../lib/repo";
+import { openFileInEditor, openNotice } from "../../core/lib/files/openFile";
 import {
   describeInstruction,
   splitFilesInstruction,
@@ -238,8 +239,12 @@ export function useChangesActions(
       if (change === undefined || file === undefined) return false;
       return fileActionOf(id, {
         open: (): void => {
-          openFileInEditor(file.path);
-          toast(`Opening ${file.path} in the editor`, { type: "info" });
+          void openFileInEditor(findWorkspaceRoot(), file.path).then(
+            (result) => {
+              const notice = openNotice(result, file.path);
+              toast(notice.message, { type: notice.type });
+            },
+          );
         },
         splitFiles: (): void => {
           onInstruction(

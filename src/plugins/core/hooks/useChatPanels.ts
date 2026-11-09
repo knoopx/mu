@@ -140,6 +140,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     session,
     removeSession: sessions.remove,
     removeFile: files.remove,
+    openFile: files.open,
     guardrails,
     composer,
   });

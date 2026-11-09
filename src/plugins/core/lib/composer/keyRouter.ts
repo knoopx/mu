@@ -11,7 +11,7 @@ import {
   type ComposerMode,
   type PickIntent,
 } from "./mode";
-import { isDeleteRowKey } from "./shortcuts";
+import { isDeleteRowKey, isOpenRowKey } from "./shortcuts";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
@@ -95,6 +95,9 @@ export interface ComposerKeyContext {
   onDraft?: (text: string) => void;
 
   onDelete?: () => void;
+
+  /** Open the row under the cursor in the user's editor. */
+  onOpen?: () => void;
   onClear?: () => void;
   onPaste?: () => void;
   onAbort: () => void;
@@ -273,6 +276,13 @@ function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
   });
 }
 
+/** A row key that is a bare letter has to be taken before the letter is typed. */
+function panelOpenKey(event: EventPayload, ctx: ComposerKeyContext): boolean {
+  if (ctx.onOpen === undefined || !isOpenRowKey(event)) return false;
+  ctx.onOpen();
+  return true;
+}
+
 function panelNavKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
@@ -285,6 +295,8 @@ function panelNavKey(
     ctx.onDelete();
     return true;
   }
+
+  if (panelOpenKey(event, ctx)) return true;
 
   if (BOUNDARY_KEYS.has(key)) {
     if (ctx.count === 0) return false;
@@ -316,6 +328,11 @@ function handlePanelKey(
     ctx.onDraft?.(query);
     ctx.send({ type: "setQuery", query });
   };
+
+  // The open key is a bare letter, so it is taken before the keystroke that
+  // would otherwise narrow the filter. Only a panel that can open a row hands
+  // an onOpen, so no other panel loses the letter to a command.
+  if (panelOpenKey(event, ctx)) return;
 
   if (bare && key === "backspace") {
     setQuery(mode.query.slice(0, -1));

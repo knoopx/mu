@@ -20,6 +20,7 @@ import type { ComposerPanelRow } from "../../components/composer/Composer";
 import type { ThemePanelState } from "../../hooks/useThemePanel";
 import type { SessionDeleteResult, ThinkingLevel } from "../agent/agentService";
 import type { FileDeleteResult } from "../files/deleteFile";
+import { openNotice, type FileOpenResult } from "../files/openFile";
 
 const COMMAND_TARGETS: Record<string, ComposerTarget> = {
   model: "model",
@@ -211,6 +212,13 @@ export interface DeleteFileContext {
   removeFile(path: string): FileDeleteResult;
 }
 
+export interface OpenFileContext {
+  toast: ToastFn;
+
+  /** Hand the file to the user's editor; the answer waits for the editor to start. */
+  openFile(path: string): Promise<FileOpenResult>;
+}
+
 /**
  * What one delete key is handed: the panel under the cursor decides what its
  * row is, so a session row and a file row answer with their own remove.
@@ -279,4 +287,33 @@ export function deletePanelRow(
     return;
   }
   if (a.mode.target === "file") deleteFileRow(row, a);
+}
+
+/**
+ * Open the file the row names, in the editor the user asked for.
+ *
+ * The panel stays open and the cursor stays put: an editor is opened to be read,
+ * and the list it was picked from is how the next one is picked. The toast is the
+ * whole notice — the answer waits for the editor to actually start, so a name
+ * that is not on the road is reported instead of promised.
+ */
+function openFileRow(row: ComposerPanelRow, a: OpenFileContext): void {
+  if (row.kind !== "option") return;
+  const name = rowName(row);
+  void a.openFile(row.key).then((result) => {
+    const notice = openNotice(result, name);
+    a.toast(notice.message, { type: notice.type });
+  });
+}
+
+export type PanelOpenContext = OpenFileContext & {
+  mode: ComposerMode;
+};
+
+export function openPanelRow(
+  row: ComposerPanelRow,
+  a: PanelOpenContext,
+): void {
+  if (a.mode.kind !== "pick") return;
+  if (a.mode.target === "file") openFileRow(row, a);
 }

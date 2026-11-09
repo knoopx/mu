@@ -92,6 +92,12 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
     if (row !== undefined) panel.onDelete(row);
   };
 
+  const openActive = (): void => {
+    if (panel?.onOpen === undefined) return;
+    const row = rowUnderCursor(panel, mode);
+    if (row !== undefined) panel.onOpen(row);
+  };
+
   const fieldNode = useRef<number | null>(null);
   const panelNode = useRef<number | null>(null);
   const captureField = (node: PublicInstance | null): void => {
@@ -123,6 +129,7 @@ export function useComposerKeys(opts: ComposerKeyOptions): ComposerKeyHandlers {
     onComplete: opts.onComplete,
     onDraft: draftIsQuery ? opts.onChange : undefined,
     onDelete: panel?.onDelete === undefined ? undefined : deleteActive,
+    onOpen: panel?.onOpen === undefined ? undefined : openActive,
     onClear: opts.onClear,
     onPaste: opts.onPaste,
     onAbort: opts.onAbort,

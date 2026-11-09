@@ -12,8 +12,9 @@ export default meta;
 
 /**
  * `Ctrl+P` over the project: the folder walked as a shell walks it, the file
- * under the cursor previewed beside the list, and `Delete` handing the row to
- * the one writer that refuses a folder or a name that walks out of it.
+ * under the cursor previewed beside the list, `Delete` handing the row to the one
+ * writer that refuses a folder or a name that walks out of it, and `o` handing it
+ * to the editor the user asked for.
  */
 export const tidy = chromeStory("tidy", () =>
   chat({

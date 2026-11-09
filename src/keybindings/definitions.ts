@@ -58,6 +58,11 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
     ),
     def("composer.files", "ctrl+p", "Open the file composer"),
     def(
+      "composer.openRow",
+      "o",
+      "Open the highlighted file in the editor in the file composer panel",
+    ),
+    def(
       "composer.userMessageHistory",
       "ctrl+r",
       "Reverse search the user message history of this session",

@@ -1,4 +1,4 @@
-import { execFile, execSync, spawn } from "node:child_process";
+import { execFile, execSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
@@ -13,7 +13,6 @@ import {
 } from "adwaita-gpuix";
 import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
 import { SHORT_OP_ID } from "../constants";
-import { withoutMuLoaderEnv } from "../../core/lib/utils/loaderEnv";
 
 const pExecFile = promisify(execFile);
 
@@ -465,18 +464,3 @@ export async function pushBookmarks(names: string[]): Promise<string> {
   return `Pushed ${names.length} bookmark(s)`;
 }
 
-export function spawnDetached(cmd: string, args: string[]): void {
-  // An editor is the user's program, not mu's: it resolves its own bindings.
-  const child = spawn(cmd, args, {
-    detached: true,
-    stdio: "ignore",
-    env: withoutMuLoaderEnv(process.env),
-  });
-  child.unref();
-}
-
-export function openFileInEditor(filePath: string): void {
-  spawnDetached(process.env.EDITOR ?? "vi", [
-    join(findWorkspaceRoot(), filePath),
-  ]);
-}

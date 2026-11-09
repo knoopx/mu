@@ -211,6 +211,7 @@ function panelDataOf(
     windowHeight: panels.windowHeight,
     onPick: composerActions.pickRow,
     onDelete: composerActions.deleteRow,
+    onOpen: composerActions.openRow,
     onHover: composerActions.onHover,
   };
 }

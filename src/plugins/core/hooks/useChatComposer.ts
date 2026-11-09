@@ -13,6 +13,7 @@ import {
 } from "../lib/composer/mode";
 import {
   deletePanelRow,
+  openPanelRow,
   pickComposerRow,
   runChatCommand,
   submitThemeCommand,
@@ -23,6 +24,7 @@ import { pathTokenOf, stripTrailingTab } from "../lib/composer/pathCompletion";
 import type { ToolImage } from "../lib/agent/content";
 import type { SessionDeleteResult } from "../lib/agent/agentService";
 import type { FileDeleteResult } from "../lib/files/deleteFile";
+import type { FileOpenResult } from "../lib/files/openFile";
 import type { ChatSession } from "../lib/session/chatSession";
 import { useClipboardPaste } from "./useClipboardPaste";
 import type { ComposerState } from "./useComposerState";
@@ -42,6 +44,8 @@ export interface ChatComposerOptions {
   removeSession(path: string): SessionDeleteResult;
 
   removeFile(path: string): FileDeleteResult;
+
+  openFile(path: string): Promise<FileOpenResult>;
 
   guardrails: GuardrailsPanelApi;
 
@@ -65,6 +69,12 @@ export interface ChatComposerActions {
    * row is taken off the disk.
    */
   deleteRow(row: ComposerPanelRow): void;
+
+  /**
+   * The open key: the file panel's row is handed to the user's editor, and the
+   * panel stays where it was.
+   */
+  openRow(row: ComposerPanelRow): void;
 
   runCommand(name: string): void;
 
@@ -100,6 +110,7 @@ export function useChatComposer(
     session,
     removeSession,
     removeFile,
+    openFile,
     guardrails,
     composer,
   } = opts;
@@ -198,6 +209,9 @@ export function useChatComposer(
       removeFile,
     });
 
+  const openRow = (row: ComposerPanelRow): void =>
+    openPanelRow(row, { toast, mode, openFile });
+
   const seedPrompt = (text: string): void => {
     setInput(text);
     setMode(draftMode());
@@ -236,6 +250,7 @@ export function useChatComposer(
     pickChangesPath,
     completePath,
     deleteRow,
+    openRow,
     runCommand,
     startNewSession,
     seedPrompt,

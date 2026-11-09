@@ -155,6 +155,9 @@ export interface ComposerPanelSpec {
   onHover: (index: number) => void;
 
   onDelete?: (row: ComposerPanelRow) => void;
+
+  /** The open key: a file panel hands its row to the user's editor. */
+  onOpen?: (row: ComposerPanelRow) => void;
 }
 
 export interface ComposerContextSpec {
