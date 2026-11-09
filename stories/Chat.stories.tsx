@@ -12,9 +12,12 @@ const meta = defineMeta({
 });
 export default meta;
 
+/** The window: a session mid-answer, the bar reading its own figures. */
 export const session = chromeStory("session", () =>
   chat({
     items: [...SESSION_ITEMS, ...STREAM_TURN],
     streaming: true,
   }),
 );
+
+

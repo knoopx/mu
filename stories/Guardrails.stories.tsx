@@ -2,10 +2,7 @@ import { defineMeta } from "storybook";
 import { ChatApp } from "../src/plugins/core/screens/Chat";
 import { pickMode } from "../src/plugins/core/lib/composer/mode";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
-import {
-  guardrailsScene,
-  guardrailsTendedScene,
-} from "../.storybook/fixtures/guardrails";
+import { guardrailsScene } from "../.storybook/fixtures/guardrails";
 
 const meta = defineMeta({
   title: "Guardrails",
@@ -20,6 +17,4 @@ export const triggered = chromeStory("triggered", () =>
   }),
 );
 
-export const tended = chromeStory("tended", () =>
-  chat({ items: guardrailsTendedScene() }),
-);
+

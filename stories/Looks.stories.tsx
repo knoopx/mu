@@ -9,7 +9,8 @@ import {
   themeStage,
   themeStory,
 } from "../.storybook/chrome/chat";
-import { PHOTOS_TURN } from "../.storybook/fixtures/scenes/photo-strip";
+import { THEME_ITEMS } from "../.storybook/fixtures/scenes/looks-rules";
+import { ACCENT_ITEMS } from "../.storybook/fixtures/scenes/looks-accent";
 
 const meta = defineMeta({
   title: "Looks",
@@ -21,10 +22,14 @@ const THEME_CURSOR = new Map(
   themeRows("").map((row, index) => [row.key as ColorScheme, index]),
 );
 
-const ACCENT_CURSOR = accentRows("", "nightsky").findIndex(
+const ACCENT_CURSOR = accentRows("", "light").findIndex(
   (row) => row.key === "orange",
 );
 
+// The `Looks` row is a theme comparison: one session, four looks. It only
+// reads as a comparison when the screen underneath is identical, so these
+// stories deliberately share a transcript — the theme is the variable, and
+// `checkUnique` counts the theme as part of the screen.
 const themePicker = (scheme: ColorScheme): ComposerMode => ({
   kind: "pick",
   target: "theme",
@@ -40,19 +45,19 @@ const accentPicker: ComposerMode = {
 };
 
 export const light = themeStory("light", "light", () =>
-  chat({ items: PHOTOS_TURN, initialMode: themePicker("light") }),
+  chat({ items: THEME_ITEMS, initialMode: themePicker("light") }),
 );
 
 export const dark = themeStory("dark", "dark", () =>
-  chat({ items: PHOTOS_TURN, initialMode: themePicker("dark") }),
+  chat({ items: THEME_ITEMS, initialMode: themePicker("dark") }),
 );
 
 export const nightsky = themeStory("nightsky", "nightsky", () =>
-  chat({ items: PHOTOS_TURN, initialMode: themePicker("nightsky") }),
+  chat({ items: THEME_ITEMS, initialMode: themePicker("nightsky") }),
 );
 
 export const accents = chromeStory(
   "accents",
-  () => chat({ items: PHOTOS_TURN, initialMode: accentPicker }),
-  themeStage("nightsky", "orange"),
+  () => chat({ items: ACCENT_ITEMS, initialMode: accentPicker }),
+  themeStage("light", "orange"),
 );

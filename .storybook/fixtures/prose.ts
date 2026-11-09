@@ -85,27 +85,6 @@ export const PREVIEW_COMPARE = [
   "The strip is where a photo loses pixels, and it is the only place it does.",
 ].join("\n");
 
-export const MONTAGE_ANSWER = [
-  "Four tiles at 318×180, in the order `ls` gives them, and one file refused to fit:",
-  "",
-  "```",
-  "sheet.webp  1290x366  4 tiles, 16 px gap",
-  "```",
-  "",
-  "`sf-bay-portrait.jpg` is skipped: it is 480×640, so a 16:9 grid cannot take it without a crop of its own. That is the same rule as the strip, one level up — the frame that is not the shape of the box is the frame that loses something.",
-].join("\n");
-
-export const CAPTURE_ANSWER = [
-  "`Chat/session.png` rendered at 205 771 bytes with the three photos in it, and the full capture is running behind this answer.",
-].join("\n");
-
-export const CAPTURE_ALL_ANSWER = [
-  "12 stories, 0 failures.",
-  "",
-  "- the heaviest shot is `Models/model.png` at 244 190 bytes — a full model list is a lot of text",
-  "- `Chat/session.png` is second at 205 771, and that is the three photos in the transcript",
-  "- `Sessions/list.png` is the lightest at 58 017, which is a list of labels and nothing else",
-].join("\n");
 
 export const CHANGES_ANSWER = [
   "Named and split, both from the panel: `6d1c4b0a` now reads `feat(changes): send describe and split to the agent`, and `stories/Changes/panel.png` is its own change, `1c7f9a44`, with the source files left in `8b2d63e0`.",

@@ -50,7 +50,11 @@ Adding a file means adding its path at each consumer; there is no public surface
 
 ## Stories
 
-One feature, one story, one scene. Each story in `stories/` renders the app — the window, the log, the composer slot, the status bar — at the size the real window is used at, with a session in it doing the thing the feature is. A story is a picture of the app being used, not a component in a box. The PNG it writes is the image `README.md` shows for that feature, so the README stays a description of the app and every claim in it has a scene behind it.
+One feature, one story, one scene. Each story in `stories/` renders the app — the window, the log, the composer slot, the status bar — at the size the real window is used at, with a session in it doing the thing the feature is. A story is a picture of the app being used, not a component in a box.
+
+**A scene carries its own conversation.** The scene behind a feature is the feature's evidence, so `Chat/session` showing the same log as `Paths/completing` says nothing about either: every feature writes its own transcript in `.storybook/fixtures/scenes/<feature>.ts` — its own prompts, its own tool calls, its own answer — and no two images the README shows may share one. `scenes/photo-strip.ts` is the hero and the only transcript that appears twice (the `Chat/session` window, and the preview pane of `Sessions/list`, which is previewing *another* session on purpose); `scenes/looks-rules.ts` carries the theme-picker shot and `scenes/looks-accent.ts` the accent-picker shot: `Looks` is two screens, not one screen in four themes, because four renders of one transcript and one panel are one image repeated. `bun .storybook/checkUnique.ts` grades this — a story is its transcript, its open panel and its theme stage, and two stories sharing all three (or one transcript between them, `photo-strip` excepted) fail the run. A scene's rows are built with `userTurn/ran/failed/running/answer/usage` from `fixtures/turn.ts`, its command output lives beside it, and its figures are read at the scene's own `clockOf` moment so the PNG is the same PNG every capture. The PNG it writes is the image `README.md` shows for that feature, so every heading in the README has a scene behind it and every scene has a heading.
+
+**The README is a gallery and nothing else:** `# mu`, one `##` per feature, one image per story. No intro, no captions, no keymap, no capture or build detail — not one sentence of prose. What a screen shows is carried by the heading, the story name in the image path, and the pixels; anything worth explaining becomes another story, and every other kind of sentence belongs in this file.
 
 - `bun storybook .` renders every scene to `stories/<Feature>/<story>.png`
 - `bun storybook . --only Chat` renders one feature
@@ -60,32 +64,80 @@ One feature, one story, one scene. Each story in `stories/` renders the app — 
 
 A story id is the meta `title` over the exported scene, so `stories/Chat.stories.tsx` with `title: "Chat"` and `export const session` is the `Chat/session` scene, and it writes `stories/Chat/session.png`.
 
-| README feature                    | Scene                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------- |
-| Chat                              | `Chat/session`                                                                |
-| Agent actions                     | `AgentActions/work`                                                           |
-| Questions                         | `Questions/asked`                                                             |
-| Composer                          | `Composer/drafting`                                                           |
-| Paths                             | `Paths/completing`                                                            |
-| Models                            | `Models/model`, `Models/thinking`                                             |
-| Sessions                          | `Sessions/list`                                                               |
-| History                           | `History/tree`                                                                |
-| Changes                           | `Changes/panel`, `Changes/instructed`                                         |
-| Web search                        | `WebSearch/results`                                                           |
-| Code quality                      | `CodeQuality/surveyed`                                                        |
-| Planning                          | `Planning/planned` — no PNG captured here: capture needs a test-support build of `@gpuix/native` |
-| Generative UI                     | `GenerativeUI/rendered`, `GenerativeUI/figures`                               |
-| Figures                           | `Figures/plotted`, `Figures/structured` — neither PNG captured here: capture needs a test-support build of `@gpuix/native` |
-| Diagrams                          | `Mermaid/drawn`                                                               |
-| GitHub                            | `Github/checked` — no PNG captured here: capture needs a test-support build of `@gpuix/native` |
-| Guardrails                        | `Guardrails/triggered`, `Guardrails/tended`                                   |
-| Terminal                          | `Terminal/shell` — no PNG captured here: capture needs a test-support build of `@gpuix/native` |
-| Project header                    | `ProjectHeader/opens`                                                         |
-| Looks                             | `Looks/light`, `Looks/dark`, `Looks/nightsky`, `Looks/accents`                |
-| (the op log `Ctrl+O` opens)       | `Changes/oplog` — no PNG in the tree yet: capture needs a test-support build of `@gpuix/native` |
-| (design sweep, not in the README) | the rest of `Looks/*` — the composer's panels in every state, at every accent |
+One feature, one story — the only feature with two is one whose stories open different panels (`Models`: the model list and the thinking levels; `Changes`: the change stack and the operation log) and `Looks`, which is one session under four themes.
 
-Every PNG under `stories/` is shown by the README, and every image the README shows exists — keep that true when adding a story (`grep -c 'stories/' README.md` against `find stories -name '*.png'`). The one gap is the status bar: the README describes it in words and has no picture, because there is no `stories/StatusBar.stories.tsx` — the bar is only ever seen inside `Chat/*` and the other scenes. Adding that story closes the gap.
+| Feature                | Story                                          | PNG in tree |
+| ---------------------- | ---------------------------------------------- | ----------- |
+| Chat                   | `Chat/session`                                 | yes         |
+| Documents              | `Documents/documents`                          | yes         |
+| Agent actions          | `AgentActions/work`                            | yes         |
+| Web search             | `WebSearch/results`                            | yes         |
+| Code quality           | `CodeQuality/surveyed`                         | yes         |
+| Snapcompact            | `Snapcompact/frames`                           | no          |
+| Codemode               | `Codemode/script`                              | no          |
+| Files                  | `Files/tidy`                                   | no          |
+| Search                 | `Search/prompts`                               | no          |
+| Guardrails             | `Guardrails/triggered`                         | yes         |
+| Project header         | `ProjectHeader/opens`                          | yes         |
+| Looks                  | `Looks/light`, `dark`, `nightsky`, `accents`    | yes (4)     |
+| Composer               | `Composer/drafting`                            | no          |
+| Paths                  | `Paths/completing`                             | no          |
+| Models                 | `Models/model`, `Models/thinking`              | no (2)      |
+| Sessions               | `Sessions/list`                                | no          |
+| History                | `History/tree`                                 | no          |
+| Changes                | `Changes/panel`, `Changes/oplog`               | no (2)      |
+| Questions              | `Questions/asked`                              | no          |
+| Planning               | `Planning/planned`                             | no          |
+| Generative UI          | `GenerativeUI/rendered`                        | no          |
+| Figures                | `Figures/plotted`                              | no          |
+| Structures             | `Structures/structured`                        | no          |
+| Diagrams               | `Mermaid/drawn`                                | no          |
+| GitHub                 | `Github/checked`                               | no          |
+| Terminal               | `Terminal/shell`                               | no          |
+
+**One story per screen, and no story repeats another's screen.** A story is the transcript in the log plus the panel open above the composer plus the theme painted under it; two stories with all three are one image twice, and one transcript across two panels is how 12 of the 20 README images ended up being one conversation with a different panel bolted on. `bun .storybook/checkUnique.ts` grades that — it reads every `stories/*.stories.tsx`, and exits 1 naming any pair that shares a screen, or shares a transcript under the same panel and theme (the `Looks` row is one session in three themes on purpose; `Sessions/list` previews the hero's session, being a preview of *another* session).
+
+Twenty-eight stories cover every plugin the app registers, and the README currently shows the eleven of them that have a correct PNG. A story without a PNG is a feature missing from the gallery, which is the other half of this problem: `Snapcompact`, `Planning`, `GenerativeUI`, `Figures`, `Structures`, `Mermaid`, `Github`, `Terminal`, `Changes/oplog` have never been captured, and eight more lost their pictures to the rule below.
+
+A stale PNG is worse than no PNG. The eight stories above marked `no` that once had pictures (`Composer/drafting`, `Paths/completing`, `Models/model`, `Models/thinking`, `Sessions/list`, `History/tree`, `Changes/panel`, `Questions/asked`) were captured on 8 Nov, before their scenes were rewritten, so those PNGs showed the hero's photo-strip session; they have been deleted rather than left to lie, and the README shows only the eight images that are genuinely distinct screens. The features whose tools live in the log and not in a panel (web search, code quality, documents-as-an-answer) have no story of their own: their rows are already in `Chat/session` and `AgentActions/work`, and a second full-log screen would be a duplicate. **Capture on Linux is not headless and no flag makes it so** — the readback (`PlatformWindow::render_to_image`) exists only for gpui's Wayland and X11 windows, its headless client's `draw()` is empty, and the gpuix CHANGELOG says Linux "stays unavailable until GPUI ships its pending wgpu headless renderer". The test window is only *placed* offscreen, which a tiling compositor ignores. A compositor with no output was tried and does not work either: under `Xvfb` the binding creates its X11 surface, prints `created native window` / `mount complete`, and then spins at 100% CPU without ever producing a PNG — `WgpuRenderer` is surface-backed and Xvfb has no GPU to flip a page to (`gpuix/docs/visual-screenshot-plan.md` names this as the blocker). So capture runs against the session's own Wayland compositor, which maps a window per story, or it does not run; it has never been run here without a window. There is still no `stories/StatusBar.stories.tsx`: the bar is only ever seen inside the other scenes, and the `Chat/session` shot is where its figures are shown.
+
+
+## Keys
+
+The README shows screens and nothing else, so the keymap lives here. Each panel prints its own keys in the bar under it; these are the window's.
+
+| Keys                           | Action                             |
+| ------------------------------ | ---------------------------------- |
+| `Enter`                        | Send                               |
+| `Alt` + `Enter`                | New line                           |
+| `Tab`                          | Autocomplete a path in the draft   |
+| `Ctrl` + `Shift` + `P`         | Commands                           |
+| `Ctrl` + `L`                   | Models                             |
+| `Ctrl` + `T`                   | Thinking level                     |
+| `Ctrl` + `P`                   | Files (insert, delete)             |
+| `Ctrl` + `H`                   | Session history (resume, delete)   |
+| `Ctrl` + `R`                   | Search your past messages          |
+| `Ctrl` + `K`                   | Project changes                    |
+| `Ctrl` + `O`                   | Repository operations              |
+| `Ctrl` + `Shift` + `T`         | Conversation tree                  |
+| `Ctrl` + `Shift` + `G`         | Guardrails                         |
+| `Ctrl` + `Shift` + `Enter`     | Terminal (the same key closes it)  |
+| `Ctrl` + `Shift` + `V`         | Paste into the terminal            |
+| `Ctrl` + `,`                   | Theme                              |
+| `Ctrl` + `Shift` + `,`         | Accent colour                      |
+| `Ctrl` + `V`                   | Paste image                        |
+| `Ctrl` + `C`                   | Clear draft and attachments        |
+| `Ctrl` + `N`                   | New session                        |
+| `Ctrl` + `Shift` + `N`         | New window                         |
+| `Ctrl` + `PageUp` / `PageDown` | Previous / next conversation point |
+| `Ctrl` + `Home` / `End`        | Start / end of the conversation    |
+| `Ctrl` + `U`                   | Delete to line start               |
+| `Ctrl` + `W`                   | Delete word                        |
+| `Ctrl` + `A` / `Ctrl` + `E`    | Line start / line end              |
+| `Ctrl` + `]`                   | Jump to character                  |
+| `Space`                        | Cycle a setting value              |
+| `Delete`                       | Delete the highlighted panel row   |
+| `Esc`                          | Close panel                        |
 
 ## Notes
 

@@ -1,11 +1,8 @@
 import type { TranscriptItem } from "../../../src/plugins/core/lib/agent/transcriptState";
 import {
-  CAPTURE_ALL,
-  CAPTURE_CHAT,
   GREP_OBJECT_FIT,
   IDENTIFY_PICTURES,
   LS_PICTURES,
-  MONTAGE_SHEET,
   READ_THUMB_STRIP,
   READ_THUMB_STYLES,
   TILE_DIFF,
@@ -14,9 +11,6 @@ import {
   TYPECHECK_NO_OBJECT_POSITION,
 } from "../output";
 import {
-  CAPTURE_ALL_ANSWER,
-  CAPTURE_ANSWER,
-  MONTAGE_ANSWER,
   PREVIEW_ANSWER,
   PREVIEW_COMPARE,
   PREVIEW_FIX_ANSWER,
@@ -25,13 +19,7 @@ import {
   PREVIEW_RELEASE_NOTES,
   PREVIEW_STREAM,
 } from "../prose";
-import { PASTED_IMAGES, PASTED_PHOTOS, STRIP_IMAGES } from "../composer";
-import {
-  SEARCH_TOOL_ITEM_EMPTY,
-  SEARCH_TOOL_ITEM_ERROR,
-  SEARCH_TOOL_ITEM,
-} from "../search";
-import { ASK_TOOL_ITEM_RUNNING } from "../ask";
+import { PASTED_IMAGES } from "../composer";
 import { photoFile, photoOf } from "../media";
 import {
   answer,
@@ -217,28 +205,6 @@ export const PREVIEW_TURN: TranscriptItem[] = [
   },
 ];
 
-export const MONTAGE_TURN: TranscriptItem[] = [
-  userTurn(
-    "u-montage",
-    "build me a contact sheet of the four 16:9 frames at 318x180 so i can see the crops side by side",
-    21,
-  ),
-  failed(
-    "c-montage",
-    "bash",
-    {
-      command:
-        "montage ~/Pictures/2026/*.jpg -tile 4x1 -geometry 318x180+8+8 sheet.webp",
-    },
-    MONTAGE_SHEET,
-    82_000,
-  ),
-  {
-    ...answer("a-montage", MONTAGE_ANSWER),
-    usage: usage(10_200, 2_040, 0, 22, 23),
-  },
-];
-
 export const RELEASE_TURN: TranscriptItem[] = [
   userTurn(
     "u-release",
@@ -279,94 +245,6 @@ export const SESSION_ITEMS: TranscriptItem[] = [
   ...RELEASE_TURN,
 ];
 
-export const COMMAND_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-capture",
-    "render the chat story and tell me the byte count, i want to know what three photos in a transcript cost",
-    36,
-  ),
-  ran(
-    "c-capture-chat",
-    "bash",
-    { command: "bun storybook . --only Chat" },
-    CAPTURE_CHAT,
-    92_000,
-  ),
-  running("c-capture-all", "bash", { command: "bun storybook ." }),
-  {
-    ...answer("a-capture", CAPTURE_ANSWER),
-    usage: usage(7_200, 1_340, 0, 37, 37),
-  },
-];
-
-export const LONG_OUTPUT_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-capture-all",
-    "render every story and tell me what fails, and which shot is the heaviest",
-    40,
-  ),
-  ran(
-    "c-capture-full",
-    "bash",
-    { command: "bun storybook ." },
-    CAPTURE_ALL,
-    101_000,
-  ),
-  {
-    ...answer("a-capture-all", CAPTURE_ALL_ANSWER),
-    usage: usage(19_800, 2_460, 0, 41, 42),
-  },
-];
-
-export const SEARCH_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-search",
-    "check upstream before i trust you on this: is a centre crop the default everywhere, and is there a standard for anchoring it on the subject?",
-    45,
-  ),
-  { ...SEARCH_TOOL_ITEM, startTs: at(min(46)) },
-  {
-    ...answer(
-      "a-search",
-      "Yes, centre, everywhere: `cover` fills the box and `object-position` defaults to 50% 50%, so a tile with no anchor cuts the middle. The standard answer is a crop anchor, and the better toolkits bias it with an entropy or focal-point rule when the frame carries metadata.\n\nThat is the same conclusion the photos forced: the anchor belongs to the frame, and we have the two dimensions to decide it from. The EXIF focal point is the option we are not taking — it needs a metadata read on every paste for a 48px tile.",
-    ),
-    usage: usage(18_200, 3_420, 0, 47, 48),
-  },
-];
-
-export const SEARCH_FAILED_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-search-fail",
-    "does a JPEG keep its display rotation in the EXIF tag, and do we honour it? check the standard, not my memory",
-    50,
-  ),
-  { ...SEARCH_TOOL_ITEM_ERROR, startTs: at(min(51)) },
-  {
-    ...answer(
-      "a-search-fail",
-      "The search timed out, so the answer stays in what I can see from here: `mediaKind` normalises the mime type and the renderer samples the pixels as stored, so an orientation tag of 6 arrives unrotated. I have not verified that upstream, and it is marked as a failure in the log rather than answered as if the search had returned nothing.",
-    ),
-    usage: usage(12_600, 2_180, 0, 52, 53),
-  },
-];
-
-export const SEARCH_EMPTY_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-search-empty",
-    "search the react renderer docs for an objectPosition prop",
-    55,
-  ),
-  { ...SEARCH_TOOL_ITEM_EMPTY, startTs: at(min(56)) },
-];
-
-export const ASK_ITEMS: TranscriptItem[] = [
-  userTurn(
-    "u-ask",
-    "decide the crop rule with me before you touch the strip — there are four sane options and i've only argued for one",
-    58,
-  ),
-  { ...ASK_TOOL_ITEM_RUNNING, startTs: at(min(59)) },
-];
-
-export const STRIP_PHOTOS = PASTED_PHOTOS;
-export const COMPOSER_PHOTOS = STRIP_IMAGES;
+// The photo-strip session is the hero scene: `Chat/session` and the preview
+// pane of `Sessions/list`. Every other scene now writes its own conversation —
+// see the rest of this folder — so no two README screens show one log.

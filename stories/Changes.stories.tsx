@@ -2,8 +2,11 @@ import { defineMeta } from "storybook";
 import { ChatApp } from "../src/plugins/core/screens/Chat";
 import { pickMode } from "../src/plugins/core/lib/composer/mode";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
-import { SESSION_ITEMS } from "../.storybook/fixtures/scenes/photo-strip";
-import { CHANGES_ITEMS } from "../.storybook/fixtures/scenes/changes";
+import {
+  CHANGE_STACK_ITEMS,
+  OPLOG_ITEMS,
+} from "../.storybook/fixtures/scenes/change-stack";
+
 
 const meta = defineMeta({
   title: "Changes",
@@ -12,13 +15,11 @@ const meta = defineMeta({
 export default meta;
 
 export const panel = chromeStory("panel", () =>
-  chat({ items: SESSION_ITEMS, initialMode: pickMode("changes") }),
+  chat({ items: CHANGE_STACK_ITEMS, initialMode: pickMode("changes") }),
 );
 
-export const instructed = chromeStory("instructed", () =>
-  chat({ items: CHANGES_ITEMS, initialMode: pickMode("changes") }),
-);
+
 
 export const oplog = chromeStory("oplog", () =>
-  chat({ items: SESSION_ITEMS, initialMode: pickMode("oplog") }),
+  chat({ items: OPLOG_ITEMS, initialMode: pickMode("oplog") }),
 );

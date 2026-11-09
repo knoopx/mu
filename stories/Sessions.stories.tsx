@@ -4,10 +4,8 @@ import { pickMode } from "../src/plugins/core/lib/composer/mode";
 import { sessionRows } from "../src/plugins/core/lib/session/sessionList";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
 import { SESSIONS_FIXTURE } from "../.storybook/fixtures/sessions";
-import {
-  COMMAND_ITEMS,
-  SESSION_ITEMS,
-} from "../.storybook/fixtures/scenes/photo-strip";
+import { SESSION_PICK_ITEMS } from "../.storybook/fixtures/scenes/session-name";
+import { SESSION_ITEMS } from "../.storybook/fixtures/scenes/photo-strip";
 
 const meta = defineMeta({
   title: "Sessions",
@@ -19,7 +17,7 @@ const sessions = sessionRows(SESSIONS_FIXTURE);
 
 export const list = chromeStory("list", () =>
   chat({
-    items: COMMAND_ITEMS,
+    items: SESSION_PICK_ITEMS,
     initialMode: pickMode("session"),
     sessions,
     sessionPreviews: {

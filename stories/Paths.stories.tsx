@@ -2,7 +2,7 @@ import { defineMeta } from "storybook";
 import { ChatApp } from "../src/plugins/core/screens/Chat";
 import { pickMode } from "../src/plugins/core/lib/composer/mode";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
-import { PHOTOS_TURN } from "../.storybook/fixtures/scenes/photo-strip";
+import { PATH_PICK_ITEMS } from "../.storybook/fixtures/scenes/path-complete";
 
 const meta = defineMeta({
   title: "Paths",
@@ -14,7 +14,7 @@ const DRAFT = "read ./src/plugins/core/lib/composer/";
 
 export const completing = chromeStory("completing", () =>
   chat({
-    items: PHOTOS_TURN,
+    items: PATH_PICK_ITEMS,
     draft: DRAFT,
     initialMode: pickMode("path", DRAFT),
   }),

@@ -2,7 +2,10 @@ import { defineMeta } from "storybook";
 import { ChatApp } from "../src/plugins/core/screens/Chat";
 import { pickMode } from "../src/plugins/core/lib/composer/mode";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
-import { PHOTOS_TURN } from "../.storybook/fixtures/scenes/photo-strip";
+import {
+  MODEL_PICK_ITEMS,
+  THINKING_LEVEL_ITEMS,
+} from "../.storybook/fixtures/scenes/model-choice";
 import { CONTEXT_WARN_SESSION } from "../.storybook/fixtures/models";
 import {
   COMPOSER_MODEL_ROWS,
@@ -17,7 +20,7 @@ export default meta;
 
 export const model = chromeStory("model", () =>
   chat({
-    items: PHOTOS_TURN,
+    items: MODEL_PICK_ITEMS,
     initialMode: pickMode("model"),
     modelRows: COMPOSER_MODEL_ROWS,
     meta: CONTEXT_WARN_SESSION,
@@ -26,7 +29,7 @@ export const model = chromeStory("model", () =>
 
 export const thinking = chromeStory("thinking", () =>
   chat({
-    items: PHOTOS_TURN,
+    items: THINKING_LEVEL_ITEMS,
     initialMode: pickMode("thinking"),
     thinkingRows: COMPOSER_THINKING_ROWS,
   }),

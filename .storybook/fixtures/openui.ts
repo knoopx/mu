@@ -162,34 +162,6 @@ export const OPENUI_RENDER_ITEM: ToolFixture = toolCallFixture(
   { details: RENDER_DETAILS },
 );
 
-/**
- * The render that drew the figures screen — the row that paints it.
- *
- * A function, not a value: the scene seeds the store when it is built, so the
- * other scenes never show a program they never rendered.
- */
-export function figuresRenderItem(): ToolFixture {
-  seedFiguresScreen();
-  const record = programStore.get("figures");
-  if (record === undefined)
-    throw new Error("the scene's figures program is missing");
-  return toolCallFixture(
-    FIGURES_RENDER_ID,
-    OPENUI_RENDER_TOOL,
-    { name: "figures", code: FIGURES_PROGRAM },
-    "ok",
-    blocks(
-      statusTable({
-        program: "figures",
-        chars: FIGURES_PROGRAM.length,
-        statements: 10,
-        ok: "yes",
-      }),
-      programStatusRow(programStore.infoOf(record)),
-    ),
-    { details: detailsOf(record, { streaming: false, chunkChars: FIGURES_PROGRAM.length }) },
-  );
-}
 
 /** What the agent read back after the screen had been used. */
 export const OPENUI_STATE_ITEM: ToolFixture = toolCallFixture(

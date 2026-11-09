@@ -1,12 +1,7 @@
 import { defineMeta } from "storybook";
 import { ChatApp } from "../src/plugins/core/screens/Chat";
 import { chat, chromeStory } from "../.storybook/chrome/chat";
-import { AGENT_ROWS } from "../.storybook/fixtures/scenes/agent";
-import {
-  COMMAND_ITEMS,
-  LONG_OUTPUT_ITEMS,
-  PHOTOS_TURN,
-} from "../.storybook/fixtures/scenes/photo-strip";
+import { AGENT_JOB_ITEMS } from "../.storybook/fixtures/scenes/agent-jobs";
 
 const meta = defineMeta({
   title: "AgentActions",
@@ -14,13 +9,8 @@ const meta = defineMeta({
 });
 export default meta;
 
+/** Every row state at once: a call still open, one that failed and kept its
+ *  error, a photo read, an edit with its diff, an answer cut short at 2x. */
 export const work = chromeStory("work", () =>
-  chat({
-    items: [
-      ...PHOTOS_TURN,
-      ...AGENT_ROWS,
-      ...COMMAND_ITEMS,
-      ...LONG_OUTPUT_ITEMS,
-    ],
-  }),
+  chat({ items: AGENT_JOB_ITEMS }),
 );

@@ -6,12 +6,6 @@ import {
   CHART_BAD_ITEM,
   CHART_ITEM,
 } from "../.storybook/fixtures/chart";
-import {
-  STRUCTURE_ANSWER,
-  TABLE_BAD_ITEM,
-  TABLE_ITEM,
-  TREE_ITEM,
-} from "../.storybook/fixtures/structure";
 import { answer, usage, userTurn } from "../.storybook/fixtures/turn";
 
 const meta = defineMeta({
@@ -40,23 +34,4 @@ export const plotted = chromeStory("plotted", () =>
   }),
 );
 
-/**
- * The same plugin drawing two other kinds of figure: a folder tree whose rows
- * open under the cursor, and a table whose figure columns stand in mono, with the
- * call before it refused for a cell that had no column to stand in — and both
- * readings walking back what a model cannot see.
- */
-export const structured = chromeStory("structured", () =>
-  chat({
-    items: [
-      userTurn("u-structure", "show me the plugin's shape, and what each tool cost", 0),
-      TREE_ITEM,
-      TABLE_BAD_ITEM,
-      TABLE_ITEM,
-      {
-        ...answer("a-structure", STRUCTURE_ANSWER),
-        usage: usage(11_400, 690, 0, 3, 1),
-      },
-    ],
-  }),
-);
+
