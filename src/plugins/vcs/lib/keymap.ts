@@ -33,7 +33,7 @@ export const STACK_ACTION_IDS = new Set([
 
 export const FILES_ACTION_IDS = new Set([
   "open",
-  "split-file",
+  "split",
   "split-hunk",
   "discard",
 ]);

@@ -3,9 +3,11 @@
  *
  * The panel's action keys are opened by a bare key press and named by an id:
  * `d` describes, `s` splits, `p` pushes a bookmark. Half of them are writes the
- * panel runs itself, and the two the agent is better at — describe and split —
- * are handed over as an instruction, so they arrive as a tool row the reader
- * can see.
+ * panel runs itself, and the two that need a reader — describing a change,
+ * breaking one change into coherent commits — are handed over as an
+ * instruction, so they arrive as a tool row the reader can see. The files
+ * pane's `s` is not one of them: moving one named file out of a change is a
+ * single jj write, so that key writes it.
  */
 import { useCallback } from "react";
 import type { ToastFn } from "adwaita-gpuix";
@@ -14,11 +16,12 @@ import {
   findWorkspaceRoot,
   listBookmarks,
   restoreFile,
+  splitFileChange,
 } from "../lib/repo";
 import { openFileInEditor, openNotice } from "../../core/lib/files/openFile";
 import {
   describeInstruction,
-  splitFilesInstruction,
+  splitChangeInstruction,
   splitHunksInstruction,
 } from "../lib/instructions";
 import { SHORT_CHANGE_ID } from "../constants";
@@ -96,8 +99,12 @@ function stackActionOf(id: string, ctx: StackActionContext): boolean {
 /** The file keys: how the selected file is opened, split or thrown away. */
 interface FileActionContext {
   open(): void;
-  splitFiles(): void;
+
+  /** the panel's own write: this file moves out of the change */
+  split(): void;
+
   splitHunks(): void;
+
   discard(): void;
 }
 
@@ -106,8 +113,8 @@ function fileActionOf(id: string, ctx: FileActionContext): boolean {
     ctx.open();
     return true;
   }
-  if (id === "split-file") {
-    ctx.splitFiles();
+  if (id === "split") {
+    ctx.split();
     return true;
   }
   if (id === "split-hunk") {
@@ -203,7 +210,7 @@ export function useChangesActions(
         describe: runDescribe,
         split: (): void => {
           onInstruction(
-            splitFilesInstruction(change.change_id, change.description),
+            splitChangeInstruction(change.change_id, change.description),
           );
           sentToAgent(
             `Splitting ${change.change_id.slice(0, SHORT_CHANGE_ID)}`,
@@ -246,13 +253,8 @@ export function useChangesActions(
             },
           );
         },
-        splitFiles: (): void => {
-          onInstruction(
-            splitFilesInstruction(change.change_id, change.description, [
-              file.path,
-            ]),
-          );
-          sentToAgent(`Splitting ${file.path}`);
+        split: (): void => {
+          void runMutation(() => splitFileChange(change.change_id, file.path));
         },
         splitHunks: (): void => {
           onInstruction(

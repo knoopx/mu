@@ -37,9 +37,6 @@ const described = (description: string): string =>
     ? `described ${quoted(description)}`
     : "still undescribed";
 
-const listed = (values: string[]): string =>
-  values.map((value) => `"${value}"`).join(", ");
-
 /**
  * The instruction behind the changes panel's describe key: the agent reads every
  * targeted change, writes a message for it, and calls vcs-describe(hash, message)
@@ -69,31 +66,19 @@ export function describeInstruction(
 }
 
 /**
- * The instruction behind the panel's split keys. With files the agent splits
- * exactly those files out of the change; without it the agent groups the change
- * into coherent commits by file, one vcs-file-split per group. Either way the
- * named files land in the first/bottom commit with the given message and the
- * rest stay in the second/top commit with the existing description.
+ * The instruction behind the stack's split key: the agent groups the change
+ * into coherent commits by file, one vcs-file-split per group. Each group's
+ * named files land in the first/bottom commit with the message the agent
+ * writes and the rest stay in the second/top commit with the existing
+ * description, so the chain works down until one group is left. A single named
+ * file is not the agent's job — the files pane writes that itself.
  */
-export function splitFilesInstruction(
+export function splitChangeInstruction(
   changeId: string,
   description: string,
-  files?: string[],
 ): string {
   const id = shortId(changeId);
-  const named = (files ?? [])
-    .map((file) => file.trim())
-    .filter((file) => file.length > 0);
   const read = `Read the change first with \`${jjDiff(changeId)}\` — it is ${described(description)}, and the split must name files it actually changes.`;
-  if (named.length > 0)
-    return [
-      `Split \`${named[0] ?? ""}\` in change ${id}.`,
-      read,
-      `Move exactly ${named.length === 1 ? "that file" : "those files"} out with \`${VCS_FILE_SPLIT_TOOL}(rev="${id}", files=[${listed(named)}], message)\`: the named files go to the first/bottom commit and take the message you give; the remaining files stay in the second/top commit and keep the description above.`,
-      authoring,
-      `${noInsertAfter} Report both change ids — which holds the moved files and which holds the rest.`,
-      bounds,
-    ].join("\n");
   return [
     `Split change ${id}.`,
     read,

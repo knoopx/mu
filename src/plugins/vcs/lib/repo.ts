@@ -12,7 +12,7 @@ import {
   type CliResult,
 } from "adwaita-gpuix";
 import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
-import { SHORT_OP_ID } from "../constants";
+import { SHORT_CHANGE_ID, SHORT_OP_ID } from "../constants";
 
 const pExecFile = promisify(execFile);
 
@@ -383,6 +383,33 @@ export async function editChange(changeId: string): Promise<string> {
 export async function abandonChange(changeId: string): Promise<string> {
   await vcsOk(["abandon", changeId]);
   return `Abandoned change ${changeId.slice(0, 8)}`;
+}
+
+/**
+ * The files pane's split: the file under the cursor moves out of the change
+ * into a new change stacked directly below it, in one write the panel runs.
+ *
+ * A whole change split into coherent commits needs a reader, so the stack's
+ * split is the agent's. One named file needs no judgement, so this is the
+ * panel's own write, and the new change takes jj's message in the words
+ * ../changes gives it.
+ */
+export async function splitFileChange(
+  changeId: string,
+  filePath: string,
+): Promise<string> {
+  const message = `Moved ${filePath} from change ${changeId.slice(0, SHORT_CHANGE_ID)} to a new change`;
+  await vcsOk([
+    "split",
+    "-m",
+    message,
+    "-r",
+    changeId,
+    "--insert-after",
+    changeId,
+    filePath,
+  ]);
+  return message;
 }
 
 async function parentChangeId(changeId: string): Promise<string | null> {

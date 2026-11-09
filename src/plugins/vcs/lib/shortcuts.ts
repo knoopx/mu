@@ -64,7 +64,7 @@ export const FILES_SHORTCUTS: Shortcut[] = [
     desc: "scroll",
     hidden: true,
   },
-  { id: "split-file", kbds: ["s"], desc: "split file" },
+  { id: "split", kbds: ["s"], desc: "split" },
   { id: "split-hunk", kbds: ["h"], desc: "split hunks" },
   { id: "discard", kbds: ["d"], desc: "discard" },
 ];
