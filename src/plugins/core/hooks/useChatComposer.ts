@@ -18,6 +18,7 @@ import {
   submitThemeCommand,
   type ComposerActionContext,
 } from "../lib/composer/panelActions";
+import { draftIsBlank } from "../lib/composer/fieldRows";
 import { pathTokenOf, stripTrailingTab } from "../lib/composer/pathCompletion";
 import type { ToolImage } from "../lib/agent/content";
 import type { SessionDeleteResult } from "../lib/agent/agentService";
@@ -159,7 +160,13 @@ export function useChatComposer(
     setMode(pickMode("path", draft));
   };
 
+  // Enter on a blank draft is inert: no turn starts, no row lands in the log,
+  // and the draft keeps its characters. The one thing that makes a wordless
+  // draft a message is an attached image — a pasted picture is asked about on
+  // its own, with no words to ask it with.
   const onSubmit = (value: string): void => {
+    if (draftIsBlank(value) && attachments.length === 0) return;
+
     const text = value.trim();
     const images = attachmentImages(attachments);
     const userImages: ToolImage[] = attachments.map((attachment) => ({

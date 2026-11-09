@@ -29,9 +29,12 @@ export function fieldFirstRowHeight(t: AdwaitaTheme): number {
 }
 
 /**
+ * Whether anything has been typed.
+ *
  * The meta pills beside the field answer "what am I talking to" before there is
  * a draft. Once a draft exists the question is asked and the row is yours: the
- * field takes the whole width and the pills step out.
+ * field takes the whole width and the pills step out. The same blankness makes
+ * Enter inert — a draft of nothing but whitespace has no message to send.
  */
 export function draftIsBlank(value: string): boolean {
   return value.trim().length === 0;
