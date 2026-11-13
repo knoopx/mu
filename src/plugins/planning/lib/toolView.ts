@@ -2,10 +2,12 @@
  * Turns a plan answer into what the transcript draws.
  *
  * A call answers two audiences: `content` text for the model, and the plan
- * itself in `details` for the log. This file folds that into one view — the chips
- * of where the plan stands, the rows to paint, and the shape of a refusal — so
- * the component never parses an answer and never re-reads a count. The details of
- * a session resumed this week are JSON rather than a live object, so every reader
+ * itself in `details` for the log. This file folds that into one view — the rows
+ * to paint and the shape of a refusal — so the component never parses an answer
+ * and never re-reads a count. A plan says where it stands in its own rows, each
+ * step wearing its standing, and in the head's count of how far the work has
+ * got: a line of count chips above the list only restates both. The details of a
+ * session resumed this week are JSON rather than a live object, so every reader
  * here checks the shape instead of trusting it.
  */
 
@@ -16,12 +18,7 @@ import {
   detailRecord,
   detailText,
 } from "../../core/lib/agent/toolDetails";
-import { counted } from "../../core/lib/agent/toolText";
-import type {
-  ToolPaintRow,
-  ToolRowCell,
-  ToolRowTone,
-} from "../../core/lib/ui/toolRowPaint";
+import type { ToolPaintRow, ToolRowTone } from "../../core/lib/ui/toolRowPaint";
 import { MAX_PLAN_ROWS, PLAN_STATUS_WORDS, PLAN_TOOL } from "../constants";
 import type {
   PlanBadStep,
@@ -53,8 +50,6 @@ export interface PlanToolView {
 
   /** The plan, or the shape of the refusal. Never absent: the header reads it too. */
   plan: PlanFigure;
-
-  cells: ToolRowCell[];
 }
 
 const EMPTY_PLAN: PlanFigure = {
@@ -154,30 +149,6 @@ export function planFailureLine(plan: PlanFigure): string {
     : `${where} ${what}, and ${String(plan.bad.length - 1)} more`;
 }
 
-/** Where the plan stands, in the chips under the head. */
-function cellsOf(plan: PlanFigure, status: PlanCallStatus): ToolRowCell[] {
-  if (status !== "ok") {
-    return [
-      { label: "plan", value: "" },
-      {
-        label: "refused",
-        value: plan.bad.length === 0 ? "" : counted(plan.bad.length, "step"),
-      },
-    ];
-  }
-
-  return [
-    { label: "plan", value: counted(plan.counts.total, "step") },
-    { label: "pending", value: String(plan.counts.pending) },
-    { label: "in progress", value: String(plan.counts.inProgress) },
-    { label: "done", value: String(plan.counts.completed) },
-    {
-      label: "not shown",
-      value: plan.notShown === 0 ? "" : String(plan.notShown),
-    },
-  ];
-}
-
 /** One row per step: its number in the log's id column, what it is, and where it stands. */
 export function planRowsOf(
   plan: PlanFigure,
@@ -226,6 +197,5 @@ export function planToolViewOf(
   return {
     status,
     plan: { ...plan, status },
-    cells: cellsOf(plan, status),
   };
 }

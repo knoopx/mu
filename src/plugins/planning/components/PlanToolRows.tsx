@@ -3,11 +3,13 @@
  * where it stands, and — when the call could not be read — the steps that could
  * not be.
  *
- * The chips, the rows, the note of a state and the truncation are core's, so a
- * plan row is built of the same parts as every other answer in the log: the
- * step's number stands in the log's id column, its words in the body, and its
- * standing in the pill column every row of this list shares. This file owns only
- * the words a plan answer has that no other answer has.
+ * The rows, the note of a state and the truncation are core's, so a plan row is
+ * built of the same parts as every other answer in the log: the step's number
+ * stands in the log's id column, its words in the body, and its standing in the
+ * pill column every row of this list shares. A plan has no chip line: the head
+ * already says how far the work has got, and every step under it wears where it
+ * stands, so a row of counts above the list says twice what the row says once.
+ * This file owns only the words a plan answer has that no other answer has.
  */
 
 import type { JSX } from "react";
@@ -16,7 +18,6 @@ import { useAdwaita, type IconName } from "adwaita-gpuix";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { firstLine } from "../../../utils/truncate";
 import {
-  ToolChips,
   ToolRowList,
   ToolRunning,
   ToolStatusNote,
@@ -138,8 +139,6 @@ export function PlanToolRows({ item }: PlanToolRowsProps): JSX.Element {
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={view.cells} />
-
       {plan.status === "failed" ? (
         <>
           <ToolSummary text={planFailureLine(plan)} tone={tone} />
