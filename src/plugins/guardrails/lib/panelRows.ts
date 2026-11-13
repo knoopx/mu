@@ -39,6 +39,25 @@ export function engineLabel(engine: GuardrailEngineState): string {
   }
 }
 
+
+/**
+ * The engine as the panel says it: one state word.
+ *
+ * The full label names every grammar the parser booted, which is what a suite
+ * run's answer wants and what a status line one row high cannot hold: the chain
+ * of figures ran past the panel's width and was cut mid-word. A cut that is not
+ * marked is worse than a figure left out.
+ */
+export function enginePanelLabel(engine: GuardrailEngineState): string {
+  switch (engine.phase) {
+    case "ready":
+      return engine.grammars.length === 0 ? "parser, no grammar" : "parser ready";
+    default:
+      return engineLabel(engine);
+  }
+}
+
+
 export const domainArmed = (
   snapshot: GuardrailsSnapshot,
   domain: string,
@@ -173,13 +192,17 @@ export function guardrailStatusText(
     blocked === 0
       ? "no calls stopped yet"
       : `${blocked} ${blocked === 1 ? "call" : "calls"} stopped`,
+    // A rule file that parsed is not news, so the chain only carries the files
+    // when one of them refuses; the engine says its state and nothing else.
     snapshot.ruleFiles === 0
       ? `no rules in ${snapshot.rulesDir ?? "mu's guardrails directory"}`
       : snapshot.ruleErrors.length === 0
-        ? `${snapshot.ruleFiles} ${snapshot.ruleFiles === 1 ? "file" : "files"} read`
+        ? ""
         : `${snapshot.ruleErrors.length} of ${snapshot.ruleFiles} rule ${
             snapshot.ruleErrors.length === 1 ? "file refuses" : "files refuse"
           }`,
-    engineLabel(snapshot.engine),
-  ].join(" · ");
+    enginePanelLabel(snapshot.engine),
+  ]
+    .filter((part) => part !== "")
+    .join(" · ");
 }
