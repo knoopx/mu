@@ -107,11 +107,19 @@ export function replyBlocks(text: string, streaming: boolean): ReplyBlocks {
       continue;
     }
     if (closesOf(line, marker)) {
-      fences.push({
+      const closed: ReplyFence = {
         fence: fences.length,
         source: dedent(buffer, indent),
         status: "closed",
-      });
+      };
+      fences.push(closed);
+      // A closed block is a screen the reply paints, not text the reply says:
+      // the segment is what paints it, and the buffer is cleared so the block's
+      // own lines cannot leak into the prose that follows it. Only the open
+      // branch below used to push a segment, so a block whose delimiter arrived
+      // never drew at all while its source printed below the answer.
+      segments.push({ kind: "ui", fence: closed });
+      buffer = [];
       marker = "";
       indent = 0;
       continue;
