@@ -12,10 +12,17 @@
 import type { JSX } from "react";
 import type { AdwaitaTheme } from "adwaita-gpuix";
 import { T } from "adwaita-gpuix";
-import type { ElementNode } from "@openuidev/lang-core";
+import { markReactive, type ElementNode } from "@openuidev/lang-core";
+import { z } from "zod/v4";
 
 import type { OpenUIEventRecord } from "../../types";
 import { innerGap, programEmphasisWeight } from "../../lib/tokens";
+
+/** Mark a prop reactive: the parser then lets a `$variable` bind to it. */
+export function reactive<T extends z.ZodType>(schema: T): T {
+  markReactive(schema);
+  return schema;
+}
 
 /** One reactive prop, read as the human left it. */
 export interface ProgramBinding<Value> {
@@ -31,6 +38,14 @@ export type ProgramDrawer = (node: ElementNode, ctx: ProgramContext) => JSX.Elem
 /** What a component draws with. */
 export interface ProgramContext {
   t: AdwaitaTheme;
+  /** Which program this screen is — the key a staged answer is filed under. */
+  readonly block: string;
+  /** Where this component stands in the screen. */
+  readonly path: string;
+  /** Where its parent stands: what a run of sibling buttons shares as one question. */
+  readonly group: string;
+  /** Whether the reply this screen stands in has already been answered. */
+  readonly answered: boolean;
   /** Draw one child of a children/items array. */
   node(value: unknown): JSX.Element | null;
   /** Draw every child of an array, skipping what the parse left null. A value
@@ -47,6 +62,15 @@ export interface ProgramContext {
   formState(): Record<string, unknown> | undefined;
   /** A stable key for a drawn child, from its statement name or position. */
   keyOf(value: unknown, index: number): string;
+
+  /* --- the answer sheet: what the human answers, and what already went out. --- */
+
+  /** Stage this block's answer to one question; "" takes it out again. */
+  stage(position: string, text: string): void;
+  /** What this block has staged for one question ("" when nothing has). */
+  staged(position: string): string;
+  /** What this block already sent as its answer to one question. */
+  sentAnswer(position: string): string;
 }
 
 /** Is this evaluated prop an element to draw, or a value to print? */

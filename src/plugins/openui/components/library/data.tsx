@@ -12,6 +12,7 @@ import {
   Chart as AdwaitaChart,
   ChartLegend,
   ProgressBar,
+  Sparkline as AdwaitaSparkline,
   Table as AdwaitaTable,
   TableBody,
   TableCell,
@@ -329,5 +330,97 @@ export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
         </>
       }
     />
+  );
+}
+
+/* ------------------------------------------------------- progress, series */
+
+/** How far a run has got, said as its own figure rather than as a meter beside one. */
+export const Progress = defineComponent({
+  name: "Progress",
+  description:
+    "how far something has got: its label, how much is done, and the whole it is a part of",
+  props: z.object({
+    label: z.union([z.string(), z.number()]),
+    value: z.number(),
+    max: z.number().nullable().optional(),
+    tone: z.string().nullable().optional(),
+    caption: z.string().nullable().optional(),
+  }),
+  component: drawProgress,
+});
+
+/** The shape of a series, with no axes to read: a sparkline under a metric, a trend beside a figure. */
+export const Sparkline = defineComponent({
+  name: "Sparkline",
+  description:
+    "a run of numbers drawn as one small line: the shape of a series, with no axes to read",
+  props: z.object({
+    values: z.array(z.number()),
+    label: z.union([z.string(), z.number()]).nullable().optional(),
+    tone: z.string().nullable().optional(),
+  }),
+  component: drawSparkline,
+});
+
+export function drawProgress(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const value = prop(node.props, "value", 0);
+  const max = prop(node.props, "max", 100);
+  const tone = toneOfValue(node.props.tone);
+  const caption = textOf(node.props.caption);
+  const percent = max <= 0 ? 0 : Math.round((value / max) * 100);
+
+  return (
+    <ProgramFigureRow
+      ctx={ctx}
+      label={textProp(node.props, "label")}
+      figure={`${String(Math.round(value))} / ${String(Math.round(max))}`}
+      figureMono
+      body={
+        <>
+          <ProgressBar
+            value={Math.max(0, Math.min(100, percent))}
+            color={programProgressTone(tone)}
+          />
+          {caption === null ? null : (
+            <T size="body" color={mutedText(ctx.t)} clamp={3} style={{ minWidth: 0 }}>
+              {caption}
+            </T>
+          )}
+        </>
+      }
+    />
+  );
+}
+
+export function drawSparkline(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const values = listProp(node.props, "values")
+    .map((entry) => Number(entry))
+    .filter((entry) => Number.isFinite(entry));
+  const tone = toneOfValue(node.props.tone);
+  const label = textProp(node.props, "label");
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "100%",
+        minWidth: 0,
+        gap: innerGap(ctx.t),
+      }}
+    >
+      <AdwaitaSparkline
+        values={values}
+        color={programTextColor(ctx.t, tone === null ? "ink" : tone)}
+        style={{ flexShrink: 0 }}
+      />
+      {label === "" ? null : (
+        <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+          {label}
+        </T>
+      )}
+    </div>
   );
 }

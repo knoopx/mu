@@ -9,7 +9,7 @@
 
 import type { JSX } from "react";
 import { defineComponent } from "@openuidev/lang-core";
-import { Icon, T } from "adwaita-gpuix";
+import { Icon, Tabs as AdwaitaTabs, TabsContent, T } from "adwaita-gpuix";
 import { z } from "zod/v4";
 
 import type { ElementNode } from "@openuidev/lang-core";
@@ -36,7 +36,7 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { listProp, prop, textProp } from "./context";
+import { listProp, prop, reactive, textProp } from "./context";
 
 export const Screen = defineComponent({
   name: "Screen",
@@ -324,5 +324,48 @@ export function drawDivider(_node: ElementNode, ctx: ProgramContext): JSX.Elemen
 
 export function drawSpacer(_node: ElementNode, _ctx: ProgramContext): JSX.Element {
   return <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />;
+}
+
+/**
+ * Several blocks in one place.
+ *
+ * Which tab is open is a `$variable` of the program, because a tab is a filter:
+ * the screen the reader is looking at is the one they chose, and a program that
+ * shows a different block per tab reads that variable to build it. With no
+ * variable bound the screen stays on the first tab — a drawer has no state of
+ * its own, and a screen that forgot what the reader opened on every repaint
+ * would be worse than one that never moved.
+ */
+export const Tabs = defineComponent({
+  name: "Tabs",
+  description:
+    "several blocks in one place: the titles of the tabs, the blocks under them, and the $variable that says which one is open",
+  props: z.object({
+    titles: z.array(z.union([z.string(), z.number()])),
+    blocks: z.array(z.any()),
+    value: reactive(z.string()).nullable().optional(),
+  }),
+  component: drawTabs,
+});
+
+/** The id of a tab by its place, which is what pairs a title with a block. */
+const tabId = (index: number): string => `t${String(index)}`;
+
+export function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const titles = listProp(node.props, "titles").map((title) => String(title ?? ""));
+  const blocks = listProp(node.props, "blocks");
+  const items = titles.map((label, index) => ({ id: tabId(index), label }));
+  const binding = ctx.binding(node.props.value, items[0]?.id ?? "");
+  const current = binding.value === "" ? (items[0]?.id ?? "") : binding.value;
+
+  return (
+    <AdwaitaTabs items={items} value={current} onSelect={(id: string) => binding.set(id)}>
+      {blocks.map((block, index) => (
+        <TabsContent key={`tab-${String(index)}`} value={tabId(index)}>
+          {ctx.node(block)}
+        </TabsContent>
+      ))}
+    </AdwaitaTabs>
+  );
 }
 

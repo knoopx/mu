@@ -8,7 +8,12 @@
  * produced, not re-parse the source to get it.
  */
 
-import { createParser, evaluate, type ParseResult } from "@openuidev/lang-core";
+import {
+  autoClose,
+  createParser,
+  evaluate,
+  type ParseResult,
+} from "@openuidev/lang-core";
 
 import { ROOT_COMPONENT } from "../../constants";
 import type {
@@ -103,12 +108,33 @@ export function parseProgram(source: string): ProgramParseOutcome {
   return { parse: describeParse(result), result };
 }
 
-/** Parse a source that is still arriving: the same parser, told it is partial. */
+/**
+ * Parse a source that is still arriving: the longest prefix that draws.
+ *
+ * A block written inline in a reply is read while the reply streams, so the
+ * source is half-written by definition. The whole source is tried first; when
+ * it gives no tree, the input is auto-closed — every open string and bracket
+ * closed where it stops — and that prefix is parsed. The result is marked
+ * `incomplete` either way, which is what keeps a block still arriving from
+ * reporting its half-written syntax as final.
+ */
 export function parseStreaming(source: string): ProgramParseOutcome {
-  const result = parser.parse(source);
+  const whole = parser.parse(source);
+  const wholeParse = describeParse(whole);
+  if (whole.root !== null)
+    return { parse: wholeParse, result: whole };
+
+  const closed = autoClose(source);
+  const result = parser.parse(closed.text);
   const parse = describeParse(result);
   return {
-    parse: { ...parse, incomplete: result.meta.incomplete || parse.incomplete },
+    parse: {
+      ...parse,
+      incomplete: true,
+      // A prefix that draws says nothing about the syntax of the text that has
+      // not arrived yet, so the whole source's complaints are the honest ones.
+      diagnostics: wholeParse.diagnostics.length > 0 ? wholeParse.diagnostics : parse.diagnostics,
+    },
     result,
   };
 }

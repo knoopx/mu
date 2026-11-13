@@ -34,6 +34,69 @@ composes the answer those words stand in, so `openui-render` and `openui-stream`
 count their columns, print the store's status line and name their diagnostics
 the same way.
 
+## A screen inside the reply
+
+A screen can also be part of the answer, with no tool call in sight. The model
+writes a `ui` fenced block in its own reply and the message paints it where the
+block stands: it costs no extra turn, and it draws while the reply streams.
+
+- `lib/fences/read.ts` cuts a reply into the prose the markdown block draws and
+  the screens mu paints, by markdown's own fence rules (up to three spaces of
+  indent, a closing run at least as long as the opener, any other info string
+  left alone as a code block) and says what became of the delimiter: `streaming`
+  while the reply arrives, `closed` when it was shut, `unclosed` when the reply
+  ended mid-block. A block keeps its index among its reply's blocks.
+- `components/ProgramFence.tsx` draws one block; `lib/fences/store.ts` holds it
+  in the *same* store under `ui#<reply>#<block>` — the same parser, the same
+  renderer, the same `$variable` state, and `openui-state` can read it by that
+  name. The key is a place rather than an id because mu's transcript rows are
+  re-numbered when a session is resumed: a block keeps being the block the human
+  already answered. A block is held after the paint, never during it, and a
+  rewind that drops a reply drops its block (`pruneFences`), answers included.
+- A streaming block has only a prefix. `parseStreaming` parses the whole source
+  and, when that yields no tree, parses the auto-closed one (`autoClose` closes
+  every open string and bracket where the text stops). The last frame that drew
+  anything is kept, so a screen never blanks itself halfway through a token, and
+  while a block streams its parse is marked `incomplete`, which is what keeps a
+  half-written line from being reported as a broken program.
+- A reply with a user message after it has been answered (`lib/fences/supersession.ts`),
+  and an answered question stops being a question: its choices fold into the line
+  that went out.
+- Reply blocks are bounded apart from rendered programs (`MAX_FENCE_PROGRAMS`).
+  Losing one costs nothing: its source is still in the message, and the next
+  paint of that message holds it again.
+
+## The answer sheet: an answer goes in the human's message
+
+Nothing a screen asks is sent by itself. `lib/answer/store.ts` holds what the
+conversation has staged — one answer per question, keyed by the program and the
+question's place in its tree (`lib/answer/positions.ts`: `form@…` for a `Form`,
+`run@…` for a run of choice buttons) — and `lib/answer/sheet.ts` writes those
+answers into the composer draft as one paragraph. `hooks/useAnswerSheet.ts`
+reconciles the two, and the person wins: the draft is theirs, so the sheet
+*tracks* the block it wrote instead of insisting on its own text. A change beside
+the block moves it, a change inside it makes that text the person's and the sheet
+stops writing it, and a change that removed it takes those answers out, because
+the draft is the truth about what will be sent. Sending turns each staged answer
+into that question's **sent** answer, which is what folds an answered choice.
+
+- A `Button` with no action is a choice, and a run of them beside each other is
+  one question, not several; its label is the answer.
+- A `Form` is one question asked as a block of fields, with no submit button: the
+  first edit stages every field as its own `Label: answer` line (`lib/answer/form.ts`
+  — a field with no answer says `—`, and a multi-select says what was picked *and*
+  what was not, because "not" is otherwise the agent's guess). A form with a field
+  the person types into waits `TYPED_ANSWER_MS` in the typing: rewriting that line
+  on every keystroke would be rewriting the draft under their hands.
+- An input outside a form is a **what-if**: it changes the page and queues
+  nothing. Its position belongs in `openui-state`, which reports the `$variable`
+  values as the human left them; only what asks for a reply — a button, an action
+  step, a form being filled — reaches `openui-events`.
+- A question is named by where it stands, so `lib/analysis/tree.ts` writes that
+  path once and the renderer and the reads that follow a painted screen build it
+  alike: the same question re-stages its own answer instead of adding a second
+  copy to the message.
+
 ## The library
 
 `components/library/` is the language's vocabulary, one file per area —
@@ -47,9 +110,11 @@ component that is not in `registry.ts` does not exist**: the parser drops it as
 `unknown-component`.
 
 Seven groups teach it, and a group's notes are part of the prompt: **Screen**,
-**Layout**, **Text**, **Data** (Table, Stat, Bar, Chart), **Figures** (Tree,
-Timeline, Trace, Heatmap, Breakdown), **Status** (Sections, Todos, Steps) and
-**Inputs**. The last three areas are the ones that draw a *shape* rather than
+**Layout** (Stack, Row, Grid, Pane, Divider, Spacer, Tabs), **Text**, **Data**
+(Table, Stat, Bar, Progress, Sparkline, Chart), **Figures** (Tree, Timeline,
+Trace, Heatmap, Breakdown), **Status** (Sections, Todos, Steps) and **Inputs**
+(Button, Form, Toggle, Choice, Radio, Select, Checklist, Rating, Slider, Field,
+TextArea, Stepper). The last three areas are the ones that draw a *shape* rather than
 cells: the files a change moved, the spans of a run, the days of a period, the
 parts of a total, the standing of a list of work. Each is an `adwaita-gpuix`
 widget — `FileTree` (`variant: "list"`, with the `+N -M` columns aligned across
@@ -74,11 +139,16 @@ in mono and stands on the right of its column, which is what makes a column of
 them line up on the digits.
 
 Adding one means: pick the area file, give the props in the positional order a
-program will write them, write the drawer against `ProgramContext` (which is
-how it reads theme, children, bindings and how it reports what the human did),
-add it to `programDefinitions`, and say which group teaches it in
-`programGroups`. A `$variable` binding is `reactive(z…)` on the prop; the
-renderer hands the drawer a `ProgramBinding` and the store keeps the value.
+program will write them, write the drawer against `ProgramContext` (which is how
+it reads theme, children, bindings, where the component stands, and how it
+stages an answer), add it to `programDefinitions`, and say which group teaches it
+in `programGroups`. A `$variable` binding is `reactive(z…)` on the prop — the one
+mark that lets a `$name` stand in that slot — and the renderer hands the drawer a
+`ProgramBinding` while the store keeps the value. A bound value is read as the
+shape the component declares (`components/library/coerce.ts`): a `$seats` the
+program wrote as `"12"`, or a query that answered with a string, is still a
+slider's number, and a value that cannot convert is the component's fallback —
+what it says when the program gave it nothing.
 
 Nothing in the drawers writes a raw size: `lib/tokens.ts` says what a program's
 `gap 3` and `Title("…","lg")` count for — `sm`/`md` are sizes of text and
@@ -109,11 +179,21 @@ middle of the paint that asked for it, and React refuses a re-render asked for
 during a render. A repaint asks the manager again only when the program asks for
 something new, so a query that failed is not retried every frame it is drawn.
 
-Every interaction the human makes is queued (`programStore.pushEvent`) and
-drained once by `openui-events`. `@Set` and `@Reset` steps are carried out on
-the page (`lib/analysis/run.ts` → `runActionSteps`); `@ToAssistant`, `@OpenUrl`
-and custom actions are reported and wait. A screen therefore works without
-another message, and the agent can still read what was done with it.
+A program's data can move on its own. `Query(name, args, default, refresh)` takes
+the seconds between asks as its fourth argument and the query manager keeps
+asking, so a screen that watches a build stays current without another call; a
+`Mutation(…)` is a write-back, and `@Run($save)` runs it (`lib/analysis/run.ts` →
+`runActionSteps` → `fireMutation`) and then asks the program's queries again,
+because a write usually changes what a read would answer.
+
+What reaches the agent is what asks for something. `@Set`, `@Reset` and `@Run`
+steps are carried out on the page (`runActionSteps`), a button and a form's
+answer go into the draft, and only a button press, an action step and a form
+being filled are queued for `openui-events` (`programStore.pushEvent`) — a slider
+the human dragged is a what-if the page holds, not a message, and a queue of
+handle positions is not evidence. `openui-state` reports the values as they were
+left. A screen therefore works without another message, and the agent can still
+read what was done with it.
 
 ## The tools
 
@@ -123,7 +203,12 @@ another message, and the agent can still read what was done with it.
 story point at, so they are never renamed or aliased. One file per tool, named
 after it; the guidance a tool adds to the model's instructions is in
 `tools/guidelines.ts`, split across the eleven so the whole set reads as one
-agreement.
+agreement — and that agreement opens with the inline block, because a tool's
+guidance is the only place mu can teach a contract the model has to honour before
+it calls anything: answer with a `ui` block when a screen is the answer, only the
+message that ends a turn carries one, anything better used than read is a block
+rather than a markdown table, and a question is one `Form` or one run of buttons
+whose answer the human sends.
 
 The row for a call is `components/OpenUIToolRows.tsx`, on top of core's shared
 row primitives; `lib/toolView.ts` folds every details shape into one view, and
@@ -133,6 +218,9 @@ decides whether this row is the one its program is painted from.
 
 A program is a screen, so it is bounded: `MAX_PROGRAM_CHARS` of source,
 `MAX_CHUNK_CHARS` per streamed piece, `MAX_PROGRAMS` in the log at once (the
-oldest un-shown program is evicted), `MAX_WAITING_EVENTS` queued interactions,
-`MAX_FIXTURE_KEYS`/`MAX_FIXTURE_CHARS` of served data. Every read is bounded, and
-says what it left out.
+oldest un-shown program is evicted), `MAX_FENCE_PROGRAMS` blocks written inline in
+replies — a second budget, so a conversation full of screens cannot push the one
+program the agent is editing out of the log — `MAX_WAITING_EVENTS` queued
+interactions, `MAX_FIXTURE_KEYS`/`MAX_FIXTURE_CHARS` of served data. A block that
+drew nothing prints its first `MAX_FAILURE_NOTES` complaints, and only once its
+parse has settled. Every read is bounded, and says what it left out.

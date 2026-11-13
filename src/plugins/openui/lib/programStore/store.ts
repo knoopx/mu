@@ -12,7 +12,11 @@
  * inventing one.
  */
 
-import { MAX_PROGRAMS, MAX_WAITING_EVENTS } from "../../constants";
+import {
+  MAX_FENCE_PROGRAMS,
+  MAX_PROGRAMS,
+  MAX_WAITING_EVENTS,
+} from "../../constants";
 import type { ParseResult } from "@openuidev/lang-core";
 
 import type {
@@ -37,8 +41,10 @@ export interface ProgramRecord {
   source: string;
   /** True until a stream closes it: the program is still arriving. */
   streaming: boolean;
-  /** The tool call whose row paints this program. */
+  /** The tool call whose row paints this program ("" for a block written inline in a reply). */
   anchor: string;
+  /** True for a block written in the reply itself: it belongs to a message, not to a call. */
+  fence: boolean;
   /** When the store last took a word of it. */
   at: number;
   /** The program `openui-state`, `openui-events` and `openui-switch` read by default. */
@@ -48,6 +54,8 @@ export interface ProgramRecord {
   result: ParseResult;
   /** The `$variable` values as the human left them, over the declared defaults. */
   values: Record<string, unknown>;
+  /** The `$variable` the human themselves changed — what makes a form answer real rather than a redraw. */
+  touched: Set<string>;
   events: OpenUIEventRecord[];
   publication: ProgramPublication;
 }
@@ -154,19 +162,26 @@ export class ProgramStore {
     parse: OpenUIProgramParse,
     result: ParseResult,
     toolCallId: string,
-    opts: { streaming?: boolean; activate?: boolean } = {},
+    opts: { streaming?: boolean; activate?: boolean; fence?: boolean } = {},
   ): ProgramWrite {
     const existing = this.programs.get(name);
     const evicted: string[] = [];
     let overflow = "";
+    const fence = opts.fence === true;
 
-    if (existing === undefined && this.programs.size >= MAX_PROGRAMS) {
-      const oldest = this.oldestUnlocked();
+    // A reply block and a program the agent asked for are bounded apart: a long
+    // conversation full of blocks must not push the screen the agent is editing
+    // out of the log, and a block whose message is still on screen is held again
+    // the moment there is room for it.
+    if (existing === undefined && this.countOf(fence) >= (fence ? MAX_FENCE_PROGRAMS : MAX_PROGRAMS)) {
+      const oldest = this.oldestUnlocked(fence);
       if (oldest !== "") {
         this.programs.delete(oldest);
         evicted.push(oldest);
       } else {
-        overflow = `${String(MAX_PROGRAMS)} programs are already in the log; clear one first`;
+        overflow = fence
+          ? `${String(MAX_FENCE_PROGRAMS)} blocks are already in the log`
+          : `${String(MAX_PROGRAMS)} programs are already in the log; clear one first`;
       }
     }
 
@@ -175,14 +190,19 @@ export class ProgramStore {
       name,
       source,
       streaming: opts.streaming === true,
-      anchor: existing?.anchor ?? toolCallId,
+      anchor: fence ? "" : (existing?.anchor ?? toolCallId),
+      fence,
       at: Date.now(),
-      live: activate ? true : (existing?.live ?? this.programs.size === 0),
+      // A write that says it is not the showing program does not become the
+      // showing program, however empty the log is; a reply block is never the
+      // one `openui-state` reads by default.
+      live: activate ? true : (existing?.live ?? false),
       parse,
       result,
       // A re-render keeps what the human did to the old program's state: the
       // language's own rule is that an edit keeps the $variable names.
       values: existing?.values ?? {},
+      touched: existing?.touched ?? new Set<string>(),
       events: existing?.events ?? [],
       publication: { drawn: [], failures: [], renderErrors: [], queries: [] },
     };
@@ -237,11 +257,29 @@ export class ProgramStore {
     for (const record of this.programs.values()) record.live = record.name === name;
   }
 
-  private oldestUnlocked(): string {
+  /** The program the log gives up when it is full: a reply block before a screen
+   *  the agent asked for, and the oldest of those.
+   *
+   *  A reply block is cheaper to lose than a render: its source is still in the
+   *  message, so the next paint of that message holds it again.
+   */
+  private countOf(fence: boolean): number {
+    let count = 0;
+    for (const record of this.programs.values()) if (record.fence === fence) count += 1;
+    return count;
+  }
+
+  /** The program of one kind the log gives up when it is full: the oldest one
+   *  that is neither showing nor still arriving.
+   *
+   *  A reply block is cheaper to lose than a render: its source is still in the
+   *  message, so the next paint of that message holds it again.
+   */
+  private oldestUnlocked(fence: boolean): string {
     let oldest = "";
     let at = Number.POSITIVE_INFINITY;
     for (const record of this.programs.values()) {
-      if (record.live || record.streaming) continue;
+      if (record.fence !== fence || record.live || record.streaming) continue;
       if (record.at < at) {
         at = record.at;
         oldest = record.name;
@@ -331,11 +369,16 @@ export class ProgramStore {
     this.notify();
   }
 
-  /** Write a `$variable` the human changed, and say which one it was. */
-  setValue(name: string, variable: string, value: unknown): void {
+  /** Write a `$variable`.
+   *
+   * Only a change the human made counts as one they made: an action step that
+   * sets a variable changes the page, it does not answer a question.
+   */
+  setValue(name: string, variable: string, value: unknown, byHuman = true): void {
     const record = this.programs.get(name);
     if (record === undefined) return;
     record.values[variable] = value;
+    if (byHuman) record.touched.add(variable);
     record.at = Date.now();
     this.notify();
   }

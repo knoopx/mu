@@ -8,7 +8,9 @@ import {
   OPENUI_RENDER_ITEM,
   OPENUI_STATE_ITEM,
   OPENUI_VALIDATE_ITEM,
+  REPLY_SCREEN_TEXT,
   seedOpenUIScreen,
+  seedReplyScreen,
 } from "../.storybook/fixtures/openui";
 import { answer, usage, userTurn } from "../.storybook/fixtures/turn";
 
@@ -41,6 +43,25 @@ export const rendered = chromeStory("rendered", () => {
       {
         ...answer("a-ui", OPENUI_ANSWER),
         usage: usage(15_400, 1_120, 0, 1, 2),
+      },
+    ],
+  });
+});
+
+/**
+ * The screen as part of the answer, with no tool call in sight: the agent wrote
+ * a `ui` block in its own reply, the message paints it, and the picker, the
+ * stepper and the two buttons are the human's — a pick lands in their draft and
+ * goes out with the message they send.
+ */
+export const replied = chromeStory("replied", () => {
+  seedReplyScreen();
+  return chat({
+    items: [
+      userTurn("u-split", "how should I split this change?", 0),
+      {
+        ...answer("a-split", REPLY_SCREEN_TEXT),
+        usage: usage(12_100, 640, 0, 0, 1),
       },
     ],
   });

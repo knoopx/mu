@@ -43,6 +43,11 @@ export const ROOT_COMPONENT = "Screen";
 /** How many programs the log holds before the oldest render stops being drawn. */
 export const MAX_PROGRAMS = 12;
 
+/** How many `ui` blocks of the conversation's own replies the log holds at once.
+ *  Bounded apart from the programs an agent rendered: a long conversation full of
+ *  screens must not push the one screen the agent is editing out of the log. */
+export const MAX_FENCE_PROGRAMS = 40;
+
 /** A program's source is bounded: a screen, not a website. */
 export const MAX_PROGRAM_CHARS = 24_000;
 
@@ -107,3 +112,9 @@ export const OPENUI_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
 
 /** The note a row shows when a program exists but is no longer drawn. */
 export const NOT_DRAWN_NOTE = "no longer in the log";
+
+/** How many parse complaints a block that drew nothing prints. */
+export const MAX_FAILURE_NOTES = 3;
+
+/** A form's typed field waits this long in the typing before its answer is written into the draft. */
+export const TYPED_ANSWER_MS = 300;

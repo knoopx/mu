@@ -17,6 +17,10 @@ import {
 } from "../../src/plugins/openui/lib/programStore/verbs";
 import { programStore } from "../../src/plugins/openui/lib/programStore/store";
 import {
+  fenceKey,
+  holdFence,
+} from "../../src/plugins/openui/lib/fences/store";
+import {
   programStatusRow,
   programTable,
   valueTable,
@@ -101,8 +105,8 @@ export const OPENUI_PROMPT_ITEM: ToolFixture = toolCallFixture(
   {},
   "ok",
   blocks(
-    statusTable({ root: "Screen", components: 35, groups: 7, chars: 19_812 }),
-    "35 components in 7 groups",
+    statusTable({ root: "Screen", components: 44, groups: 7, chars: 24_408 }),
+    "44 components in 7 groups",
   ),
   {
     details: {
@@ -110,7 +114,7 @@ export const OPENUI_PROMPT_ITEM: ToolFixture = toolCallFixture(
       error: "",
       chars: 19_812,
       root: "Screen",
-      components: 35,
+      components: 44,
       groups: [
         "Screen",
         "Layout",
@@ -268,3 +272,46 @@ export const OPENUI_LIST_ITEM: ToolFixture = toolCallFixture(
 
 export const OPENUI_ANSWER =
   'The screen holds the split: the filter is a `$variable`, so picking "Only the big ones" hides the small files without another message, and the stepper is on 3 commits. Pressing **Split it** queued one interaction — I have it, and the split runs as `vcs-file-split`.';
+
+/* ------------------------------------------------ a screen written inline */
+
+/** Which reply of the conversation the scene's block stands in: the first one. */
+const REPLY_MESSAGE = 0;
+
+/** The block itself, in the language, as the reply writes it. */
+export const REPLY_SCREEN_BLOCK = [
+  '$plan = "two commits"',
+  "$files = 2",
+  "$keep = true",
+  "root = Screen([head, ask, run])",
+  'head = Header("Three ways to split this change", "the second keeps the parser whole")',
+  'ask = Form("How to split it", [Choice($plan, ["one commit", "two commits", "three commits"], "Plan"), Stepper($files, 1, 6, "Files per commit"), Toggle($keep, "Keep the parser in one commit")])',
+  'run = Row([Button("Two commits, parser whole"), Button("Split by area")], 2)',
+].join("\n");
+
+/** The reply that carries it: prose around a ```ui block, which the message paints. */
+export const REPLY_SCREEN_TEXT = [
+  "Three ways to split the change; the second keeps `lib/parser.ts` whole, which is what the tests lean on.",
+  "",
+  "```ui",
+  REPLY_SCREEN_BLOCK,
+  "```",
+  "",
+  "Pick one and it lands in your message beside anything you type — nothing goes until you send it.",
+].join("\n");
+
+/**
+ * Hold the reply's block in the store, as painting that message does. Held here
+ * as well so the scene fails when the block stops parsing rather than painting a
+ * blank where the screen should be.
+ */
+export function seedReplyScreen(): void {
+  holdFence(REPLY_MESSAGE, {
+    fence: 0,
+    source: REPLY_SCREEN_BLOCK,
+    status: "closed",
+  });
+  const record = programStore.get(fenceKey(REPLY_MESSAGE, 0));
+  if (record === undefined || record.parse.components.length === 0)
+    throw new Error("the reply's ui block did not parse");
+}

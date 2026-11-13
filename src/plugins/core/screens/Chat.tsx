@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, type JSX } from "react";
+import { memo, useEffect, useMemo, useRef, type JSX } from "react";
 import {
   Message,
   MessageContent,
@@ -88,6 +88,10 @@ import { useWindowHandlers } from "../hooks/useWindowHandlers";
 import { useTranscriptView } from "../hooks/useTranscriptView";
 import { useChatPanels, type ChatPanels } from "../hooks/useChatPanels";
 import { useReloadAll } from "../hooks/useReloadAll";
+import { pruneFences } from "../../openui/lib/fences/store";
+import { supersededOf } from "../../openui/lib/fences/supersession";
+import { useAnswerSheet } from "../../openui/hooks/useAnswerSheet";
+import { answerSheet } from "../../openui/lib/answer/store";
 
 const SLASH_COMMANDS: SlashCommand[] = [...builtinCommands, ...coreCommands];
 
@@ -96,9 +100,20 @@ function conversationLog(
   source: readonly TranscriptItem[],
   perTurn: Map<string, TurnStats>,
 ): JSX.Element[] {
+  // A `ui` block belongs to the reply it stands in, and a reply is named by its
+  // place among the conversation's replies; a reply with a user message after it
+  // has been answered, and its block's questions have closed with that message.
+  const answered = supersededOf(source);
+  let replies = -1;
   return withRowSpacers(
-    source.map((item) => (
-      <TranscriptRow key={item.id} item={item} stats={perTurn.get(item.id)} />
+    source.map((item, index) => (
+      <TranscriptRow
+        key={item.id}
+        item={item}
+        stats={perTurn.get(item.id)}
+        uiMessage={item.kind === "assistant" ? (replies += 1) : -1}
+        answered={answered[index] === true}
+      />
     )),
     transcriptRowGap(t),
   );
@@ -285,15 +300,19 @@ export function withRowSpacers(
 export const TranscriptRow = memo(function TranscriptRow({
   item,
   stats,
+  uiMessage,
+  answered,
 }: {
   item: TranscriptItem;
   stats?: TurnStats;
+  uiMessage?: number;
+  answered?: boolean;
 }): JSX.Element {
   const body =
     item.kind === "user" ? (
       <UserRow text={item.text} images={item.images} />
     ) : item.kind === "assistant" ? (
-      <AssistantMessage item={item} stats={stats} />
+      <AssistantMessage item={item} stats={stats} uiMessage={uiMessage} answered={answered} />
     ) : item.kind === "tool" ? (
       <ToolExecution item={item} />
     ) : (
@@ -497,6 +516,11 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
   });
   const { input, attachments, mode, setMode, followTail } = composer;
 
+  // The answer sheet lives in the draft: what the human answers in a screen goes
+  // into the message they are already typing, and nothing of it is sent until
+  // they send.
+  useAnswerSheet(composer);
+
   const reloadAll = useReloadAll();
   const chat = useChatSession(
     cwd,
@@ -504,6 +528,23 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     chatEffectsOf(toast, composer, reloadAll.changed),
   );
   const { items, isStreaming, session, sessionStart } = chat;
+
+  // A different conversation takes its staged answers and its sent record with it.
+  const sessionFile = session?.sessionFile() ?? "";
+  useEffect(() => {
+    answerSheet.clear();
+  }, [sessionFile]);
+
+  // A `ui` block is named by the reply it stands in, so a rewind that drops a
+  // reply drops its block: nothing paints it any more, and its staged answers
+  // would otherwise go on answering a question no longer on screen.
+  const replies = items.reduce(
+    (count, item) => count + (item.kind === "assistant" ? 1 : 0),
+    0,
+  );
+  useEffect(() => {
+    if (items.length > 0) pruneFences(replies);
+  }, [replies, items.length]);
 
   const panels = useChatPanels({
     cwd,
@@ -627,7 +668,11 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
           composer={{
             value: input,
             onChange: composer.setInput,
-            onSubmit: composerActions.onSubmit,
+            onSubmit: (value: string) => {
+              // What was staged went out with this message: its questions fold.
+              answerSheet.markSent();
+              composerActions.onSubmit(value);
+            },
             mode,
             onMode: setMode,
             panel: panelView.panel,

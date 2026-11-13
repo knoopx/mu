@@ -98,6 +98,7 @@ const askedOf = (nodes: QueryNode[]): string =>
       node.args,
       node.deps,
       node.defaults,
+      node.refreshInterval,
       node.complete,
     ]),
   );
@@ -181,15 +182,30 @@ export function evaluateProgram(
   const nodes: QueryNode[] = parsed.queryStatements.map((query) => {
     const tool = String(evalNode(query.toolAST, asking) ?? "");
     runtime.tools[query.statementId] = tool;
+    // The fourth argument of `Query(name, args, default, refresh)` is how often
+    // the data is asked for again, in seconds: the program says it, and the
+    // manager keeps asking — a screen that watches a build does not have to be
+    // re-rendered to stay current.
+    const refresh = Number(evalNode(query.refreshAST, asking) ?? 0);
     return {
       statementId: query.statementId,
       toolName: tool,
       args: evalNode(query.argsAST, asking) ?? {},
       defaults: evalNode(query.defaultsAST, asking) ?? null,
       deps: (query.deps ?? []).map((dep) => asking(dep)),
+      ...(Number.isFinite(refresh) && refresh > 0 ? { refreshInterval: refresh } : {}),
       complete: query.complete,
     };
   });
+
+  // A program that writes back names its calls the same way it names the ones it
+  // reads; the manager has to be told they exist before anything can run them.
+  runtime.qm.registerMutations(
+    parsed.mutationStatements.map((mutation) => ({
+      statementId: mutation.statementId,
+      toolName: String(evalNode(mutation.toolAST, asking) ?? ""),
+    })),
+  );
 
   // Only ask when the program asks for something new. A repaint that reads the
   // same queries must not fire the fetches again: an answer that failed has no
@@ -242,6 +258,8 @@ export function evaluateProgram(
 export interface ActionStepOutcome {
   /** Steps that changed the page. */
   set: string[];
+  /** Steps that ran a `Mutation` or asked a `Query` again. */
+  ran: string[];
   /** What the step asks of the agent: assistant, url, or a custom action name. */
   asked: { type: string; message: string; params: Record<string, unknown> }[];
 }
@@ -256,6 +274,8 @@ interface StepLike {
   url?: string;
   context?: string;
   message?: string;
+  statementId?: string;
+  refType?: string;
 }
 
 /**
@@ -269,7 +289,7 @@ export function runActionSteps(
   values: Record<string, unknown>,
 ): ActionStepOutcome {
   const record = programStore.get(name);
-  const outcome: ActionStepOutcome = { set: [], asked: [] };
+  const outcome: ActionStepOutcome = { set: [], ran: [], asked: [] };
   if (record === undefined) return outcome;
 
   // A step reads the page the way the screen does, so `@Set(x, @Count(rows))`
@@ -300,18 +320,45 @@ type StepHandler = (
 
 /** `@Set` and `@Reset` change the page here; the rest are only reported. */
 const STEP_HANDLERS: Readonly<Record<string, StepHandler>> = {
+  // An action step that changes the page is the program changing it, not the
+  // human answering a question, so it never marks a field as touched.
   set: (name, step, read, outcome) => {
     if (typeof step.target !== "string") return;
     const value = evalNode(step.valueAST, read);
-    programStore.setValue(name, step.target, value);
+    programStore.setValue(name, step.target, value, false);
     outcome.set.push(`${step.target}=${String(value)}`);
   },
 
   reset: (name, step, _read, outcome, declared) => {
     if (!Array.isArray(step.targets)) return;
     for (const target of step.targets)
-      programStore.setValue(name, target, declared[target] ?? null);
+      programStore.setValue(name, target, declared[target] ?? null, false);
     outcome.set.push(...step.targets);
+  },
+
+  // `@Run($save)` runs a Mutation, or asks a Query again. This is the step a
+  // program uses to write something back, so it is not a note in the log: the
+  // call runs, its result lands in the program's state, and its queries refresh.
+  run: (name, step, _read, outcome) => {
+    const runtime = runtimes.get(name);
+    if (runtime === undefined || typeof step.statementId !== "string") return;
+    if (step.refType === "mutation") {
+      // A write usually changes what a read would answer, so the screen's
+      // queries are asked again once it lands.
+      const queries = Object.keys(runtime.qm.getSnapshot()).filter(
+        (key) => !key.startsWith("__openui_"),
+      );
+      void runtime.qm.fireMutation(
+        step.statementId,
+        {},
+        queries.length === 0 ? undefined : queries,
+      );
+      outcome.ran.push(step.statementId);
+      return;
+    }
+    runtime.qm.invalidate([step.statementId]);
+    runtime.asked = "";
+    outcome.ran.push(step.statementId);
   },
 
   continue_conversation: (_name, step, _read, outcome) => {

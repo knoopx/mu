@@ -3,6 +3,8 @@ import type { JSX } from "react";
 import type { GpuixTheme, StyleDesc } from "@gpuix/react";
 
 import { Markdown } from "./Markdown";
+import { ProgramFence } from "../../openui/components/ProgramFence";
+import { replyBlocks } from "../../openui/lib/fences/read";
 import { PAGE_INSET } from "../lib/ui/transcriptLayout";
 import { TurnStatsLine } from "./TurnStats";
 import { buildNativeTheme, mutedText } from "../lib/ui/theme";
@@ -17,6 +19,49 @@ export interface AssistantMessageProps {
 
   stats?: TurnStats;
   style?: Partial<StyleDesc>;
+
+  /** Which reply this is among the conversation's replies: what a `ui` block's state key is made of. */
+  uiMessage?: number;
+
+  /** A user message follows this reply: its questions have already been answered. */
+  answered?: boolean;
+}
+
+/**
+ * A reply, in order: its prose in the markdown block, and its `ui` blocks as
+ * screens the human can use.
+ *
+ * A block is taken out of the prose rather than left in it — the reference
+ * plugin hides BB's code block behind the UI it renders, and mu hands the prose
+ * to a markdown element that would otherwise draw the source as a code block.
+ * A reply with no block keeps one markdown element, exactly as before.
+ */
+function bodyOf(
+  item: AssistantTranscriptItem,
+  props: AssistantMessageProps,
+): JSX.Element | null {
+  if (!item.text) return null;
+  const blocks = replyBlocks(item.text, item.streaming);
+  if (!blocks.hasFence)
+    return <Markdown source={item.text} style={{ padding: 0 }} />;
+
+  const message = props.uiMessage ?? 0;
+  return (
+    <>
+      {blocks.segments.map((segment, index) =>
+        segment.kind === "prose" ? (
+          <Markdown key={`prose-${String(index)}`} source={segment.text} style={{ padding: 0 }} />
+        ) : (
+          <ProgramFence
+            key={`ui-${String(index)}`}
+            message={message}
+            fence={segment.fence}
+            answered={props.answered === true}
+          />
+        ),
+      )}
+    </>
+  );
 }
 
 function ReasoningBlock({ body }: { body: string }): JSX.Element {
@@ -48,9 +93,7 @@ export function AssistantMessage(props: AssistantMessageProps): JSX.Element {
     >
       <MessageContent style={{ gap: t.space.md }}>
         {item.reasoning ? <ReasoningBlock body={item.reasoning} /> : null}
-        {item.text ? (
-          <Markdown source={item.text} style={{ padding: 0 }} />
-        ) : null}
+        {bodyOf(item, props)}
         {showStats && stats !== undefined ? (
           <TurnStatsLine stats={stats} />
         ) : null}

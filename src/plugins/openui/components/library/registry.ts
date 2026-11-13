@@ -10,7 +10,7 @@
 
 import type { OpenUIGroupInfo } from "../../types";
 import type { ProgramDrawer } from "./context";
-import { Bar, Chart, Stat, Table } from "./data";
+import { Bar, Chart, Progress, Sparkline, Stat, Table } from "./data";
 import {
   Divider,
   Grid,
@@ -19,13 +19,20 @@ import {
   Screen,
   Spacer,
   Stack,
+  Tabs,
 } from "./layout";
 import {
   Button,
+  Checklist,
   Choice,
   Field,
+  Form,
+  Radio,
+  Rating,
+  Select,
   Slider,
   Stepper,
+  TextArea,
   Toggle,
 } from "./inputs";
 import { Header, StatusLine } from "./screen";
@@ -61,6 +68,7 @@ export const programDefinitions = [
   Pane,
   Divider,
   Spacer,
+  Tabs,
   StatusLine,
   Title,
   Text,
@@ -73,6 +81,8 @@ export const programDefinitions = [
   Table,
   Stat,
   Bar,
+  Progress,
+  Sparkline,
   Chart,
   Tree,
   Timeline,
@@ -83,10 +93,16 @@ export const programDefinitions = [
   Todos,
   Steps,
   Button,
+  Form,
   Toggle,
   Choice,
+  Radio,
+  Select,
+  Checklist,
+  Rating,
   Slider,
   Field,
+  TextArea,
   Stepper,
 ];
 
@@ -121,7 +137,7 @@ export const programGroups: OpenUIGroupInfo[] = [
   },
   {
     name: "Layout",
-    components: ["Stack", "Row", "Grid", "Pane", "Divider", "Spacer"],
+    components: ["Stack", "Row", "Grid", "Pane", "Divider", "Spacer", "Tabs"],
     notes: [],
   },
   {
@@ -140,7 +156,7 @@ export const programGroups: OpenUIGroupInfo[] = [
   },
   {
     name: "Data",
-    components: ["Table", "Stat", "Bar", "Chart"],
+    components: ["Table", "Stat", "Bar", "Progress", "Sparkline", "Chart"],
     notes: [],
   },
   {
@@ -155,7 +171,20 @@ export const programGroups: OpenUIGroupInfo[] = [
   },
   {
     name: "Inputs",
-    components: ["Button", "Toggle", "Choice", "Slider", "Field", "Stepper"],
+    components: [
+      "Button",
+      "Form",
+      "Toggle",
+      "Choice",
+      "Radio",
+      "Select",
+      "Checklist",
+      "Rating",
+      "Slider",
+      "Field",
+      "TextArea",
+      "Stepper",
+    ],
     notes: [],
   },
 ];

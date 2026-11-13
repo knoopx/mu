@@ -1,13 +1,24 @@
 /**
  * What each OpenUI tool tells the model about how it is used.
  *
- * The guidance is split across the eleven tools rather than repeated by each:
- * a tool states what only it can state — the authoring contract, the data
- * contract, the reading contract — and the whole set reads as one agreement
- * about the plugin.
+ * The guidance is split across the tools rather than repeated by each: a tool
+ * states what only it can state, and the whole set reads as one agreement about
+ * the plugin. The agreement starts with the one thing the reference plugin is
+ * built on — **a screen is part of the reply** — because a tool's guidelines are
+ * the only place mu can teach a contract the model has to honour before it calls
+ * anything.
  */
 
+/** The contract every tool's guidance stands on: where a screen comes from, and where an answer goes. */
+export const REPLY_BLOCK_GUIDELINES: readonly string[] = [
+  "Answer with a screen by writing a ```ui block inline in your reply: it is OpenUI Lang, it draws while the reply streams, and it costs no extra model call.",
+  "Only the message that ends a turn carries a block — progress notes and tool input stay plain text — and the reply opens with a plain sentence that answers, which is what a preview shows.",
+  "Anything better used than read is a block, not a markdown table: a comparison, a plan, a run of options, a figure to move, a diff, a tree of what changed. In doubt, add the block.",
+  "A question is one Form, or one run of Buttons with no action: what the human picks or types lands in their own message and is sent by them, never by you and never mid-turn.",
+];
+
 export const PROMPT_GUIDELINES: readonly string[] = [
+  ...REPLY_BLOCK_GUIDELINES,
   "Call openui-prompt once before authoring an OpenUI Lang program, then follow it — the component list it prints is the whole truth about what will draw.",
   "A component absent from the library cannot be drawn, however obvious its name looks.",
 ];
@@ -19,38 +30,41 @@ export const LIBRARY_GUIDELINES: readonly string[] = [
 ];
 
 export const VALIDATE_GUIDELINES: readonly string[] = [
-  "Validate before rendering when a program is new or was rewritten from a rejected one; the parse is the same one a render will run.",
+  "Validate a block before you put it in a reply, or a program before you render it; the parse is the same one the log runs.",
   "Treat `unresolved` as a bug, not a note: an unresolved name renders as null, and a $ prefix is how a reference is written.",
-  "A hard parse error still renders: fix the first error the call printed and re-send the same name rather than starting a second program.",
+  "A hard parse error still renders: the block draws as far as it parses, so fix the first error the call printed rather than starting a second block.",
 ];
 
 export const RENDER_GUIDELINES: readonly string[] = [
-  "Render with openui-render, then read openui-state: the parse said the source is valid, the renderer says what it actually drew.",
+  "A screen that is part of an answer is a ```ui block in the reply, not a call: openui-render is for replacing a program already in the log — one the human is operating, or one your earlier call drew.",
   "Keep one name per screen and re-send it to edit in place — a new name every turn leaves a trail of programs the human has to ignore.",
+  "Render with openui-render, then read openui-state: the parse said the source is valid, the renderer says what it actually drew.",
   "A program with unread events is waiting on you: drain openui-events before rendering over it.",
 ];
 
 export const STREAM_GUIDELINES: readonly string[] = [
-  "Stream a long program with openui-stream so the human watches it appear, and close it with done: true — an open program keeps its form interactions disabled.",
+  "Use openui-stream to build a program already in the log piece by piece; a ```ui block in your reply already draws while it streams and needs no streaming call.",
   "Send source in the order you generate it; a truncated program mid-stream is expected and is reported as `incomplete`.",
   "Do not re-send a chunk that was already accepted: the source accumulates, it does not replace.",
 ];
 
 export const STATE_GUIDELINES: readonly string[] = [
   "Read openui-state after a render: the components it lists are what the human sees, and its errors are the ones only drawing revealed.",
+  "A block written inline in a reply is a program too, named `ui#<reply>#<block>`; name it to read the screen a message holds.",
   "The `$variable` values are the human's current selections — build the next version of the program from them rather than from what you first set.",
   "name defaults to the program the log paints; name another one to read it without switching to it.",
 ];
 
 export const EVENTS_GUIDELINES: readonly string[] = [
+  "Only what asks for something arrives: a button pressed, an action run, a form answered. An input the human moved is a what-if the page holds — read it with openui-state, and do not expect a queue of slider positions.",
   "Drain openui-events after a program lands instead of asking the human to describe what they pressed.",
-  "`clear: false` is for re-reading the same events; leave it off only when a turn may need them twice.",
   "A program with no events is a screen nobody used yet — change it rather than assuming it worked.",
 ];
 
 export const FIXTURES_GUIDELINES: readonly string[] = [
   "Set openui-tools before the render that uses the data, keyed by the exact names the program passes to Query().",
   "A Query() whose name was never served fails as a missing tool — the screen shows the failure, so name the fixtures and the queries together.",
+  "The fourth argument of Query(name, args, default, refresh) is seconds between asks: give it to a screen that watches something, and it stays current without another call.",
   "An empty fixtures object clears them; a program that then re-draws answers with its own defaults.",
 ];
 

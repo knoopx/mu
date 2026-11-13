@@ -12,6 +12,7 @@ import type { OpenUIProgramDetails } from "../../types";
 import { emptySource, sourceTooBig } from "../answer";
 import { parseProgram } from "../analysis/parse";
 import { dropRuntime } from "../analysis/run";
+import { answerSheet } from "../answer/store";
 import { programStore, type ProgramRecord } from "./store";
 
 export interface ProgramWriteOutcome {
@@ -178,7 +179,13 @@ export function detailsOf(
   };
 }
 
-/** Take programs out of the log, and let their data caches go with them. */
+/** Take programs out of the log, and let their data caches and their answers go with them. */
 export function dropPrograms(names: readonly string[]): void {
-  for (const name of names) dropRuntime(name);
+  for (const name of names) {
+    dropRuntime(name);
+    // A screen that leaves the log leaves the paragraph it put in the draft too:
+    // an answer staged by a question nobody can see any more is text the person
+    // has to notice and delete by hand.
+    answerSheet.dropBlock(name);
+  }
 }
