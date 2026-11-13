@@ -11,9 +11,9 @@
  */
 
 import type { JSX } from "react";
-import { formatSize } from "@earendil-works/pi-coding-agent";
 import { useAdwaita, type IconName } from "adwaita-gpuix";
 
+import { partsLine } from "../../core/lib/agent/toolText";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import {
@@ -96,18 +96,10 @@ function headOf(_tool: string, view: MermaidToolView): string {
   if (picture.status === "failed") {
     return `${diagramName(picture) === "" ? "diagram" : diagramName(picture)} · ${diagramFailureLine(picture)}`;
   }
-  const canvas =
-    picture.width === 0
-      ? ""
-      : `${String(picture.width)}×${String(picture.height)}`;
-  return [
-    diagramName(picture),
-    canvas,
-    picture.svgBytes === 0 ? "" : formatSize(picture.svgBytes),
-    view.written,
-  ]
-    .filter((part) => part !== "")
-    .join(" · ");
+  // The kind and the file the picture was saved to: the canvas, the markup size
+  // and the label count are measured figures, so they are chips, and printing
+  // them here as well put one copy in the header's clipping budget.
+  return partsLine(diagramName(picture), view.written);
 }
 
 /** How big the picture is drawn: never bigger than the log, never smaller than

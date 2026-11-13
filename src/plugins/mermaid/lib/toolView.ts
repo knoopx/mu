@@ -10,7 +10,7 @@
 
 import { formatSize } from "@earendil-works/pi-coding-agent";
 
-import { counted, partsLine } from "../../core/lib/agent/toolText";
+import { partsLine } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
 import { MERMAID_RENDER_TOOL } from "../constants";
 import type { MermaidPicture, MermaidStatus } from "../types";
@@ -118,8 +118,9 @@ export function mermaidToolViewOf(
   const picture = pictureOf(details);
   if (picture === null) return null;
 
+  // The header line owns the kind and the file the SVG was written to, so
+  // neither is a chip; and `labels 12 labels` says its own unit twice.
   const cells: ToolRowCell[] = [
-    { label: "diagram", value: diagramName(picture) },
     {
       label: "canvas",
       value:
@@ -129,18 +130,13 @@ export function mermaidToolViewOf(
     },
     {
       label: "labels",
-      value:
-        picture.status === "ok" ? counted(picture.labels.length, "label") : "",
+      value: picture.status === "ok" ? String(picture.labels.length) : "",
     },
     {
       label: "svg",
       value: picture.svgBytes === 0 ? "" : formatSize(picture.svgBytes),
     },
-    {
-      label: "drew in",
-      value: picture.ms === 0 ? "" : `${String(picture.ms)} ms`,
-    },
-    { label: "wrote", value: picture.written },
+    { label: "drew in", value: picture.ms === 0 ? "" : `${String(picture.ms)} ms` },
   ];
 
   return {

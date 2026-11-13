@@ -562,7 +562,8 @@ function hunkListView(
     ["rev", rev],
     ["git", textOf(details.git)],
     ["change", textOf(details.change)],
-    ["files", files.size === 0 ? "" : counted(files.size, "file")],
+    // The label is the unit, so the value is only the figure.
+    ["files", files.size === 0 ? "" : String(files.size)],
   );
   v.headline = hunks.length === 0 ? "" : counted(hunks.length, "hunk");
   // The badge says the hunk's type, so the muted line does not say it twice.
