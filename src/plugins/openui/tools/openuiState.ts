@@ -144,7 +144,7 @@ export const openUIStateTool: ToolDefinition<
           : `query failures:\n${details.failures.join("\n")}`,
         details.waiting === 0
           ? ""
-          : `${String(details.waiting)} interactions waiting — read them with openui-events`,
+          : `${counted(details.waiting, "interaction")} waiting — read them with openui-events`,
         details.truncated
           ? "the source is cut: read it in pieces with a limit"
           : "",

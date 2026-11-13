@@ -21,7 +21,7 @@ import {
   ToolSummary,
   ToolTruncated,
 } from "../../core/components/ToolDataRows";
-import { partsLine } from "../../core/lib/agent/toolText";
+import { counted, partsLine } from "../../core/lib/agent/toolText";
 import {
   toolPreviewLine,
   type ToolPreviewVocabulary,
@@ -259,7 +259,7 @@ export function OpenUIToolRows(props: {
       {view.waiting === 0 || paints ? null : (
         <ToolStateNote
           icon={toolStatusIcon("open", STATUS_ICONS)}
-          text={`${String(view.waiting)} interactions waiting — read them with openui-events`}
+          text={`${counted(view.waiting, "interaction")} waiting — read them with openui-events`}
           tone="warn"
         />
       )}

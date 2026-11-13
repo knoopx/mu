@@ -59,7 +59,8 @@ export const programStatusRow = (program: OpenUIProgramInfo): string => {
   if (program.errors > 0) parts.push(`${String(program.errors)} errors`);
   if (program.streaming) parts.push("still streaming");
   if (program.waiting > 0)
-    parts.push(`${String(program.waiting)} interactions waiting`);
+    // A count of one must not wear the plural of a count of three.
+    parts.push(`${counted(program.waiting, "interaction")} waiting`);
   return parts.join(" · ");
 };
 
