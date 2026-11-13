@@ -122,6 +122,8 @@ export const toolStatusIcon = (
 /** An id column shows an id short; the reader has the full id in `details`. */
 const ID_MAX = 13;
 
+/** An id column's own ink, so a column is measured on what is drawn and never
+ *  on the raw id behind it — a cut id prints its ellipsis too. */
 export const toolIdText = (key: string): string =>
   key.length <= ID_MAX ? key : `${key.slice(0, ID_MAX)}…`;
 
@@ -159,6 +161,8 @@ export const toolChip = (t: AdwaitaTheme): StyleDesc => ({
  * put there.
  */
 export interface ToolRowFigureColumns {
+  /** The id column, measured off the widest id the list holds. */
+  id: number;
   meter: number;
   trailing: number;
   badge: number;
@@ -174,15 +178,18 @@ export function figureColumnsOf(
   rows: readonly ToolPaintRow[],
   t: AdwaitaTheme,
 ): ToolRowFigureColumns {
+  let idChars = 0;
   let badgeChars = 0;
   let trailingChars = 0;
   let meter = 0;
   for (const row of rows) {
+    idChars = Math.max(idChars, toolIdText(row.key).trim().length);
     badgeChars = Math.max(badgeChars, row.badge.trim().length);
     trailingChars = Math.max(trailingChars, (row.trailing ?? "").trim().length);
     if (row.meter !== null && row.meter !== undefined) meter = METER_TRACK_WIDTH;
   }
   return {
+    id: idColumn(t, idChars),
     meter,
     trailing: trailingChars === 0 ? 0 : monoTextWidth(t, trailingChars, t.type.micro),
     badge: badgeChars === 0 ? 0 : badgeWidth(t, badgeChars),
@@ -248,9 +255,11 @@ export function toolDataRow(
     : row;
 }
 
-/** The id column: a fixed mono width, so every body line starts at the same x. */
-export const toolKeyColumn = (t: AdwaitaTheme): StyleDesc => ({
-  width: idColumn(t),
+/** The id column: the width the list measured for its own ids, so every body
+ *  line of that list starts at the same x and no more than the widest id in it
+ *  is ever reserved. */
+export const toolKeyColumn = (t: AdwaitaTheme, width: number): StyleDesc => ({
+  width,
   flexShrink: 0,
   fontFamily: t.type.fontFamilyMono,
   pointerEvents: "none",

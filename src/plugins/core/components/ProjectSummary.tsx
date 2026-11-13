@@ -35,6 +35,7 @@ import {
   glyphForText,
   lineBox,
   monoColumn,
+  monoTextWidth,
   titleWeight,
 } from "../lib/ui/tokens";
 import {
@@ -45,10 +46,36 @@ import {
 import type { PromptPill } from "../lib/project/promptTemplates";
 import { hasNoDescription } from "../../vcs/constants";
 
-/** How many characters a project feed's own two fixed columns hold — the feed's
- *  id and age, not the log's id column, which `tokens.ts` sizes for itself. */
-const FEED_ID_CHARS = 6;
-const FEED_AGE_CHARS = 7;
+/** How much of a change id the feed shows. A cut, not a column: the column is
+ *  measured off what the rows print. */
+const FEED_ID_LIMIT = 8;
+
+/** The id and the age as this feed's own rows print them — the two columns are
+ *  measured off these, never guessed at in characters. */
+const feedIdOf = (feed: FeedChange): string =>
+  feed.change.change_id.slice(0, FEED_ID_LIMIT);
+
+const feedAgeOf = (feed: FeedChange): string =>
+  humanizeAgo(tsToMs(feed.change.timestamp));
+
+/** The feed's two mono columns, measured off the rows that stand in them — the
+ *  same rule the log's id column follows. A column guessed at in characters is
+ *  dead air at one measure and a clipped id at the next. */
+function feedColumnsOf(
+  feeds: readonly FeedChange[],
+  t: AdwaitaTheme,
+): { id: number; age: number } {
+  let idChars = 0;
+  let ageChars = 0;
+  for (const feed of feeds) {
+    idChars = Math.max(idChars, feedIdOf(feed).length);
+    ageChars = Math.max(ageChars, feedAgeOf(feed).length);
+  }
+  return {
+    id: monoTextWidth(t, idChars, t.type.micro),
+    age: monoTextWidth(t, ageChars, t.type.micro),
+  };
+}
 
 /** The lines a loading header stands in for, in characters: a short title and two meta lines. */
 const SKELETON_TITLE_CHARS = 18;
@@ -73,6 +100,7 @@ function ChangeFeedRow(props: {
   node: GraphNode;
   prev: GraphNode | null;
   laneCount: number;
+  columns: { id: number; age: number };
   onPick?: () => void;
 }): JSX.Element {
   const t = useAdwaita();
@@ -95,7 +123,7 @@ function ChangeFeedRow(props: {
         />
         <div
           style={{
-            width: monoColumn(t, FEED_ID_CHARS),
+            width: props.columns.id,
             flexShrink: 0,
             fontFamily: t.type.fontFamilyMono,
             fontSize: t.type.micro,
@@ -103,7 +131,7 @@ function ChangeFeedRow(props: {
             whiteSpace: "nowrap",
           }}
         >
-          {change.change_id.slice(0, 8)}
+          {feedIdOf(props.feed)}
         </div>
         {bookmarks.length > 0 ? (
           <PillGroup
@@ -126,7 +154,7 @@ function ChangeFeedRow(props: {
         ) : null}
         <div
           style={{
-            width: monoColumn(t, FEED_AGE_CHARS),
+            width: props.columns.age,
             flexShrink: 0,
             textAlign: "right",
             fontSize: t.type.micro,
@@ -135,7 +163,7 @@ function ChangeFeedRow(props: {
             overflow: "hidden",
           }}
         >
-          {humanizeAgo(tsToMs(change.timestamp))}
+          {feedAgeOf(props.feed)}
         </div>
       </RowShell>
     </ListRow>
@@ -406,7 +434,9 @@ export function projectSummaryRows(
           inset={inset}
         />,
       );
-      activity.recent.slice(0, FEED_LIMIT).forEach((feed, i) => {
+      const recent = activity.recent.slice(0, FEED_LIMIT);
+      const feedColumns = feedColumnsOf(recent, t);
+      recent.forEach((feed, i) => {
         rows.push(
           <div
             key={feed.change.commit_id}
@@ -422,12 +452,13 @@ export function projectSummaryRows(
               node={graph[i]}
               prev={i > 0 ? graph[i - 1] : null}
               laneCount={laneCount}
+              columns={feedColumns}
               onPick={
                 props.onPrompt === undefined
                   ? undefined
                   : () =>
                       props.onPrompt?.(
-                        `Tell me about change ${feed.change.change_id.slice(0, 8)} in ${identity.name}: what it did, and what is left to finish.`,
+                        `Tell me about change ${feedIdOf(feed)} in ${identity.name}: what it did, and what is left to finish.`,
                       )
               }
             />

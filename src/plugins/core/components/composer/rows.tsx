@@ -22,8 +22,8 @@ import {
   glyphForText,
   lineBox,
   lineBoxAt,
-  monoColumn,
   monoTextWidth,
+  textWidth,
 } from "../../lib/ui/tokens";
 import type {
   ComposerPanelRow,
@@ -31,9 +31,42 @@ import type {
   ComposerSwatchSpec,
 } from "./Composer";
 
-/** A command row's two fixed columns, in characters of the caption size. */
-const NAME_COLUMN_CHARS = 12;
-const ARGS_COLUMN_CHARS = 16;
+/**
+ * The columns a panel's rows share, measured off the rows it holds. No column in
+ * a panel is a fixed number of characters: a name column is as wide as the
+ * longest name that panel ever draws and no wider, an age column as wide as the
+ * longest age it words. The panel measures once over its whole list — not over
+ * the visible slice, or a column would slide as you scroll.
+ */
+export interface ComposerPanelColumns {
+  name: number;
+  args: number;
+  age: number;
+}
+
+export function panelColumnsOf(
+  rows: readonly ComposerPanelRow[],
+  t: AdwaitaTheme,
+): ComposerPanelColumns {
+  let nameChars = 0;
+  let argsChars = 0;
+  let ageChars = 0;
+  for (const row of rows) {
+    if (row.kind === "command") {
+      nameChars = Math.max(nameChars, row.name.trim().length);
+      argsChars = Math.max(argsChars, (row.args ?? "").trim().length);
+    } else if (row.kind === "option" && row.tabular === true) {
+      ageChars = Math.max(ageChars, (row.description ?? "").trim().length);
+    }
+  }
+  // A command name and its args stand in the proportional family, so their
+  // columns are measured in what that family prints, not in mono character-widths.
+  return {
+    name: textWidth(t, nameChars, t.type.caption),
+    args: textWidth(t, argsChars, t.type.caption),
+    age: ageChars === 0 ? 0 : monoTextWidth(t, ageChars, t.type.caption),
+  };
+}
 
 /** A figure's glyph stands beside caption text and takes its measure. */
 const figureGlyph = (t: AdwaitaTheme): number => glyphForText(t.type.caption);
@@ -258,13 +291,11 @@ function RowFigures({
 }
 
 /** A row's trailing age: two characters of a mono column, right-aligned. */
-const AGE_COLUMN_WIDTH = (t: AdwaitaTheme): number => monoColumn(t, 2);
-
-const ageColumn = (t: AdwaitaTheme): StyleDesc => ({
+const ageColumn = (t: AdwaitaTheme, width: number): StyleDesc => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
-  width: AGE_COLUMN_WIDTH(t),
+  width,
   flexShrink: 0,
   pointerEvents: "none",
 });
@@ -274,6 +305,9 @@ export interface ComposerCommandRowProps {
   args?: string;
   description?: string;
   icon?: IconName;
+
+  /** The columns the panel measured for its rows. */
+  columns: ComposerPanelColumns;
 
   active: boolean;
   onClick: () => void;
@@ -296,7 +330,7 @@ export function ComposerCommandRow(
       <text
         style={{
           ...label(t),
-          width: monoColumn(t, NAME_COLUMN_CHARS),
+          width: props.columns.name,
           flexShrink: 0,
         }}
       >
@@ -306,7 +340,7 @@ export function ComposerCommandRow(
       <text
         style={{
           ...meta(t),
-          width: monoColumn(t, ARGS_COLUMN_CHARS),
+          width: props.columns.args,
           ...truncate(t),
         }}
       >
@@ -331,6 +365,9 @@ export interface ComposerOptionRowProps {
   icon?: IconName;
 
   tabular?: boolean;
+
+  /** The column a tabular row's trailing figure stands in. */
+  ageWidth?: number;
 
   picked: boolean;
 
@@ -396,7 +433,7 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
         ? props.trailing
         : showMeta &&
           (props.tabular === true ? (
-            <div style={ageColumn(t)}>
+            <div style={ageColumn(t, props.ageWidth ?? 0)}>
               <text
                 style={{
                   ...meta(t),

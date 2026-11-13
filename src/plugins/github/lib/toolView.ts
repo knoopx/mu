@@ -107,10 +107,15 @@ export function githubCallOf(details: unknown): GithubCall | null {
 const fieldNamed = (call: GithubCall, label: string): string =>
   call.fields.find((field) => field.label === label)?.value ?? "";
 
-/** The rows a call answers with, in the shape the log draws: rank, body, state, figure. */
+/** The rows a call answers with, in the shape the log draws: rank, body, state, figure.
+ *
+ * The id column holds the rank and nothing else. What kind of thing a row is
+ * stands in the header and the scope chips already, so repeating it in every id
+ * of a twenty-row list was twenty copies of one word in the column that should
+ * be the narrowest in the table. */
 function paintRows(call: GithubCall): ToolPaintRow[] {
   return call.rows.map((row, index) => ({
-    key: `${call.kind}-${String(row.rank === 0 ? index + 1 : row.rank)}`,
+    key: String(row.rank === 0 ? index + 1 : row.rank),
     primary: row.name,
     secondary: row.detail,
     badge: row.state,

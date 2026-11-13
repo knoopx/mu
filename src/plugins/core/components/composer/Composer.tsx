@@ -68,6 +68,8 @@ import {
   ComposerOptionRow,
   ComposerStatus,
   ComposerThemeRow,
+  panelColumnsOf,
+  type ComposerPanelColumns,
 } from "./rows";
 import { type Shortcut } from "../../lib/composer/shortcuts";
 import { useComposerKeys } from "../../hooks/useComposerKeys";
@@ -343,12 +345,15 @@ function PanelRow({
   row,
   active,
   checkColumn,
+  columns,
   onPick,
   onHover,
 }: {
   row: ComposerPanelRow;
   active: boolean;
   checkColumn: boolean;
+  /** The columns every row of this panel stands in, measured over its whole list. */
+  columns: ComposerPanelColumns;
   onPick: () => void;
   onHover: () => void;
 }): JSX.Element {
@@ -369,6 +374,7 @@ function PanelRow({
         args={row.args}
         description={row.description}
         icon={row.icon}
+        columns={columns}
         active={active}
         onClick={onPick}
         onHover={onHover}
@@ -382,6 +388,7 @@ function PanelRow({
       figures={row.figures}
       icon={row.icon}
       tabular={row.tabular === true}
+      ageWidth={columns.age}
       picked={row.picked === true}
       checkColumn={checkColumn}
       active={active}
@@ -489,9 +496,13 @@ function ComposerPanel({
   onKeyDown,
   panelRef,
 }: ComposerPanelProps): JSX.Element {
+  const t = useAdwaita();
   const checkColumn = panel.rows.some(
     (row) => row.kind === "option" && row.picked === true,
   );
+  // Measured over every row the panel holds, so the columns do not slide as the
+  // list scrolls or as a filter narrows it.
+  const columns = panelColumnsOf(panel.rows, t);
   const split = panel.preview !== undefined;
   const wide = panel.wide;
   if (wide !== undefined)
@@ -533,6 +544,7 @@ function ComposerPanel({
                 row={row}
                 active={index === active}
                 checkColumn={checkColumn}
+                columns={columns}
                 // A click completes the way Tab does, so a folder stays open
                 // for the next segment; Enter is the key that commits.
                 onPick={() => panel.onPick(row, "complete")}

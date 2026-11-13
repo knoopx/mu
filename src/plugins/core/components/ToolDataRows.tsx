@@ -151,15 +151,19 @@ const toolFigureText = (t: AdwaitaTheme): StyleDesc => ({
   flexShrink: 0,
 });
 
-/** The body of a row: what it is about, where it is, and the lines under it. */
+/** The body of a row: what it is about, where it is, and the lines under it.
+ *  A member line stands under its parent's body, so it clears the id column the
+ *  list measured rather than a column of its own choosing. */
 function ToolRowBody({
   primary,
   secondary,
   members,
+  keyWidth,
 }: {
   primary: string;
   secondary: string;
   members: readonly string[];
+  keyWidth: number;
 }): JSX.Element {
   const t = useAdwaita();
   // Two lines of text per row and never more: each line is one line of text with
@@ -192,7 +196,7 @@ function ToolRowBody({
           display: "flex",
           flexDirection: "column",
           gap: 0,
-          paddingLeft: subLineIndent(t),
+          paddingLeft: subLineIndent(t, keyWidth),
           flexGrow: 1,
           flexBasis: 0,
           minWidth: 0,
@@ -301,13 +305,16 @@ function ToolDataRow({
         alignItems: members.length === 0 ? "center" : "flex-start",
       }}
     >
-      <T size="caption" color={mutedText(t)} style={toolKeyColumn(t)}>
-        {toolIdText(row.key)}
-      </T>
+      {columns.id === 0 ? null : (
+        <T size="caption" color={mutedText(t)} style={toolKeyColumn(t, columns.id)}>
+          {toolIdText(row.key)}
+        </T>
+      )}
       <ToolRowBody
         primary={row.primary}
         secondary={row.secondary}
         members={members}
+        keyWidth={columns.id}
       />
       <ToolRowFigures row={row} columns={columns} variants={variants} />
     </div>

@@ -25,9 +25,6 @@ export const ROW_HEIGHT = CONTROL.rowHeight;
 
 /* Columns of monospace text -------------------------------------------- */
 
-/** How wide the id column is, in monospace character-widths at the caption measure. */
-const ID_COLUMN_CHARS = 7.5;
-
 /**
  * A column of `chars` monospace characters: a *budget*, one character-unit per
  * unit of the caption measure, so a column of ids stays one column whatever the
@@ -50,15 +47,20 @@ export const monoTextWidth = (
 ): number => Math.round(chars * size * MONO_ADVANCE);
 
 /**
- * The id column a tool row and a revision row both open with, so every body
- * line in the log begins at the same x whatever drew it.
+ * The id column a list of rows opens with, measured off the widest id that list
+ * actually holds and in the mono it is drawn in — the same measure
+ * `figureColumnsOf` budgets a trailing figure with, so the two columns of a row
+ * cannot drift. A column fixed at the worst id the log could ever draw put an
+ * eleven-step plan's `1` in eighty pixels of nothing: the column belongs to the
+ * list, so the list's own ids are what size it, and every body line under it
+ * still begins at one x.
  */
-export const idColumn = (t: AdwaitaTheme): number =>
-  monoColumn(t, ID_COLUMN_CHARS);
+export const idColumn = (t: AdwaitaTheme, chars: number): number =>
+  chars <= 0 ? 0 : monoTextWidth(t, chars, t.type.caption);
 
-/** A sub-line's indent: past its parent's id column and the gap between columns. */
-export const subLineIndent = (t: AdwaitaTheme): number =>
-  idColumn(t) + t.space.md;
+/** A sub-line's indent: past its list's id column and the gap between columns. */
+export const subLineIndent = (t: AdwaitaTheme, keyWidth: number): number =>
+  keyWidth + t.space.md;
 
 /** How far one character of the app's *proportional* text advances, as a
  *  fraction of the size it is set at — the sibling of `MONO_ADVANCE`, and

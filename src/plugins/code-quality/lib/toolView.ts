@@ -490,9 +490,12 @@ function referencesView(
             : "",
         );
 
-  const paint = (edges: typeof callers, verb: string): ToolPaintRow[] =>
+  // The id column is the hop number and nothing else: the section head above the
+  // rows already says which way the chain runs, so a direction word in every id
+  // was ink that repeated a head and widened the narrowest column in the table.
+  const paint = (edges: typeof callers): ToolPaintRow[] =>
     edges.map((row) => ({
-      key: `${verb} ${String(row.depth)}`,
+      key: String(row.depth),
       primary: row.name === "" ? row.file : row.name,
       secondary: row.file === "" ? "(project edge)" : row.file,
       badge: row.type_only ? "type" : "",
@@ -503,11 +506,11 @@ function referencesView(
   v.sections = [
     ...section(
       `callers — ${String(numberOf(details, "caller_count"))}`,
-      paint(callers, "up"),
+      paint(callers),
     ),
     ...section(
       `callees — ${String(numberOf(details, "callee_count"))}`,
-      paint(callees, "down"),
+      paint(callees),
     ),
   ];
   v.note = noteFor(
