@@ -184,11 +184,7 @@ function SectionTitle(props: {
           gap: t.space.sm,
         }}
       >
-        <T
-          size="title4"
-          weight={titleWeight(t)}
-          color={t.color.text.primary}
-        >
+        <T size="title4" weight={titleWeight(t)} color={t.color.text.primary}>
           {props.title}
         </T>
         {props.trailing !== undefined ? (

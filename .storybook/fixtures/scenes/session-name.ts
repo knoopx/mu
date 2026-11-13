@@ -47,7 +47,9 @@ export const SESSION_PICK_ITEMS: TranscriptItem[] = [
     "edit",
     {
       path: "~/.pi/agent/sessions/--home-knoopx-Projects-gpuix-apps-mu--/index.json",
-      edits: [{ oldText: '"label": null', newText: '"label": "composer ring at 2x"' }],
+      edits: [
+        { oldText: '"label": null', newText: '"label": "composer ring at 2x"' },
+      ],
     },
     "Error: can't edit a session's own file — the label lives in the entry's header, which pi owns. Use `mu sessions --label`.",
     11_000,

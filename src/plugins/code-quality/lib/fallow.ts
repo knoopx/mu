@@ -38,7 +38,6 @@ import type {
   SurfaceRow,
 } from "../types";
 
-
 interface QualityToolHead {
   analyzer: "fallow";
   version: string;
@@ -91,7 +90,6 @@ async function fallow(
   };
 }
 
-
 /**
  * The head every answer carries: the analyser that ran, the version that
  * answered, how the call ended, and how long it took. A tool adds its own
@@ -107,11 +105,13 @@ const baseOf = (found: FallowRun): QualityToolHead => ({
   error: "",
 });
 
-function failedOf(found: FallowRun): { status: QualityToolStatus; error: string } {
+function failedOf(found: FallowRun): {
+  status: QualityToolStatus;
+  error: string;
+} {
   if (found.run.status !== "ok")
     return { status: found.run.status, error: found.run.error };
-  if (found.message !== "")
-    return { status: "failed", error: found.message };
+  if (found.message !== "") return { status: "failed", error: found.message };
   return { status: "failed", error: found.run.stderr.trim() };
 }
 
@@ -124,8 +124,6 @@ const anyCheapAction = (record: JsonRecord): boolean =>
 /** The first value that is actually there — an analyser names a thing differently per finding kind. */
 const firstText = (...values: readonly string[]): string =>
   values.find((value) => value !== "") ?? "";
-
-
 
 const SEVERITY_ORDER = ["critical", "high", "moderate", "low", "warn"];
 
@@ -143,7 +141,10 @@ const rowOfComplexity = (record: JsonRecord): ComplexityRow => ({
   crap: numberOf(record, "crap"),
   lines: numberOf(record, "line_count"),
   exceeded: textOf(record, "exceeded"),
-  severity: firstText(textOf(record, "severity"), textOf(record, "effective_severity")),
+  severity: firstText(
+    textOf(record, "severity"),
+    textOf(record, "effective_severity"),
+  ),
   fixable: anyCheapAction(record),
   meter: { score: 0, worst: 0 },
 });
@@ -157,14 +158,20 @@ const rowOfComplexity = (record: JsonRecord): ComplexityRow => ({
  * row says, and equal numbers draw unequal bars.
  */
 function metered(rows: readonly ComplexityRow[]): ComplexityRow[] {
-  const worst = rows.reduce((top, row) => Math.max(top, Math.round(row.crap)), 0);
+  const worst = rows.reduce(
+    (top, row) => Math.max(top, Math.round(row.crap)),
+    0,
+  );
   return rows.map((row) => ({
     ...row,
     meter: { score: Math.round(row.crap), worst },
   }));
 }
 
-function sorted(rows: readonly ComplexityRow[], sort: string | undefined): ComplexityRow[] {
+function sorted(
+  rows: readonly ComplexityRow[],
+  sort: string | undefined,
+): ComplexityRow[] {
   const copy = [...rows];
   if (sort === "complexity")
     return copy.sort((a, b) => b.cyclomatic - a.cyclomatic);
@@ -230,27 +237,30 @@ export async function fallowComplexity(
   };
 }
 
-
-
 /** What each `scope` of `code-dead-code` answers with, by the envelope keys it reads. */
-const DEAD_KINDS: ReadonlyMap<string, { label: string; groups: readonly string[] }> =
-  new Map([
-    ["files", { label: "file", groups: ["files"] }],
-    ["exports", { label: "export", groups: ["exports"] }],
-    ["types", { label: "type", groups: ["types"] }],
-    ["members", { label: "member", groups: ["members"] }],
-    [
-      "deps",
-      {
-        label: "dependency",
-        groups: ["dependencies", "binaries", "duplicates"],
-      },
-    ],
-  ]);
+const DEAD_KINDS: ReadonlyMap<
+  string,
+  { label: string; groups: readonly string[] }
+> = new Map([
+  ["files", { label: "file", groups: ["files"] }],
+  ["exports", { label: "export", groups: ["exports"] }],
+  ["types", { label: "type", groups: ["types"] }],
+  ["members", { label: "member", groups: ["members"] }],
+  [
+    "deps",
+    {
+      label: "dependency",
+      groups: ["dependencies", "binaries", "duplicates"],
+    },
+  ],
+]);
 
 /** The category an envelope key reports, without the prefix the analyser hangs off it. */
 const deadGroupOf = (key: string): string =>
-  key.replace(/^unused_/, "").replace(/^unlisted_/, "").replace(/^duplicate_/, "");
+  key
+    .replace(/^unused_/, "")
+    .replace(/^unlisted_/, "")
+    .replace(/^duplicate_/, "");
 
 /** What a reader calls that category: `unused_class_members` is an unused class member. */
 const deadKindOf = (key: string): string =>
@@ -325,7 +335,10 @@ export async function fallowDeadCode(
   if (found.envelope === null) return { ...empty, ...failedOf(found) };
 
   const wanted = DEAD_KINDS.get((scope ?? "all").toLowerCase());
-  const groups = deadGroupsOf(found.envelope, wanted === undefined ? null : wanted.groups);
+  const groups = deadGroupsOf(
+    found.envelope,
+    wanted === undefined ? null : wanted.groups,
+  );
   const rows = groups.flatMap((group) =>
     group.entries.map((entry) => deadRowOf(group.kind, entry)),
   );
@@ -346,8 +359,6 @@ export async function fallowDeadCode(
     error: "",
   };
 }
-
-
 
 const instanceOf = (record: JsonRecord): DuplicateInstance => ({
   file: textOf(record, "file"),
@@ -405,8 +416,6 @@ export async function fallowDupes(
   };
 }
 
-
-
 const surfaceRowOf = (record: JsonRecord): SurfaceRow => ({
   name: textOf(record, "name"),
   kind: textOf(record, "kind"),
@@ -433,7 +442,8 @@ function identityOf(
   const identity = recordOf(envelope["identity"]);
   return {
     reachable:
-      identity?.["is_reachable"] === true || identity?.["file_reachable"] === true,
+      identity?.["is_reachable"] === true ||
+      identity?.["file_reachable"] === true,
     entry_point: identity?.["is_entry_point"] === true,
     used: identity?.["is_used"] === true,
     reason: textOf(identity, "reason"),
@@ -489,7 +499,11 @@ export async function fallowInspect(
   return {
     ...empty,
     status: exports.length === 0 && asked === "" ? "empty" : "ok",
-    ...identityOf(found.envelope, exports.length, stringsOf(trace?.["imported_by"]).length),
+    ...identityOf(
+      found.envelope,
+      exports.length,
+      stringsOf(trace?.["imported_by"]).length,
+    ),
     rows: exports.slice(0, cap),
     hotspots: metered(hotspots).slice(0, Math.max(limit, 1)),
     duplicates: numberOf(duplication, "matched_count"),
@@ -497,8 +511,6 @@ export async function fallowInspect(
     error: "",
   };
 }
-
-
 
 const referenceRowOf = (record: JsonRecord): ReferenceRow => ({
   name: firstText(textOf(record, "local_name"), textOf(record, "imported_as")),

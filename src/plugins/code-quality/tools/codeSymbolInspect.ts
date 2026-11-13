@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -46,7 +44,6 @@ const Parameters = Type.Object({
   limit: limitParam("exports and hotspots to return"),
 });
 
-
 /** The answer of a call that never reached the analyser: the same shape, failed. */
 const blankOf = (
   params: CodeSymbolInspectParams,
@@ -70,7 +67,6 @@ const blankOf = (
   omitted: 0,
   error,
 });
-
 
 /** The file's surface: one line per export and how many files read it. */
 const surfaceOf = (details: CodeSymbolInspectDetails): string =>
@@ -135,10 +131,7 @@ async function executeCodeSymbolInspect(
       moreLine(details.omitted, "export"),
       hotspots,
       details.reason === ""
-        ? `${counted(
-            details.export_count,
-            "export",
-          )} — read by ${String(
+        ? `${counted(details.export_count, "export")} — read by ${String(
             details.imported_by_count,
           )} file(s), imports ${String(details.import_count)}.`
         : details.reason,
@@ -146,7 +139,6 @@ async function executeCodeSymbolInspect(
     details,
   );
 }
-
 
 export const codeSymbolInspectTool: ToolDefinition<
   typeof Parameters,
@@ -160,13 +152,13 @@ export const codeSymbolInspectTool: ToolDefinition<
     "an entry point, its import counts, the complexity hotspots inside it, and any clone " +
     "matches. `symbol` narrows the same bundle to one export and says why it is used or unused. " +
     "Read this before changing a file you did not write. Read-only.",
-  promptSnippet: "Read one file's exports, who reads them, and its own complexity hotspots",
-  promptGuidelines:
-    [
-      "Read code-symbol-inspect before editing an unfamiliar file — never reach for a shell command instead of it.",
-      "An export read by zero files is a deletion candidate: confirm with code-dead-code rather than trusting one row.",
-      "`symbol` answers one export's evidence; leave it empty to see the whole surface at once.",
-    ],
+  promptSnippet:
+    "Read one file's exports, who reads them, and its own complexity hotspots",
+  promptGuidelines: [
+    "Read code-symbol-inspect before editing an unfamiliar file — never reach for a shell command instead of it.",
+    "An export read by zero files is a deletion candidate: confirm with code-dead-code rather than trusting one row.",
+    "`symbol` answers one export's evidence; leave it empty to see the whole surface at once.",
+  ],
 
   executionMode: "parallel",
   parameters: Parameters,

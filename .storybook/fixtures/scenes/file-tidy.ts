@@ -38,7 +38,7 @@ export const FILE_TIDY_ITEMS: TranscriptItem[] = [
     "c-rm",
     "bash",
     { command: "rm src/plugins/figures/lib/params.ts" },
-    "blocked(guardrails/trash-deletion): Use `trash` or `jj file removal` — a file deleted with rm cannot be recovered [rm -f on command, matched \"rm src/plugins/figures/lib/params.ts\"]",
+    'blocked(guardrails/trash-deletion): Use `trash` or `jj file removal` — a file deleted with rm cannot be recovered [rm -f on command, matched "rm src/plugins/figures/lib/params.ts"]',
     6_000,
   ),
   {

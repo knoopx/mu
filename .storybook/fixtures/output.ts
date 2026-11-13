@@ -115,4 +115,3 @@ export const TILE_DIFF = [
   '+  return "center";',
   "+}",
 ].join("\n");
-

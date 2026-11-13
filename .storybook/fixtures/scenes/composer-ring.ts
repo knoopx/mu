@@ -21,7 +21,7 @@ export const COMPOSER_DRAFT_ITEMS: TranscriptItem[] = [
       "  const tone =",
       "    percent >= 0.95",
       '      ? "danger"',
-      '      : percent >= 0.85',
+      "      : percent >= 0.85",
       '        ? "warning"',
       '        : "accent";',
       "  return {",

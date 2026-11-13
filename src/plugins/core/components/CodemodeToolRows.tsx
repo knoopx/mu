@@ -38,9 +38,7 @@ export interface CodemodeToolRowsProps {
   item: ToolTranscriptItem;
 }
 
-export function CodemodeToolRows({
-  item,
-}: CodemodeToolRowsProps): JSX.Element {
+export function CodemodeToolRows({ item }: CodemodeToolRowsProps): JSX.Element {
   const t = useAdwaita();
   const answer = codemodeAnswerOf(item.output);
   const view = codemodeViewOf(item);

@@ -5,16 +5,10 @@ export const DOWN = "↓";
 export const DOT = "·";
 export const BAR = "|";
 
-/**
- * A provider answers with its usage only when a message ends, so a decode in
- * flight is measured by what it has streamed. Four characters to a token is the
- * same estimate pi's compaction makes, so the live figures agree with the
- * settled figures that replace them the moment the message ends.
- */
+
 const CHARS_PER_TOKEN = 4;
 
-/** The first instants of a decode have streamed too little to divide by the
- * time they took; the last measured rate stands until there is. */
+
 const LIVE_MIN_MS = 250;
 
 export interface StatsFigures {
@@ -38,17 +32,15 @@ export interface TurnStats extends StatsFigures {
 export interface ConversationStats extends StatsFigures {
   turns: number;
 
-  /** A decode is in flight, so these figures are the run's own and still
-   * moving rather than the last settled turn's. */
+  
   live: boolean;
 }
 
-/** When the figures of a live session are read, and whether they should move. */
+
 export interface SessionClock {
   now: number;
 
-  /** A turn is in flight: its elapsed time keeps growing through the seconds it
-   * spends in its tools, where nothing streams. */
+  
   running: boolean;
 }
 
@@ -94,8 +86,8 @@ export function formatOutbound(tokens: number): string {
 }
 
 export function formatInboundOutbound(input: number, output: number): string {
-  // A figure the session has not spent yet has nothing to say: a run that is
-  // only just streaming answers with its outbound count alone.
+  
+  
   const inbound = input === 0 ? "" : formatTokens(input);
   const outbound = output === 0 ? "" : formatTokens(output);
   if (inbound === "" && outbound === "") return "";
@@ -116,7 +108,7 @@ function usageOf(item: TranscriptItem): AssistantUsage | undefined {
     : undefined;
 }
 
-/** The moment a row began, for the span a session is measured over. */
+
 function startTsOf(item: TranscriptItem): number | undefined {
   if (item.kind === "user") return item.ts;
   if (item.kind === "assistant" || item.kind === "tool")
@@ -132,12 +124,7 @@ function tokensOf(chars: number): number {
   return Math.round(chars / CHARS_PER_TOKEN);
 }
 
-/**
- * A decode in flight: when the streaming message began, and what it has
- * produced since — its prose, its reasoning, and the arguments of the calls it
- * is still writing. A call that has finished running is not counted, because
- * the tokens it was written with already landed in a message's usage.
- */
+
 interface LiveDecode {
   startTs: number | undefined;
 
@@ -149,15 +136,13 @@ interface Scan {
 
   decode: LiveDecode | null;
 
-  /** The last thing the rows show happening: a provider answering with its
-   * figures, or a call finishing its run. */
+  
   endTs: number;
 
   runningTools: number;
 }
 
-/** One pass over rows: the figures a provider has answered with, the decode the
- * session is still in the middle of, and when the rows last did something. */
+
 function scan(items: readonly TranscriptItem[]): Scan {
   const used: UsageItem[] = [];
   let decode: LiveDecode | null = null;
@@ -186,7 +171,7 @@ function scan(items: readonly TranscriptItem[]): Scan {
   return { used, decode, endTs, runningTools };
 }
 
-/** The first row of a log that knows when it happened. */
+
 function earliestStartOf(
   items: readonly TranscriptItem[],
 ): number | undefined {
@@ -207,7 +192,7 @@ function callCharsOf(item: ToolItem): number {
   return JSON.stringify(item.args).length;
 }
 
-/** What a set of rows measures, before anyone asks how long the span was. */
+
 interface Measured {
   input: number;
 
@@ -224,10 +209,7 @@ interface Measured {
   live: boolean;
 }
 
-/**
- * The rate a decode answers with: what it has streamed over how long it has
- * been streaming. Nothing to divide yet, and the last measured rate stands.
- */
+
 function liveRateOf(
   decode: LiveDecode,
   now: number,
@@ -256,11 +238,7 @@ function measuredOf(rows: Scan, now: number): Measured {
   };
 }
 
-/**
- * A session's span is its own: from the first row of its log that carries a
- * timestamp to its last activity — not from the moment the window opened, and
- * to the running clock while a turn is in flight.
- */
+
 function sessionSpanOf(
   items: readonly TranscriptItem[],
   figures: Measured,
@@ -274,7 +252,7 @@ function sessionSpanOf(
   return Math.max(0, endTs - startTs);
 }
 
-/** One turn of the log: its rows, and the row its figures are painted under. */
+
 interface Turn {
   startTs?: number;
   rows: TranscriptItem[];
@@ -285,8 +263,8 @@ interface Turn {
 function statsOfTurn(turn: Turn): TurnStats | null {
   const rows = scan(turn.rows);
   if (rows.used.length === 0) return null;
-  // A turn's figures are painted only once it settles, so a turn never answers
-  // with an estimate: the moving figures belong to the status bar.
+  
+  
   const figures = measuredOf({ ...rows, decode: null }, 0);
   const startTs =
     turn.startTs ?? earliestStartOf(turn.rows) ?? rows.used[0].usage.startTs;
@@ -302,6 +280,32 @@ function statsOfTurn(turn: Turn): TurnStats | null {
   };
 }
 
+
+const statsCache = new Map<string, TurnStats>();
+
+
+const STATS_CACHE_MAX = 1_024;
+
+function sameStats(a: TurnStats, b: TurnStats): boolean {
+  return (
+    a.settled === b.settled &&
+    a.input === b.input &&
+    a.output === b.output &&
+    a.cost === b.cost &&
+    a.durMs === b.durMs &&
+    a.tpsOutput === b.tpsOutput &&
+    a.genMs === b.genMs
+  );
+}
+
+function rememberedStats(footerId: string, stats: TurnStats): TurnStats {
+  const previous = statsCache.get(footerId);
+  if (previous !== undefined && sameStats(previous, stats)) return previous;
+  if (statsCache.size >= STATS_CACHE_MAX) statsCache.clear();
+  statsCache.set(footerId, stats);
+  return stats;
+}
+
 export function turnStatsById(
   items: readonly TranscriptItem[],
 ): Map<string, TurnStats> {
@@ -310,7 +314,7 @@ export function turnStatsById(
   const flush = (): void => {
     const stats = statsOfTurn(turn);
     if (stats !== null && turn.footerId !== undefined)
-      out.set(turn.footerId, stats);
+      out.set(turn.footerId, rememberedStats(turn.footerId, stats));
     turn = { rows: [] };
   };
   for (const item of items) {
@@ -323,7 +327,7 @@ export function turnStatsById(
       continue;
     }
     turn.rows.push(item);
-    // The figures stand under the last row a provider answered with.
+    
     if (item.kind === "assistant" && item.usage !== undefined)
       turn.footerId = item.id;
     if (turn.startTs === undefined) {
@@ -344,8 +348,8 @@ export function conversationStats(
   if (rows.used.length === 0 && rows.decode === null) return null;
   const figures = measuredOf(rows, clock.now);
   return {
-    // The decode in flight is a turn the session has taken even though its
-    // usage has not landed yet, and lands as one of these a moment later.
+    
+    
     turns: rows.used.length + (rows.decode === null ? 0 : 1),
     input: figures.input,
     output: figures.output,

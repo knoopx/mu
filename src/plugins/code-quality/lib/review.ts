@@ -45,10 +45,15 @@ const rowOfReview = (record: JsonRecord): RiskRow => ({
 });
 
 /** Riskiest first, above the floor the call asked for, each meter scaled to the widest blast radius in the answer. */
-function ranked(rows: readonly RiskRow[], minRisk: string | undefined): RiskRow[] {
+function ranked(
+  rows: readonly RiskRow[],
+  minRisk: string | undefined,
+): RiskRow[] {
   const floor = (minRisk ?? "any").toLowerCase();
   const kept =
-    floor === "any" ? rows : rows.filter((row) => riskRank(row.risk) <= riskRank(floor));
+    floor === "any"
+      ? rows
+      : rows.filter((row) => riskRank(row.risk) <= riskRank(floor));
   const sorted = [...kept].sort(
     (a, b) =>
       riskRank(a.risk) - riskRank(b.risk) ||
@@ -59,10 +64,7 @@ function ranked(rows: readonly RiskRow[], minRisk: string | undefined): RiskRow[
   return sorted.map((row) => ({ ...row, meter: { score: row.blast, worst } }));
 }
 
-const countsOf = (
-  record: JsonRecord | null,
-  key: string,
-): QualityCount[] => {
+const countsOf = (record: JsonRecord | null, key: string): QualityCount[] => {
   const group = recordOf(record?.[key]);
   return Object.entries(group ?? {})
     .filter(([, value]) => typeof value === "number" && value > 0)
@@ -121,19 +123,27 @@ export async function inspectDiff(
       error: scope.error,
     };
 
-  const run = await runReview(reviewArgs(target, minRisk, scope.dir), scope.dir);
+  const run = await runReview(
+    reviewArgs(target, minRisk, scope.dir),
+    scope.dir,
+  );
   const envelope = parseEnvelope(run.stdout);
   if (envelope === null)
     return {
       ...emptyReview(target, repo),
       status: run.status === "ok" ? "failed" : run.status,
       error:
-        run.error !== "" ? run.error : firstLine(run.stderr) || "the change analyser failed",
+        run.error !== ""
+          ? run.error
+          : firstLine(run.stderr) || "the change analyser failed",
     };
 
   const stats = recordOf(envelope["stats"]);
   const timing = recordOf(envelope["timing"]);
-  const rows = ranked(recordsOf(envelope["entity_reviews"]).map(rowOfReview), minRisk);
+  const rows = ranked(
+    recordsOf(envelope["entity_reviews"]).map(rowOfReview),
+    minRisk,
+  );
   const shown = rows.slice(0, Math.max(limit, 1));
 
   return {

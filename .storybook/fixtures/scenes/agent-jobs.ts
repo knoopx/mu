@@ -59,7 +59,11 @@ export const AGENT_JOB_ITEMS: TranscriptItem[] = [
   ran(
     "c-read-height",
     "read",
-    { path: "src/plugins/core/lib/composer/panelHeight.ts", offset: 1, limit: 30 },
+    {
+      path: "src/plugins/core/lib/composer/panelHeight.ts",
+      offset: 1,
+      limit: 30,
+    },
     [
       "export function composerPanelRowsForHeight(",
       "  t: AdwaitaTheme,",
@@ -132,7 +136,7 @@ export const AGENT_JOB_ITEMS: TranscriptItem[] = [
       "): number {",
       "  return (",
       "    panelPad(t) * 2 +",
-      "    lineBox(t, \"row\").height * slots.rows +",
+      '    lineBox(t, "row").height * slots.rows +',
       "    (slots.hints ? ROW_HEIGHT : 0)",
       "  );",
       "}",

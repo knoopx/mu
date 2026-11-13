@@ -71,9 +71,7 @@ const busyBox: StyleDesc = {
   minWidth: 0,
 };
 
-function ComposerWithBusyMark(props: {
-  composer: ComposerProps;
-}): JSX.Element {
+function ComposerWithBusyMark(props: { composer: ComposerProps }): JSX.Element {
   const { composer } = props;
   if (composer.isStreaming === false) return <Composer {...composer} />;
   return (

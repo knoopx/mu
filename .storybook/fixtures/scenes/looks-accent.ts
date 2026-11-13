@@ -36,7 +36,7 @@ export const ACCENT_ITEMS: TranscriptItem[] = [
       "",
       "/** The row's own colour, never the theme's current accent. */",
       "export function swatchOf(accent: AccentDef, t: AdwaitaTheme): string {",
-      "  return t.variant === \"dark\" ? lighten(accent.hex) : accent.hex;",
+      '  return t.variant === "dark" ? lighten(accent.hex) : accent.hex;',
       "}",
     ].join("\n"),
     6_000,

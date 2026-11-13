@@ -103,7 +103,6 @@ export type ComposerPanelRow =
 export interface ComposerRowFigure {
   icon?: IconName;
 
-  
   color?: string;
   text: string;
 
@@ -120,7 +119,6 @@ export interface ComposerPreviewSpec {
   path: string;
   lines: string[];
 
-  
   note?: string;
 }
 
@@ -191,7 +189,6 @@ export interface ComposerProps {
 
   onHistory?: () => void;
 
-  
   onComplete?: () => void;
 
   tone?: ComposerTone;
@@ -212,7 +209,10 @@ function previewLinesOf(
   if (preview === undefined) return [];
   const hasContent = preview.lines.some((line) => line.trim() !== "");
   if (!hasContent) return [];
-  return preview.lines.slice(0, Math.max(1, Math.floor(maxHeightPx / lineBoxPx)));
+  return preview.lines.slice(
+    0,
+    Math.max(1, Math.floor(maxHeightPx / lineBoxPx)),
+  );
 }
 
 interface ComposerStyles {
@@ -458,7 +458,7 @@ function PanelPreview({
   const src = imageSourceOf(preview.path);
   if (src !== undefined)
     return <PanelImagePreview path={preview.path} src={src} styles={styles} />;
-  
+
   if (lines.length === 0)
     return (
       <div style={styles.panel.previewPane}>

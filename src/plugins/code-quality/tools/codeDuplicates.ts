@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -30,7 +28,6 @@ const Parameters = Type.Object({
   ),
   limit: limitParam("clone groups to return, longest first"),
 });
-
 
 async function executeCodeDuplicates(
   params: CodeDuplicatesParams,
@@ -93,7 +90,6 @@ async function executeCodeDuplicates(
     details,
   );
 }
-
 
 export const codeDuplicatesTool: ToolDefinition<
   typeof Parameters,

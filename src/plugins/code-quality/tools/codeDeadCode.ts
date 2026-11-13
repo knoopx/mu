@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -46,7 +44,6 @@ const Parameters = Type.Object({
     ),
   ),
 });
-
 
 async function executeCodeDeadCode(
   params: CodeDeadCodeParams,
@@ -95,7 +92,6 @@ async function executeCodeDeadCode(
   );
 }
 
-
 export const codeDeadCodeTool: ToolDefinition<
   typeof Parameters,
   CodeDeadCodeDetails
@@ -108,7 +104,8 @@ export const codeDeadCodeTool: ToolDefinition<
     "hygiene (unused, unlisted, duplicated exports) — each with its kind, path, symbol, line " +
     "and whether the fix is mechanical. `scope` answers one category at a time; the per-category " +
     "totals come back whether or not the rows are bounded. Read-only: nothing is deleted.",
-  promptSnippet: "Find unused files, exports, types, members and dependencies before deleting them",
+  promptSnippet:
+    "Find unused files, exports, types, members and dependencies before deleting them",
   promptGuidelines: [
     "Check code-dead-code before removing an export or a file — never reach for a shell command instead of it.",
     "Narrow with `scope` instead of raising `limit` past what you will act on; a 200-row list is not a plan.",

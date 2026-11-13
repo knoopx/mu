@@ -34,12 +34,22 @@ import type {
   SurfaceRow,
 } from "../types";
 
-const STATUSES: readonly string[] = ["ok", "failed", "unsupported", "empty", "none"];
+const STATUSES: readonly string[] = [
+  "ok",
+  "failed",
+  "unsupported",
+  "empty",
+  "none",
+];
 
 type Args = JsonRecord;
 type Details = JsonRecord;
 
-type Fold = (args: Args, details: Details, itemStatus: string) => QualityToolView;
+type Fold = (
+  args: Args,
+  details: Details,
+  itemStatus: string,
+) => QualityToolView;
 
 const FOLD_OF_TOOL: ReadonlyMap<string, Fold> = new Map([
   [CODE_COMPLEXITY_TOOL, complexityView],
@@ -65,7 +75,7 @@ export function qualityToolViewOf(
   return fold(recordOf(args) ?? {}, found, itemStatus);
 }
 
-const rowsOf = <T,>(value: unknown): T[] => listOf(value) as T[];
+const rowsOf = <T>(value: unknown): T[] => listOf(value) as T[];
 
 function countsOf(value: unknown): { kind: string; count: number }[] {
   return rowsOf<JsonRecord>(value).map((entry) => ({
@@ -83,7 +93,11 @@ function view(
 ): QualityToolView {
   const stated = textOf(details, "status").trim();
   const status: QualityToolStatus =
-    itemStatus === "error" ? "failed" : STATUSES.includes(stated) ? (stated as QualityToolStatus) : "ok";
+    itemStatus === "error"
+      ? "failed"
+      : STATUSES.includes(stated)
+        ? (stated as QualityToolStatus)
+        : "ok";
 
   return {
     tool,
@@ -110,7 +124,10 @@ const analyserPairs = (details: Details): (readonly [string, string])[] => [
   ["scope", scopeLabel(textOf(details, "path"))],
 ];
 
-function section(title: string, rows: readonly ToolPaintRow[]): ToolPaintSection[] {
+function section(
+  title: string,
+  rows: readonly ToolPaintRow[],
+): ToolPaintSection[] {
   return rows.length === 0 ? [] : [{ title, rows }];
 }
 
@@ -171,8 +188,6 @@ const complexityFigures = (row: ComplexityRow): string =>
     `${String(row.lines)} ln`,
   );
 
-
-
 function complexityView(
   args: Args,
   details: Details,
@@ -215,15 +230,9 @@ function complexityView(
       ),
     ),
   );
-  v.note = noteFor(
-    v.status,
-    details,
-    "no function is over the thresholds",
-  );
+  v.note = noteFor(v.status, details, "no function is over the thresholds");
   return v;
 }
-
-
 
 function deadCodeView(
   args: Args,
@@ -251,9 +260,7 @@ function deadCodeView(
   v.headline =
     rows.length === 0
       ? ""
-      : partsLine(
-          counted(numberOf(details, "total_issues"), "issue"),
-        );
+      : partsLine(counted(numberOf(details, "total_issues"), "issue"));
   v.sections = section(
     "",
     rows.map((row, index) =>
@@ -270,8 +277,6 @@ function deadCodeView(
   v.note = noteFor(v.status, details, "nothing unused found");
   return v;
 }
-
-
 
 function duplicatesView(
   _args: Args,
@@ -335,8 +340,6 @@ function duplicatesView(
   return v;
 }
 
-
-
 function reviewView(
   args: Args,
   details: Details,
@@ -367,11 +370,7 @@ function reviewView(
       findingRow(
         row.at,
         row.entity,
-        partsLine(
-          row.type,
-          row.file,
-          row.public_api ? "public api" : "",
-        ),
+        partsLine(row.type, row.file, row.public_api ? "public api" : ""),
         row.risk === "" ? row.change : `${row.risk} ${row.change}`,
         severityTone(row.risk),
         meterOf(row.meter),
@@ -389,8 +388,6 @@ function reviewView(
   );
   return v;
 }
-
-
 
 function surfaceView(
   args: Args,
@@ -454,8 +451,6 @@ function surfaceView(
   return v;
 }
 
-
-
 function referencesView(
   args: Args,
   details: Details,
@@ -495,10 +490,7 @@ function referencesView(
             : "",
         );
 
-  const paint = (
-    edges: typeof callers,
-    verb: string,
-  ): ToolPaintRow[] =>
+  const paint = (edges: typeof callers, verb: string): ToolPaintRow[] =>
     edges.map((row) => ({
       key: `${verb} ${String(row.depth)}`,
       primary: row.name === "" ? row.file : row.name,
@@ -509,8 +501,14 @@ function referencesView(
     }));
 
   v.sections = [
-    ...section(`callers — ${String(numberOf(details, "caller_count"))}`, paint(callers, "up")),
-    ...section(`callees — ${String(numberOf(details, "callee_count"))}`, paint(callees, "down")),
+    ...section(
+      `callers — ${String(numberOf(details, "caller_count"))}`,
+      paint(callers, "up"),
+    ),
+    ...section(
+      `callees — ${String(numberOf(details, "callee_count"))}`,
+      paint(callees, "down"),
+    ),
   ];
   v.note = noteFor(
     v.status,

@@ -27,16 +27,24 @@ const rows: Row[] = [];
 for (const file of storyFiles) {
   const source = readFileSync(`stories/${file}`, "utf8");
   // One block per exported story; `export const <name>` or `export function <name>`.
-  const blocks = source.split(/(?=^export (?:const|function) )/m).filter((b) => /^export /.test(b));
+  const blocks = source
+    .split(/(?=^export (?:const|function) )/m)
+    .filter((b) => /^export /.test(b));
   for (const block of blocks) {
     const name = block.match(/^export (?:const|function) (\w+)/m)?.[1] ?? "?";
     // A chrome helper may wrap a chat() call; scan the whole block, and a story
     // without its own chat() call borrows the file-level helper (handled below).
     // Fixture identifiers, the panel opened, and the theme painted — read from
     // the whole block so a nested object or a wrapper helper cannot hide one.
-    const items = [...block.matchAll(/\b([A-Z][A-Z0-9_]*_(?:ITEMS|TURN|ROWS|SESSION))\b/g)]
+    const items = [
+      ...block.matchAll(/\b([A-Z][A-Z0-9_]*_(?:ITEMS|TURN|ROWS|SESSION))\b/g),
+    ]
       .map((m) => m[1])
-      .filter((id) => !id.endsWith("_ROWS") || /model|thinking|session|path|change|theme|accent/i.test(id))
+      .filter(
+        (id) =>
+          !id.endsWith("_ROWS") ||
+          /model|thinking|session|path|change|theme|accent/i.test(id),
+      )
       .filter((id, i, all) => all.indexOf(id) === i);
     const mode =
       block.match(/pickMode\("(\w+)"\)/)?.[1] ??
@@ -80,13 +88,22 @@ for (const [items, stories] of byTranscript) {
   // row is one session in three themes on purpose, and `Sessions/list` previews
   // the hero's session in another session's row. It may not appear twice in the
   // same panel under the same theme, which is the first check above.
-  const panelSame = new Set(
-    rows.filter((r) => r.items.split(",").includes(items)).map((r) => r.mode),
-  ).size === 1;
-  const themeSame = new Set(
-    rows.filter((r) => r.items.split(",").includes(items)).map((r) => r.theme),
-  ).size === 1;
-  if (stories.length > 1 && panelSame && themeSame && !stories.every((s) => photoStripOk.has(s))) {
+  const panelSame =
+    new Set(
+      rows.filter((r) => r.items.split(",").includes(items)).map((r) => r.mode),
+    ).size === 1;
+  const themeSame =
+    new Set(
+      rows
+        .filter((r) => r.items.split(",").includes(items))
+        .map((r) => r.theme),
+    ).size === 1;
+  if (
+    stories.length > 1 &&
+    panelSame &&
+    themeSame &&
+    !stories.every((s) => photoStripOk.has(s))
+  ) {
     failures++;
     console.log(`shared transcript ${items}:\n  ${stories.join("\n  ")}`);
   }

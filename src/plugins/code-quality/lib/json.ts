@@ -1,7 +1,4 @@
-
-
 export type JsonRecord = Record<string, unknown>;
-
 
 export function parseEnvelope(stdout: string): JsonRecord | null {
   const text = stdout.trim();
@@ -10,7 +7,9 @@ export function parseEnvelope(stdout: string): JsonRecord | null {
   if (start < 0) return null;
   try {
     const parsed: unknown = JSON.parse(text.slice(start));
-    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)
+    return typeof parsed === "object" &&
+      parsed !== null &&
+      !Array.isArray(parsed)
       ? (parsed as JsonRecord)
       : null;
   } catch {
@@ -53,14 +52,12 @@ export function sectionOf(
   };
 }
 
-
 export function recordsOf(value: unknown): JsonRecord[] {
   return listOf(value).flatMap((entry) => {
     const record = recordOf(entry);
     return record === null ? [] : [record];
   });
 }
-
 
 export function stringsOf(value: unknown): string[] {
   return listOf(value).flatMap((entry) => {

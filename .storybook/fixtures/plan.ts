@@ -1,12 +1,18 @@
 import { PLAN_TOOL } from "../../src/plugins/planning/constants";
-import { planAnswerOf, planFailedAnswer } from "../../src/plugins/planning/lib/answer";
+import {
+  planAnswerOf,
+  planFailedAnswer,
+} from "../../src/plugins/planning/lib/answer";
 import { planOf } from "../../src/plugins/planning/lib/steps";
 import { toolCallFixture, type ToolFixture } from "./tool";
 
 /** The plan the agent wrote down before it started: one step begun, five waiting. */
 export const PLAN_OPEN_PARAMS = {
   steps: [
-    { content: "read how a plugin's tool rows are drawn", status: "in_progress" },
+    {
+      content: "read how a plugin's tool rows are drawn",
+      status: "in_progress",
+    },
     { content: "write the plan contract in lib/steps.ts", status: "pending" },
     { content: "draw the plan rows in the log", status: "pending" },
     { content: "wire `plan` into the agent's tool list", status: "pending" },

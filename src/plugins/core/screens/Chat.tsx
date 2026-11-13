@@ -1,4 +1,4 @@
-import { useRef, type JSX } from "react";
+import { memo, useMemo, useRef, type JSX } from "react";
 import {
   Message,
   MessageContent,
@@ -104,7 +104,7 @@ function conversationLog(
   );
 }
 
-/** What the composer shows beside the draft: who is answering and how full the context is. */
+
 interface ComposerMeta {
   model: string | null;
   thinking: AgentSnapshot["thinking"] | null;
@@ -128,10 +128,10 @@ const emptyTranscript = (
   isStreaming: boolean,
 ): boolean => preview === null && items.length === 0 && !isStreaming;
 
-/** The folder the app was opened in is the folder the session works in. */
+
 const cwdOf = (props: ChatAppProps): string => props.cwd ?? process.cwd();
 
-/** A story hands the window a session of its own; the app opens a live one. */
+
 const openSessionOf = (
   props: ChatAppProps,
   cwd: string,
@@ -141,20 +141,17 @@ const openSessionOf = (
 const snapshotOf = (session: ChatSession | null): AgentSnapshot | null =>
   session?.snapshot() ?? null;
 
-/** How far a question waiting in the composer slot has got, in words. */
+
 const progressOf = (request: AskRequest | null): string | null =>
   request === null ? null : askProgressLabel(request);
 
-/**
- * Whether the log keeps its own tail in view. A run the reader is not watching
- * — a preview, or a scroll back up the conversation — stays at the top instead.
- */
+
 const followTopOf = (
   showProjectSummary: boolean,
   followTail: boolean,
 ): boolean => showProjectSummary || !followTail;
 
-/** Either the tree node or the session row the log is showing instead of the run. */
+
 const previewOf = (
   treePreview: SessionPreviewData | null,
   sessions: SessionListState,
@@ -162,7 +159,7 @@ const previewOf = (
 ): SessionPreviewData | null =>
   treePreview ?? sessions.preview(activeSessionRow);
 
-/** The project header the log opens with, and only while the log is empty. */
+
 function summaryRowsOf(
   open: boolean,
   project: ProjectSummaryState,
@@ -179,7 +176,7 @@ function summaryRowsOf(
   });
 }
 
-/** Everything every composer panel reads, from the panels that hold it. */
+
 function panelDataOf(
   panels: ChatPanels,
   theme: AdwaitaTheme,
@@ -246,11 +243,7 @@ export function transcriptRowGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
 
-/**
- * The composer's panel in one pass: the rows the open panel shows, the slot it
- * fills, and the session row the cursor is on — which is the session whose
- * preview the log shows.
- */
+
 interface ComposerPanelView {
   rows: ComposerPanelRow[];
   panel: ComposerPanelSpec | undefined;
@@ -288,7 +281,8 @@ export function withRowSpacers(
   return out;
 }
 
-export function TranscriptRow({
+
+export const TranscriptRow = memo(function TranscriptRow({
   item,
   stats,
 }: {
@@ -319,7 +313,7 @@ export function TranscriptRow({
       {body}
     </div>
   );
-}
+});
 
 export function userCardStyle(t: AdwaitaTheme): StyleDesc {
   return {
@@ -370,8 +364,7 @@ export function UserRow({
   );
 }
 
-/** A log row that is a lone line: it carries the page inset the log's columns
- *  leave, so its mark can hang into the header's gutter. */
+
 const insetRow: StyleDesc = {
   display: "flex",
   flexDirection: "column",
@@ -382,14 +375,7 @@ const insetRow: StyleDesc = {
   paddingRight: PAGE_INSET,
 };
 
-/**
- * A note the run itself had to say — a compaction, a retry.
- *
- * It is a log note like every other one, so it is drawn by the log's own note
- * row: the mark hangs `MARK_HANG` into the page inset and stands on the same
- * centred line box as the caption, and mark and caption wear one muted ink — a
- * comment on the conversation, not a line of it.
- */
+
 export function SystemRow({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
@@ -422,8 +408,7 @@ export interface ChatAppProps {
 
   initialAttachments?: ComposerAttachment[];
 
-  /** A story pins the moment a session's figures are read at, so the elapsed
-   * time and speed of a running scene are the scene's own and never drift. */
+  
   now?: number;
 }
 
@@ -474,9 +459,9 @@ export function ToastLayer(props: {
           style={{
             pointerEvents: "auto",
             maxWidth: maxWidth ?? "100%",
-            // A typed toast wears its type as the fill, which is the
-            // library's tone; only an untyped one needs a surface picked
-            // here, and it picks one lighter than the log's own fill.
+            
+            
+            
             ...(item.type && item.type !== "default"
               ? {}
               : { backgroundColor: t.color.surface.button }),
@@ -555,8 +540,8 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     active: showProjectSummary,
   });
 
-  // Only the run in this window moves the figures: a preview of another session
-  // has settled rows and answers with its own, unchanging, totals.
+  
+  
   const running = preview === null && isStreaming;
   const tick = useRunningClock(running);
 
@@ -571,10 +556,12 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     followTail: composer.setFollowTail,
   });
 
-  const transcriptRows: JSX.Element[] = conversationLog(
-    t,
-    transcript.source,
-    transcript.stats,
+  
+  
+  
+  const transcriptRows: JSX.Element[] = useMemo(
+    () => conversationLog(t, transcript.source, transcript.stats),
+    [t, transcript.source, transcript.stats],
   );
   const summaryRows: JSX.Element[] = summaryRowsOf(
     showProjectSummary,

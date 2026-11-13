@@ -7,7 +7,10 @@ import {
   tableInvalidAnswer,
   treeAnswerOf,
 } from "../../src/plugins/figures/lib/answer";
-import { tableShapeOf, treeShapeOf } from "../../src/plugins/figures/lib/structure";
+import {
+  tableShapeOf,
+  treeShapeOf,
+} from "../../src/plugins/figures/lib/structure";
 import { toolCallFixture, type ToolFixture } from "./tool";
 
 /** What the agent worked out about the plugin that grew two tools. */
@@ -23,7 +26,11 @@ export const TREE_ITEMS = [
       },
       {
         name: "components",
-        children: ["ChartToolRows.tsx", "TreeToolRows.tsx", "TableToolRows.tsx"],
+        children: [
+          "ChartToolRows.tsx",
+          "TreeToolRows.tsx",
+          "TableToolRows.tsx",
+        ],
       },
       {
         name: "tools",

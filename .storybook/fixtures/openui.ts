@@ -7,8 +7,14 @@
  * used rather than a picture of a widget.
  */
 
-import { OPENUI_RENDER_TOOL, OPENUI_VALIDATE_TOOL } from "../../src/plugins/openui/constants";
-import { detailsOf, writeProgram } from "../../src/plugins/openui/lib/programStore/verbs";
+import {
+  OPENUI_RENDER_TOOL,
+  OPENUI_VALIDATE_TOOL,
+} from "../../src/plugins/openui/constants";
+import {
+  detailsOf,
+  writeProgram,
+} from "../../src/plugins/openui/lib/programStore/verbs";
 import { programStore } from "../../src/plugins/openui/lib/programStore/store";
 import {
   programStatusRow,
@@ -56,7 +62,8 @@ export const FIGURES_RENDER_ID = "call-figures-render";
 export function seedOpenUIScreen(): void {
   if (programStore.has("screen")) return;
   const write = writeProgram("screen", OPENUI_PROGRAM, OPENUI_RENDER_ID, {});
-  if (write.error !== "") throw new Error(`the scene's program did not parse: ${write.error}`);
+  if (write.error !== "")
+    throw new Error(`the scene's program did not parse: ${write.error}`);
   // What the human did to it before the screenshot.
   programStore.setValue("screen", "$count", 3);
   programStore.pushEvent("screen", {
@@ -126,7 +133,15 @@ export const OPENUI_VALIDATE_ITEM: ToolFixture = toolCallFixture(
   OPENUI_VALIDATE_TOOL,
   {},
   "ok",
-  blocks(statusTable({ chars: OPENUI_PROGRAM.length, statements: 8, ok: "yes", errors: 0, unresolved: 0 })),
+  blocks(
+    statusTable({
+      chars: OPENUI_PROGRAM.length,
+      statements: 8,
+      ok: "yes",
+      errors: 0,
+      unresolved: 0,
+    }),
+  ),
   {
     details: {
       status: "ok",
@@ -135,7 +150,16 @@ export const OPENUI_VALIDATE_ITEM: ToolFixture = toolCallFixture(
       name: "",
       chars: OPENUI_PROGRAM.length,
       statements: 8,
-      components: ["Screen", "Header", "Badge", "Pane", "Choice", "Table", "Stepper", "Button"],
+      components: [
+        "Screen",
+        "Header",
+        "Badge",
+        "Pane",
+        "Choice",
+        "Table",
+        "Stepper",
+        "Button",
+      ],
       unresolved: [],
       orphaned: [],
       incomplete: false,
@@ -156,12 +180,16 @@ export const OPENUI_RENDER_ITEM: ToolFixture = toolCallFixture(
   { name: "screen", code: OPENUI_PROGRAM },
   "ok",
   blocks(
-    statusTable({ program: "screen", chars: OPENUI_PROGRAM.length, statements: 8, ok: "yes" }),
+    statusTable({
+      program: "screen",
+      chars: OPENUI_PROGRAM.length,
+      statements: 8,
+      ok: "yes",
+    }),
     `program screen · ${String(OPENUI_PROGRAM.length)} chars · 8 statements · 14 components`,
   ),
   { details: RENDER_DETAILS },
 );
-
 
 /** What the agent read back after the screen had been used. */
 export const OPENUI_STATE_ITEM: ToolFixture = toolCallFixture(
@@ -170,7 +198,14 @@ export const OPENUI_STATE_ITEM: ToolFixture = toolCallFixture(
   {},
   "ok",
   blocks(
-    statusTable({ program: "screen", statements: 8, drawn: 14, errors: 0, interactions: 1, showing: "yes" }),
+    statusTable({
+      program: "screen",
+      statements: 8,
+      drawn: 14,
+      errors: 0,
+      interactions: 1,
+      showing: "yes",
+    }),
     valueTable([
       { name: "$show", value: "All" },
       { name: "$count", value: "3" },
@@ -185,7 +220,17 @@ export const OPENUI_STATE_ITEM: ToolFixture = toolCallFixture(
       truncated: false,
       streaming: false,
       live: true,
-      drawn: ["Screen", "Header", "Badge", "Pane", "Choice", "Table", "Stepper", "Button", "StatusLine"],
+      drawn: [
+        "Screen",
+        "Header",
+        "Badge",
+        "Pane",
+        "Choice",
+        "Table",
+        "Stepper",
+        "Button",
+        "StatusLine",
+      ],
       unresolved: [],
       errors: [],
       values: [
@@ -206,7 +251,10 @@ export const OPENUI_LIST_ITEM: ToolFixture = toolCallFixture(
   "openui-list",
   {},
   "ok",
-  blocks(statusTable({ programs: 1, showing: "screen" }), programTable([programStore.infoOf(seeded)])),
+  blocks(
+    statusTable({ programs: 1, showing: "screen" }),
+    programTable([programStore.infoOf(seeded)]),
+  ),
   {
     details: {
       status: "ok",
@@ -219,4 +267,4 @@ export const OPENUI_LIST_ITEM: ToolFixture = toolCallFixture(
 );
 
 export const OPENUI_ANSWER =
-  "The screen holds the split: the filter is a `$variable`, so picking \"Only the big ones\" hides the small files without another message, and the stepper is on 3 commits. Pressing **Split it** queued one interaction — I have it, and the split runs as `vcs-file-split`.";
+  'The screen holds the split: the filter is a `$variable`, so picking "Only the big ones" hides the small files without another message, and the stepper is on 3 commits. Pressing **Split it** queued one interaction — I have it, and the split runs as `vcs-file-split`.';

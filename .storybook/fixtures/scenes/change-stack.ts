@@ -49,7 +49,10 @@ export const CHANGE_STACK_ITEMS: TranscriptItem[] = [
   toolCallFixture(
     "call-vcs-squash",
     VCS_DESCRIBE_TOOL,
-    { hash: "lwkqvtz4pwus", message: "docs(readme): what the changes scenes show" },
+    {
+      hash: "lwkqvtz4pwus",
+      message: "docs(readme): what the changes scenes show",
+    },
     "ok",
     SQUASHED_TEXT,
     {
@@ -92,17 +95,10 @@ export const OPLOG_ITEMS: TranscriptItem[] = [
     "a change of mine vanished about ten minutes ago and I did not delete it on purpose. jj knows what happened — show me, and do not undo anything yet",
     0,
   ),
-  toolCallFixture(
-    "call-oplog",
-    VCS_OPLOG_TOOL,
-    { limit: 4 },
-    "ok",
-    OP_ROWS,
-    {
-      startTs: 3_000,
-      details: { status: "ok", operations: [], count: 4, error: "" },
-    },
-  ),
+  toolCallFixture("call-oplog", VCS_OPLOG_TOOL, { limit: 4 }, "ok", OP_ROWS, {
+    startTs: 3_000,
+    details: { status: "ok", operations: [], count: 4, error: "" },
+  }),
   {
     ...answer(
       "a-oplog",

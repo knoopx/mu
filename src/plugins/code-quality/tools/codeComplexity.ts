@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -39,7 +37,6 @@ const Parameters = Type.Object({
     ),
   ),
 });
-
 
 async function executeCodeComplexity(
   params: CodeComplexityParams,
@@ -89,7 +86,6 @@ async function executeCodeComplexity(
     details,
   );
 }
-
 
 export const codeComplexityTool: ToolDefinition<
   typeof Parameters,

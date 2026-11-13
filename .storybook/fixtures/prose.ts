@@ -85,7 +85,6 @@ export const PREVIEW_COMPARE = [
   "The strip is where a photo loses pixels, and it is the only place it does.",
 ].join("\n");
 
-
 export const CHANGES_ANSWER = [
   "Named and split, both from the panel: `6d1c4b0a` now reads `feat(changes): send describe and split to the agent`, and `stories/Changes/panel.png` is its own change, `1c7f9a44`, with the source files left in `8b2d63e0`.",
 ].join("\n");

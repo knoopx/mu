@@ -2,11 +2,11 @@ import type { TranscriptItem } from "../../../src/plugins/core/lib/agent/transcr
 import { answer, ran, running, usage, userTurn } from "../turn";
 
 const GREP_AUTOCOMPLETE = [
-  "src/plugins/core/components/composer/Composer.tsx:412: onKey(\"editor.autocomplete\", complete);",
-  "src/plugins/core/lib/composer/keyRouter.ts:88: case \"editor.autocomplete\": return panelActions.completePath();",
+  'src/plugins/core/components/composer/Composer.tsx:412: onKey("editor.autocomplete", complete);',
+  'src/plugins/core/lib/composer/keyRouter.ts:88: case "editor.autocomplete": return panelActions.completePath();',
   "src/plugins/core/lib/composer/mode.ts:57: export const isCompletionMode = (mode: ComposerMode): boolean =>",
   "src/plugins/core/lib/composer/pathCompletion.ts:24: export function trailingPathToken(draft: string): string | null {",
-  "src/plugins/core/lib/composer/pathCompletion.ts:61: const cycle = intent === \"complete\";",
+  'src/plugins/core/lib/composer/pathCompletion.ts:61: const cycle = intent === "complete";',
 ].join("\n");
 
 export const PATH_PICK_ITEMS: TranscriptItem[] = [
@@ -32,14 +32,14 @@ export const PATH_PICK_ITEMS: TranscriptItem[] = [
     },
     [
       "export function isCompletionMode(mode: ComposerMode | null): boolean {",
-      "  return mode?.kind === \"pick\" && mode.target === \"path\";",
+      '  return mode?.kind === "pick" && mode.target === "path";',
       "}",
       "",
       "/** Tab completes, Enter commits: a folder keeps the list open, a file closes it. */",
-      "export type PickIntent = \"complete\" | \"commit\";",
+      'export type PickIntent = "complete" | "commit";',
       "",
       "export function pickMode(target: ComposerTarget, query?: string): ComposerMode {",
-      "  return { kind: \"pick\", target, index: 0, query: query ?? \"\" };",
+      '  return { kind: "pick", target, index: 0, query: query ?? "" };',
       "}",
     ].join("\n"),
     8_000,

@@ -23,7 +23,8 @@ const params = {
   points: CHART_POINTS,
   kind: "bar",
   unit: "commits",
-  caption: "one change per working day, most months — the December drop is the holiday gap",
+  caption:
+    "one change per working day, most months — the December drop is the holiday gap",
   grid: true,
   emphasis: 6,
 };
@@ -42,7 +43,10 @@ export const CHART_ITEM: ToolFixture = toolCallFixture(
 
 /** The same call a spreadsheet wrote: a figure with a comma in it is not a number. */
 const BROKEN_PARAMS = {
-  points: [["Oct", "1,234"], ["Nov", 121]] as Array<Array<string | number>>,
+  points: [
+    ["Oct", "1,234"],
+    ["Nov", 121],
+  ] as Array<Array<string | number>>,
   kind: "bar",
   unit: "commits",
 };

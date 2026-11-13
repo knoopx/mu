@@ -22,7 +22,9 @@ export const HISTORY_ITEMS: TranscriptItem[] = [
   ran(
     "c-tree-read",
     "bash",
-    { command: "mu tree --session current --kinds user,tool,branch,compaction" },
+    {
+      command: "mu tree --session current --kinds user,tool,branch,compaction",
+    },
     TREE_ROWS,
     3_000,
   ),

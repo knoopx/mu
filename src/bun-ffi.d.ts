@@ -36,7 +36,9 @@ declare module "bun:ffi" {
     offset?: number;
   }
 
-  export type FFISymbolTable<T> = { [K in keyof T]: (...args: never[]) => unknown };
+  export type FFISymbolTable<T> = {
+    [K in keyof T]: (...args: never[]) => unknown;
+  };
 
   export interface DLOpenHandle<T extends Record<string, FFISignature>> {
     handle: number;

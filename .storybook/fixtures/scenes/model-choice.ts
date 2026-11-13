@@ -13,7 +13,7 @@ const MODELS_CONFIG = [
 ].join("\n");
 
 const NO_BENCH = [
-  "error: script \"bench:models\" not found",
+  'error: script "bench:models" not found',
   "",
   "available scripts:",
   "  dev         bun --hot app.tsx",
@@ -24,7 +24,7 @@ const NO_BENCH = [
 const GREP_THINKING = [
   "src/plugins/core/lib/agent/thinking.ts:12: export const THINKING_LEVELS = [",
   "src/plugins/core/lib/agent/thinking.ts:31: export function budgetFor(level: ThinkingLevel): number {",
-  "src/plugins/core/lib/agent/thinking.ts:44:   return level === \"off\" ? 0 : Math.min(32_000, window / 4);",
+  'src/plugins/core/lib/agent/thinking.ts:44:   return level === "off" ? 0 : Math.min(32_000, window / 4);',
   "src/plugins/core/hooks/useModelPanel.ts:18: const rows = bridge.availableModels.map(toRow);",
 ].join("\n");
 
@@ -49,7 +49,13 @@ export const MODEL_PICK_ITEMS: TranscriptItem[] = [
     MODELS_CONFIG,
     4_000,
   ),
-  failed("c-bench", "bash", { command: "bun run bench:models" }, NO_BENCH, 9_000),
+  failed(
+    "c-bench",
+    "bash",
+    { command: "bun run bench:models" },
+    NO_BENCH,
+    9_000,
+  ),
   ran(
     "c-ledger",
     "bash",
@@ -109,7 +115,7 @@ export const THINKING_LEVEL_ITEMS: TranscriptItem[] = [
       "",
       "export function budgetFor(level: ThinkingLevel, window: number): number {",
       '  if (level === "off") return 0;',
-      "  if (level === \"max\") return window / 2;",
+      '  if (level === "max") return window / 2;',
       "  const share = SHARES[level];",
       "  return Math.min(CAP, Math.floor(window * share));",
       "}",
@@ -122,8 +128,8 @@ export const THINKING_LEVEL_ITEMS: TranscriptItem[] = [
     { pattern: "reasoningDetails", path: "src/plugins/core/lib/agent" },
     [
       "src/plugins/core/lib/agent/transcriptState.ts:96: reasoning?: string;",
-      "src/plugins/core/lib/agent/turnStats.ts:64: if (item.kind === \"assistant\" && item.reasoning)",
-      "src/plugins/core/components/ReasoningRow.tsx:31: <Collapsible title=\"Reasoning\" defaultOpen={risky}>",
+      'src/plugins/core/lib/agent/turnStats.ts:64: if (item.kind === "assistant" && item.reasoning)',
+      'src/plugins/core/components/ReasoningRow.tsx:31: <Collapsible title="Reasoning" defaultOpen={risky}>',
     ].join("\n"),
     7_000,
   ),

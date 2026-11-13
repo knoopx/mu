@@ -38,7 +38,10 @@ export interface AnalyserRun {
 }
 
 /** Where to run: the scope a call named, or here, and never a directory that is not there. */
-export function scopeDir(path: string | undefined): { dir: string; error: string } {
+export function scopeDir(path: string | undefined): {
+  dir: string;
+  error: string;
+} {
   const asked = (path ?? "").trim();
   const dir = asked === "" ? process.cwd() : resolve(asked);
   if (!existsSync(dir)) return { dir, error: `no such directory: ${asked}` };
@@ -60,7 +63,11 @@ export async function runFallow(
   args: readonly string[],
   cwd: string,
 ): Promise<AnalyserRun> {
-  return run([RUNNER_BINARY, [FALLOW_BINARY, ...jsonArgs(args)]], cwd, PROJECT_ANALYSER);
+  return run(
+    [RUNNER_BINARY, [FALLOW_BINARY, ...jsonArgs(args)]],
+    cwd,
+    PROJECT_ANALYSER,
+  );
 }
 
 export async function runReview(

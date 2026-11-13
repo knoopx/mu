@@ -100,45 +100,48 @@ export const ASK_FORK_TOOL_ITEM: ReturnType<typeof toolCallFixture> =
   });
 
 export const ASK_FORK_ITEMS: TranscriptItem[] = [
-    userTurn(
-      "u-retire-rule",
-      "go through my rule files and tell me which of them are earning their keep. if one is dead, say so before you touch it",
-      0,
-    ),
-    ran(
-      "c-rules-ls",
-      "bash",
-      { command: "mu guardrails --coverage --days 63" },
-      RULE_FILES,
-      4_000,
-    ),
-    ran(
-      "c-read-legacy",
-      "read",
-      { path: `${RULES_DIR}/legacy-python.json` },
-      [
-        "{",
-        '  "domain": "legacy-python",',
-        '  "rules": [',
-        "    {",
-        '      "id": "python-eval",',
-        '      "query": "(command (word) @c (#match? @c \\"^python -c\\"))",',
-        '      "correction": "Use `uv run --with <dependency> <script.py>` or the python-eval tool."',
-        "    }",
-        "  ]",
-        "}",
-      ].join("\n"),
-      8_000,
-    ),
-    ASK_FORK_TOOL_ITEM,
-  ];
+  userTurn(
+    "u-retire-rule",
+    "go through my rule files and tell me which of them are earning their keep. if one is dead, say so before you touch it",
+    0,
+  ),
+  ran(
+    "c-rules-ls",
+    "bash",
+    { command: "mu guardrails --coverage --days 63" },
+    RULE_FILES,
+    4_000,
+  ),
+  ran(
+    "c-read-legacy",
+    "read",
+    { path: `${RULES_DIR}/legacy-python.json` },
+    [
+      "{",
+      '  "domain": "legacy-python",',
+      '  "rules": [',
+      "    {",
+      '      "id": "python-eval",',
+      '      "query": "(command (word) @c (#match? @c \\"^python -c\\"))",',
+      '      "correction": "Use `uv run --with <dependency> <script.py>` or the python-eval tool."',
+      "    }",
+      "  ]",
+      "}",
+    ].join("\n"),
+    8_000,
+  ),
+  ASK_FORK_TOOL_ITEM,
+];
 
 /** The turn that closes the fork, for a scene that shows the answer landed. */
 export const ASK_FORK_ANSWER: TranscriptItem = {
   ...answer(
     "a-retire-rule",
     "Deleted, with both of its cases moved to `python.fixtures.json` first — so the surviving rule now has the false-positive case that the old file was the only place testing. Suite is green: 6 cases, 0 failures.",
-    { reasoning: "A rule that cannot fire is not protection, it is a file someone has to read." },
+    {
+      reasoning:
+        "A rule that cannot fire is not protection, it is a file someone has to read.",
+    },
   ),
   usage: usage(12_400, 1_320, 0, 3, 5),
 };

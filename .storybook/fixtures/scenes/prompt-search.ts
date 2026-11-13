@@ -14,8 +14,15 @@ export const PROMPT_SEARCH_ITEMS: TranscriptItem[] = [
     "Successfully replaced 1 block(s) in src/plugins/figures/lib/plot.ts.",
     3_000,
   ),
-  answer("a-p1", "Anchored the crop on the frame's own aspect instead of the tile's."),
-  userTurn("u-p2", "no — the strip is still cutting the sky off the portrait", 60_000),
+  answer(
+    "a-p1",
+    "Anchored the crop on the frame's own aspect instead of the tile's.",
+  ),
+  userTurn(
+    "u-p2",
+    "no — the strip is still cutting the sky off the portrait",
+    60_000,
+  ),
   userTurn(
     "u-p3",
     "what rule did you land on for the strip? I want the same rule in the preview",
@@ -25,7 +32,10 @@ export const PROMPT_SEARCH_ITEMS: TranscriptItem[] = [
     ...answer(
       "a-p3",
       "Taller than wide: anchor top. Wider than tall: centre, cut the sides. That is the whole rule, and it reads the frame, not the tile.",
-      { reasoning: "The rule is short enough to quote, so the answer is the quote." },
+      {
+        reasoning:
+          "The rule is short enough to quote, so the answer is the quote.",
+      },
     ),
     usage: usage(6_400, 210, 0, 1, 0),
   },

@@ -73,7 +73,6 @@ const STATED_STATUS: Readonly<Record<string, string>> = {
   unsupported: "no analyser available",
 };
 
-
 /** An empty result is worth a warning; a clean one is not. */
 const QUALITY_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
   empty: "warn",
@@ -127,7 +126,12 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
   if (item.status === "running")
     return <ToolRunning text={RUNNING_TEXT[tool] ?? "reading the project"} />;
 
-  const view = qualityToolViewOf(item.name, item.args, item.details, item.status);
+  const view = qualityToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
 
   if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
 
@@ -143,7 +147,10 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
           tone={status === "ok" ? "neutral" : toneOf(status)}
         />
       )}
-      <ToolSections sections={view.sections} variants={QUALITY_BADGE_VARIANTS} />
+      <ToolSections
+        sections={view.sections}
+        variants={QUALITY_BADGE_VARIANTS}
+      />
       <ToolTruncated
         count={view.omitted}
         text={`${String(view.omitted)} more not shown — widen limit to read them`}

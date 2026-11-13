@@ -15,18 +15,7 @@ import { STATE_GLYPH } from "../lib/ui/tokens";
  * because pi colours its working spinner with the accent too. The cells are set
  * in the mono family, which is where a braille cell has its glyph.
  */
-const PI_FRAMES = [
-  "⠋",
-  "⠙",
-  "⠹",
-  "⠸",
-  "⠼",
-  "⠴",
-  "⠦",
-  "⠧",
-  "⠇",
-  "⠏",
-] as const;
+const PI_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"] as const;
 
 const FRAME_MS = 80;
 

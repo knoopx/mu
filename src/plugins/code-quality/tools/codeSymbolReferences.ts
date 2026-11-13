@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -59,7 +57,6 @@ const Parameters = Type.Object({
   ),
   limit: limitParam("rows to return per direction"),
 });
-
 
 const targetOf = (params: CodeSymbolReferencesParams): string => {
   const asked = (params.symbol ?? "").trim();
@@ -164,7 +161,6 @@ async function executeCodeSymbolReferences(
     details,
   );
 }
-
 
 export const codeSymbolReferencesTool: ToolDefinition<
   typeof Parameters,

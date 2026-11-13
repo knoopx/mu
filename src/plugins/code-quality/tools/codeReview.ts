@@ -1,5 +1,3 @@
-
-
 import type {
   AgentToolResult,
   ToolDefinition,
@@ -53,7 +51,6 @@ const Parameters = Type.Object({
   limit: limitParam("entities to return, riskiest first"),
 });
 
-
 /** The answer of a call that never reached the analyser: the same shape, failed. */
 const blankOf = (
   params: CodeReviewParams,
@@ -73,7 +70,6 @@ const blankOf = (
   elapsed_ms: 0,
   error,
 });
-
 
 async function executeCodeReview(
   params: CodeReviewParams,
@@ -136,7 +132,6 @@ async function executeCodeReview(
   );
 }
 
-
 export const codeReviewTool: ToolDefinition<
   typeof Parameters,
   CodeReviewDetails
@@ -149,7 +144,8 @@ export const codeReviewTool: ToolDefinition<
     "radius, whether it is public API, and how it changed (added, modified, deleted) — riskiest " +
     "first. `min_risk` drops the quiet rows; the risk mix of the whole change is stated even " +
     "when the rows are bounded. Read-only.",
-  promptSnippet: "Score a commit's entity-level impact — risk, blast radius, what changed",
+  promptSnippet:
+    "Score a commit's entity-level impact — risk, blast radius, what changed",
   promptGuidelines: [
     "Read a change's blast radius with code-review before merging or refactoring on top of it — never reach for a shell command instead of it.",
     "Name the ref you mean (`HEAD~1`, `main..feature`); a range is one call, not two.",

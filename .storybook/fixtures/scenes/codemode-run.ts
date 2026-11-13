@@ -33,17 +33,39 @@ export const CODEMODE_ITEMS: TranscriptItem[] = [
     {
       details: {
         calls: [
-          { name: "vcs-log", args: '{ limit: 200 }', status: "ok", durationMs: 640, cost: null, error: "" },
-          { name: "guardrails-coverage", args: "{ days: 7 }", status: "ok", durationMs: 1_180, cost: null, error: "" },
+          {
+            name: "vcs-log",
+            args: "{ limit: 200 }",
+            status: "ok",
+            durationMs: 640,
+            cost: null,
+            error: "",
+          },
+          {
+            name: "guardrails-coverage",
+            args: "{ days: 7 }",
+            status: "ok",
+            durationMs: 1_180,
+            cost: null,
+            error: "",
+          },
           {
             name: "guardrails-test",
             args: '{ domain: "package-manager" }',
             status: "error",
             durationMs: 900,
             cost: null,
-            error: "blocked(guardrails/uv): suite run refused a raw python3 invocation",
+            error:
+              "blocked(guardrails/uv): suite run refused a raw python3 invocation",
           },
-          { name: "table-render", args: '{ rows: 12, columns: 4 }', status: "ok", durationMs: 120, cost: null, error: "" },
+          {
+            name: "table-render",
+            args: "{ rows: 12, columns: 4 }",
+            status: "ok",
+            durationMs: 120,
+            cost: null,
+            error: "",
+          },
         ],
         fullOutputPath: "",
       },

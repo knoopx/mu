@@ -47,9 +47,8 @@ export const composerFigureTextWidth = (
   chars: number,
 ): number => monoTextWidth(t, chars);
 
-export const composerFigureGlyphWidth = (
-  t: AdwaitaTheme,
-): number => figureGlyph(t);
+export const composerFigureGlyphWidth = (t: AdwaitaTheme): number =>
+  figureGlyph(t);
 
 export const composerFigureColumnWidth = (
   t: AdwaitaTheme,

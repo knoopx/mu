@@ -1,5 +1,3 @@
-
-
 import type {
   ToolPaintSection,
   ToolRowCell,
@@ -7,26 +5,17 @@ import type {
 } from "../core/lib/ui/toolRowPaint";
 
 export type QualityToolStatus =
-  | "ok"
-  | "failed"
-  | "unsupported"
-  | "empty"
-  | "none";
-
+  "ok" | "failed" | "unsupported" | "empty" | "none";
 
 /** A chip of what the call read — the shared row shape, under this plugin's name. */
 export type QualityCell = ToolRowCell;
-
 
 export interface QualityCount {
   kind: string;
   count: number;
 }
 
-
 export type QualityMeter = ToolRowMeter;
-
-
 
 export interface CodeComplexityParams {
   path?: string;
@@ -68,8 +57,6 @@ export interface CodeComplexityDetails {
   error: string;
 }
 
-
-
 export interface DeadCodeRow {
   kind: string;
   path: string;
@@ -98,8 +85,6 @@ export interface CodeDeadCodeDetails {
   elapsed_ms: number;
   error: string;
 }
-
-
 
 export interface DuplicateInstance {
   file: string;
@@ -139,8 +124,6 @@ export interface CodeDuplicatesDetails {
   error: string;
 }
 
-
-
 export interface RiskRow {
   risk: string;
   entity: string;
@@ -178,8 +161,6 @@ export interface CodeReviewDetails {
   error: string;
 }
 
-
-
 export interface SurfaceRow {
   name: string;
   kind: string;
@@ -214,8 +195,6 @@ export interface CodeSymbolInspectDetails {
   omitted: number;
   error: string;
 }
-
-
 
 export interface ReferenceRow {
   name: string;
@@ -253,12 +232,6 @@ export interface CodeSymbolReferencesDetails {
   elapsed_ms: number;
   error: string;
 }
-
-
-
-
-
-
 
 export interface QualityToolView {
   tool: string;

@@ -90,7 +90,8 @@ export const WASM_SEARCH_ITEM: ToolFixture = toolCallFixture(
   { details: WASM_SEARCH_DETAILS },
 );
 
-const RUNTIME_QUERY = "web-tree-sitter Parser.init wasmBinary embed compiled binary";
+const RUNTIME_QUERY =
+  "web-tree-sitter Parser.init wasmBinary embed compiled binary";
 
 export const RUNTIME_SEARCH_ITEM: ToolFixture = toolCallFixture(
   "call-search-runtime",
@@ -169,9 +170,17 @@ export const SEARCH_WASM_ITEMS: TranscriptItem[] = [
     ),
     usage: usage(9_700, 1_120, 0, 7, 8),
   },
-  userTurn("u-search-nothing", "search for a renderer that highlights diff rows in a gpu ui", 12),
+  userTurn(
+    "u-search-nothing",
+    "search for a renderer that highlights diff rows in a gpu ui",
+    12,
+  ),
   { ...EMPTY_SEARCH_ITEM, startTs: at(15_000) },
-  userTurn("u-search-dead", "check whether wgpu can read a rendered image back on linux", 16),
+  userTurn(
+    "u-search-dead",
+    "check whether wgpu can read a rendered image back on linux",
+    16,
+  ),
   { ...FAILED_SEARCH_ITEM, startTs: at(19_000) },
   {
     ...answer(

@@ -341,7 +341,9 @@ const treeStatus = (tree: SessionTreeApi): ComposerPanelStatusSpec => ({
 /** A terminal says what shell it is running, how big its screen is and how much
  *  history is above it — and its hint line says the one way out, because every
  *  other key belongs to the program on the screen. */
-const terminalStatusSpec = (terminal: TerminalPanelState): ComposerPanelStatusSpec => ({
+const terminalStatusSpec = (
+  terminal: TerminalPanelState,
+): ComposerPanelStatusSpec => ({
   message: terminal.status,
   hints: terminalHints(),
 });
