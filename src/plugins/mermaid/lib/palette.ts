@@ -12,7 +12,7 @@
 
 import type { AdwaitaTheme } from "adwaita-gpuix";
 
-import { paneFill } from "../../core/lib/ui/theme";
+import { paneFill, seriesRamp } from "../../core/lib/ui/theme";
 import { DIAGRAM_FONT_SIZE, DIAGRAM_TITLE_RATIO } from "../constants";
 
 /** The variables Pele reads, in the order it lists them. */
@@ -46,11 +46,12 @@ const PELE_VARS = [
  * exist to cover what passes behind them. Either of them a different colour
  * from the page turns the picture into a darker card with holes in it, which is
  * why this reads the page from core rather than picking a surface. A group
- * still gets a band, one step up from the page. Series colours come from the
- * chart ramp, which is why a pie and a bar chart in the same app agree.
+ * still gets a band, one step up from the page. Series colours come from the ramp
+ * a plot is drawn with, which is why a pie and a bar chart in the same app
+ * agree — and why the second branch of a diagram is quieter than the first.
  */
 function diagramVars(t: AdwaitaTheme): Record<string, string> {
-  const series = t.color.chart.series;
+  const series = seriesRamp(t, PELE_VARS.filter((name) => name.startsWith("--pele-series-")).length);
   const page = paneFill(t);
   const vars: Record<string, string> = {
     "--pele-bg": page,

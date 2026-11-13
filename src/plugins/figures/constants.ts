@@ -28,7 +28,7 @@ export const FIGURE_TOOL_NAMES: readonly string[] = [
  */
 export const MAX_POINTS = 64;
 
-/** How many series one plot carries: adwaita's series ramp is this long. */
+/** How many series one plot carries: the ramp core builds is this long. */
 export const MAX_SERIES = 8;
 
 /** How many of the plotted points are read back to the model as figures. */
@@ -36,6 +36,28 @@ export const MAX_READOUT_POINTS = 24;
 
 /** An axis label longer than this is clipped: it is a tick, not a sentence. */
 export const MAX_LABEL_CHARS = 24;
+
+/**
+ * How many points a line may carry and still have a marker at every one.
+ *
+ * A marker is a dot the eye counts; past a dozen on one canvas they are a second
+ * series drawn over the first, and the thing the line was showing — its shape —
+ * is what gets buried. A run this short is marked whatever the caller left
+ * unsaid; a longer one marks only the point it points at.
+ */
+export const MAX_MARKED_POINTS = 12;
+
+/**
+ * How wide one bar of a single-series bar plot is allowed to get.
+ *
+ * adwaita lets a bar fill its slot, so three categories across a wide panel
+ * print three slabs. Past this width a bar stops reading as one of a handful of
+ * comparisons and starts reading as a block with a figure on it.
+ */
+export const MAX_BAR_WIDTH = 24;
+
+/** The gap adwaita stands a single-series bar plot's slots in. */
+export const BAR_SLOT_GAP = 4;
 
 /** The plot box the height parameter is bounded to, in px. */
 export const MIN_PLOT_HEIGHT = 72;

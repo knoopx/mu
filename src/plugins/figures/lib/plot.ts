@@ -24,11 +24,15 @@ import type {
   ChartSeriesPoint,
 } from "adwaita-gpuix";
 
+import { seriesRamp } from "../../core/lib/ui/theme";
 import { truncateToWidth } from "../../../utils/truncate";
 import {
+  BAR_SLOT_GAP,
   CHART_CANVAS_WIDTH,
   CHART_HEIGHT,
+  MAX_BAR_WIDTH,
   MAX_LABEL_CHARS,
+  MAX_MARKED_POINTS,
   MAX_POINTS,
   MAX_SERIES,
   MAX_PLOT_HEIGHT,
@@ -88,8 +92,44 @@ export function plotColor(t: AdwaitaTheme, tone: PlotTone | null): string {
   }
 }
 
-/** The ramp the series of one plot are drawn from. */
-export const seriesColors = (t: AdwaitaTheme): string[] => t.color.chart.series;
+/**
+ * The ramp the series of one plot are drawn from.
+ *
+ * Not the theme's categorical ramp: five unrelated hues, walked twice over by
+ * eight series, leaves every series equally loud and puts the app's error and
+ * warning colours in the third and fourth bar. core's ramp keeps the accent's
+ * hue and walks its lightness, then goes quiet, so the first series is the one
+ * the reader looks at and the rest read as context.
+ */
+export const seriesColors = (t: AdwaitaTheme): string[] => seriesRamp(t, MAX_SERIES);
+
+/**
+ * Whether a line draws a marker at every point.
+ *
+ * A caller that named the flag gets what it asked for. One that did not gets
+ * dots only where a dot is the figure: a run short enough to count, or a run
+ * with one point singled out — the singled-out point is drawn as a marker, so a
+ * line with no dots has nowhere to point. On a long run the shape of the line is
+ * the figure, and a dot at every point is a second series drawn over it.
+ */
+export const markersFor = (
+  markers: boolean | undefined,
+  points: number,
+  emphasis: number | null,
+): boolean => markers ?? (emphasis !== null || points <= MAX_MARKED_POINTS);
+
+/**
+ * How wide a bar is drawn, or nothing when the slot is the width.
+ *
+ * The slot is what is left of the canvas once the gaps between categories are
+ * paid for; a slot wider than a bar should read as air around the bar, not as a
+ * slab the length of the panel.
+ */
+export function barWidthFor(points: number, width: number): number | undefined {
+  if (points <= 0) return undefined;
+  const slot = (width - BAR_SLOT_GAP * (points - 1)) / points;
+  return slot > MAX_BAR_WIDTH ? MAX_BAR_WIDTH : undefined;
+}
 
 /**
  * What the series of a plot are called.
