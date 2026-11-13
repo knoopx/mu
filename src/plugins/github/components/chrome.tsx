@@ -1,19 +1,4 @@
-/**
- * The layout a GitHub row is built out of.
- *
- * A GitHub call owns its whole row — there is no shared tool box around it — so
- * these are the parts every one of the nine cards is assembled from, in the order a
- * record is read: **who or what it is** (a mark or an avatar, the name GitHub gave
- * the thing, and where it stands on the far side of the same line), **what it is
- * worth** (its counts, each one a figure with the word under it, not a mark beside
- * it), **the thing itself** (the tree, the change rows, the thread, the code), and
- * **what someone wrote about it** last, because a description is commentary on the
- * facts above it.
- *
- * Grouping is carried by space: 8 between the parts of one band, 24 between bands.
- * Every value arriving here has been through `lib/format.ts`, so a date reads as
- * `6 Nov`, a count as `812` or `47k`, and nothing on screen is the wire's text.
- */
+
 
 import type { JSX } from "react";
 import { Avatar, Icon, T, useAdwaita, type IconName } from "adwaita-gpuix";
@@ -31,23 +16,23 @@ import {
   monoColumn,
   titleWeight,
 } from "../../core/lib/ui/tokens";
-import { outputPanel, PAGE_INSET } from "../../core/lib/ui/transcriptLayout";
+import { PAGE_INSET, toolBand } from "../../core/lib/ui/transcriptLayout";
 import type { GithubState } from "../lib/kinds/contract";
 
-/** The band a mark or an avatar stands in, so the names of nine kinds start at one column. */
+
 const MARK_BOX = 24;
 
-/** One cell of a record's counts: the figure, and the word for it underneath. */
+
 export interface GithubFact {
   label: string;
   value: string;
-  /** the figure is painted in mono and holds one format, because it is a number */
+  
   figure?: boolean;
-  /** the tone a figure is read in, when the number itself is news */
+  
   tone?: "good" | "bad" | "warn";
 }
 
-/** The page a GitHub row stands on: the log's own inset, and nothing else. */
+
 export const rowPage = (): StyleDesc => ({
   paddingLeft: PAGE_INSET,
   paddingRight: PAGE_INSET,
@@ -57,14 +42,7 @@ export const rowPage = (): StyleDesc => ({
   minWidth: 0,
 });
 
-/**
- * The plate a call's whole answer stands on.
- *
- * A tool's output sits on a band a step darker than the log, the same plate a file
- * read stands in: the log is the reading surface, and what a call brought back is a
- * thing laid on it, with its own edges. Every card is one plate — the identity, the
- * counts, the widget and the prose are its parts, not plates of their own.
- */
+
 export function Card({
   children,
 }: {
@@ -79,7 +57,7 @@ export function Card({
   return (
     <div
       style={{
-        ...outputPanel(t),
+        ...toolBand(t),
         padding: t.space.md,
         gap: 0,
         flexShrink: 0,
@@ -91,7 +69,7 @@ export function Card({
   );
 }
 
-/** A band of the row, with the air that separates one band from the next. */
+
 export function Band({
   children,
   first = false,
@@ -130,12 +108,7 @@ const stateColor = (
   return mutedText(t);
 };
 
-/**
- * Who or what the row is about: a mark or the person's own face, the name GitHub
- * gives the thing, and where it stands on the far side of that same line. The state
- * is one word in the colour that word is read in — never a pill, and never said
- * again below.
- */
+
 export function Identity({
   title,
   secondary = "",
@@ -241,13 +214,7 @@ export function Identity({
   );
 }
 
-/**
- * What the record is worth: its counts, each one a figure with the word for it
- * underneath. A label above a number makes the label the thing the eye lands on;
- * the count is the fact, so the count stands in the row's own size and the word
- * sits under it, one step down and muted. Numbers hold one format and a fixed
- * column, so three rows of the same kind can be read down the page.
- */
+
 export function Facts({ facts }: { facts: GithubFact[] }): JSX.Element | null {
   const t = useAdwaita();
   const shown = facts.filter((fact) => fact.value !== "");
@@ -306,12 +273,7 @@ export function Facts({ facts }: { facts: GithubFact[] }): JSX.Element | null {
   );
 }
 
-/**
- * What a call says when it has no card to show: that it is still going, that GitHub
- * refused it, that the path is bytes rather than text. The mark stands in the same
- * box an identity's mark stands in, so the line starts where every other card's
- * name starts.
- */
+
 export function Standing({
   icon,
   text,
@@ -360,7 +322,7 @@ export function Standing({
   );
 }
 
-/** A rule between two parts of one band — the log's own hairline, never a faint one. */
+
 export function Rule(): JSX.Element {
   const t = useAdwaita();
   return (
@@ -374,11 +336,7 @@ export function Rule(): JSX.Element {
   );
 }
 
-/**
- * What someone wrote: a description, an issue's body, a commit's message. It stands
- * on the card's own plate, inset a step from its edge so a block of prose reads as
- * the card speaking rather than as a second panel laid over it.
- */
+
 export function Prose({ source }: { source: string }): JSX.Element | null {
   const t = useAdwaita();
   const text = source.trim();
@@ -407,11 +365,7 @@ export function Prose({ source }: { source: string }): JSX.Element | null {
   );
 }
 
-/**
- * A file's text. The path and what the read carried are the card's identity band,
- * so the panel is only the text; where it stops short, one quiet line under it says
- * how much of the file is on screen.
- */
+
 export function Code({
   path,
   content,
@@ -449,11 +403,7 @@ export function Code({
   );
 }
 
-/**
- * The text itself, through the log's markdown element: a fenced block is what the
- * app's syntax pass already reads, so a file painted here is highlighted the same
- * way a diff row is.
- */
+
 function CodeLines({
   path,
   content,
@@ -466,7 +416,7 @@ function CodeLines({
   return (
     <Markdown
       source={["```" + fence.toLowerCase(), content, "```"].join("\n")}
-      style={{ ...outputPanel(t), flexShrink: 0 }}
+      style={{ ...toolBand(t), flexShrink: 0 }}
     />
   );
 }

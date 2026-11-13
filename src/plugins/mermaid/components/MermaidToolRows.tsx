@@ -33,7 +33,6 @@ import {
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { buildNativeTheme, mutedText } from "../../core/lib/ui/theme";
-import { outputPanel } from "../../core/lib/ui/transcriptLayout";
 import { codeLineBox } from "../../core/lib/ui/tokens";
 import {
   DIAGRAM_BOX_HEIGHT,
@@ -127,20 +126,20 @@ function FailureSnippet({ snippet }: { snippet: string }): JSX.Element | null {
   const t = useAdwaita();
   if (snippet.trim() === "") return null;
   const lines = snippet.split("\n");
+  // Bare: the row's answer already stands on the log's band, and the snippet is
+  // part of that answer, not a plate laid over it.
   return (
-    <div style={outputPanel(t)}>
-      <code
-        code={lines.join("\n")}
-        theme={buildNativeTheme(t)}
-        style={{
-          fontFamily: t.type.fontFamilyMono,
-          fontSize: t.type.caption,
-          lineHeight: codeLineBox(t),
-          color: t.color.text.primary,
-          flexShrink: 0,
-        }}
-      />
-    </div>
+    <code
+      code={lines.join("\n")}
+      theme={buildNativeTheme(t)}
+      style={{
+        fontFamily: t.type.fontFamilyMono,
+        fontSize: t.type.caption,
+        lineHeight: codeLineBox(t),
+        color: t.color.text.primary,
+        flexShrink: 0,
+      }}
+    />
   );
 }
 

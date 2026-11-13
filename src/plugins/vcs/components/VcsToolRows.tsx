@@ -7,8 +7,7 @@
  */
 
 import type { JSX, ReactNode } from "react";
-import { useAdwaita, type AdwaitaTheme, type IconName } from "adwaita-gpuix";
-import type { StyleDesc } from "@gpuix/react";
+import { useAdwaita, type IconName } from "adwaita-gpuix";
 
 import {
   ToolChips,
@@ -31,10 +30,7 @@ import {
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { toolGapColumn } from "../../core/lib/ui/toolRows";
-import {
-  outputPanel,
-  previewLineHeight,
-} from "../../core/lib/ui/transcriptLayout";
+import { previewLineHeight } from "../../core/lib/ui/transcriptLayout";
 import {
   MAX_OUTPUT_LINES,
   plainOutputOf,
@@ -195,12 +191,12 @@ function VcsViewBody({
   );
 }
 
-const bodyCard = (t: AdwaitaTheme): StyleDesc => ({
-  ...outputPanel(t),
-  flexShrink: 0,
-});
-
-/** A file's body at a revision, as monospace code in a panel, bounded by a line budget. */
+/**
+ * A file's body at a revision, as monospace code bounded by a line budget.
+ *
+ * It is quoted bare: the whole answer already stands on the log's band, and a
+ * plate inside a band is a card inside a card.
+ */
 function VcsFileBody({
   path,
   content,
@@ -213,22 +209,20 @@ function VcsFileBody({
   const lineHeight = previewLineHeight(t);
 
   return (
-    <div style={bodyCard(t)}>
-      <code
-        code={plainOutputOf(content)}
-        path={path}
-        theme={buildNativeTheme(t)}
-        style={{
-          maxHeight: MAX_OUTPUT_LINES * lineHeight,
-          overflow: "hidden",
-          flexShrink: 0,
-          fontSize: t.type.caption,
-          lineHeight,
-          fontFamily: t.type.fontFamilyMono,
-          color: t.color.text.primary,
-        }}
-      />
-    </div>
+    <code
+      code={plainOutputOf(content)}
+      path={path}
+      theme={buildNativeTheme(t)}
+      style={{
+        maxHeight: MAX_OUTPUT_LINES * lineHeight,
+        overflow: "hidden",
+        flexShrink: 0,
+        fontSize: t.type.caption,
+        lineHeight,
+        fontFamily: t.type.fontFamilyMono,
+        color: t.color.text.primary,
+      }}
+    />
   );
 }
 
