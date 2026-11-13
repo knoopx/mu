@@ -70,7 +70,7 @@ const TREE_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
 
 const TREE_STATUS_ICONS: Readonly<Record<string, IconName>> = {
   invalid: "error",
-  empty: "info",
+  empty: "warning",
 };
 
 const TREE_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {

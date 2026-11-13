@@ -75,7 +75,7 @@ const MERMAID_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
 
 const MERMAID_STATUS_ICONS: Readonly<Record<string, IconName>> = {
   failed: "error",
-  empty: "info",
+  empty: "warning",
 };
 
 export function isMermaidTool(name: string): boolean {

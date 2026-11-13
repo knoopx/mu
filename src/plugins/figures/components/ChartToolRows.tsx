@@ -76,7 +76,7 @@ const CHART_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
 
 const CHART_STATUS_ICONS: Readonly<Record<string, IconName>> = {
   invalid: "error",
-  empty: "info",
+  empty: "warning",
 };
 
 const CHART_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
