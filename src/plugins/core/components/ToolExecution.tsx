@@ -1,5 +1,6 @@
 import type { JSX } from "react";
 import {
+  OutputBox,
   Tool,
   ToolContent,
   ToolHeader,
@@ -32,7 +33,8 @@ import {
 } from "../lib/ui/toolOutputMode";
 import { commandTextOf, pathTextOf } from "../lib/agent/toolInput";
 import { toolIconOf } from "../lib/ui/toolIcon";
-import { PAGE_INSET, outputPanel } from "../lib/ui/transcriptLayout";
+import { PAGE_INSET } from "../lib/ui/transcriptLayout";
+import { ToolBand } from "./ToolBand";
 import { buildNativeTheme } from "../lib/ui/theme";
 import {
   askDetailsOf,
@@ -283,50 +285,44 @@ export function dedicatedToolRowOf(
   );
 }
 
+/**
+ * One tool's answer, on the one band every answer stands on.
+ *
+ * Rows, chips, a figure, a patch, quoted lines, printed text: all of them sit on
+ * the same plate the read preview uses, so a tool row reads as an answer and the
+ * log stays a column that changes its content per row and never its shape.
+ */
+function answerPanel(key: string, body: JSX.Element): JSX.Element {
+  return (
+    <ToolContent key={key} open>
+      <ToolBand>{body}</ToolBand>
+    </ToolContent>
+  );
+}
+
 function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
   const panels: JSX.Element[] = [];
   const block = guardrailBlockOf(item);
   if (isAskTool(item.name))
-    panels.push(
-      <ToolContent key="ask" open>
-        <AskResultRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("ask", <AskResultRows item={item} />));
   if (isSearchTool(item.name))
-    panels.push(
-      <ToolContent key="search" open>
-        <SearchResults item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("search", <SearchResults item={item} />));
   if (block !== null)
-    panels.push(
-      <ToolContent key="block" open>
-        <GuardrailBlockRows hit={block} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("block", <GuardrailBlockRows hit={block} />));
   if (isGuardrailsTool(item.name))
-    panels.push(
-      <ToolContent key="guardrails" open>
-        <GuardrailsToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("guardrails", <GuardrailsToolRows item={item} />));
   if (isVcsTool(item.name))
-    panels.push(
-      <ToolContent key="vcs" open>
-        <VcsToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("vcs", <VcsToolRows item={item} />));
   if (isCodeQualityTool(item.name))
-    panels.push(
-      <ToolContent key="code-quality" open>
-        <QualityToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("code-quality", <QualityToolRows item={item} />));
   // The script's own rows, its printed output and its timing: pi answers with a
   // header plus text and records the nested calls in details, and none of that
   // is a table the shared output panel could draw.
   // A program is not a table of findings: the row of a render or a stream is
-  // the screen itself, painted live from the program store.
+  // the screen itself, painted live from the program store. It is the one body
+  // drawn without a band — a `Pane` is a plate of the same colour as the band,
+  // so a band under a screen is a card inside a card and the panes read as
+  // nothing; the screen brings its own page instead.
   if (isOpenUITool(item.name))
     panels.push(
       <ToolContent key="openui" open>
@@ -334,46 +330,28 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
       </ToolContent>,
     );
   if (isCodemodeTool(item.name))
-    panels.push(
-      <ToolContent key="codemode" open>
-        <CodemodeToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("codemode", <CodemodeToolRows item={item} />));
   // A diagram is not a table of findings: the row's body is the picture, drawn
-  // from the markup the call left in its details.
+  // from the markup the call left in its details — and the band is the picture's
+  // page too, because its edge labels and node interiors are the colour of
+  // whatever they stand on.
   if (isMermaidTool(item.name))
-    panels.push(
-      <ToolContent key="mermaid" open>
-        <MermaidToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("mermaid", <MermaidToolRows item={item} />));
   // A plot is not a table of findings either: the row's body is the picture,
   // drawn from the points the call left in its details, in the theme the window
   // is wearing — which is why the data travels and a bitmap never does. A tree
   // is the same kind of call: its body is the widget, drawn from the shape in
   // the details, so a resumed session still draws it.
   if (isChartTool(item.name))
-    panels.push(
-      <ToolContent key="figures" open>
-        <ChartToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("figures", <ChartToolRows item={item} />));
   if (isTreeTool(item.name))
-    panels.push(
-      <ToolContent key="tree" open>
-        <TreeToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("tree", <TreeToolRows item={item} />));
   // A plan is not a table of findings either: its rows are the list itself, each
   // step in the colour of where it stands, drawn from the steps the call left in
   // its details — which is why a session resumed next week still shows the plan
   // it ended with.
   if (isPlanTool(item.name))
-    panels.push(
-      <ToolContent key="plan" open>
-        <PlanToolRows item={item} />
-      </ToolContent>,
-    );
+    panels.push(answerPanel("plan", <PlanToolRows item={item} />));
   return panels;
 }
 
@@ -384,19 +362,32 @@ function ToolOutputBody(props: {
   theme: AdwaitaTheme;
 }): JSX.Element {
   const { item, state, outputMode, theme } = props;
+  // A failure keeps a plate of its own, because the tint is the message. Printed
+  // text does not: it stands on the band, flattened, so a command's output is
+  // inset exactly as the lines a read quoted and not a second card inside one.
   if (state === "output-error")
     return <ToolContent open errorText={plainOutputOf(item.output)} />;
   if (outputMode === "code")
-    return <ToolContent open output={plainOutputOf(item.output)} />;
+    return (
+      <ToolContent open>
+        <ToolBand style={{ flexShrink: 1 }}>
+          <OutputBox
+            text={plainOutputOf(item.output)}
+            padding={0}
+            style={{ backgroundColor: "transparent" }}
+          />
+        </ToolBand>
+      </ToolContent>
+    );
   return (
     <ToolContent open>
-      <div style={outputPanel(theme)}>
+      <ToolBand style={{ flexShrink: 1 }}>
         <Markdown
           source={item.output}
           theme={buildNativeTheme(theme)}
           style={{ padding: 0, flexShrink: 1, minWidth: 0 }}
         />
-      </div>
+      </ToolBand>
     </ToolContent>
   );
 }
@@ -433,7 +424,11 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
       {look.writePreview !== undefined ? (
         <WritePreview preview={look.writePreview} />
       ) : null}
-      {look.patch !== undefined ? <PatchDiff patch={look.patch} /> : null}
+      {look.patch !== undefined ? (
+        <ToolBand style={{ flexShrink: 0 }}>
+          <PatchDiff patch={look.patch} />
+        </ToolBand>
+      ) : null}
       {look.showOutput ? (
         <ToolOutputBody
           item={item}

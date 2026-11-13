@@ -61,12 +61,24 @@ export function CodemodeToolRows({ item }: CodemodeToolRowsProps): JSX.Element {
           )}
         </>
       )}
-      {body === "" ? null : (
-        <OutputBox
-          text={body}
-          tone={item.status === "error" ? "error" : "default"}
-        />
-      )}
+      {
+        // The script's printed text is an answer like any other, and its rows are
+        // already on the band — so the box that parses its escapes stands on the
+        // band rather than drawing a second plate inside it. Only a failure keeps
+        // a plate, because the tint is the point of it.
+        body === "" ? null : (
+          <OutputBox
+            text={body}
+            tone={item.status === "error" ? "error" : "default"}
+            padding={0}
+            style={
+              item.status === "error"
+                ? undefined
+                : { backgroundColor: "transparent" }
+            }
+          />
+        )
+      }
       {view.fullOutputPath === "" ? null : (
         <ToolStateNote
           icon="unfoldMore"
