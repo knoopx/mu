@@ -59,24 +59,30 @@ export function FilePane({
             label={entry.path}
             icon={iconForFile(entry.path)}
             trailing={
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: figureGap(t),
-                  flexShrink: 0,
-                }}
-              >
-                <DiffStats
-                  insertions={entry.insertions}
-                  deletions={entry.deletions}
-                  stats={stats}
-                />
-                <DiffHistogram
-                  insertions={entry.insertions}
-                  deletions={entry.deletions}
-                />
-              </div>
+              // A file the patch carries no lines for — an image, a mode change —
+              // has no figure to print. `+0 −0` and a track with nothing in it are
+              // a meter measuring no figure: the row says nothing about the file,
+              // and the marks that do carry a number next to it read as noise.
+              entry.insertions + entry.deletions === 0 ? null : (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: figureGap(t),
+                    flexShrink: 0,
+                  }}
+                >
+                  <DiffStats
+                    insertions={entry.insertions}
+                    deletions={entry.deletions}
+                    stats={stats}
+                  />
+                  <DiffHistogram
+                    insertions={entry.insertions}
+                    deletions={entry.deletions}
+                  />
+                </div>
+              )
             }
             picked={false}
             active={i === fileSel}
