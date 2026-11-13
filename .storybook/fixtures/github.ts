@@ -10,10 +10,15 @@
  */
 
 import {
+  GITHUB_COMMIT_TOOL,
   GITHUB_FILE_TOOL,
+  GITHUB_ISSUE_TOOL,
   GITHUB_PR_TOOL,
+  GITHUB_RELEASE_TOOL,
   GITHUB_REPO_TOOL,
+  GITHUB_SEARCH_TOOL,
   GITHUB_TREE_TOOL,
+  GITHUB_USER_TOOL,
 } from "../../src/plugins/github/constants";
 import { githubAnswerOf } from "../../src/plugins/github/lib/answer";
 import type { GithubCall } from "../../src/plugins/github/types";
@@ -31,13 +36,10 @@ export const GITHUB_REPO_CALL: GithubCall = {
   target: "",
   query: "",
   fields: [
-    { label: "repo", value: "gpuix/adwaita-gpuix" },
-    { label: "description", value: "The Adwaita widget set, drawn on the GPU" },
     { label: "stars", value: "812" },
     { label: "forks", value: "54" },
     { label: "language", value: "TypeScript" },
     { label: "license", value: "MIT" },
-    { label: "state", value: "public" },
     { label: "branch", value: "main" },
     { label: "open issues", value: "37" },
     { label: "pushed", value: "2026-11-06 18:12" },
@@ -45,7 +47,7 @@ export const GITHUB_REPO_CALL: GithubCall = {
   ],
   rows: [],
   omitted: 0,
-  body: "",
+  body: "The Adwaita widget set, drawn on the GPU.",
   bodyOmitted: 0,
   total: 0,
   cached: true,
@@ -258,6 +260,254 @@ export const GITHUB_FAILED_CALL: GithubCall = {
     "not found: repos/gpuix/adwaita-gpuix/contents/src/lib/rowHeight.ts — no such repository, ref, path, number or tag",
 };
 
+/** One commit on the trunk, read as the change it made. */
+export const GITHUB_COMMIT_CALL: GithubCall = {
+  status: "ok",
+  kind: "commit",
+  repo: "gpuix/adwaita-gpuix",
+  ref: "",
+  path: "",
+  target: "8f3c21a",
+  query: "",
+  fields: [
+    { label: "commit", value: "8f3c21a" },
+    {
+      label: "description",
+      value: "theme: drive the whole accent ramp from one colour",
+    },
+    { label: "author", value: "Niamh Ní Dhomhnaill (niamh@gpuix.dev)" },
+    { label: "date", value: "2026-11-04 11:26" },
+    { label: "changes", value: "+64 −22" },
+    { label: "files", value: "3" },
+    {
+      label: "url",
+      value: "https://github.com/gpuix/adwaita-gpuix/commit/8f3c21a",
+    },
+  ],
+  rows: [
+    {
+      rank: 1,
+      name: "src/theme/adwaita.ts",
+      detail: "",
+      state: "modified",
+      figure: "+41 −9",
+    },
+    {
+      rank: 2,
+      name: "src/theme/code.ts",
+      detail: "",
+      state: "modified",
+      figure: "+18 −13",
+    },
+    {
+      rank: 3,
+      name: "src/theme/README.md",
+      detail: "",
+      state: "added",
+      figure: "+5 −0",
+    },
+  ],
+  omitted: 0,
+  body: "Every tone that was a hand-picked hex is now mixed off the accent, so picking an accent in the picker moves the ramp with it.\n\n`divider.faint` stays a hairline colour and nothing else, which is the rule this commit writes down.",
+  bodyOmitted: 0,
+  total: 3,
+  cached: false,
+  ms: 288,
+  rate: NO_RATE,
+  error: "",
+};
+
+/** An open issue: its body, and the thread that has accumulated on it. */
+export const GITHUB_ISSUE_CALL: GithubCall = {
+  status: "ok",
+  kind: "issue",
+  repo: "gpuix/adwaita-gpuix",
+  ref: "",
+  path: "",
+  target: "#391",
+  query: "",
+  fields: [
+    { label: "issue", value: "#391" },
+    {
+      label: "title",
+      value: "ContributionHeatmap cells ignore the accent ramp",
+    },
+    { label: "author", value: "teodor" },
+    { label: "created", value: "2026-11-01 08:14" },
+    { label: "state", value: "open" },
+    { label: "labels", value: "bug, theme" },
+    { label: "comments", value: "7" },
+    {
+      label: "url",
+      value: "https://github.com/gpuix/adwaita-gpuix/issues/391",
+    },
+  ],
+  rows: [
+    {
+      rank: 1,
+      name: "kosp",
+      detail:
+        "The cells read `t.color.accent.tint` once at build time, so the picker cannot move them.",
+      state: "",
+      figure: "2026-11-01 12:02",
+    },
+    {
+      rank: 2,
+      name: "niamh",
+      detail:
+        "Confirmed — same root as the code palette. Fixing it under the accent commit rather than here.",
+      state: "",
+      figure: "2026-11-04 11:31",
+    },
+    {
+      rank: 3,
+      name: "milan",
+      detail:
+        "Still wrong on nightsky: the empty cells are the card colour, so the grid disappears.",
+      state: "",
+      figure: "2026-11-06 19:47",
+    },
+  ],
+  omitted: 4,
+  body: "Pick an accent, and the heatmap keeps its old squares. The ten cells of a week should get darker towards the accent the rest of the window moved to; instead they stay wherever the theme was built.\n\nRepro: nightsky, default accent, then move the accent to amber.",
+  bodyOmitted: 0,
+  total: 7,
+  cached: false,
+  ms: 356,
+  rate: NO_RATE,
+  error: "",
+};
+
+/** What the project has published, newest first. */
+export const GITHUB_RELEASES_CALL: GithubCall = {
+  status: "ok",
+  kind: "releases",
+  repo: "gpuix/adwaita-gpuix",
+  ref: "",
+  path: "",
+  target: "",
+  query: "",
+  fields: [{ label: "releases", value: "4" }],
+  rows: [
+    {
+      rank: 1,
+      name: "v0.14.0",
+      detail: "v0.14.0",
+      state: "",
+      figure: "2026-11-04",
+    },
+    {
+      rank: 2,
+      name: "v0.14.0-rc1",
+      detail: "v0.14.0-rc1",
+      state: "prerelease",
+      figure: "2026-10-27",
+    },
+    {
+      rank: 3,
+      name: "v0.13.2",
+      detail: "v0.13.2",
+      state: "",
+      figure: "2026-10-12",
+    },
+    {
+      rank: 4,
+      name: "v0.13.0",
+      detail: "v0.13.0",
+      state: "",
+      figure: "2026-09-30",
+    },
+  ],
+  omitted: 0,
+  body: "",
+  bodyOmitted: 0,
+  total: 4,
+  cached: true,
+  ms: 0,
+  rate: NO_RATE,
+  error: "",
+};
+
+/** A search of GitHub, and what its three repository hits are. */
+export const GITHUB_SEARCH_CALL: GithubCall = {
+  status: "ok",
+  kind: "search",
+  repo: "",
+  ref: "",
+  path: "",
+  target: "repositories",
+  query: "gpuix",
+  fields: [
+    { label: "kind", value: "repositories" },
+    { label: "total", value: "59" },
+    { label: "shown", value: "3" },
+  ],
+  rows: [
+    {
+      rank: 1,
+      name: "gpuix/gpuix",
+      detail: "GPU-rendered desktop applications, written in Rust",
+      state: "Rust",
+      figure: "1204",
+    },
+    {
+      rank: 2,
+      name: "gpuix/adwaita-gpuix",
+      detail: "The Adwaita widget set, drawn on the GPU",
+      state: "TypeScript",
+      figure: "812",
+    },
+    {
+      rank: 3,
+      name: "gpuix/react",
+      detail: "React reconciler for the gpuix scene graph",
+      state: "TypeScript",
+      figure: "241",
+    },
+  ],
+  omitted: 0,
+  body: "",
+  bodyOmitted: 0,
+  total: 59,
+  cached: false,
+  ms: 812,
+  rate: NO_RATE,
+  error: "",
+};
+
+/** The person who landed the accent change. */
+export const GITHUB_USER_CALL: GithubCall = {
+  status: "ok",
+  kind: "user",
+  repo: "",
+  ref: "",
+  path: "",
+  target: "niamh",
+  query: "",
+  fields: [
+    { label: "login", value: "niamh" },
+    { label: "name", value: "Niamh Ní Dhomhnaill" },
+    { label: "type", value: "User" },
+    { label: "company", value: "gpuix" },
+    { label: "location", value: "Gaillimh" },
+    { label: "repos", value: "34" },
+    { label: "gists", value: "6" },
+    { label: "followers", value: "412" },
+    { label: "following", value: "118" },
+    { label: "joined", value: "2019-04-11" },
+    { label: "url", value: "https://github.com/niamh" },
+  ],
+  rows: [],
+  omitted: 0,
+  body: "Draws interfaces on GPUs. Keeps a single number for every measure and makes the widgets argue about it.",
+  bodyOmitted: 0,
+  total: 0,
+  cached: false,
+  ms: 214,
+  rate: NO_RATE,
+  error: "",
+};
+
 const argsOf = (call: GithubCall): Record<string, unknown> => ({
   owner: "gpuix",
   repo: "adwaita-gpuix",
@@ -310,8 +560,59 @@ export const GITHUB_FAILED_ITEM: ToolFixture = toolCallFixture(
   { details: GITHUB_FAILED_CALL },
 );
 
+export const GITHUB_COMMIT_ITEM: ToolFixture = toolCallFixture(
+  "call-github-commit",
+  GITHUB_COMMIT_TOOL,
+  { owner: "gpuix", repo: "adwaita-gpuix", sha: "8f3c21a" },
+  "ok",
+  githubAnswerOf(GITHUB_COMMIT_CALL),
+  { details: GITHUB_COMMIT_CALL },
+);
+
+export const GITHUB_ISSUE_ITEM: ToolFixture = toolCallFixture(
+  "call-github-issue",
+  GITHUB_ISSUE_TOOL,
+  { owner: "gpuix", repo: "adwaita-gpuix", number: 391, limit: 3 },
+  "ok",
+  githubAnswerOf(GITHUB_ISSUE_CALL),
+  { details: GITHUB_ISSUE_CALL },
+);
+
+export const GITHUB_RELEASES_ITEM: ToolFixture = toolCallFixture(
+  "call-github-releases",
+  GITHUB_RELEASE_TOOL,
+  { owner: "gpuix", repo: "adwaita-gpuix" },
+  "ok",
+  githubAnswerOf(GITHUB_RELEASES_CALL),
+  { details: GITHUB_RELEASES_CALL },
+);
+
+export const GITHUB_SEARCH_ITEM: ToolFixture = toolCallFixture(
+  "call-github-search",
+  GITHUB_SEARCH_TOOL,
+  { query: "gpuix", kind: "repositories", limit: 3 },
+  "ok",
+  githubAnswerOf(GITHUB_SEARCH_CALL),
+  { details: GITHUB_SEARCH_CALL },
+);
+
+export const GITHUB_USER_ITEM: ToolFixture = toolCallFixture(
+  "call-github-user",
+  GITHUB_USER_TOOL,
+  { login: "niamh" },
+  "ok",
+  githubAnswerOf(GITHUB_USER_CALL),
+  { details: GITHUB_USER_CALL },
+);
+
 export const GITHUB_QUESTION =
   "before we touch the row heights, check upstream: has adwaita-gpuix already made the row measure configurable, and what does its tokens file say today?";
+
+export const GITHUB_THREAD_QUESTION =
+  "who keeps breaking the theme, and what has this project shipped lately? check the open theme issue, the last few releases, the commit that touched the accent ramp, and who wrote it.";
+
+export const GITHUB_THREAD_ANSWER =
+  "Three people, and not the same one twice: the heatmap issue (#391) has been open since 1 November with three replies in it and four more GitHub did not send, the accent ramp was actually fixed by `8f3c21a` on 4 November, and the newest thing the project has published is `v0.14.0`, also 4 November — after an `rc1` a week earlier. The person who wrote the accent change is `niamh`, who also replied on #391 the same morning, so the fix and the issue are the same thread of work.";
 
 export const GITHUB_ANSWER =
   "It landed two weeks ago: gpuix/adwaita-gpuix#418, merged 2 November, made the row measure one number and moved every widget to counting slots from it — `rowSlots(height)` is the only way to ask for more than a line. So we do not need our own row height constant: we budget slots and let `ROW_HEIGHT` stay theirs. The read of `src/lib/tokens/rows.ts` above is the shape we are matching, and the path I guessed first (`src/lib/rowHeight.ts`) does not exist — the file moved under `tokens/`.";
