@@ -366,6 +366,10 @@ export function chartPlotOf(params: ChartPlotParams): ChartFigure {
   );
   const width = boundedNumber(params.width, CHART_CANVAS_WIDTH, 120, 4_096);
   const named = (params.series ?? []).map((name) => cellText(name));
+  const emphasis =
+    typeof params.emphasis === "number" && Number.isFinite(params.emphasis)
+      ? Math.max(0, Math.round(params.emphasis))
+      : null;
 
   const base = {
     kind,
@@ -382,10 +386,7 @@ export function chartPlotOf(params: ChartPlotParams): ChartFigure {
       params.dash > 0
         ? params.dash
         : null,
-    emphasis:
-      typeof params.emphasis === "number" && Number.isFinite(params.emphasis)
-        ? Math.max(0, Math.round(params.emphasis))
-        : null,
+    emphasis,
     unit: (params.unit ?? "").trim(),
     caption: (params.caption ?? "").trim(),
   };
@@ -426,6 +427,9 @@ export function chartPlotOf(params: ChartPlotParams): ChartFigure {
   return {
     ...base,
     status: "ok",
+    // A marker per point is decided with the point count in hand, and travels in
+    // the details so the row draws and the answer reads the same decision.
+    markers: markersFor(params.markers, capped.points.length, emphasis),
     series: seriesNamesOf(named, { ...read, points: capped.points }),
     points: capped.points,
     plotted: capped.points.length,

@@ -102,7 +102,8 @@ const RenderParametersSchema = Type.Object({
   ),
   markers: Type.Optional(
     Type.Boolean({
-      description: "Draw a marker per point on a line (default true).",
+      description:
+        "Draw a marker per point on a line. Default: only on a run of 12 points or fewer, or one with an `emphasis` point — a longer run of dots is a second series over the first.",
     }),
   ),
   fill: Type.Optional(
@@ -126,7 +127,7 @@ const RenderParametersSchema = Type.Object({
     Type.Number({
       minimum: 0,
       description:
-        "Which point the reader is standing at — now, the end, the selected row. Its marker is drawn bigger.",
+        "Which point the reader is standing at — now, the end, the selected row. Its marker is drawn bigger, and naming one draws markers even on a long run.",
     }),
   ),
 });

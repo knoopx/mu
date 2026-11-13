@@ -31,12 +31,15 @@ import {
   MAX_POINTS,
 } from "../../../figures/constants";
 import {
+  barWidthFor,
   capPlot,
   coercePlot,
+  markersFor,
   plotColor,
   plotData,
   plotKindOf,
   plotToneOf,
+  seriesColors,
   seriesLegend,
   seriesNamesOf,
 } from "../../../figures/lib/plot";
@@ -250,6 +253,9 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const kind = plotKindOf(node.props.kind);
   const read = coercePlot(listProp(node.props, "points"));
   const capped = capPlot(read.points, MAX_POINTS);
+  const width = prop<number>(node.props, "width", CHART_CANVAS_WIDTH);
+  const emphasis = prop<number | null>(node.props, "emphasis", null);
+  const line = kind === "line";
 
   const series = seriesNamesOf(
     listProp(node.props, "series").map((name) => cellText(name)),
@@ -270,16 +276,24 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         data={plotData(capped.points, series)}
         type={kind}
         color={plotColor(ctx.t, plotToneOf(node.props.tone))}
+        colors={seriesColors(ctx.t)}
+        barWidth={line ? undefined : barWidthFor(capped.points.length, width)}
         height={prop<number>(node.props, "height", CHART_HEIGHT)}
-        width={prop<number>(node.props, "width", CHART_CANVAS_WIDTH)}
+        width={width}
         grid={prop(node.props, "grid", false)}
-        markers={kind === "line" ? prop(node.props, "markers", true) : false}
-        fill={kind === "line" ? prop(node.props, "fill", false) : false}
+        markers={
+          line
+            ? markersFor(
+                prop<boolean | null>(node.props, "markers", null) ?? undefined,
+                capped.points.length,
+                emphasis,
+              )
+            : false
+        }
+        fill={line ? prop(node.props, "fill", false) : false}
         labels={prop(node.props, "labels", true)}
         dash={prop<number | null>(node.props, "dash", null) ?? undefined}
-        emphasis={
-          prop<number | null>(node.props, "emphasis", null) ?? undefined
-        }
+        emphasis={emphasis ?? undefined}
         style={{ width: "100%", minWidth: 0 }}
       />
       {series.length === 0 ? null : (

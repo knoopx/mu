@@ -160,8 +160,8 @@ export function chartFailureLine(figure: ChartFigure): string {
     : `${figure.error}: ${where} holds ${shown}, and ${String(figure.bad.length - 1)} more`;
 }
 
-/** The axis a plot spans, in one chip. */
-function axisCell(figure: ChartFigure): string {
+/** The axis a plot spans, in one line: the header's, since only the header says it. */
+export function axisCell(figure: ChartFigure): string {
   const measure = figure.measure;
   if (measure === null) return "";
   if (measure.first === measure.last) return measure.first;
@@ -190,17 +190,19 @@ export function chartToolViewOf(
     status,
     figure,
     bad: figure.bad,
+    // The header line already says the kind and the span, so neither is a chip;
+    // and a chip whose value repeats its own label prints the word twice
+    // (`points 9 points`), which is what the bare figure is for.
     cells: [
-      { label: "chart", value: status === "empty" ? "" : figure.kind },
       {
         label: "points",
-        value: figure.status === "ok" ? counted(figure.plotted, "point") : "",
+        value:
+          figure.status === "ok" ? String(figure.plotted) : "",
       },
       {
         label: "series",
         value: figure.series.length === 0 ? "" : figure.series.join(", "),
       },
-      { label: "axis", value: status === "ok" ? axisCell(figure) : "" },
       { label: "range", value: status === "ok" ? rangeCell(figure) : "" },
       {
         label: "peak",

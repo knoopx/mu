@@ -41,8 +41,14 @@ import {
 } from "../../core/lib/ui/toolRowPaint";
 import { mutedText } from "../../core/lib/ui/theme";
 import { CHART_RENDER_TOOL, MAX_READOUT_POINTS } from "../constants";
-import { legendOf, plotColor, plotDataOf } from "../lib/plot";
-import { chartFailureLine, chartToolViewOf } from "../lib/toolView";
+import {
+  barWidthFor,
+  legendOf,
+  plotColor,
+  plotDataOf,
+  seriesColors,
+} from "../lib/plot";
+import { axisCell, chartFailureLine, chartToolViewOf } from "../lib/toolView";
 import type { ChartToolView } from "../lib/toolView";
 
 const RUNNING_TEXT: Record<string, string> = {
@@ -96,12 +102,7 @@ function headOf(_tool: string, view: ChartToolView): string {
   if (figure.status === "invalid") {
     return chartFailureLine(figure);
   }
-  const axis =
-    figure.measure === null
-      ? ""
-      : figure.measure.first === figure.measure.last
-        ? figure.measure.first
-        : `${figure.measure.first} → ${figure.measure.last}`;
+  const axis = axisCell(figure);
   return [
     figure.kind,
     axis,
@@ -157,6 +158,12 @@ export function ChartToolRows({ item }: ChartToolRowsProps): JSX.Element {
           data={data}
           type={figure.kind}
           color={plotColor(t, figure.tone)}
+          colors={seriesColors(t)}
+          barWidth={
+            figure.kind === "line"
+              ? undefined
+              : barWidthFor(figure.plotted, figure.width)
+          }
           height={figure.height}
           width={figure.width}
           grid={figure.grid}
