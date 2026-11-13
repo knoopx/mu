@@ -16,7 +16,7 @@ export function composerGap(t: AdwaitaTheme): number {
   return conversationGap(t);
 }
 
-/** The block a tool shows its own output in: lines read, lines written, a patch. */
+/** The row of lines inside a band: one line per text line, no plate of its own. */
 export function toolPreviewWrap(
   t: AdwaitaTheme,
   style?: Partial<StyleDesc>,
@@ -40,10 +40,21 @@ export const previewLineHeight = (t: AdwaitaTheme): number =>
 export const userMessageLineHeight = (t: AdwaitaTheme): number =>
   lineBox(t, "body");
 
-export function outputPanel(t: AdwaitaTheme): StyleDesc {
+/**
+ * The one band a tool's answer stands on.
+ *
+ * Every answer the log shows — the lines a read quoted, the lines a write left,
+ * a patch, rows of a table, a plot, a tree, a printed command — sits on this same
+ * plate, so a tool row reads as *an answer* rather than as loose lines on the log
+ * with a card only where one tool happens to quote text. Nothing inside a band
+ * gets to draw a second plate: an output box on the band is flattened to the
+ * band's own colour, and a diagram takes it as its page.
+ */
+export function toolBand(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
+    gap: t.space.xs,
     minWidth: 0,
     flexShrink: 1,
     padding: t.space.sm,

@@ -4,7 +4,7 @@ import type { StyleDesc } from "@gpuix/react";
 
 import { buildNativeTheme, mutedText } from "../lib/ui/theme";
 import {
-  outputPanel,
+  toolBand,
   previewLineHeight,
   toolPreviewWrap,
 } from "../lib/ui/transcriptLayout";
@@ -108,7 +108,7 @@ export function WritePreview({
   const t = useAdwaita();
   const lineHeight = previewLineHeight(t);
   const wrap = toolPreviewWrap(t, style);
-  const card: StyleDesc = { ...outputPanel(t), flexShrink: 0 };
+  const card: StyleDesc = { ...toolBand(t), flexShrink: 0 };
 
   return (
     <div style={wrap}>

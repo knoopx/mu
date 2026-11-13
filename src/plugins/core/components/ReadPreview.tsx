@@ -8,8 +8,8 @@ import type { StyleDesc } from "@gpuix/react";
 import { buildNativeTheme } from "../lib/ui/theme";
 import { PREVIEW_IMAGE_HEIGHT, PREVIEW_IMAGE_WIDTH } from "../lib/ui/tokens";
 import {
-  outputPanel,
   previewLineHeight,
+  toolBand,
   toolPreviewWrap,
 } from "../lib/ui/transcriptLayout";
 
@@ -180,7 +180,7 @@ export function ReadPreview({
   const t = useAdwaita();
   const lineHeight = previewLineHeight(t);
   const wrap = toolPreviewWrap(t, style);
-  const card: StyleDesc = { ...outputPanel(t), flexShrink: 0 };
+  const card: StyleDesc = { ...toolBand(t), flexShrink: 0 };
 
   const tile: StyleDesc = {
     width: PREVIEW_IMAGE_WIDTH,
