@@ -18,6 +18,7 @@ import {
 import type { FilePanelFocus, NavDirection, VcsPanelKind } from "../types";
 
 export const STACK_ACTION_IDS = new Set([
+  "pick",
   "new",
   "edit",
   "split",
@@ -33,6 +34,7 @@ export const STACK_ACTION_IDS = new Set([
 
 export const FILES_ACTION_IDS = new Set([
   "open",
+  "edit",
   "split",
   "split-hunk",
   "discard",
@@ -135,6 +137,7 @@ export interface FileKeys {
   run: (id: string) => boolean;
 }
 
+/** The right half of both panels: a file's own patch, and what can be done to it. */
 export function runFileKey(id: string, keys: FileKeys): boolean {
   const direction = navDirectionOf(id);
   if (direction !== null) {

@@ -41,7 +41,8 @@ export interface ChangesPanelOptions {
 
   enabled: boolean;
 
-  onPickPath: (path: string) => void;
+  /** Enter on either half: the change id, or the file path, into the draft. */
+  onPickText: (text: string) => void;
 
   onInstruction(text: string): void;
 }
@@ -89,7 +90,7 @@ export interface ChangesPanelState {
 }
 
 export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
-  const { cwd, toast, enabled, onPickPath, onInstruction } = opts;
+  const { cwd, toast, enabled, onPickText, onInstruction } = opts;
   const renderer = useGpuixRequired();
   const rowHeight = useAdwaita().control.rowHeight;
 
@@ -123,7 +124,7 @@ export function useChangesPanel(opts: ChangesPanelOptions): ChangesPanelState {
     checked: selection.checked,
     toggleChecked: selection.toggleChecked,
     clearChecked: selection.clearChecked,
-    onPickPath,
+    onPickText,
     onInstruction,
   });
 

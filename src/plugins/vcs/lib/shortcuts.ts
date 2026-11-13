@@ -34,6 +34,7 @@ const FOCUS_OPS: Shortcut = {
 export const STACK_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_RIGHT,
+  { id: "pick", kbds: ["enter"], desc: "insert" },
   { id: "new", kbds: ["n"], desc: "new" },
   { id: "edit", kbds: ["e"], desc: "edit" },
   { id: "split", kbds: ["s"], desc: "split" },
@@ -51,7 +52,8 @@ export const FILES_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_LEFT,
   { id: "pick", kbds: ["enter"], desc: "insert" },
-  { id: "open", kbds: ["e"], desc: "editor" },
+  { id: "open", kbds: ["o"], desc: "open" },
+  { id: "edit", kbds: ["e"], desc: "edit" },
   {
     id: "scroll-up",
     kbds: [["shift", "pageup"]],
@@ -84,10 +86,18 @@ export const OPLOG_SHORTCUTS: Shortcut[] = [
   { id: "redo", kbds: [["shift", "u"]], desc: "redo" },
 ];
 
-/** An operation's files are history: they are read and scrolled, never split. */
+/**
+ * An operation's files are history: they are read and scrolled, never split.
+ *
+ * They are still the paths of the working copy, so the two open keys answer —
+ * `o` to the desktop's default app, `e` to the editor — and a file the
+ * operation moved out of the tree is refused as gone rather than opened.
+ */
 export const OPLOG_FILE_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_OPS,
+  { id: "open", kbds: ["o"], desc: "open" },
+  { id: "edit", kbds: ["e"], desc: "edit" },
   {
     id: "scroll-up",
     kbds: [["shift", "pageup"]],

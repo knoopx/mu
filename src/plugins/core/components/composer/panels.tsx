@@ -43,6 +43,7 @@ import {
 } from "../../lib/composer/panelHeight";
 import {
   panelCanDelete,
+  panelCanEdit,
   panelCanOpen,
   panelHints,
   pathCompletionHints,
@@ -148,6 +149,7 @@ export interface ComposerPanelData {
   onPick: (row: ComposerPanelRow, intent: PickIntent) => void;
   onDelete: (row: ComposerPanelRow) => void;
   onOpen: (row: ComposerPanelRow) => void;
+  onEdit: (row: ComposerPanelRow) => void;
   onHover: (mode: ComposerMode, index: number, count: number) => void;
 }
 
@@ -481,6 +483,7 @@ function listPanelSpec(
     status: listStatus(data, source, rows, query, total),
     ...(panelCanDelete(source) ? { onDelete: data.onDelete } : {}),
     ...(panelCanOpen(source) ? { onOpen: data.onOpen } : {}),
+    ...(panelCanEdit(source) ? { onEdit: data.onEdit } : {}),
     emptyText:
       source === "guardrails"
         ? data.guardrails.emptyText

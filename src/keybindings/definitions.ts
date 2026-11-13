@@ -60,6 +60,11 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
     def(
       "composer.openRow",
       "o",
+      "Open the highlighted file in the desktop's default app in the file composer panel",
+    ),
+    def(
+      "composer.editRow",
+      "e",
       "Open the highlighted file in the editor in the file composer panel",
     ),
     def(

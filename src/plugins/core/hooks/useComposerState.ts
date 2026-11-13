@@ -8,6 +8,9 @@ export interface ComposerStateOptions {
   initialAttachments?: ComposerAttachment[];
 
   initialMode?: ComposerMode;
+
+  /** start the log at its end (the live default) or at its first row */
+  initialFollowTail?: boolean;
 }
 
 export interface ComposerState {
@@ -50,7 +53,10 @@ export function useComposerState(
   const [attachments, setAttachments] = useState<ComposerAttachment[]>(
     opts.initialAttachments ?? [],
   );
-  const [followTail, setFollowTail] = useState(true);
+  // A session opened mid-transcript stands at the end of it, which is what a reader
+  // of a running session wants. The one caller that wants the other half — a scene
+  // painted whole from its first row — says so on the way in.
+  const [followTail, setFollowTail] = useState(opts.initialFollowTail ?? true);
   const [mode, setMode] = useState<ComposerMode>(
     opts.initialMode ?? draftMode(),
   );

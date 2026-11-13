@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { launchDefaultApp } from "../utils/launcher";
 
 export type LinkOpener = (url: string) => void;
 
@@ -6,22 +6,6 @@ let linkOpener: LinkOpener | undefined;
 
 function setLinkOpener(opener: LinkOpener | undefined): void {
   linkOpener = opener;
-}
-
-const LAUNCHERS = ["xdg-open", "open"];
-
-function spawnLauncher(cmd: string, url: string): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
-    const child = spawn(cmd, [url], {
-      stdio: "ignore",
-      detached: true,
-    });
-    child.once("error", (error: NodeJS.ErrnoException) => reject(error));
-    child.once("spawn", () => {
-      child.unref();
-      resolve();
-    });
-  });
 }
 
 function httpUrl(url: string): string {
@@ -37,6 +21,13 @@ function httpUrl(url: string): string {
   return parsed.href;
 }
 
+/**
+ * Hand a web link to the desktop's browser.
+ *
+ * The launchers are the file opener's — one chain, one answer for what it
+ * means for nothing to have started — and the refusal keeps the link, because
+ * the row that asked is the only place a reader can see what was not opened.
+ */
 export async function openExternal(url: string): Promise<void> {
   const link = httpUrl(url);
 
@@ -45,19 +36,7 @@ export async function openExternal(url: string): Promise<void> {
     return;
   }
 
-  const attempted: string[] = [];
-  for (const cmd of LAUNCHERS) {
-    try {
-      await spawnLauncher(cmd, link);
-      return;
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code;
-      if (code !== "ENOENT") throw error;
-      attempted.push(cmd);
-    }
-  }
-
-  throw new Error(
-    `No link opener available (${attempted.join(", ")} not found) — ${link}`,
-  );
+  const launched = await launchDefaultApp(link);
+  if (!launched.ok)
+    throw new Error(`Could not open the link: ${launched.error} — ${link}`);
 }

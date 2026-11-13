@@ -156,8 +156,11 @@ export interface ComposerPanelSpec {
 
   onDelete?: (row: ComposerPanelRow) => void;
 
-  /** The open key: a file panel hands its row to the user's editor. */
+  /** The open key: a file panel hands its row to the desktop's default app. */
   onOpen?: (row: ComposerPanelRow) => void;
+
+  /** The edit key: a file panel hands its row to the user's editor. */
+  onEdit?: (row: ComposerPanelRow) => void;
 }
 
 export interface ComposerContextSpec {

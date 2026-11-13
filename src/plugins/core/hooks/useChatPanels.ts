@@ -141,6 +141,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     removeSession: sessions.remove,
     removeFile: files.remove,
     openFile: files.open,
+    editFile: files.edit,
     guardrails,
     composer,
   });
@@ -149,7 +150,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     cwd,
     toast,
     enabled: target === "changes",
-    onPickPath: composerActions.pickChangesPath,
+    onPickText: composerActions.pickChangesText,
     onInstruction: composerActions.sendInstruction,
   });
 

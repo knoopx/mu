@@ -11,7 +11,7 @@ import {
   type ComposerMode,
   type PickIntent,
 } from "./mode";
-import { isDeleteRowKey, isOpenRowKey } from "./shortcuts";
+import { isDeleteRowKey, isEditRowKey, isOpenRowKey } from "./shortcuts";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
@@ -96,8 +96,11 @@ export interface ComposerKeyContext {
 
   onDelete?: () => void;
 
-  /** Open the row under the cursor in the user's editor. */
+  /** Hand the row under the cursor to the desktop's default app. */
   onOpen?: () => void;
+
+  /** Hand the row under the cursor to the user's editor. */
+  onEdit?: () => void;
   onClear?: () => void;
   onPaste?: () => void;
   onAbort: () => void;
@@ -276,11 +279,22 @@ function panelListKeys(event: EventPayload, ctx: ComposerKeyContext): void {
   });
 }
 
-/** A row key that is a bare letter has to be taken before the letter is typed. */
-function panelOpenKey(event: EventPayload, ctx: ComposerKeyContext): boolean {
-  if (ctx.onOpen === undefined || !isOpenRowKey(event)) return false;
-  ctx.onOpen();
-  return true;
+/**
+ * A row key that is a bare letter has to be taken before the letter is typed.
+ *
+ * The file panel is the only panel that hands letters — `o` to the default app,
+ * `e` to the editor — so it is the only panel that loses them from its filter.
+ */
+function panelLetterKey(event: EventPayload, ctx: ComposerKeyContext): boolean {
+  if (ctx.onOpen !== undefined && isOpenRowKey(event)) {
+    ctx.onOpen();
+    return true;
+  }
+  if (ctx.onEdit !== undefined && isEditRowKey(event)) {
+    ctx.onEdit();
+    return true;
+  }
+  return false;
 }
 
 function panelNavKey(
@@ -296,7 +310,7 @@ function panelNavKey(
     return true;
   }
 
-  if (panelOpenKey(event, ctx)) return true;
+  if (panelLetterKey(event, ctx)) return true;
 
   if (BOUNDARY_KEYS.has(key)) {
     if (ctx.count === 0) return false;
@@ -329,10 +343,11 @@ function handlePanelKey(
     ctx.send({ type: "setQuery", query });
   };
 
-  // The open key is a bare letter, so it is taken before the keystroke that
-  // would otherwise narrow the filter. Only a panel that can open a row hands
-  // an onOpen, so no other panel loses the letter to a command.
-  if (panelOpenKey(event, ctx)) return;
+  // The open and edit keys are bare letters, so they are taken before the
+  // keystroke that would otherwise narrow the filter. Only a panel that can
+  // take a row hands an onOpen or an onEdit, so no other panel loses a letter
+  // to a command.
+  if (panelLetterKey(event, ctx)) return;
 
   if (bare && key === "backspace") {
     setQuery(mode.query.slice(0, -1));

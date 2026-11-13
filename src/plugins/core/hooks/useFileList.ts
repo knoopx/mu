@@ -1,14 +1,21 @@
 import { useCallback, useState } from "react";
 import { deleteFile, type FileDeleteResult } from "../lib/files/deleteFile";
 import { invalidateFileList } from "../lib/files/fileList";
-import { openFileInEditor, type FileOpenResult } from "../lib/files/openFile";
+import {
+  openFileInDefaultApp,
+  openFileInEditor,
+  type FileOpenResult,
+} from "../lib/files/openFile";
 
 export interface FileListState {
   /** Take a listed file off the disk; the answer says why it could not. */
   remove(path: string): FileDeleteResult;
 
-  /** Hand a listed file to the user's editor; the answer waits for it to start. */
+  /** Hand a listed file to the desktop's default app; the answer waits for it to start. */
   open(path: string): Promise<FileOpenResult>;
+
+  /** Hand a listed file to the user's editor; the answer waits for it to start. */
+  edit(path: string): Promise<FileOpenResult>;
 
   /** Drop the folder's walk, so the next read lists the tree as it now is. */
   reload(): void;
@@ -44,9 +51,14 @@ export function useFileList(cwd: string): FileListState {
   // Opening changes nothing on disk that the list has to notice, so the walk
   // stays: the row that was opened is still the row under the cursor.
   const open = useCallback(
+    (path: string): Promise<FileOpenResult> => openFileInDefaultApp(cwd, path),
+    [cwd],
+  );
+
+  const edit = useCallback(
     (path: string): Promise<FileOpenResult> => openFileInEditor(cwd, path),
     [cwd],
   );
 
-  return { remove, open, reload };
+  return { remove, open, edit, reload };
 }

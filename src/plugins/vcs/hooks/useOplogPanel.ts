@@ -24,6 +24,7 @@ import {
   runOplogKey,
 } from "../lib/keymap";
 import { redoOperation, restoreOperation, undoOperation } from "../lib/repo";
+import { openPanelFile } from "../lib/fileOpen";
 import { useOplogData } from "./useOplogData";
 import { useRepoWrites } from "./useRepoWrites";
 import { usePanelListRefs } from "./usePanelListRefs";
@@ -125,6 +126,24 @@ export function useOplogPanel(options: OplogPanelOptions): OplogPanelState {
     [data, runMutation, toast],
   );
 
+  /**
+   * An operation's files are history, but the paths it names are the working
+   * copy's: `o` and `e` hand the one under the cursor to the desktop or the
+   * editor, and a file the operation took out of the tree is refused as gone
+   * rather than opened. Nothing is inserted, split or discarded out of them.
+   */
+  const oplogFileAction = useCallback(
+    (id: string): boolean => {
+      if (id !== "open" && id !== "edit") return false;
+      const live = data.live();
+      const file = live.files[live.fileSel];
+      if (file === undefined) return false;
+      openPanelFile(file.path, id === "open" ? "default app" : "editor", toast);
+      return true;
+    },
+    [data, toast],
+  );
+
   const onKey = useCallback(
     (event: EventPayload): boolean => {
       const key = keyOf(event);
@@ -144,18 +163,16 @@ export function useOplogPanel(options: OplogPanelOptions): OplogPanelState {
           run: oplogAction,
         });
 
-      // An operation's files are history: nothing is inserted, split or
-      // discarded out of them, so only the cursor and the scroll answer.
       return runFileKey(id, {
         actionsOpen,
         nav: nav.goFile,
         focusStack: () => setFocus("stack"),
         scroll: (down) => refs.scrollDiff(down),
         pick: () => false,
-        run: () => false,
+        run: oplogFileAction,
       });
     },
-    [data, focus, nav, oplogAction, refs],
+    [data, focus, nav, oplogAction, oplogFileAction, refs],
   );
 
   return {

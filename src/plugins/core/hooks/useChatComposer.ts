@@ -13,6 +13,7 @@ import {
 } from "../lib/composer/mode";
 import {
   deletePanelRow,
+  editPanelRow,
   openPanelRow,
   pickComposerRow,
   runChatCommand,
@@ -47,6 +48,8 @@ export interface ChatComposerOptions {
 
   openFile(path: string): Promise<FileOpenResult>;
 
+  editFile(path: string): Promise<FileOpenResult>;
+
   guardrails: GuardrailsPanelApi;
 
   composer: ComposerState;
@@ -59,7 +62,8 @@ export interface ChatComposerActions {
 
   pickRow(row: ComposerPanelRow, intent: PickIntent): void;
 
-  pickChangesPath(path: string): void;
+  /** What the changes panel's Enter takes: the token it names into the draft. */
+  pickChangesText(text: string): void;
 
   /** Tab: open the path completion panel over the path the draft is typing. */
   completePath(): void;
@@ -71,10 +75,16 @@ export interface ChatComposerActions {
   deleteRow(row: ComposerPanelRow): void;
 
   /**
-   * The open key: the file panel's row is handed to the user's editor, and the
-   * panel stays where it was.
+   * The open key: the file panel's row is handed to the desktop's default app,
+   * and the panel stays where it was.
    */
   openRow(row: ComposerPanelRow): void;
+
+  /**
+   * The edit key: the same row is handed to the user's editor, for the file
+   * they mean to change rather than just look at.
+   */
+  editRow(row: ComposerPanelRow): void;
 
   runCommand(name: string): void;
 
@@ -111,6 +121,7 @@ export function useChatComposer(
     removeSession,
     removeFile,
     openFile,
+    editFile,
     guardrails,
     composer,
   } = opts;
@@ -157,8 +168,8 @@ export function useChatComposer(
     toggleGuardrail: (key) => guardrails.toggle(key),
   };
 
-  const pickChangesPath = (path: string): void => {
-    appendPath(path);
+  const pickChangesText = (text: string): void => {
+    appendPath(text);
     setMode(draftMode());
   };
 
@@ -210,7 +221,10 @@ export function useChatComposer(
     });
 
   const openRow = (row: ComposerPanelRow): void =>
-    openPanelRow(row, { toast, mode, openFile });
+    openPanelRow(row, { toast, mode, openFile, editFile });
+
+  const editRow = (row: ComposerPanelRow): void =>
+    editPanelRow(row, { toast, mode, openFile, editFile });
 
   const seedPrompt = (text: string): void => {
     setInput(text);
@@ -247,10 +261,11 @@ export function useChatComposer(
     actions,
     onSubmit,
     pickRow,
-    pickChangesPath,
+    pickChangesText,
     completePath,
     deleteRow,
     openRow,
+    editRow,
     runCommand,
     startNewSession,
     seedPrompt,

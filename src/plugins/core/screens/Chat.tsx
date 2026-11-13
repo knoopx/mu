@@ -29,7 +29,7 @@ import { type TurnStats } from "../lib/agent/turnStats";
 import { ChatTranscript } from "../components/ChatTranscript";
 import { ChatComposerSlot } from "../components/ChatComposerSlot";
 import { AssistantMessage } from "../components/AssistantMessage";
-import { ToolExecution } from "../components/ToolExecution";
+import { ToolExecution, dedicatedToolRowOf } from "../components/ToolExecution";
 import {
   composerGap,
   PAGE_INSET,
@@ -216,6 +216,7 @@ function panelDataOf(
     onPick: composerActions.pickRow,
     onDelete: composerActions.deleteRow,
     onOpen: composerActions.openRow,
+    onEdit: composerActions.editRow,
     onHover: composerActions.onHover,
   };
 }
@@ -309,7 +310,7 @@ export const TranscriptRow = memo(function TranscriptRow({
         answered={answered}
       />
     ) : item.kind === "tool" ? (
-      <ToolExecution item={item} />
+      (dedicatedToolRowOf(item) ?? <ToolExecution item={item} />)
     ) : (
       <SystemRow text={item.text} />
     );
@@ -420,6 +421,9 @@ export interface ChatAppProps {
 
   initialAttachments?: ComposerAttachment[];
 
+  /** whether the log stands at the end of the transcript (the live default) or at its top */
+  followTail?: boolean;
+
   now?: number;
 }
 
@@ -503,6 +507,7 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     initialInput: props.initialInput,
     initialAttachments: props.initialAttachments,
     initialMode: props.initialMode,
+    initialFollowTail: props.followTail,
   });
   const { input, attachments, mode, setMode, followTail } = composer;
 

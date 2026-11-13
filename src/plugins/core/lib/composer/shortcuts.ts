@@ -10,6 +10,8 @@ export const DELETE_ROW_KEY = "composer.deleteRow";
 
 export const OPEN_ROW_KEY = "composer.openRow";
 
+export const EDIT_ROW_KEY = "composer.editRow";
+
 export const AUTOCOMPLETE_KEY = "editor.autocomplete";
 
 /**
@@ -29,14 +31,18 @@ export const panelCanDelete = (panel: ComposerTarget | "commands"): boolean =>
 /**
  * The panels whose highlighted row is a file on disk that can be opened.
  *
- * Only the file panel: its rows are the project's own files, and `o` is the one
- * key that hands a row to the user's editor. It is a bare letter, so unlike the
- * other panels' keys it is taken from the filter the panel types into — the hint
- * line is what says so.
+ * Only the file panel: its rows are the project's own files. `o` hands one to
+ * the desktop's default app and `e` to the user's editor, matching the two keys
+ * the project's own file panes use. Both are bare letters, so unlike the other
+ * panels' keys they are taken from the filter the panel types into — the hint
+ * line is what says so, and two letters is the whole budget.
  */
 const OPENABLE_PANELS: Array<ComposerTarget | "commands"> = ["file"];
 
 export const panelCanOpen = (panel: ComposerTarget | "commands"): boolean =>
+  OPENABLE_PANELS.includes(panel);
+
+export const panelCanEdit = (panel: ComposerTarget | "commands"): boolean =>
   OPENABLE_PANELS.includes(panel);
 
 /** What the delete key is called beside each panel that has one. */
@@ -48,6 +54,11 @@ const PANEL_DELETE: Record<string, string> = {
 /** What the open key is called beside each panel that has one. */
 const PANEL_OPEN: Record<string, string> = {
   file: "open",
+};
+
+/** What the edit key is called beside each panel that has one. */
+const PANEL_EDIT: Record<string, string> = {
+  file: "edit",
 };
 
 const PANEL_CHOOSE: Record<string, string> = {
@@ -74,6 +85,12 @@ export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
       id: "open",
       kbds: [getKeybindings().get(OPEN_ROW_KEY)],
       desc: PANEL_OPEN[panel] ?? "open",
+    });
+  if (panelCanEdit(panel))
+    rows.push({
+      id: "edit",
+      kbds: [getKeybindings().get(EDIT_ROW_KEY)],
+      desc: PANEL_EDIT[panel] ?? "edit",
     });
   if (panelCanDelete(panel))
     rows.push({
@@ -132,6 +149,9 @@ export const isDeleteRowKey = (event: EventPayload): boolean =>
 
 export const isOpenRowKey = (event: EventPayload): boolean =>
   isBareRowKey(event, OPEN_ROW_KEY);
+
+export const isEditRowKey = (event: EventPayload): boolean =>
+  isBareRowKey(event, EDIT_ROW_KEY);
 
 export const USER_MESSAGE_HISTORY_KEY = "composer.userMessageHistory";
 

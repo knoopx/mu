@@ -1,24 +1,15 @@
 /**
- * What an action key does to the selection.
- *
- * The panel's action keys are opened by a bare key press and named by an id:
- * `d` describes, `s` splits, `p` pushes a bookmark. Half of them are writes the
- * panel runs itself, and the two that need a reader — describing a change,
- * breaking one change into coherent commits — are handed over as an
- * instruction, so they arrive as a tool row the reader can see. The files
- * pane's `s` is not one of them: moving one named file out of a change is a
- * single jj write, so that key writes it.
+ * PROBE MARKER
  */
 import { useCallback } from "react";
 import type { ToastFn } from "adwaita-gpuix";
 import {
   bookmarkNamesFor,
-  findWorkspaceRoot,
   listBookmarks,
   restoreFile,
   splitFileChange,
 } from "../lib/repo";
-import { openFileInEditor, openNotice } from "../../core/lib/files/openFile";
+import { openPanelFile } from "../lib/fileOpen";
 import {
   describeInstruction,
   splitChangeInstruction,
@@ -37,31 +28,26 @@ export interface ChangesActionsOptions {
   writes: ChangeWrites;
   overlay: ChangesOverlay;
 
-  /** the changes ticked for a describe */
   checked: ReadonlySet<string>;
 
   toggleChecked(changeId: string): void;
   clearChecked(): void;
-  onPickPath(path: string): void;
+
+  onPickText(text: string): void;
+
   onInstruction(text: string): void;
 }
 
 export interface ChangesActions {
-  /** an action on the selected change; false hands the key back to the editor */
   stackAction(id: string): boolean;
 
-  /** an action on the selected file, same bargain */
   filesAction(id: string): boolean;
 }
 
-/**
- * The stack keys, in the order they are tried. A key either names an action the
- * panel has or names nothing. (A revset key is answered by the caller: it opens
- * an overlay and needs no change selected.)
- */
 interface StackActionContext {
   change: Change;
 
+  insert(): void;
   openBookmark(changeId: string): void;
   mutate(call: (changeId: string) => Promise<string>): void;
   describe(): boolean;
@@ -71,6 +57,10 @@ interface StackActionContext {
 }
 
 function stackActionOf(id: string, ctx: StackActionContext): boolean {
+  if (id === "pick") {
+    ctx.insert();
+    return true;
+  }
   const mutate = STACK_MUTATIONS[id];
   if (mutate !== undefined) {
     ctx.mutate(mutate);
@@ -96,11 +86,11 @@ function stackActionOf(id: string, ctx: StackActionContext): boolean {
   return false;
 }
 
-/** The file keys: how the selected file is opened, split or thrown away. */
 interface FileActionContext {
   open(): void;
 
-  /** the panel's own write: this file moves out of the change */
+  edit(): void;
+
   split(): void;
 
   splitHunks(): void;
@@ -111,6 +101,10 @@ interface FileActionContext {
 function fileActionOf(id: string, ctx: FileActionContext): boolean {
   if (id === "open") {
     ctx.open();
+    return true;
+  }
+  if (id === "edit") {
+    ctx.edit();
     return true;
   }
   if (id === "split") {
@@ -128,7 +122,6 @@ function fileActionOf(id: string, ctx: FileActionContext): boolean {
   return false;
 }
 
-/** What a describe asks for, in the notice the panel gives back. */
 function describeNotice(targets: readonly string[]): string {
   return targets.length === 1
     ? `Describing ${targets[0]?.slice(0, SHORT_CHANGE_ID)}`
@@ -146,7 +139,7 @@ export function useChangesActions(
     checked,
     toggleChecked,
     clearChecked,
-    onPickPath,
+    onPickText,
     onInstruction,
   } = options;
   const { selectedChange, runMutation, sentToAgent } = writes;
@@ -159,7 +152,6 @@ export function useChangesActions(
     [data.rows],
   );
 
-  /** A describe takes what is ticked, or the change the cursor is on. */
   const describeTargets = useCallback((): string[] => {
     const ids = Array.from(checked);
     if (ids.length > 0) return ids;
@@ -203,6 +195,9 @@ export function useChangesActions(
       if (change === undefined) return false;
       return stackActionOf(id, {
         change,
+        insert: (): void => {
+          onPickText(change.change_id.slice(0, SHORT_CHANGE_ID));
+        },
         openBookmark: overlay.openBookmark,
         mutate: (mutate) => {
           void runMutation(() => mutate(change.change_id));
@@ -224,6 +219,7 @@ export function useChangesActions(
     },
     [
       onInstruction,
+      onPickText,
       overlay.openBookmark,
       pushBookmarks,
       runDescribe,
@@ -239,19 +235,17 @@ export function useChangesActions(
       const live = data.live();
       const file = live.files[live.fileSel];
       if (id === "pick") {
-        if (file !== undefined) onPickPath(file.path);
+        if (file !== undefined) onPickText(file.path);
         return true;
       }
       const change = selectedChange();
       if (change === undefined || file === undefined) return false;
       return fileActionOf(id, {
         open: (): void => {
-          void openFileInEditor(findWorkspaceRoot(), file.path).then(
-            (result) => {
-              const notice = openNotice(result, file.path);
-              toast(notice.message, { type: notice.type });
-            },
-          );
+          openPanelFile(file.path, "default app", toast);
+        },
+        edit: (): void => {
+          openPanelFile(file.path, "editor", toast);
         },
         split: (): void => {
           void runMutation(() => splitFileChange(change.change_id, file.path));
@@ -274,7 +268,7 @@ export function useChangesActions(
     [
       data,
       onInstruction,
-      onPickPath,
+      onPickText,
       runMutation,
       selectedChange,
       sentToAgent,

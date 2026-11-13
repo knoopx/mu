@@ -20,7 +20,11 @@ import type { ComposerPanelRow } from "../../components/composer/Composer";
 import type { ThemePanelState } from "../../hooks/useThemePanel";
 import type { SessionDeleteResult, ThinkingLevel } from "../agent/agentService";
 import type { FileDeleteResult } from "../files/deleteFile";
-import { openNotice, type FileOpenResult } from "../files/openFile";
+import {
+  openNotice,
+  type FileOpenResult,
+  type OpenTarget,
+} from "../files/openFile";
 
 const COMMAND_TARGETS: Record<string, ComposerTarget> = {
   model: "model",
@@ -215,8 +219,11 @@ export interface DeleteFileContext {
 export interface OpenFileContext {
   toast: ToastFn;
 
-  /** Hand the file to the user's editor; the answer waits for the editor to start. */
+  /** Hand the file to the desktop's default app; the answer waits for it to start. */
   openFile(path: string): Promise<FileOpenResult>;
+
+  /** Hand the file to the user's editor; the answer waits for the editor to start. */
+  editFile(path: string): Promise<FileOpenResult>;
 }
 
 /**
@@ -290,18 +297,23 @@ export function deletePanelRow(
 }
 
 /**
- * Open the file the row names, in the editor the user asked for.
+ * Hand the file the row names to a program, and say which one it went to.
  *
- * The panel stays open and the cursor stays put: an editor is opened to be read,
- * and the list it was picked from is how the next one is picked. The toast is the
- * whole notice — the answer waits for the editor to actually start, so a name
- * that is not on the road is reported instead of promised.
+ * The panel stays open and the cursor stays put: a file is opened to be read,
+ * and the list it was picked from is how the next one is picked. The toast is
+ * the whole notice — the answer waits for the program to actually start, so a
+ * launcher that is not on the road is reported instead of promised.
  */
-function openFileRow(row: ComposerPanelRow, a: OpenFileContext): void {
+function handFileRow(
+  row: ComposerPanelRow,
+  take: (path: string) => Promise<FileOpenResult>,
+  a: OpenFileContext,
+  target: OpenTarget,
+): void {
   if (row.kind !== "option") return;
   const name = rowName(row);
-  void a.openFile(row.key).then((result) => {
-    const notice = openNotice(result, name);
+  void take(row.key).then((result) => {
+    const notice = openNotice(result, name, target);
     a.toast(notice.message, { type: notice.type });
   });
 }
@@ -310,7 +322,14 @@ export type PanelOpenContext = OpenFileContext & {
   mode: ComposerMode;
 };
 
+/** `o`: the desktop's own answer to the file's type. */
 export function openPanelRow(row: ComposerPanelRow, a: PanelOpenContext): void {
   if (a.mode.kind !== "pick") return;
-  if (a.mode.target === "file") openFileRow(row, a);
+  if (a.mode.target === "file") handFileRow(row, a.openFile, a, "default app");
+}
+
+/** `e`: the editor the user asked for. */
+export function editPanelRow(row: ComposerPanelRow, a: PanelOpenContext): void {
+  if (a.mode.kind !== "pick") return;
+  if (a.mode.target === "file") handFileRow(row, a.editFile, a, "editor");
 }
