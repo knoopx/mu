@@ -39,7 +39,7 @@ import {
   QUALITY_BADGE_VARIANTS,
 } from "../constants";
 import { qualityCellOf, qualityToolViewOf } from "../lib/toolView";
-import type { QualityToolStatus, QualityToolView } from "../types";
+import type { QualityCell, QualityToolStatus, QualityToolView } from "../types";
 
 const RUNNING_TEXT: Record<string, string> = {
   [CODE_COMPLEXITY_TOOL]: "measuring complexity",
@@ -115,6 +115,16 @@ function headOf(tool: string, view: QualityToolView): string {
   return qualityCellOf(view, SCOPE_LABELS[tool] ?? "scope");
 }
 
+/**
+ * The scope is the header's, so it is not a chip too: `code-complexity (cwd)`
+ * over a chip reading `scope (cwd)` was one fact printed twice on one row. The
+ * cell stays in the view, because the header reads it out of there.
+ */
+function chipCellsOf(tool: string, view: QualityToolView): QualityCell[] {
+  const scope = SCOPE_LABELS[tool] ?? "scope";
+  return view.cells.filter((cell) => cell.label !== scope);
+}
+
 export interface QualityToolRowsProps {
   item: ToolTranscriptItem;
 }
@@ -140,7 +150,7 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={view.cells} />
+      <ToolChips cells={chipCellsOf(tool, view)} />
       {clean ? null : (
         <ToolSummary
           text={view.headline}

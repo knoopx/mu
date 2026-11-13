@@ -25,7 +25,11 @@ export const CODEMODE_ITEMS: TranscriptItem[] = [
     "c-script",
     "codemode",
     {
-      script:
+      // pi's codemode tool names its parameter `code`, and the header reads the
+      // first real line of the script out of that key: under any other name the
+      // call has no script to show and the header falls back to the tool's own
+      // name, printing `codemode` twice.
+      code:
         'const sessions = await tools.vcs_log({ limit: 200 });\nconst hits = sessions.filter(s => s.calls > 0);\nconsole.log(JSON.stringify({ tool: "vcs-log", calls: hits.length, failures: 0 }));\nconst cov = await tools.guardrails_coverage({ days: 7 });\n…',
     },
     SCRIPT_OUTPUT,

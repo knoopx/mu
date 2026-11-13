@@ -33,6 +33,51 @@ export const FILE_TIDY_ITEMS: TranscriptItem[] = [
       "unused exp.  src/plugins/figures/lib/plot.ts     CHART_PAD         22    mechanical",
     ].join("\n"),
     4_000,
+    {
+      // The scene has to carry the envelope the tool really answers with: with
+      // only the text, the row cannot read a shape and falls back to printing the
+      // answer verbatim — which shows the table's own header band twice, once as
+      // the header's preview and once as the blob's first line.
+      details: {
+        status: "ok",
+        analyzer: "fallow",
+        version: "0.14.1",
+        path: "src/plugins/figures",
+        total_issues: 3,
+        entry_points: 2,
+        omitted: 0,
+        counts: [
+          { kind: "unused file", count: 1 },
+          { kind: "unused export", count: 2 },
+        ],
+        rows: [
+          {
+            kind: "unused file",
+            path: "src/plugins/figures/lib/params.ts",
+            symbol: "params.ts",
+            at: "1",
+            severity: "moderate",
+            fixable: true,
+          },
+          {
+            kind: "unused export",
+            path: "src/plugins/figures/lib/plot.ts",
+            symbol: "legacyPointsOf",
+            at: "118",
+            severity: "moderate",
+            fixable: true,
+          },
+          {
+            kind: "unused export",
+            path: "src/plugins/figures/lib/plot.ts",
+            symbol: "CHART_PAD",
+            at: "22",
+            severity: "minor",
+            fixable: true,
+          },
+        ],
+      },
+    },
   ),
   failed(
     "c-rm",

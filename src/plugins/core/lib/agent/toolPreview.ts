@@ -31,21 +31,25 @@ export interface ToolPreviewVocabulary {
   stated: Readonly<Record<string, string>>;
 }
 
+/** A header that has nothing better to say still has to say the call ended. */
+export const FAILED_TEXT = "failed";
+
 /** Details of an unknown shape answer in their own first line of text. */
 export function toolPreviewFallback(
   item: ToolTranscriptItem,
   max: number = TOOL_PREVIEW_MAX,
 ): string {
   const line = firstLine(item.output);
-  if (item.status === "error")
-    return `${item.name.toLowerCase()} · ${line === "" ? "failed" : line}`;
-  return line === "" ? item.name.toLowerCase() : clipText(line, max);
+  // The header's title already IS the tool's name, so a preview that begins with
+  // it prints the word twice — `codemode codemode`, `plan plan · failed`.
+  if (item.status === "error") return line === "" ? FAILED_TEXT : clipText(line, max);
+  return line === "" ? "" : clipText(line, max);
 }
 
 /**
  * The header line: what is running, why it failed, and when the call answered
  * with what — the counts, ids and bodies belong to the rows, so the header
- * never repeats them.
+ * never repeats them, and it never repeats its own title either.
  */
 export function toolPreviewLine<T extends { status: string }>(
   item: ToolTranscriptItem,
@@ -59,7 +63,7 @@ export function toolPreviewLine<T extends { status: string }>(
     return words.running[tool] ?? words.runningDefault;
 
   if (view === null) return toolPreviewFallback(item, max);
-  if (view.status === "failed") return `${tool} · failed`;
+  if (view.status === "failed") return FAILED_TEXT;
 
   const stated = words.stated[view.status];
   if (stated !== undefined) return stated;
