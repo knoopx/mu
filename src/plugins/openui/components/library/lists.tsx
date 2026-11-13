@@ -19,6 +19,7 @@ import { mutedText } from "../../../core/lib/ui/theme";
 import {
   groupGap,
   innerGap,
+  noteGap,
   programEmphasisWeight,
   programMarkIndent,
 } from "../../lib/tokens";
@@ -227,7 +228,7 @@ export function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
               flexDirection: "column",
               width: "100%",
               minWidth: 0,
-              gap: 2,
+              gap: noteGap,
             }}
           >
             <div

@@ -33,6 +33,16 @@ export const programGap = (
   return Math.min(counted, GAP_MAX_STEPS) * GAP_STEP;
 };
 
+/**
+ * The air between a line and the note that belongs under it.
+ *
+ * Less than one step of the gap scale on purpose: a note has to read as part of
+ * the line it explains, not as the next item in the list. It is a named measure
+ * rather than a number in a drawer because every list in the language repeats the
+ * same pair.
+ */
+export const noteGap = 2;
+
 /** The three tiers a program's blocks nest in, when it leaves a gap unset. */
 export const innerGap = (t: AdwaitaTheme): number =>
   programGap(t, PROGRAM_GAP_TIER.inner);
