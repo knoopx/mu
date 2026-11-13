@@ -135,8 +135,16 @@ export const codeLineBox = (
 export const emphasisWeight = (t: AdwaitaTheme): number =>
   t.type.weight.semibold;
 
-/** The weight of a heading. */
-export const titleWeight = (t: AdwaitaTheme): number => t.type.weight.bold;
+/**
+ * The weight of a heading.
+ *
+ * The heaviest ink the app paints with. A heading at bold is a heading shouting
+ * for the reason a heading never needs it: its size and its colour already put it
+ * above the text under it, and a heavy face at a display size closes the gaps
+ * between letters until a headline reads as a block. One step down, and the ladder
+ * of sizes is what does the work.
+ */
+export const titleWeight = (t: AdwaitaTheme): number => t.type.weight.semibold;
 
 /** The weight of text that is not emphasised — the other half of every
  *  selected/unselected pair, so a row changes weight and not just colour. */
