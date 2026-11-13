@@ -154,23 +154,28 @@ function AskDetailPane({
   emptyText: string;
 }): JSX.Element {
   const option = row?.kind === "option" ? row : undefined;
-  const title =
-    option !== undefined ? option.option.label : "No matching option";
+  // The list one pane to the left already prints the highlighted option's label,
+  // so a pane titled with that same label says it twice, side by side. Its job is
+  // the half the list has no room for: what the choice costs. A title only stands
+  // when there is no option under the cursor at all.
+  const title = option !== undefined ? "" : "No matching option";
   const body =
     option !== undefined
-      ? option.option.description
+      ? (option.option.description ?? "")
       : `${emptyText} — keep typing to filter the options.`;
 
   return (
     <div style={detailPane(t)}>
-      <T
-        size="caption"
-        weight={emphasisWeight(t)}
-        color={t.color.accent.base}
-        style={{ flexShrink: 0, lineHeight: lineBox(t, "caption") }}
-      >
-        {title}
-      </T>
+      {title === "" ? null : (
+        <T
+          size="caption"
+          weight={emphasisWeight(t)}
+          color={t.color.accent.base}
+          style={{ flexShrink: 0, lineHeight: lineBox(t, "caption") }}
+        >
+          {title}
+        </T>
+      )}
       <T
         size="micro"
         color={t.color.text.primary}
