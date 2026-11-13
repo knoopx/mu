@@ -2,9 +2,9 @@ import type { TranscriptItem } from "../../../src/plugins/core/lib/agent/transcr
 import { answer, failed, ran, usage, userTurn } from "../turn";
 
 const GREP_FAINT = [
-  "src/plugins/figures/components/TableToolRows.tsx:74: borderBottomWidth: HAIRLINE,",
-  "src/plugins/figures/components/TableToolRows.tsx:75: borderBottomColor: t.color.divider.faint,",
-  "src/plugins/openui/components/library/data.tsx:120: borderColor: t.color.divider.faint,",
+  "src/plugins/openui/components/library/data.tsx:196: borderBottomColor: t.color.divider.faint,",
+  "src/plugins/openui/components/library/lists.tsx:88: borderBottomColor: t.color.divider.faint,",
+  "src/plugins/core/lib/ui/toolRowPaint.ts:212: track: t.color.divider.faint,",
   "src/plugins/code-quality/lib/toolView.ts:88: // the meter track vanished here too",
   "src/plugins/core/lib/ui/tokens.ts:12: export const HAIRLINE = 1;",
 ].join("\n");
@@ -12,7 +12,7 @@ const GREP_FAINT = [
 export const THEME_ITEMS: TranscriptItem[] = [
   userTurn(
     "u-faint-rules",
-    "in nightsky the tables have no lines. the rows are there, the header is there, and the thing that makes it a table is missing — and it is not missing in light",
+    "in nightsky the tables in the generated screens have no lines. the rows are there, the header is there, and the thing that makes it a table is missing — and it is not missing in light",
     0,
   ),
   ran(
@@ -57,22 +57,22 @@ export const THEME_ITEMS: TranscriptItem[] = [
     "c-edit-rules",
     "edit",
     {
-      path: "src/plugins/figures/components/TableToolRows.tsx",
+      path: "src/plugins/openui/components/library/data.tsx",
       edits: [
         {
           oldText: "        borderBottomColor: t.color.divider.faint,",
-          newText: "        borderBottomColor: ruleColor(t),",
+          newText: "        borderBottomColor: programRule(t),",
         },
       ],
     },
-    "Successfully replaced 1 block(s) in src/plugins/figures/components/TableToolRows.tsx.",
+    "Successfully replaced 1 block(s) in src/plugins/openui/components/library/data.tsx.",
     15_000,
   ),
   {
     ...answer(
       "a-faint-rules",
       [
-        "Every rule in the log is painted `divider.default` now — table cell rules, the meter track, the line under a program row. `divider.faint` is not a fainter line, it is *the colour of the surface behind the line*, so in nightsky it drew the log's own background over the log and left the table with nothing holding it apart. Light looked fine by accident: there, faint is a real grey.",
+        "Every rule is painted `divider.default` now — a program's table cell rules, the meter track, the line under a program row. `divider.faint` is not a fainter line, it is *the colour of the surface behind the line*, so in nightsky it drew the log's own background over the log and left the table with nothing holding it apart. Light looked fine by accident: there, faint is a real grey.",
         "",
         "Three files fixed, one helper (`ruleColor`) so a component cannot reach for a divider colour by hand again. `faint` is now only used where a shape fills itself first.",
       ].join("\n"),

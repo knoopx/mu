@@ -1,19 +1,12 @@
+import { TREE_RENDER_TOOL } from "../../src/plugins/figures/constants";
 import {
-  TABLE_RENDER_TOOL,
-  TREE_RENDER_TOOL,
-} from "../../src/plugins/figures/constants";
-import {
-  tableAnswerOf,
-  tableInvalidAnswer,
   treeAnswerOf,
+  treeInvalidAnswer,
 } from "../../src/plugins/figures/lib/answer";
-import {
-  tableShapeOf,
-  treeShapeOf,
-} from "../../src/plugins/figures/lib/structure";
+import { treeShapeOf } from "../../src/plugins/figures/lib/structure";
 import { toolCallFixture, type ToolFixture } from "./tool";
 
-/** What the agent worked out about the plugin that grew two tools. */
+/** What the agent read back of the plugin that lost one of its three figures. */
 export const TREE_ITEMS = [
   {
     name: "figures",
@@ -26,17 +19,15 @@ export const TREE_ITEMS = [
       },
       {
         name: "components",
-        children: [
-          "ChartToolRows.tsx",
-          "TreeToolRows.tsx",
-          "TableToolRows.tsx",
-        ],
+        children: ["ChartToolRows.tsx", "TreeToolRows.tsx"],
+        added: 1,
+        removed: 221,
       },
       {
         name: "tools",
-        children: ["chartRender.ts", "treeRender.ts", "tableRender.ts"],
-        added: 331,
-        removed: 4,
+        children: ["chartRender.ts", "treeRender.ts"],
+        added: 2,
+        removed: 132,
       },
     ],
   },
@@ -45,12 +36,12 @@ export const TREE_ITEMS = [
 const treeParams = {
   items: TREE_ITEMS,
   caption:
-    "one plugin, three figures: the new contract sits beside the plot's, and each tool is one file",
+    "figures after the table came out: one contract beside the plot's, and one file per tool that is left",
 };
 
 const tree = treeShapeOf(treeParams);
 
-/** A tree that drew, and the reading its answer gave the model. */
+/** A tree that drew, its changeset columns, and the reading its answer gave the model. */
 export const TREE_ITEM: ToolFixture = toolCallFixture(
   "call-tree",
   TREE_RENDER_TOOL,
@@ -60,53 +51,35 @@ export const TREE_ITEM: ToolFixture = toolCallFixture(
   { details: tree },
 );
 
-/** What the agent measured per tool — the same call a header mis-counted first. */
-export const TABLE_COLUMNS = ["tool", "calls", "tokens", "state"];
-
-export const TABLE_ROWS = [
-  ["chart-render", 41, 12_310, "settled"],
-  ["tree-render", 6, 1_940, "new"],
-  ["table-render", 5, 1_112, "new"],
-  { tool: "mermaid-render", calls: 12, tokens: 3_860, state: "settled" },
-  { tool: "openui-render", calls: 28, tokens: 9_404, state: "moving" },
-];
-
-const tableParams = {
-  columns: TABLE_COLUMNS,
-  rows: TABLE_ROWS,
-  caption: "the cost of drawing, per tool, this session",
+/** The same folder written by someone who named the folders' contents and not the folders. */
+const UNTITLED_PARAMS = {
+  items: [
+    {
+      name: "figures",
+      children: [
+        { kind: "folder", children: ["plot.ts", "structure.ts"] },
+        { kind: "folder", children: ["ChartToolRows.tsx", "TreeToolRows.tsx"] },
+      ],
+    },
+  ],
+  caption: "the same folder, one contract shorter",
 };
 
-const table = tableShapeOf(tableParams);
+const untitled = treeShapeOf(UNTITLED_PARAMS);
 
-/** A table that drew: its figure columns in mono, and its Σ read back. */
-export const TABLE_ITEM: ToolFixture = toolCallFixture(
-  "call-table",
-  TABLE_RENDER_TOOL,
-  tableParams,
+/** A node with no name to draw: the whole call refused, and the refusal says where it hangs. */
+export const TREE_BAD_ITEM: ToolFixture = toolCallFixture(
+  "call-tree-untitled",
+  TREE_RENDER_TOOL,
+  UNTITLED_PARAMS,
   "ok",
-  tableAnswerOf(table),
-  { details: table },
-);
-
-/** The same call with a cell that had no column to stand in. */
-const BROKEN_PARAMS = {
-  columns: TABLE_COLUMNS,
-  rows: [["tree-render", 6, 1_940, "new", "two tools now"]],
-};
-
-const broken = tableShapeOf(BROKEN_PARAMS);
-
-export const TABLE_BAD_ITEM: ToolFixture = toolCallFixture(
-  "call-table-broken",
-  TABLE_RENDER_TOOL,
-  BROKEN_PARAMS,
-  "ok",
-  tableInvalidAnswer(broken),
-  { details: broken },
+  treeInvalidAnswer(untitled),
+  { details: untitled },
 );
 
 export const STRUCTURE_ANSWER =
-  "The plugin kept its shape: `lib/structure.ts` is the second contract beside `lib/plot.ts`, and each figure is " +
-  "still one file in `tools/`. The drawing cost is not what grew — `chart-render` is still the most expensive call " +
-  "in the session, and the two new tools together cost less than one mermaid diagram";
+  "The plugin is one contract shorter, not one file longer: `lib/structure.ts` still reads the tree loosely and " +
+  "refuses what it cannot mean, and the folder above is that shape walked back as text — 14 nodes, 4 folders, " +
+  "10 leaves, 3 deep, `+3 −353` measured across the whole tree, which is the deletion and nothing else. The " +
+  "second call is the one worth reading: it drew nothing, because a folder with no name is a branch the log " +
+  "cannot label, and the refusal names the parent it hangs under instead of printing a tree with holes in it.";

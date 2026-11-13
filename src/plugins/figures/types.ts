@@ -96,14 +96,14 @@ export interface ChartFigure {
 export type ChartFigureDetails = ChartFigure;
 
 /* --------------------------------------------------------------------------
- * A tree and a table travel the same way a plot does: as the shape the call
- * named, never as what was painted. The log draws a widget out of it in the
- * theme the window is wearing right now; the model gets the shape back as text.
+ * A tree travels the same way a plot does: as the shape the call named, never as
+ * what was painted. The log draws a widget out of it in the theme the window is
+ * wearing right now; the model gets the shape back as text.
  * ------------------------------------------------------------------------ */
 
 /**
  * `ok` drew what it was given; `empty` had nothing to draw; `invalid` is a shape
- * the caller can fix — a node with no name, a row wider than the header.
+ * the caller can fix — a node with no name to draw.
  */
 export type StructureStatus = "ok" | "empty" | "invalid";
 
@@ -165,63 +165,6 @@ export interface TreeFigure {
 export interface TreeRenderParams {
   items: readonly unknown[];
   expanded?: readonly unknown[];
-  caption?: string;
-}
-
-/** One column of a table, and what its cells add up to when they are figures. */
-export interface TableColumnStat {
-  name: string;
-
-  /** Every cell of the column reads as a number, so it stands in mono on the right. */
-  figure: boolean;
-
-  total: number;
-  min: number;
-  max: number;
-}
-
-/** A cell the call wrote that has nowhere to stand, and why. */
-export interface TableBadCell {
-  /** Which entry of `rows` it came from, 0-based. */
-  at: number;
-
-  /** The column it landed in, or `(past the header)` when it had none. */
-  column: string;
-
-  /** The text that was in that cell. */
-  value: string;
-
-  /** `overflow`: the row is wider than the header; `unreadable`: the cell is a shape, not text. */
-  reason: "overflow" | "unreadable";
-}
-
-/** A table call's whole answer. */
-export interface TableFigure {
-  status: StructureStatus;
-
-  columns: string[];
-
-  /** One per column, in the header's order. */
-  stats: TableColumnStat[];
-
-  /** The rows actually drawn — after the row cap — each one cell per column. */
-  rows: string[][];
-
-  counted: number;
-  drawn: number;
-  omitted: number;
-
-  caption: string;
-
-  bad: TableBadCell[];
-
-  error: string;
-}
-
-/** What a caller asked to be drawn as a table, before any of it is read. */
-export interface TableRenderParams {
-  rows: readonly unknown[];
-  columns?: readonly unknown[];
   caption?: string;
 }
 

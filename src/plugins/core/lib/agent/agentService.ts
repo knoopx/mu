@@ -79,7 +79,6 @@ import { mermaidRenderTool } from "../../../mermaid/tools/mermaidRender";
 import { FIGURE_TOOL_NAMES } from "../../../figures/constants";
 import { chartRenderTool } from "../../../figures/tools/chartRender";
 import { treeRenderTool } from "../../../figures/tools/treeRender";
-import { tableRenderTool } from "../../../figures/tools/tableRender";
 import { PLANNING_TOOL_NAMES } from "../../../planning/constants";
 import { planTool } from "../../../planning/tools/plan";
 
@@ -247,7 +246,6 @@ export async function createAgentSessionHandle(
         mermaidRenderTool,
         chartRenderTool,
         treeRenderTool,
-        tableRenderTool,
         planTool,
       ] as ToolDefinition[],
     });

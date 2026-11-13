@@ -1,16 +1,14 @@
 /**
  * What the figures plugin shares: the tool names a user's guardrail rule points
- * at, the bounds a plot, a tree and a table live inside, and the geometry of the
- * canvas adwaita draws on.
+ * at, the bounds a plot and a tree live inside, and the geometry of the canvas
+ * adwaita draws on.
  */
 
 export const CHART_RENDER_TOOL = "chart-render";
 export const TREE_RENDER_TOOL = "tree-render";
-export const TABLE_RENDER_TOOL = "table-render";
 
 export const CHART_TOOL_LABEL = "Chart";
 export const TREE_TOOL_LABEL = "Tree";
-export const TABLE_TOOL_LABEL = "Table";
 
 /**
  * These names are what a guardrail rule and a story point at, so they are never
@@ -19,7 +17,6 @@ export const TABLE_TOOL_LABEL = "Table";
 export const FIGURE_TOOL_NAMES: readonly string[] = [
   CHART_RENDER_TOOL,
   TREE_RENDER_TOOL,
-  TABLE_RENDER_TOOL,
 ];
 
 /**
@@ -61,25 +58,13 @@ export const MAX_DEPTH = 10;
 /** How many of its nodes the answer walks back as indented text. */
 export const MAX_TREE_LINES = 40;
 
-/** A name longer than this is clipped: it is a name, not a sentence. */
-export const MAX_NAME_CHARS = 60;
-
-/* Tables ----------------------------------------------------------------- */
-
 /**
- * How many rows a table holds, and how wide its header is.
+ * A name longer than this is clipped: it is a name, not a sentence.
  *
- * A table of sixty rows is already taller than the window, and the log scrolls
- * past them one at a time; past that the call should be grouping, not listing.
+ * It is also the measure of a value a refusal quotes back — the text that sat
+ * where a name belonged is quoted to be recognised, not read.
  */
-export const MAX_ROWS = 60;
-export const MAX_COLUMNS = 12;
-
-/** How many of its rows the answer reads back as an aligned table. */
-export const MAX_TABLE_ROWS = 30;
-
-/** A cell longer than this is clipped: a table cell is a word, not a clause. */
-export const MAX_CELL_CHARS = 60;
+export const MAX_NAME_CHARS = 60;
 
 /* Plot geometry ------------------------------------------------------------ */
 

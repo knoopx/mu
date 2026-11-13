@@ -1,5 +1,5 @@
 /**
- * Turns a figure answer into what the transcript draws — a plot, a tree, a table.
+ * Turns a figure answer into what the transcript draws — a plot, or a tree.
  *
  * A call answers two audiences: `content` text for the model, and the data of the
  * figure in `details` for the log. This file folds the details into one view — the
@@ -18,8 +18,6 @@ import { counted } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
 import {
   CHART_RENDER_TOOL,
-  MAX_ROWS,
-  TABLE_RENDER_TOOL,
   TREE_RENDER_TOOL,
 } from "../constants";
 import type {
@@ -29,9 +27,6 @@ import type {
   PlotPoint,
   StructureNode,
   StructureStatus,
-  TableBadCell,
-  TableFigure,
-  TableColumnStat,
   TreeBadNode,
   TreeFigure,
 } from "../types";
@@ -256,19 +251,6 @@ const EMPTY_TREE: TreeFigure = {
   error: "",
 };
 
-const EMPTY_TABLE: TableFigure = {
-  status: "empty",
-  columns: [],
-  stats: [],
-  rows: [],
-  counted: 0,
-  drawn: 0,
-  omitted: 0,
-  caption: "",
-  bad: [],
-  error: "",
-};
-
 function nodeOf(value: unknown): StructureNode | null {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
@@ -299,7 +281,7 @@ function treeBadOf(value: unknown): TreeBadNode {
   };
 }
 
-/** The one guard both structure readers open with: a record, and a status word. */
+/** The guard a structure reader opens with: a record, and a status word. */
 function detailsOf(details: unknown): {
   record: Record<string, unknown>;
   status: StructureStatus;
@@ -395,128 +377,6 @@ export function treeToolViewOf(
       {
         label: "cut",
         value: tree.omitted === 0 ? "" : counted(tree.omitted, "subtree"),
-      },
-    ],
-  };
-}
-
-/* --------------------------------------------------------- the table view */
-
-export interface TableToolView {
-  status: StructureStatus;
-
-  /** The table, or the shape of the refusal. Never absent: the header reads it too. */
-  table: TableFigure;
-
-  cells: ToolRowCell[];
-}
-
-function statOf(value: unknown): TableColumnStat {
-  const record =
-    typeof value === "object" && value !== null
-      ? (value as Record<string, unknown>)
-      : {};
-  return {
-    name: detailText(record["name"]),
-    figure: detailFlag(record["figure"], false),
-    total: detailNumber(record["total"]),
-    min: detailNumber(record["min"]),
-    max: detailNumber(record["max"]),
-  };
-}
-
-function tableBadOf(value: unknown): TableBadCell {
-  const record =
-    typeof value === "object" && value !== null
-      ? (value as Record<string, unknown>)
-      : {};
-  const reason = detailText(record["reason"]);
-  return {
-    at: detailNumber(record["at"]),
-    column: detailText(record["column"]),
-    value: detailText(record["value"]),
-    reason: reason === "unreadable" ? "unreadable" : "overflow",
-  };
-}
-
-/** The table a call left in its details, read as the JSON a resumed session keeps. */
-function tableFigureOf(details: unknown): TableFigure | null {
-  const read = detailsOf(details);
-  if (read === null) return null;
-  const { record, status } = read;
-  if (!Array.isArray(record["columns"]) || !Array.isArray(record["rows"]))
-    return null;
-
-  return {
-    status,
-    columns: record["columns"].filter(
-      (name): name is string => typeof name === "string",
-    ),
-    stats: Array.isArray(record["stats"]) ? record["stats"].map(statOf) : [],
-    rows: record["rows"]
-      .map((row) =>
-        Array.isArray(row)
-          ? row.map((cell) => (typeof cell === "string" ? cell : ""))
-          : [],
-      )
-      .slice(0, MAX_ROWS),
-    counted: detailNumber(record["counted"]),
-    drawn: detailNumber(record["drawn"]),
-    omitted: detailNumber(record["omitted"]),
-    caption: detailText(record["caption"]),
-    bad: Array.isArray(record["bad"]) ? record["bad"].map(tableBadOf) : [],
-    error: detailText(record["error"]),
-  };
-}
-
-/** The line a refusal leaves behind: which row, which column, and what was in it. */
-export function tableFailureLine(table: TableFigure): string {
-  const first = table.bad[0];
-  if (first === undefined) return table.error;
-  const where = `row ${String(first.at + 1)} · ${first.column}`;
-  const shown = first.value === "" ? "(nothing)" : `“${first.value}”`;
-  return table.bad.length === 1
-    ? `${table.error}: ${where} holds ${shown}`
-    : `${table.error}: ${where} holds ${shown}, and ${String(table.bad.length - 1)} more`;
-}
-
-/** The columns that add up, in one chip: the reading a table-less model checks. */
-function figureCell(table: TableFigure): string {
-  const figures = table.stats.filter((stat) => stat.figure);
-  if (figures.length === 0) return "";
-  const first = figures[0];
-  const rest = figures.length - 1;
-  const head = `${first.name} Σ ${plotFigure(first.total)}`;
-  return rest === 0 ? head : `${head} (+${String(rest)})`;
-}
-
-export function tableToolViewOf(
-  name: string,
-  _args: Record<string, unknown> | undefined,
-  details: unknown,
-  itemStatus: string,
-): TableToolView | null {
-  if (name.toLowerCase() !== TABLE_RENDER_TOOL) return null;
-
-  const table = tableFigureOf(details) ?? EMPTY_TABLE;
-  const status: StructureStatus =
-    itemStatus === "error" && table.status === "ok" ? "empty" : table.status;
-
-  return {
-    status,
-    table,
-    cells: [
-      // The header row's own names are the head line, not a chip: the table
-      // prints them again above its rows.
-      {
-        label: "table",
-        value: status === "empty" ? "" : counted(table.drawn, "row"),
-      },
-      { label: "columns", value: counted(table.columns.length, "column") },
-      { label: "figures", value: status === "ok" ? figureCell(table) : "" },
-      {
-        label: "not drawn",
-        value: table.omitted === 0 ? "" : String(table.omitted),
       },
     ],
   };

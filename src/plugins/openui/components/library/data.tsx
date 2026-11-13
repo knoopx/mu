@@ -1,9 +1,9 @@
 /**
  * The data area of the language: the rows and figures a program shows.
  *
- * A `Table` is adwaita's `Table` — the same component a `table-render` answer
- * paints with — so a program's rows and the agent's rows are one kind of thing:
- * cells of text in equal columns, one line to a row, rules between them.
+ * A `Table` is adwaita's `Table`, and the only table in the app: cells of text
+ * in equal columns, one line to a row, rules between them. The agent has no
+ * table tool — a table is drawn here, inside a screen the human operates.
  */
 
 import type { JSX } from "react";
@@ -158,11 +158,11 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
       : undefined;
 
   /**
-   * adwaita's table, not a column of divs dressed as one: the same component a
-   * `table-render` answer paints with, so a program's rows and the agent's rows
-   * are one kind of thing — one line per row, a rule between rows, a header
+   * adwaita's table, not a column of divs dressed as one: one line per row (its
+   * `compact` row height is core's `ROW_HEIGHT`), a rule between rows, a header
    * divided from what it names, and no box drawn around a block that already
-   * sits inside a pane.
+   * sits inside a pane — `frame="bare"`, because a framed table inside a framed
+   * pane is one box drawn twice.
    */
   return (
     <AdwaitaTable

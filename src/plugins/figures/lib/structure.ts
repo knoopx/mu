@@ -1,17 +1,16 @@
 /**
- * The one structure contract: a tree of named things nested in groups, and a
- * table of cells under a header.
+ * The one structure contract: a tree of named things nested in groups.
  *
- * Both are read once here and drawn from what was read, the way `lib/plot.ts`
- * reads a plot. A caller writes loosely and is met there rather than crashed —
- * a `children` slot holding one value instead of a list is one child, exactly as
- * a program's `Tree` reads one — because a model that meant one child should get
+ * It is read once here and drawn from what was read, the way `lib/plot.ts` reads
+ * a plot. A caller writes loosely and is met there rather than crashed — a
+ * `children` slot holding one value instead of a list is one child, exactly as a
+ * program's `Tree` reads one — because a model that meant one child should get
  * one child, not an empty screen.
  *
  * What a shape *cannot* mean is answered and refused, the way a plot refuses a
- * cell that is not a number: a node with no name to draw, a row wider than the
- * header it stands under. A silently-dropped branch is a tree that lies, so the
- * answer names the node or the cell and the next call is right.
+ * cell that is not a number: a node with no name to draw. A silently-dropped
+ * branch is a tree that lies, so the answer names the node, quotes what stood
+ * where its name belonged, and the next call is right.
  *
  * Nothing here resolves a colour or builds a widget: a structure travels as data
  * and is painted in the theme the window is wearing at the moment it is drawn.
@@ -20,20 +19,9 @@
 import type { FileTreeNode } from "adwaita-gpuix/ai";
 
 import { truncateToWidth } from "../../../utils/truncate";
-import {
-  MAX_CELL_CHARS,
-  MAX_COLUMNS,
-  MAX_DEPTH,
-  MAX_NAME_CHARS,
-  MAX_NODES,
-  MAX_ROWS,
-} from "../constants";
+import { MAX_DEPTH, MAX_NAME_CHARS, MAX_NODES } from "../constants";
 import type {
   StructureNode,
-  TableBadCell,
-  TableColumnStat,
-  TableFigure,
-  TableRenderParams,
   TreeFigure,
   TreeRenderParams,
 } from "../types";
@@ -42,13 +30,14 @@ import { cellText, numberOf } from "./plot";
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-/** A name clipped to a name's measure: a tree's rows are narrow by design. */
+/**
+ * A name clipped to a name's measure: a tree's rows are narrow by design.
+ *
+ * It is also the measure of what a refusal quotes back — the text that sat where
+ * a name belonged is quoted so it can be recognised, not read.
+ */
 const nameText = (value: unknown): string =>
   truncateToWidth(cellText(value).trim(), MAX_NAME_CHARS);
-
-/** A cell clipped to a cell's measure: a table cell is a word, not a clause. */
-const cellOf = (value: unknown): string =>
-  truncateToWidth(cellText(value).trim(), MAX_CELL_CHARS);
 
 /** A figure a node trails, never negative: `−3 lines` is not a thing a node did. */
 const countOf = (value: unknown): number => {
@@ -121,7 +110,7 @@ function nodeShapeOf(value: unknown): NodeShape | null {
       children: value[AT_CHILDREN],
       added: countOf(value[AT_ADDED]),
       removed: countOf(value[AT_REMOVED]),
-      written: cellOf(value[AT_NAME]),
+      written: nameText(value[AT_NAME]),
     };
   }
 
@@ -134,7 +123,7 @@ function nodeShapeOf(value: unknown): NodeShape | null {
     children: keyOf(value, CHILD_KEYS),
     added: countOf(value["added"]),
     removed: countOf(value["removed"]),
-    written: cellOf(named),
+    written: nameText(named),
   };
 }
 
@@ -163,7 +152,7 @@ function readNode(
   if (shape === null || shape.name === "") {
     read.bad.push({
       under: under === "" ? "(the root)" : under,
-      value: shape === null ? cellOf(value) : shape.written,
+      value: shape === null ? nameText(value) : shape.written,
     });
     return null;
   }
@@ -313,210 +302,4 @@ export function treeLinesOf(
     );
   });
   return { lines, notRead };
-}
-
-/* ------------------------------------------------------------------ table */
-
-/** A header name, or the count of the column where the header said nothing. */
-const columnNameOf = (value: unknown, at: number): string => {
-  const text = cellOf(value);
-  return text === "" ? `column ${String(at + 1)}` : text;
-};
-
-/** The header a caller wrote without naming it: the keys of its first object row. */
-function columnsOfRows(rows: readonly unknown[]): string[] {
-  const first = rows.find(isRecord);
-  if (first !== undefined) return Object.keys(first).slice(0, MAX_COLUMNS);
-
-  let widest = 0;
-  for (const row of rows) {
-    if (Array.isArray(row)) widest = Math.max(widest, row.length);
-  }
-  return Array.from({ length: widest }, (_, at) => columnNameOf("", at));
-}
-
-/**
- * The cells of one row, and every cell of it that had no column to stand in.
- *
- * A row narrower than the header is a row with blanks in it, which is a real
- * thing a table has. A row wider than it is a row the caller mis-counted or a
- * header that is missing a name, and both are answers, not drawings.
- */
-/** A cell that is a shape rather than text, named for what it is. */
-const shapeOf = (value: unknown): string =>
-  Array.isArray(value)
-    ? "(a list)"
-    : value === null
-      ? "(nothing)"
-      : "(an object)";
-
-function rowCellsOf(
-  row: unknown,
-  columns: readonly string[],
-  at: number,
-): { cells: string[]; bad: TableBadCell[] } {
-  const bad: TableBadCell[] = [];
-
-  // A cell of text or a figure is drawn; a cell that is itself a list or an
-  // object is not drawn as nothing, because a blank cell in a table reads as an
-  // empty field rather than as a mistake.
-  const read = (value: unknown, column: string): string => {
-    if (value === undefined || value === null || typeof value !== "object") {
-      return cellOf(value);
-    }
-    bad.push({ at, column, value: shapeOf(value), reason: "unreadable" });
-    return "";
-  };
-
-  if (Array.isArray(row)) {
-    const cells = row
-      .slice(0, columns.length)
-      .map((cell, index) => read(cell, columns[index] ?? "(past the header)"));
-    for (const extra of row.slice(columns.length)) {
-      bad.push({
-        at,
-        column: "(past the header)",
-        value: cellOf(extra),
-        reason: "overflow",
-      });
-    }
-    while (cells.length < columns.length) cells.push("");
-    return { cells, bad };
-  }
-
-  if (isRecord(row)) {
-    const cells = columns.map((column) => read(row[column], column));
-    for (const [key, value] of Object.entries(row)) {
-      if (columns.includes(key)) continue;
-      bad.push({
-        at,
-        column: `(no column called “${key}”)`,
-        value: cellOf(value),
-        reason: "overflow",
-      });
-    }
-    return { cells, bad };
-  }
-
-  const text = cellOf(row);
-  return { cells: columns.map((_, index) => (index === 0 ? text : "")), bad };
-}
-
-/** What a column adds up to — and whether it is a column of figures at all. */
-function statsOf(
-  rows: readonly string[][],
-  columns: readonly string[],
-): TableColumnStat[] {
-  return columns.map((name, at) => {
-    const values: number[] = [];
-    for (const row of rows) {
-      const cell = row[at] ?? "";
-      if (cell === "") continue;
-      const number = numberOf(cell);
-      if (number === null)
-        return { name, figure: false, total: 0, min: 0, max: 0 };
-      values.push(number);
-    }
-    if (values.length === 0)
-      return { name, figure: false, total: 0, min: 0, max: 0 };
-    return {
-      name,
-      figure: true,
-      total: values.reduce((sum, value) => sum + value, 0),
-      min: Math.min(...values),
-      max: Math.max(...values),
-    };
-  });
-}
-
-/** A table, in one status vocabulary. */
-export function tableShapeOf(params: TableRenderParams): TableFigure {
-  const asked = listOf(params.columns)
-    .slice(0, MAX_COLUMNS)
-    .map((column, at) => columnNameOf(column, at));
-
-  const entries = listOf(params.rows);
-  const columns = asked.length > 0 ? asked : columnsOfRows(entries);
-
-  const bad: TableBadCell[] = [];
-  const cells: string[][] = [];
-  entries.forEach((row, at) => {
-    const read = rowCellsOf(row, columns, at);
-    cells.push(read.cells);
-    bad.push(...read.bad);
-  });
-
-  const shown = cells.slice(0, MAX_ROWS);
-  const figure: TableFigure = {
-    status: "ok",
-    columns,
-    stats: statsOf(shown, columns),
-    rows: shown,
-    counted: cells.length,
-    drawn: shown.length,
-    omitted: cells.length - shown.length,
-    caption: (params.caption ?? "").trim(),
-    bad,
-    error: "",
-  };
-
-  if (bad.length > 0) {
-    figure.status = "invalid";
-    figure.rows = [];
-    figure.drawn = 0;
-    figure.stats = statsOf([], columns);
-    figure.error = tableErrorOf(bad);
-    return figure;
-  }
-  if (cells.length === 0) {
-    figure.status = "empty";
-    figure.error = "the table has no rows";
-  }
-  return figure;
-}
-
-/** What went wrong, in the words for the kind of wrong it was. */
-function tableErrorOf(bad: readonly TableBadCell[]): string {
-  const overflow = bad.filter((cell) => cell.reason === "overflow").length;
-  const unreadable = bad.length - overflow;
-  if (overflow > 0 && unreadable > 0) {
-    return "a row does not fit its header, and a cell is a shape rather than text";
-  }
-  return unreadable > 0
-    ? "a cell is a shape rather than text"
-    : "a row does not fit the header";
-}
-
-/** Counts of each kind of refusal, for the head a refused table answers with. */
-export function tableBadCounts(bad: readonly TableBadCell[]): {
-  overflow: number;
-  unreadable: number;
-} {
-  const overflow = bad.filter((cell) => cell.reason === "overflow").length;
-  return { overflow, unreadable: bad.length - overflow };
-}
-
-/** The rows as the model reads them: one record per row, keyed by the header. */
-export function tableRowsOf(
-  figure: TableFigure,
-  max: number,
-): { rows: Record<string, string>[]; notRead: number } {
-  const rows = figure.rows
-    .slice(0, max)
-    .map((cells) =>
-      Object.fromEntries(
-        figure.columns.map((column, at) => [column, cells[at] ?? ""]),
-      ),
-    );
-  return { rows, notRead: figure.drawn - rows.length };
-}
-
-/** What each column of figures adds to, in the header's order. */
-export function tableFigureLinesOf(figure: TableFigure): string[] {
-  return figure.stats
-    .filter((stat) => stat.figure)
-    .map(
-      (stat) =>
-        `${stat.name}: Σ ${cellText(stat.total)}, ${cellText(stat.min)} → ${cellText(stat.max)}`,
-    );
 }

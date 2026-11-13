@@ -59,10 +59,10 @@ export const CODEMODE_ITEMS: TranscriptItem[] = [
               "blocked(guardrails/uv): suite run refused a raw python3 invocation",
           },
           {
-            name: "table-render",
-            args: "{ rows: 12, columns: 4 }",
+            name: "tree-render",
+            args: "{ items: 9 }",
             status: "ok",
-            durationMs: 120,
+            durationMs: 140,
             cost: null,
             error: "",
           },

@@ -136,7 +136,7 @@ export const treeRenderTool: ToolDefinition<
     "You cannot see the tree — read the indented text the answer walks back. A leaf that ended up one level too deep is a nesting mistake in what you sent.",
     "A node with no name refuses the whole call and names the path it hangs under: fix that node and re-send.",
     "Past 80 nodes, or 10 levels deep, branches are cut and the answer says how many: draw the part of the tree that carries the point.",
-    "Use table-render for things measured the same way, chart-render for numbers across an axis, and openui-render when the tree is one part of a screen the human operates.",
+    "Use chart-render for numbers across an axis, and openui-render — whose `Table` draws named columns — when the thing to show is one part of a screen the human operates.",
   ],
 
   executionMode: "sequential",
