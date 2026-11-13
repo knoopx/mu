@@ -1,19 +1,28 @@
 /**
  * Turns a GitHub answer into what the transcript draws.
  *
- * The nine tools answer two audiences — `content` text in aligned columns for
- * the model, one `GithubCall` in `details` for the log — and this file is the
- * only reader of that shape. A session resumed this week holds JSON rather than
- * a live object, so every field is checked rather than trusted, and a call whose
- * details are not a GitHub call at all answers `null` so the log falls back to
- * its generic row.
+ * The nine tools answer two audiences — `content` text in aligned columns for the
+ * model, one `GithubCall` in `details` for the log — and this file is the only
+ * reader of that shape. A session resumed this week holds JSON rather than a live
+ * object, so every field is checked rather than trusted, and a call whose details
+ * are not a GitHub call at all answers `null` so the log falls back to its generic
+ * row.
+ *
+ * What is here is the frame every read shares: which kind's vocabulary answers,
+ * what the read found, what the caps left out, and what it cost. What a folder, a
+ * changeset, a thread or a profile is *drawn as* is each widget's own business —
+ * one component per tool in `components/`.
  */
 
-import { counted, partsLine } from "../../core/lib/agent/toolText";
-import type { ToolRowCell, ToolPaintRow } from "../../core/lib/ui/toolRowPaint";
 import { GITHUB_TOOL_NAMES } from "../constants";
-import { emptyNote, targetLabel, unitOf } from "./answer";
 import { listOf, numberOf, recordOf, stringOf } from "./api/record";
+import { wordsOf } from "./kinds/vocabulary";
+import type {
+  GithubFact,
+  GithubIdentity,
+  GithubKindWords,
+  GithubState,
+} from "./kinds/contract";
 import type {
   GithubCall,
   GithubField,
@@ -26,21 +35,28 @@ export interface GithubToolView {
   status: GithubStatus;
   call: GithubCall;
 
-  /** the chips under the head: what the call was pointed at and what it cost */
-  cells: ToolRowCell[];
+  /** the kind's own vocabulary: its figures, its empty words, how its body reads */
+  words: GithubKindWords;
 
-  /** the one line above the rows: how much was read, or what the record is */
-  headline: string;
+  /** how the card opens: what the record is called, what identifies it, whose face stands at its head */
+  identity: GithubIdentity;
 
-  rows: ToolPaintRow[];
+  /** the record's counts, formatted, in the order they are read */
+  facts: GithubFact[];
 
-  /** a file's text or a prose body, ready to paint */
+  /** where the record stands, said once at the head of the card */
+  state: GithubState | null;
+
+  /** what the read listed, for the widget that draws it: a tree, a changeset, a thread, a hit list */
+  rows: GithubRow[];
+
+  /** a file's text or a body of prose, ready to paint */
   body: string;
 
   /** what a status means in words — the reason of a failure, the news of an empty read */
   note: string;
 
-  /** rows the cap left out */
+  /** listed rows the cap left out */
   omitted: number;
 }
 
@@ -119,71 +135,9 @@ export function githubCallOf(details: unknown): GithubCall | null {
   };
 }
 
-const fieldNamed = (call: GithubCall, label: string): string =>
-  call.fields.find((field) => field.label === label)?.value ?? "";
-
-/** The rows a call answers with, in the shape the log draws: rank, body, state, figure.
- *
- * The id column holds the rank and nothing else. What kind of thing a row is
- * stands in the header and the scope chips already, so repeating it in every id
- * of a twenty-row list was twenty copies of one word in the column that should
- * be the narrowest in the table. */
-function paintRows(call: GithubCall): ToolPaintRow[] {
-  return call.rows.map((row, index) => ({
-    key: String(row.rank === 0 ? index + 1 : row.rank),
-    primary: row.name,
-    secondary: row.detail,
-    badge: row.state,
-    trailing: row.figure,
-  }));
-}
-
-/** What a call read, in the one line above its rows. */
-function headlineOf(call: GithubCall): string {
-  if (call.rows.length > 0) {
-    const shown = counted(call.rows.length, unitOf(call.kind));
-    if (call.kind === "search" && call.total > call.rows.length)
-      return `${shown} of ${String(call.total)}`;
-    return shown;
-  }
-  if (call.status !== "ok") return "";
-
-  const named = fieldNamed(call, "title");
-  if (named !== "") return partsLine(named, fieldNamed(call, "state"));
-
-  if (call.kind === "repo")
-    return partsLine(
-      `${fieldNamed(call, "stars")} stars`,
-      fieldNamed(call, "language"),
-      fieldNamed(call, "branch") === ""
-        ? ""
-        : `default ${fieldNamed(call, "branch")}`,
-    );
-
-  if (call.kind === "file")
-    return partsLine(fieldNamed(call, "size"), fieldNamed(call, "lines"));
-
-  if (call.kind === "user")
-    return partsLine(
-      `${fieldNamed(call, "repos")} repos`,
-      `${fieldNamed(call, "followers")} followers`,
-    );
-
-  if (call.kind === "commit")
-    return partsLine(
-      fieldNamed(call, "description"),
-      fieldNamed(call, "changes"),
-    );
-
-  if (call.kind === "release")
-    return partsLine(fieldNamed(call, "state"), fieldNamed(call, "published"));
-
-  return fieldNamed(call, "description");
-}
-
-/** The note a status has to say in words; an `ok` call has none. */
-function noteOf(call: GithubCall): string {
-  if (call.status === "empty") return emptyNote(call);
+/** What a status means in words; an `ok` call has none. */
+function noteOf(call: GithubCall, words: GithubKindWords): string {
+  if (call.status === "empty") return words.emptyNote(call);
   if (call.status === "ok") return "";
   return call.error;
 }
@@ -201,28 +155,25 @@ export function githubToolViewOf(
 
   const status: GithubStatus =
     itemStatus === "error" && call.status === "ok" ? "failed" : call.status;
-
-  const cells: ToolRowCell[] = [
-    { label: "repo", value: call.repo },
-    {
-      label: targetLabel(call.kind),
-      value: call.kind === "search" ? "" : call.target,
-    },
-    { label: "query", value: call.query },
-    { label: "ref", value: call.ref },
-    { label: "path", value: call.path },
-    { label: "read", value: call.cached ? "cached" : "live" },
-    { label: "took", value: call.ms === 0 ? "" : `${String(call.ms)} ms` },
-  ];
+  const withStatus = { ...call, status };
+  const words = wordsOf(call.kind);
 
   return {
     status,
-    call,
-    cells,
-    headline: headlineOf(call),
-    rows: paintRows(call),
+    call: withStatus,
+    words,
+    identity: words.identity(withStatus),
+    facts: words.facts(withStatus),
+    state: words.state(withStatus),
+    rows: withStatus.rows,
     body: call.body,
-    note: noteOf({ ...call, status }),
-    omitted: call.omitted,
+    note: noteOf(withStatus, words),
+    omitted: withStatus.omitted,
   };
 }
+
+/**
+ * What a GitHub call's row looks like is the nine cards' business, not a header
+ * line's: each card opens with the record it read, so there is no scope string to
+ * build and no counts to repeat beside it.
+ */

@@ -18,7 +18,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_COMMENT_LIMIT,
 } from "../constants";
-import { readIssue } from "../lib/api/read";
+import { readIssue } from "../lib/api/read/issue";
 import {
   limitParam,
   numberParam,

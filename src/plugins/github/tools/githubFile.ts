@@ -13,7 +13,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_FILE_TOOL, GITHUB_TOOL_LABELS } from "../constants";
-import { readFile } from "../lib/api/read";
+import { readFile } from "../lib/api/read/file";
 import {
   ownerParam,
   pathParam,

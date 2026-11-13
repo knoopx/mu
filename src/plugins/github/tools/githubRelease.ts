@@ -18,7 +18,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_RELEASE_LIMIT,
 } from "../constants";
-import { readRelease } from "../lib/api/read";
+import { readRelease } from "../lib/api/read/release";
 import { limitParam, ownerParam, refreshParam, repoParam } from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubReleaseParams } from "../types";

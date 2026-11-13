@@ -13,7 +13,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_TOOL_LABELS, GITHUB_TREE_TOOL } from "../constants";
-import { readTree } from "../lib/api/read";
+import { readTree } from "../lib/api/read/tree";
 import {
   ownerParam,
   pathParam,

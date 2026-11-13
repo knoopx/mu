@@ -18,7 +18,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_SEARCH_LIMIT,
 } from "../constants";
-import { readSearch } from "../lib/api/read";
+import { readSearch } from "../lib/api/read/search";
 import { kindParam, limitParam, refreshParam } from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubSearchParams } from "../types";

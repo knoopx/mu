@@ -69,6 +69,10 @@ export function sizeOf(value: unknown): string {
 
 export const shortSha = (sha: string): string => sha.slice(0, SHORT_SHA);
 
+/** The page a human can open, when GitHub gave one. */
+export const urlOf = (record: Record<string, unknown>): string =>
+  stringOf(record["html_url"]);
+
 /** A repository's licence, in the word GitHub spells for it, or nothing. */
 export function licenseOf(value: unknown): string {
   const spdx = stringOf(nested(value)["spdx_id"]);

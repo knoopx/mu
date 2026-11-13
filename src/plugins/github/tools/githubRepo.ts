@@ -10,7 +10,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_REPO_TOOL, GITHUB_TOOL_LABELS } from "../constants";
-import { readRepo } from "../lib/api/read";
+import { readRepo } from "../lib/api/read/repo";
 import { ownerParam, refreshParam, repoParam } from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubRepoParams } from "../types";

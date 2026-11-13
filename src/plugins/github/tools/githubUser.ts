@@ -9,7 +9,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_TOOL_LABELS, GITHUB_USER_TOOL } from "../constants";
-import { readUser } from "../lib/api/read";
+import { readUser } from "../lib/api/read/user";
 import { loginParam, refreshParam } from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubUserParams } from "../types";

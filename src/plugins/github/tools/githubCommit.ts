@@ -12,7 +12,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_COMMIT_TOOL, GITHUB_TOOL_LABELS } from "../constants";
-import { readCommit } from "../lib/api/read";
+import { readCommit } from "../lib/api/read/commit";
 import { ownerParam, refreshParam, repoParam, shaParam } from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubCommitParams } from "../types";

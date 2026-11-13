@@ -13,7 +13,7 @@ import type {
 import { Type } from "typebox";
 
 import { GITHUB_PR_TOOL, GITHUB_TOOL_LABELS } from "../constants";
-import { readPull } from "../lib/api/read";
+import { readPull } from "../lib/api/read/pr";
 import {
   flagParam,
   numberParam,

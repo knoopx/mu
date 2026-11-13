@@ -11,7 +11,7 @@ import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
 import { toolResult } from "../../core/lib/agent/toolText";
 import { githubAnswerOf } from "./answer";
-import type { GithubReadInput } from "./api/read";
+import type { GithubReadInput } from "./api/read/gate";
 import type { GithubCall } from "../types";
 
 export async function runRead(

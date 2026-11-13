@@ -8,6 +8,7 @@
  */
 
 import type { BadgeVariant } from "adwaita-gpuix";
+import type { GithubKind } from "./types";
 
 export const GITHUB_REPO_TOOL = "github-repo";
 export const GITHUB_FILE_TOOL = "github-file";
@@ -31,6 +32,26 @@ export const GITHUB_TOOL_NAMES: readonly string[] = [
   GITHUB_SEARCH_TOOL,
   GITHUB_USER_TOOL,
 ];
+
+/**
+ * Which kind each tool reads.
+ *
+ * A call's own answer names its kind, but a call that is still running has no
+ * answer to read one from, and the header has to say what it is doing already —
+ * so the header goes from a tool name to a kind, and the kind's own file says the
+ * words.
+ */
+export const GITHUB_TOOL_KINDS: Readonly<Record<string, GithubKind>> = {
+  [GITHUB_REPO_TOOL]: "repo",
+  [GITHUB_FILE_TOOL]: "file",
+  [GITHUB_TREE_TOOL]: "tree",
+  [GITHUB_PR_TOOL]: "pr",
+  [GITHUB_ISSUE_TOOL]: "issue",
+  [GITHUB_RELEASE_TOOL]: "release",
+  [GITHUB_COMMIT_TOOL]: "commit",
+  [GITHUB_SEARCH_TOOL]: "search",
+  [GITHUB_USER_TOOL]: "user",
+};
 
 export const GITHUB_TOOL_LABELS: Record<string, string> = {
   [GITHUB_REPO_TOOL]: "GitHub repo",
