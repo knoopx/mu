@@ -10,6 +10,7 @@ import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 import {
   Badge,
+  Icon,
   Skeleton,
   T,
   useAdwaita,

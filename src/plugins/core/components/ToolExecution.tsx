@@ -47,7 +47,6 @@ import {
 } from "../../web-search/components/SearchResults";
 import {
   GithubToolRows,
-  githubToolPreviewOf,
   isGithubTool,
 } from "../../github/components/GithubToolRows";
 import {
@@ -220,7 +219,6 @@ function argsLineOf(
 ): string {
   if (isAskTool(item.name)) return askPreview(item);
   if (isSearchTool(item.name)) return searchPreviewOf(item);
-  if (isGithubTool(item.name)) return githubToolPreviewOf(item);
   if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
   if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
   if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
@@ -266,6 +264,32 @@ function toolRowLookOf(
   };
 }
 
+/**
+ * A tool whose plugin draws its whole row — tool chrome and all.
+ *
+ * A GitHub read is a record, a list and a body of prose. Wrapped in the shared tool
+ * box it looks like every other tool's answer, which is what it is not: so the
+ * plugin owns the row — the identity band, the counts, the widget that thing has —
+ * and core supplies only the page it stands on and the guardrail block that outranks
+ * any card.
+ */
+export function dedicatedToolRowOf(
+  item: ToolTranscriptItem,
+): JSX.Element | null {
+  if (!isGithubTool(item.name)) return null;
+  const block = guardrailBlockOf(item);
+  return (
+    <>
+      <GithubToolRows item={item} />
+      {block === null ? null : (
+        <ToolContent open>
+          <GuardrailBlockRows hit={block} />
+        </ToolContent>
+      )}
+    </>
+  );
+}
+
 function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
   const panels: JSX.Element[] = [];
   const block = guardrailBlockOf(item);
@@ -279,14 +303,6 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
     panels.push(
       <ToolContent key="search" open>
         <SearchResults item={item} />
-      </ToolContent>,
-    );
-  // A GitHub read answers with a record, a list and often a body: chips for what
-  // it resolved, ranked rows for what it listed, and the file or prose itself.
-  if (isGithubTool(item.name))
-    panels.push(
-      <ToolContent key="github" open>
-        <GithubToolRows item={item} />
       </ToolContent>,
     );
   if (block !== null)
