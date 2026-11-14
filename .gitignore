@@ -1,4 +1,5 @@
 node_modules/
 dist/
+.fallow/
 *.png
-!stories/**/*.png
+!docs/screens/**/*.png
