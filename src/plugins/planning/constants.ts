@@ -6,11 +6,6 @@
 export const PLAN_TOOL = "plan";
 export const PLAN_TOOL_LABEL = "Plan";
 
-/**
- * This name is what a guardrail rule and a story point at, so it is never
- * renamed or aliased.
- */
-export const PLANNING_TOOL_NAMES: readonly string[] = [PLAN_TOOL];
 
 /**
  * The three standings a step has, in the order a plan reads down them.

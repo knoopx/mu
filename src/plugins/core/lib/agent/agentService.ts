@@ -24,63 +24,14 @@ import {
   type CreateAgentSessionRuntimeFactory,
   type PromptOptions,
   type SessionTreeNode,
-  type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { agentSettingsManager } from "./settings";
-import { askUserTool } from "../../../interaction/tools/askUser";
-import { CODE_QUALITY_TOOL_NAMES } from "../../../code-quality/constants";
-import { codeComplexityTool } from "../../../code-quality/tools/codeComplexity";
-import { codeDeadCodeTool } from "../../../code-quality/tools/codeDeadCode";
-import { codeDuplicatesTool } from "../../../code-quality/tools/codeDuplicates";
-import { codeReviewTool } from "../../../code-quality/tools/codeReview";
-import { codeSymbolInspectTool } from "../../../code-quality/tools/codeSymbolInspect";
-import { codeSymbolReferencesTool } from "../../../code-quality/tools/codeSymbolReferences";
-import { webSearchTool } from "../../../web-search/tools/webSearch";
-import { GITHUB_TOOL_NAMES } from "../../../github/constants";
-import { githubCommitTool } from "../../../github/tools/githubCommit";
-import { githubFileTool } from "../../../github/tools/githubFile";
-import { githubIssueTool } from "../../../github/tools/githubIssue";
-import { githubPrTool } from "../../../github/tools/githubPr";
-import { githubReleaseTool } from "../../../github/tools/githubRelease";
-import { githubRepoTool } from "../../../github/tools/githubRepo";
-import { githubSearchTool } from "../../../github/tools/githubSearch";
-import { githubTreeTool } from "../../../github/tools/githubTree";
-import { githubUserTool } from "../../../github/tools/githubUser";
-import { OPENUI_TOOL_NAMES } from "../../../openui/constants";
-import { openUIPromptTool } from "../../../openui/tools/openuiPrompt";
-import { openUILibraryTool } from "../../../openui/tools/openuiLibrary";
-import { openUIValidateTool } from "../../../openui/tools/openuiValidate";
-import { openUIRenderTool } from "../../../openui/tools/openuiRender";
-import { openUIStreamTool } from "../../../openui/tools/openuiStream";
-import { openUIStateTool } from "../../../openui/tools/openuiState";
-import { openUIEventsTool } from "../../../openui/tools/openuiEvents";
-import { openUIToolsTool } from "../../../openui/tools/openuiTools";
-import { openUIListTool } from "../../../openui/tools/openuiList";
-import { openUISwitchTool } from "../../../openui/tools/openuiSwitch";
-import { openUIClearTool } from "../../../openui/tools/openuiClear";
-import { guardrailsExtension } from "../../../guardrails/lib/guardrailsExtension";
-import { snapcompactExtension } from "../../../snapcompact/lib/extension";
-import { guardrailsCoverageTool } from "../../../guardrails/tools/guardrailsCoverage";
-import { guardrailsFixtureUpdateTool } from "../../../guardrails/tools/guardrailsFixtureUpdate";
-import { guardrailsTestTool } from "../../../guardrails/tools/guardrailsTest";
-import { VCS_TOOL_NAMES } from "../../../vcs/constants";
-import { vcsConflictsTool } from "../../../vcs/tools/vcsConflicts";
-import { vcsDescribeTool } from "../../../vcs/tools/vcsDescribe";
-import { vcsFileDiffTool } from "../../../vcs/tools/vcsFileDiff";
-import { vcsFileHistoryShowTool } from "../../../vcs/tools/vcsFileHistoryShow";
-import { vcsFileHistoryTool } from "../../../vcs/tools/vcsFileHistory";
-import { vcsFileSplitTool } from "../../../vcs/tools/vcsFileSplit";
-import { vcsHunkListTool } from "../../../vcs/tools/vcsHunkList";
-import { vcsHunkSplitTool } from "../../../vcs/tools/vcsHunkSplit";
-import { vcsLogTool } from "../../../vcs/tools/vcsLog";
-import { vcsOplogTool } from "../../../vcs/tools/vcsOplog";
-import { MERMAID_TOOL_NAMES } from "../../../mermaid/constants";
-import { mermaidRenderTool } from "../../../mermaid/tools/mermaidRender";
-import { FIGURE_TOOL_NAMES } from "../../../figures/constants";
-import { chartRenderTool } from "../../../figures/tools/chartRender";
-import { treeRenderTool } from "../../../figures/tools/treeRender";
-import { PLANNING_TOOL_NAMES } from "../../../planning/constants";
-import { planTool } from "../../../planning/tools/plan";
+import { HOST } from "../../../registry";
+import {
+  agentExtensions,
+  agentToolNames,
+  agentTools,
+} from "../plugin/surfaces";
 
 export type { SessionInfo } from "@earendil-works/pi-coding-agent";
 export type ThinkingLevel = AgentSession["thinkingLevel"];
@@ -100,38 +51,39 @@ export interface AgentOptions {
   model?: string;
 }
 
-const APP_TOOL_NAMES = [
-  "read",
-  "bash",
-  "edit",
-  "write",
-  "codemode",
-  "ask-user",
-  "search-duckduckgo",
-  ...GITHUB_TOOL_NAMES,
-  "guardrails-test",
-  "guardrails-fixture-update",
-  "guardrails-coverage",
-  ...VCS_TOOL_NAMES,
-  ...CODE_QUALITY_TOOL_NAMES,
-  ...OPENUI_TOOL_NAMES,
-  ...MERMAID_TOOL_NAMES,
-  ...FIGURE_TOOL_NAMES,
-  ...PLANNING_TOOL_NAMES,
-];
+/**
+ * pi's own tools. mu names them because pi asks which tools are active by name;
+ * every other name in the session is a plugin's, read off its manifest, so a
+ * tool can never be declared to the model in one file and implemented in another.
+ */
+const PI_TOOL_NAMES = ["read", "bash", "edit", "write", "codemode"];
 
-const ISOLATED_RESOURCE_LOADER_OPTIONS = {
+/**
+ * The names of every tool the session may use.
+ *
+ * Read when a session starts, not when this module loads: the plugin host is what
+ * answers the plugins' names, and a module-level read of it would run in the middle
+ * of building it — the composer's data bag names the session, the session names the
+ * agent, and the host is what pulls the plugins in.
+ */
+const appToolNames = (): string[] => [...PI_TOOL_NAMES, ...agentToolNames(HOST)];
+
+/**
+ * How a session's resources are loaded: pi's built-ins trimmed to the five tools
+ * mu shows, and every plugin's extension in the order the plugins are loaded.
+ *
+ * Built per session rather than once at import, because the extensions are the
+ * host's and the host is still being built while anything that reads it is being
+ * built.
+ */
+const isolatedResourceLoaderOptions = () => ({
   noExtensions: true,
   disabledBuiltinExtensions: ["mcp", "codemode", "tool-search"],
   noSkills: true,
   noPromptTemplates: true,
   noThemes: true,
-  extensionFactories: [
-    guardrailsExtension,
-    snapcompactExtension,
-    createCodemodeExtension(),
-  ],
-};
+  extensionFactories: [...agentExtensions(HOST), createCodemodeExtension()],
+});
 
 function readDefaultModelRef(agentDir: string): string | undefined {
   try {
@@ -193,61 +145,15 @@ export async function createAgentSessionHandle(
       agentDir: effectiveAgentDir,
 
       settingsManager: agentSettingsManager(effectiveCwd, effectiveAgentDir),
-      resourceLoaderOptions: ISOLATED_RESOURCE_LOADER_OPTIONS,
+      resourceLoaderOptions: isolatedResourceLoaderOptions(),
     });
     const created = await createAgentSessionFromServices({
       services,
       sessionManager,
       sessionStartEvent,
 
-      tools: [...APP_TOOL_NAMES],
-      customTools: [
-        askUserTool,
-        webSearchTool,
-        githubRepoTool,
-        githubFileTool,
-        githubTreeTool,
-        githubPrTool,
-        githubIssueTool,
-        githubReleaseTool,
-        githubCommitTool,
-        githubSearchTool,
-        githubUserTool,
-        guardrailsTestTool,
-        guardrailsFixtureUpdateTool,
-        guardrailsCoverageTool,
-        vcsLogTool,
-        vcsFileDiffTool,
-        vcsFileHistoryTool,
-        vcsFileHistoryShowTool,
-        vcsConflictsTool,
-        vcsOplogTool,
-        vcsDescribeTool,
-        vcsFileSplitTool,
-        vcsHunkListTool,
-        vcsHunkSplitTool,
-        codeComplexityTool,
-        codeDeadCodeTool,
-        codeDuplicatesTool,
-        codeReviewTool,
-        codeSymbolInspectTool,
-        codeSymbolReferencesTool,
-        openUIPromptTool,
-        openUILibraryTool,
-        openUIValidateTool,
-        openUIRenderTool,
-        openUIStreamTool,
-        openUIStateTool,
-        openUIEventsTool,
-        openUIToolsTool,
-        openUIListTool,
-        openUISwitchTool,
-        openUIClearTool,
-        mermaidRenderTool,
-        chartRenderTool,
-        treeRenderTool,
-        planTool,
-      ] as ToolDefinition[],
+      tools: appToolNames(),
+      customTools: agentTools(HOST),
     });
     const diagnostics: AgentSessionRuntimeDiagnostic[] = [
       ...services.diagnostics,

@@ -1,7 +1,8 @@
 import { resolve } from "node:path";
 import type { ToastFn } from "adwaita-gpuix";
 import { truncateToWidth } from "../../../../utils/truncate";
-import { coreCommands } from "../commands/coreCommands";
+import { HOST } from "../../../registry";
+import { commandByName } from "../plugin/surfaces";
 import {
   accentOfThemeRow,
   parseInvocation,
@@ -25,18 +26,6 @@ import {
   type FileOpenResult,
   type OpenTarget,
 } from "../files/openFile";
-
-const COMMAND_TARGETS: Record<string, ComposerTarget> = {
-  model: "model",
-  thinking: "thinking",
-  changes: "changes",
-  guardrails: "guardrails",
-};
-
-const COMMAND_MODES: Record<string, ComposerTarget> = {
-  model: "model",
-  thinking: "thinking",
-};
 
 export interface ComposerActionContext {
   mode: ComposerMode;
@@ -72,8 +61,8 @@ function pickThemeRow(row: ComposerPanelRow, a: ComposerActionContext): void {
 
 function pickCommandRow(row: ComposerPanelRow, a: ComposerActionContext): void {
   if (row.kind !== "command") return;
-  const plugin = coreCommands.find((c) => c.name === row.name);
-  const to = plugin?.target ?? COMMAND_TARGETS[row.name] ?? null;
+  // A command that names a panel opens it; one that does not is run as a command.
+  const to = commandByName(HOST, row.name)?.target ?? null;
   a.setInput("");
   if (to !== null) {
     a.setMode(pickMode(to));
@@ -153,14 +142,10 @@ export interface ChatCommandContext {
 }
 
 export function runChatCommand(name: string, a: ChatCommandContext): void {
-  const plugin = coreCommands.find((c) => c.name === name);
-  if (plugin !== undefined) {
-    a.setMode(
-      plugin.target !== undefined ? pickMode(plugin.target) : draftMode(),
-    );
-    return;
-  }
-  const target = COMMAND_MODES[name];
+  // The panel a command names is the command's whole meaning: `/changes` is the
+  // change stack, and the draft is left behind. A command that names no panel is
+  // an action on the session, and the commands that do that are core's own.
+  const target = commandByName(HOST, name)?.target;
   if (target !== undefined) {
     a.setMode(pickMode(target));
     return;

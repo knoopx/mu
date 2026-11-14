@@ -29,7 +29,12 @@ import { type TurnStats } from "../lib/agent/turnStats";
 import { ChatTranscript } from "../components/ChatTranscript";
 import { ChatComposerSlot } from "../components/ChatComposerSlot";
 import { AssistantMessage } from "../components/AssistantMessage";
-import { ToolExecution, dedicatedToolRowOf } from "../components/ToolExecution";
+import { ToolExecution } from "../components/ToolExecution";
+import { HOST } from "../../registry";
+import {
+  commandSurfaces,
+  dedicatedRowOf,
+} from "../lib/plugin/surfaces";
 import {
   composerGap,
   PAGE_INSET,
@@ -52,8 +57,8 @@ import {
 import {
   composerPanelRows,
   composerPanelSpec,
-  type ComposerPanelData,
 } from "../components/composer/panels";
+import type { ComposerPanelData } from "../lib/composer/panelData";
 import { SessionStatus } from "../components/SessionStatus";
 import { useAskSnapshot, useAskUiHost } from "../../interaction/hooks/useAsk";
 import { askProgressLabel } from "../../interaction/lib/progress";
@@ -66,8 +71,6 @@ import {
 } from "../hooks/useProjectSummary";
 import type { PromptPill } from "../lib/project/promptTemplates";
 import { ChangesOverlayHost } from "../../vcs/components/ChangesOverlayHost";
-import { builtinCommands } from "../lib/commands/builtins";
-import { coreCommands } from "../lib/commands/coreCommands";
 import type { SlashCommand } from "../../../autocomplete";
 import { openChatSession, type ChatSession } from "../lib/session/chatSession";
 import {
@@ -93,7 +96,7 @@ import { supersededOf } from "../../openui/lib/fences/supersession";
 import { useAnswerSheet } from "../../openui/hooks/useAnswerSheet";
 import { answerSheet } from "../../openui/lib/answer/store";
 
-const SLASH_COMMANDS: SlashCommand[] = [...builtinCommands, ...coreCommands];
+const slashCommands = (): SlashCommand[] => commandSurfaces(HOST);
 
 function conversationLog(
   t: AdwaitaTheme,
@@ -197,7 +200,7 @@ function panelDataOf(
     theme,
     mode,
     query: panels.query,
-    commands: SLASH_COMMANDS,
+    commands: slashCommands(),
     session,
     themePanel: panels.themePanel,
     sessionRows: sessions.rows,
@@ -310,7 +313,7 @@ export const TranscriptRow = memo(function TranscriptRow({
         answered={answered}
       />
     ) : item.kind === "tool" ? (
-      (dedicatedToolRowOf(item) ?? <ToolExecution item={item} />)
+      (dedicatedRowOf(HOST, item) ?? <ToolExecution item={item} />)
     ) : (
       <SystemRow text={item.text} />
     );

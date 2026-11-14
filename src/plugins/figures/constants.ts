@@ -11,15 +11,6 @@ export const CHART_TOOL_LABEL = "Chart";
 export const TREE_TOOL_LABEL = "Tree";
 
 /**
- * These names are what a guardrail rule and a story point at, so they are never
- * renamed or aliased.
- */
-export const FIGURE_TOOL_NAMES: readonly string[] = [
-  CHART_RENDER_TOOL,
-  TREE_RENDER_TOOL,
-];
-
-/**
  * How many points a plot holds.
  *
  * A bar is a flex child of the row it stands in, so past a few dozen bars the

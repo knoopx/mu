@@ -12,49 +12,38 @@ import {
   type PickIntent,
 } from "./mode";
 import { isDeleteRowKey, isEditRowKey, isOpenRowKey } from "./shortcuts";
+import { HOST } from "../../../registry";
+import { panelHotkeys, wideHotkeyOf } from "../plugin/surfaces";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
 const AUTOCOMPLETE_KEY_ID = "editor.autocomplete";
 
-const COMPOSER_HOTKEYS: Array<{ id: string; event: ComposerEvent }> = [
+/**
+ * The chords that open a composer panel.
+ *
+ * One entry belongs to the window itself — the command palette, which is not a
+ * panel and has no owner. Every other chord is a panel's, registered by the plugin
+ * that owns the panel, so a plugin that takes a chord cannot collide with another
+ * one and the keymap has one list of owners.
+ */
+const composerHotkeys = (): Array<{ id: string; event: ComposerEvent }> => [
   { id: "composer.commands", event: { type: "openCommands" } },
-  { id: "composer.models", event: { type: "openPick", target: "model" } },
-  { id: "composer.thinking", event: { type: "openPick", target: "thinking" } },
-  { id: "composer.sessions", event: { type: "openPick", target: "session" } },
-  { id: "composer.files", event: { type: "openPick", target: "file" } },
-  {
-    id: "composer.userMessageHistory",
-    event: { type: "openPick", target: "userMessageHistory" },
-  },
-  { id: "composer.changes", event: { type: "openChanges" } },
-  { id: "composer.oplog", event: { type: "openPick", target: "oplog" } },
-  {
-    id: "composer.guardrails",
-    event: { type: "openPick", target: "guardrails" },
-  },
-  { id: "composer.tree", event: { type: "openPick", target: "tree" } },
-  { id: "composer.terminal", event: { type: "openPick", target: "terminal" } },
-  { id: "composer.theme", event: { type: "openPick", target: "theme" } },
-  { id: "composer.accent", event: { type: "openPick", target: "accent" } },
+  ...panelHotkeys(HOST),
 ];
 
 /**
- * The hotkey that opens each wide panel.
+ * The hotkey that opens the wide panel that is open.
  *
  * While a wide panel is open only its own hotkey is a candidate, so pressing it
- * again closes the panel instead of opening a second one.
+ * again closes the panel instead of opening a second one. The fallback is the
+ * change stack's chord, which is what the window shows when nothing wide is open.
  */
-const WIDE_HOTKEYS: Record<string, string> = {
-  changes: "composer.changes",
-  oplog: "composer.oplog",
-  tree: "composer.tree",
-  terminal: "composer.terminal",
-};
+const DEFAULT_WIDE_HOTKEY = "composer.changes";
 
 function wideHotkeyId(mode: ComposerMode): string {
-  if (mode.kind !== "pick") return "composer.changes";
-  return WIDE_HOTKEYS[mode.target] ?? "composer.changes";
+  if (mode.kind !== "pick") return DEFAULT_WIDE_HOTKEY;
+  return wideHotkeyOf(HOST, mode.target) ?? DEFAULT_WIDE_HOTKEY;
 }
 
 const NAV_KEYS = new Set([
@@ -171,8 +160,8 @@ function composerHotkey(
   const openHotkeyId = wideHotkeyId(ctx.mode);
   const candidates =
     ctx.wideOpen === true
-      ? COMPOSER_HOTKEYS.filter((h) => h.id === openHotkeyId)
-      : COMPOSER_HOTKEYS;
+      ? composerHotkeys().filter((h) => h.id === openHotkeyId)
+      : composerHotkeys();
   const hotkey = candidates.find((h) => keys.matches(keyEvent, h.id));
   if (hotkey === undefined) return false;
   const target = hotkey.event.type === "openPick" ? hotkey.event.target : null;

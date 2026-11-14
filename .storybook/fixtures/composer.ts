@@ -1,5 +1,5 @@
-import { builtinCommands } from "../../src/plugins/core/lib/commands/builtins";
-import { coreCommands } from "../../src/plugins/core/lib/commands/coreCommands";
+import { HOST } from "../../src/plugins/registry";
+import { commandSurfaces } from "../../src/plugins/core/lib/plugin/surfaces";
 import {
   accentRows,
   themeRows,
@@ -25,10 +25,9 @@ import type {
 import { MOCK_BRIDGE } from "./models";
 import { photoBuffer, photoOf, totalBytes, type PhotoKey } from "./media";
 
-export const COMPOSER_COMMAND_ROWS: ComposerPanelRow[] = commandRows([
-  ...builtinCommands,
-  ...coreCommands,
-]);
+export const COMPOSER_COMMAND_ROWS: ComposerPanelRow[] = commandRows(
+  commandSurfaces(HOST),
+);
 
 export const COMPOSER_MODEL_ROWS: ComposerPanelRow[] = modelRows(
   MOCK_BRIDGE,

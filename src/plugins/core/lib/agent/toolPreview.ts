@@ -15,6 +15,20 @@ import { firstLine } from "../../../../utils/truncate";
 /** How wide a tool header's preview is before it is clipped. */
 export const TOOL_PREVIEW_MAX = 96;
 
+/**
+ * How wide a header's own line is — narrower than a preview of an answer, since
+ * a header sits beside the tool's name and the call's state mark.
+ */
+export const HEADER_PREVIEW_MAX = 72;
+
+/** One line of a header: collapsed to a row of text, then cut to the budget. */
+export function headerSnippet(
+  value: string,
+  max: number = HEADER_PREVIEW_MAX,
+): string {
+  return clipText(value.split(/\s+/).filter(Boolean).join(" "), max);
+}
+
 /** What a plugin's tools say, in the tool's own words. */
 export interface ToolPreviewVocabulary {
   /** what each tool is doing while it runs, by tool name */

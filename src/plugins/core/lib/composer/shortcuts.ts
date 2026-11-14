@@ -3,6 +3,13 @@ import { hints, navShortcuts, type Shortcut } from "adwaita-gpuix/shortcuts";
 import { getKeybindings } from "../../../../keybindings/manager";
 import { keyEventOf } from "../../../../keys";
 import type { ComposerTarget } from "./mode";
+import { HOST } from "../../../registry";
+import {
+  panelChooseWord,
+  panelDeleteWord,
+  panelEditWord,
+  panelOpenWord,
+} from "../plugin/surfaces";
 
 export type { Shortcut } from "adwaita-gpuix/shortcuts";
 
@@ -15,88 +22,55 @@ export const EDIT_ROW_KEY = "composer.editRow";
 export const AUTOCOMPLETE_KEY = "editor.autocomplete";
 
 /**
- * The panels whose highlighted row is a thing on disk that can be deleted.
+ * What a panel's keys are called, in the panel's own words.
  *
- * One key does it in every one of them, and a panel that is not listed here
- * never shows the hint, so the hint is how the panel says it can delete.
+ * The panel that owns a row type says what its keys do by registering the words
+ * (`core/lib/plugin/manifest.ts`): what Enter takes, whether Delete has anything
+ * to delete, and whether `o` and `e` have a file to hand off. A panel that names
+ * no word does not take that key, and its hint line says so — a hint a panel does
+ * not print is a key that panel does not take. The command palette is the one
+ * list core owns and is not a panel, so its word is the one left here.
  */
-const DELETABLE_PANELS: Array<ComposerTarget | "commands"> = [
-  "session",
-  "file",
-];
+const COMMANDS_CHOICE = "run";
+
+const chooseWord = (panel: ComposerTarget | "commands"): string | undefined =>
+  panel === "commands"
+    ? COMMANDS_CHOICE
+    : panelChooseWord(HOST, panel);
 
 export const panelCanDelete = (panel: ComposerTarget | "commands"): boolean =>
-  DELETABLE_PANELS.includes(panel);
-
-/**
- * The panels whose highlighted row is a file on disk that can be opened.
- *
- * Only the file panel: its rows are the project's own files. `o` hands one to
- * the desktop's default app and `e` to the user's editor, matching the two keys
- * the project's own file panes use. Both are bare letters, so unlike the other
- * panels' keys they are taken from the filter the panel types into — the hint
- * line is what says so, and two letters is the whole budget.
- */
-const OPENABLE_PANELS: Array<ComposerTarget | "commands"> = ["file"];
+  panelDeleteWord(HOST, panel) !== undefined;
 
 export const panelCanOpen = (panel: ComposerTarget | "commands"): boolean =>
-  OPENABLE_PANELS.includes(panel);
+  panelOpenWord(HOST, panel) !== undefined;
 
 export const panelCanEdit = (panel: ComposerTarget | "commands"): boolean =>
-  OPENABLE_PANELS.includes(panel);
-
-/** What the delete key is called beside each panel that has one. */
-const PANEL_DELETE: Record<string, string> = {
-  session: "delete",
-  file: "delete file",
-};
-
-/** What the open key is called beside each panel that has one. */
-const PANEL_OPEN: Record<string, string> = {
-  file: "open",
-};
-
-/** What the edit key is called beside each panel that has one. */
-const PANEL_EDIT: Record<string, string> = {
-  file: "edit",
-};
-
-const PANEL_CHOOSE: Record<string, string> = {
-  commands: "run",
-  model: "use",
-  thinking: "set",
-  session: "resume",
-  file: "insert",
-  path: "use",
-  changes: "open",
-  tree: "jump",
-  theme: "apply",
-  accent: "apply",
-  userMessageHistory: "use",
-  guardrails: "arm",
-};
+  panelEditWord(HOST, panel) !== undefined;
 
 export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
   const rows: Shortcut[] = [];
   rows.push(...navShortcuts({ select: "move" }));
-  rows.push({ id: "choose", kbds: ["enter"], desc: PANEL_CHOOSE[panel] });
+  // A panel that names no word for a key does not take it, and prints no chip for
+  // it — the hint line is how a panel says what its keys do.
+  const choose = chooseWord(panel);
+  if (choose !== undefined) rows.push({ id: "choose", kbds: ["enter"], desc: choose });
   if (panelCanOpen(panel))
     rows.push({
       id: "open",
       kbds: [getKeybindings().get(OPEN_ROW_KEY)],
-      desc: PANEL_OPEN[panel] ?? "open",
+      desc: panelOpenWord(HOST, panel) ?? "open",
     });
   if (panelCanEdit(panel))
     rows.push({
       id: "edit",
       kbds: [getKeybindings().get(EDIT_ROW_KEY)],
-      desc: PANEL_EDIT[panel] ?? "edit",
+      desc: panelEditWord(HOST, panel) ?? "edit",
     });
   if (panelCanDelete(panel))
     rows.push({
       id: "delete",
       kbds: [getKeybindings().chord(DELETE_ROW_KEY)],
-      desc: PANEL_DELETE[panel] ?? "delete",
+      desc: panelDeleteWord(HOST, panel) ?? "delete",
     });
   rows.push({ id: "close", kbds: ["escape"], desc: "close" });
   return rows;

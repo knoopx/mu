@@ -36,67 +36,14 @@ import { toolIconOf } from "../lib/ui/toolIcon";
 import { PAGE_INSET } from "../lib/ui/transcriptLayout";
 import { ToolBand } from "./ToolBand";
 import { buildNativeTheme } from "../lib/ui/theme";
+import { HOST } from "../../registry";
 import {
-  askDetailsOf,
-  isAskTool,
-  AskResultRows,
-} from "../../interaction/components/AskResultRows";
-import type { AskQuestion } from "../../interaction/types";
-import {
-  isSearchTool,
-  searchPreviewOf,
-  SearchResults,
-} from "../../web-search/components/SearchResults";
-import {
-  GithubToolRows,
-  isGithubTool,
-} from "../../github/components/GithubToolRows";
-import {
-  GuardrailBlockRows,
-  guardrailBlockOf,
-} from "../../guardrails/components/GuardrailBlockRows";
-import {
-  GuardrailsToolRows,
-  guardrailsToolPreview,
-  isGuardrailsTool,
-} from "../../guardrails/components/GuardrailsToolRows";
-import {
-  isVcsTool,
-  vcsToolPreviewOf,
-  VcsToolRows,
-} from "../../vcs/components/VcsToolRows";
-import {
-  isCodeQualityTool,
-  QualityToolRows,
-  qualityToolPreviewOf,
-} from "../../code-quality/components/QualityToolRows";
-import {
-  isOpenUITool,
-  openUIToolPreviewOf,
-  OpenUIToolRows,
-} from "../../openui/components/OpenUIToolRows";
-import {
-  isMermaidTool,
-  MermaidToolRows,
-  mermaidToolPreviewOf,
-} from "../../mermaid/components/MermaidToolRows";
-import {
-  ChartToolRows,
-  chartToolPreviewOf,
-  isChartTool,
-} from "../../figures/components/ChartToolRows";
-import {
-  isTreeTool,
-  TreeToolRows,
-  treeToolPreviewOf,
-} from "../../figures/components/TreeToolRows";
-import {
-  isPlanTool,
-  PlanToolRows,
-  planToolPreviewOf,
-} from "../../planning/components/PlanToolRows";
-import { CodemodeToolRows, isCodemodeTool } from "./CodemodeToolRows";
-import { codemodePreviewOf } from "../lib/codemode/script";
+  answerBodiesOf,
+  blockBodiesOf,
+  ownsItsRows,
+  toolPreviewOf,
+} from "../lib/plugin/surfaces";
+import { headerSnippet } from "../lib/agent/toolPreview";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -105,15 +52,7 @@ export interface ToolExecutionProps {
   style?: Partial<StyleDesc>;
 }
 
-const PREVIEW_MAX = 72;
-
 const DIFF_TOOLS = new Set(["edit"]);
-
-function snippet(value: string): string {
-  const normalized = value.split(/\s+/).filter(Boolean).join(" ");
-  if (normalized.length <= PREVIEW_MAX) return normalized;
-  return `${normalized.slice(0, PREVIEW_MAX)}…`;
-}
 
 function formatArgs(args: Record<string, unknown>): string {
   return Object.entries(args)
@@ -131,35 +70,12 @@ function previewFor(item: ToolTranscriptItem): string {
   const args = item.args ?? {};
 
   const command = commandTextOf(args);
-  if (command !== "") return snippet(command);
+  if (command !== "") return headerSnippet(command);
 
   const path = pathTextOf(args);
-  if (path !== "") return snippet(path);
+  if (path !== "") return headerSnippet(path);
 
-  return snippet(formatArgs(args));
-}
-
-function askQuestionsOf(item: ToolTranscriptItem): Partial<AskQuestion>[] {
-  const questions = item.args?.questions;
-  if (!Array.isArray(questions)) return [];
-  return questions.filter(
-    (question): question is Partial<AskQuestion> =>
-      typeof question === "object" && question !== null,
-  );
-}
-
-function askPreview(item: ToolTranscriptItem): string {
-  const questions = askQuestionsOf(item);
-  const label = `${questions.length} ${questions.length === 1 ? "question" : "questions"}`;
-
-  const answers = askDetailsOf(item)?.answers ?? [];
-  if (answers.length > 0) return `${label} · answered ${answers.length}`;
-
-  const text = questions.length === 1 ? questions[0].question : undefined;
-  if (typeof text === "string" && text.trim() !== "")
-    return `${label} · ${snippet(text.trim())}`;
-
-  return label;
+  return headerSnippet(formatArgs(args));
 }
 
 function patchOf(item: ToolTranscriptItem): string | undefined {
@@ -181,24 +97,6 @@ function toToolState(item: ToolTranscriptItem): ToolState {
   }
 }
 
-function ownsItsRows(item: ToolTranscriptItem): boolean {
-  return (
-    isAskTool(item.name) ||
-    isSearchTool(item.name) ||
-    isGithubTool(item.name) ||
-    isGuardrailsTool(item.name) ||
-    isVcsTool(item.name) ||
-    isCodeQualityTool(item.name) ||
-    isCodemodeTool(item.name) ||
-    isOpenUITool(item.name) ||
-    isMermaidTool(item.name) ||
-    isChartTool(item.name) ||
-    isTreeTool(item.name) ||
-    isPlanTool(item.name) ||
-    guardrailBlockOf(item) !== null
-  );
-}
-
 interface ToolRowLook {
   state: ToolState;
   args: string;
@@ -209,21 +107,18 @@ interface ToolRowLook {
   showOutput: boolean;
 }
 
+/**
+ * The header's line: the owning plugin's own words if it has any, then what the
+ * call was pointed at. The chain of tool names that used to live here is now the
+ * registry's — a plugin that declares a preview gets it, and one that does not
+ * falls to the shape of its arguments.
+ */
 function argsLineOf(
   item: ToolTranscriptItem,
   readPreview: ReadPreviewData | undefined,
 ): string {
-  if (isAskTool(item.name)) return askPreview(item);
-  if (isSearchTool(item.name)) return searchPreviewOf(item);
-  if (isGuardrailsTool(item.name)) return guardrailsToolPreview(item);
-  if (isVcsTool(item.name)) return vcsToolPreviewOf(item);
-  if (isCodeQualityTool(item.name)) return qualityToolPreviewOf(item);
-  if (isOpenUITool(item.name)) return openUIToolPreviewOf(item);
-  if (isMermaidTool(item.name)) return mermaidToolPreviewOf(item);
-  if (isChartTool(item.name)) return chartToolPreviewOf(item);
-  if (isTreeTool(item.name)) return treeToolPreviewOf(item);
-  if (isPlanTool(item.name)) return planToolPreviewOf(item);
-  if (isCodemodeTool(item.name)) return codemodePreviewOf(item);
+  const owned = toolPreviewOf(HOST, item);
+  if (owned !== null) return owned;
   if (readPreview !== undefined) return readPreview.caption;
   return previewFor(item);
 }
@@ -252,7 +147,7 @@ function toolRowLookOf(
     ...(patch === undefined ? {} : { patch }),
     showOutput:
       item.output.length > 0 &&
-      !ownsItsRows(item) &&
+      !ownsItsRows(HOST, item) &&
       readPreview === undefined &&
       patch === undefined &&
       !(isWrite && state !== "output-error"),
@@ -260,98 +155,35 @@ function toolRowLookOf(
 }
 
 /**
- * A tool whose plugin draws its whole row — tool chrome and all.
+ * The bodies a call answers with, each on the plate the log owns.
  *
- * A GitHub read is a record, a list and a body of prose. Wrapped in the shared tool
- * box it looks like every other tool's answer, which is what it is not: so the
- * plugin owns the row — the identity band, the counts, the widget that thing has —
- * and core supplies only the page it stands on and the guardrail block that outranks
- * any card.
+ * The plugin supplies the rows, the chips, the figure or the picture; core
+ * supplies the band, so a tool row reads as an answer and the log stays a column
+ * that changes its content per row and never its shape. `frame: "page"` is the
+ * one exception a plugin can ask for — a program screen brings its own page, and
+ * a band under it is a card inside a card. A guardrails block is drawn last, and
+ * drawn whatever tool carried it, because the reason a call has no answer is the
+ * answer.
  */
-export function dedicatedToolRowOf(
-  item: ToolTranscriptItem,
-): JSX.Element | null {
-  if (!isGithubTool(item.name)) return null;
-  const block = guardrailBlockOf(item);
-  return (
-    <>
-      <GithubToolRows item={item} />
-      {block === null ? null : (
-        <ToolContent open>
-          <GuardrailBlockRows hit={block} />
+function answerPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
+  const panels: JSX.Element[] = answerBodiesOf(HOST, item).map(
+    ({ key, frame, body }) =>
+      frame === "page" ? (
+        <ToolContent key={key} open>
+          {body}
         </ToolContent>
-      )}
-    </>
+      ) : (
+        <ToolContent key={key} open>
+          <ToolBand>{body}</ToolBand>
+        </ToolContent>
+      ),
   );
-}
-
-/**
- * One tool's answer, on the one band every answer stands on.
- *
- * Rows, chips, a figure, a patch, quoted lines, printed text: all of them sit on
- * the same plate the read preview uses, so a tool row reads as an answer and the
- * log stays a column that changes its content per row and never its shape.
- */
-function answerPanel(key: string, body: JSX.Element): JSX.Element {
-  return (
-    <ToolContent key={key} open>
-      <ToolBand>{body}</ToolBand>
-    </ToolContent>
-  );
-}
-
-function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
-  const panels: JSX.Element[] = [];
-  const block = guardrailBlockOf(item);
-  if (isAskTool(item.name))
-    panels.push(answerPanel("ask", <AskResultRows item={item} />));
-  if (isSearchTool(item.name))
-    panels.push(answerPanel("search", <SearchResults item={item} />));
-  if (block !== null)
-    panels.push(answerPanel("block", <GuardrailBlockRows hit={block} />));
-  if (isGuardrailsTool(item.name))
-    panels.push(answerPanel("guardrails", <GuardrailsToolRows item={item} />));
-  if (isVcsTool(item.name))
-    panels.push(answerPanel("vcs", <VcsToolRows item={item} />));
-  if (isCodeQualityTool(item.name))
-    panels.push(answerPanel("code-quality", <QualityToolRows item={item} />));
-  // The script's own rows, its printed output and its timing: pi answers with a
-  // header plus text and records the nested calls in details, and none of that
-  // is a table the shared output panel could draw.
-  // A program is not a table of findings: the row of a render or a stream is
-  // the screen itself, painted live from the program store. It is the one body
-  // drawn without a band — a `Pane` is a plate of the same colour as the band,
-  // so a band under a screen is a card inside a card and the panes read as
-  // nothing; the screen brings its own page instead.
-  if (isOpenUITool(item.name))
+  for (const { key, body } of blockBodiesOf(HOST, item))
     panels.push(
-      <ToolContent key="openui" open>
-        <OpenUIToolRows item={item} />
+      <ToolContent key={key} open>
+        <ToolBand>{body}</ToolBand>
       </ToolContent>,
     );
-  if (isCodemodeTool(item.name))
-    panels.push(answerPanel("codemode", <CodemodeToolRows item={item} />));
-  // A diagram is not a table of findings: the row's body is the picture, drawn
-  // from the markup the call left in its details — and the band is the picture's
-  // page too, because its edge labels and node interiors are the colour of
-  // whatever they stand on.
-  if (isMermaidTool(item.name))
-    panels.push(answerPanel("mermaid", <MermaidToolRows item={item} />));
-  // A plot is not a table of findings either: the row's body is the picture,
-  // drawn from the points the call left in its details, in the theme the window
-  // is wearing — which is why the data travels and a bitmap never does. A tree
-  // is the same kind of call: its body is the widget, drawn from the shape in
-  // the details, so a resumed session still draws it.
-  if (isChartTool(item.name))
-    panels.push(answerPanel("figures", <ChartToolRows item={item} />));
-  if (isTreeTool(item.name))
-    panels.push(answerPanel("tree", <TreeToolRows item={item} />));
-  // A plan is not a table of findings either: its rows are the list itself, each
-  // step in the colour of where it stands, drawn from the steps the call left in
-  // its details — which is why a session resumed next week still shows the plan
-  // it ended with.
-  if (isPlanTool(item.name))
-    panels.push(answerPanel("plan", <PlanToolRows item={item} />));
   return panels;
 }
 
@@ -417,7 +249,7 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
         icon={toolIconOf(item.name)}
         spinnerSlot={<StateSpinner />}
       />
-      {ownedPanelsOf(item)}
+      {answerPanelsOf(item)}
       {look.readPreview !== undefined ? (
         <ReadPreview item={item} preview={look.readPreview} />
       ) : null}
