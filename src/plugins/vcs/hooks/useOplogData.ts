@@ -12,7 +12,7 @@
  * the operation as one patch, and `opPatchFiles` cuts it into rows.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { runOplog, runOpPatch } from "../lib/ops";
+import { useRepoSource } from "../components/RepoSource";
 import { opPatchFiles, type OpPatchFile } from "../lib/opPatch";
 import { OPLOG_PANEL_ROWS, OP_PATCH_CACHE } from "../constants";
 import { useRepoWatch } from "./useRepoWatch";
@@ -92,6 +92,8 @@ export function useOplogData(options: OplogDataOptions): OplogData {
   const seqRef = useRef(0);
   const cacheRef = useRef(new Map<string, string>());
 
+  const source = useRepoSource();
+
   const readPatch = useCallback(
     async (op: string | undefined): Promise<void> => {
       const seq = ++seqRef.current;
@@ -104,7 +106,7 @@ export function useOplogData(options: OplogDataOptions): OplogData {
         setOpPatch(held);
         return;
       }
-      const out = await runOpPatch(op);
+      const out = await source.opPatch(op);
       if (seq !== seqRef.current) return;
       if (out.status === "failed") {
         setError(out.error);
@@ -114,12 +116,12 @@ export function useOplogData(options: OplogDataOptions): OplogData {
       cacheRef.current.set(op, out.patch);
       setOpPatch(out.patch);
     },
-    [],
+    [source],
   );
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!enabled) return;
-    const out = await runOplog(OPLOG_PANEL_ROWS, 0, false, true);
+    const out = await source.oplog(OPLOG_PANEL_ROWS, 0, false, true);
     if (out.status === "failed") {
       setError(out.error);
       return;
@@ -129,7 +131,7 @@ export function useOplogData(options: OplogDataOptions): OplogData {
     setRows(out.rows);
     setSel(next);
     await readPatch(out.rows[next]?.op);
-  }, [enabled, readPatch]);
+  }, [enabled, readPatch, source]);
 
   useEffect(() => {
     void refresh();

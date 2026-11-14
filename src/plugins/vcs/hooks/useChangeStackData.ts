@@ -7,12 +7,8 @@
  * patch under a change are read elsewhere — see useChangeFiles.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  failMessage,
-  getCurrentChangeId,
-  listBookmarks,
-  loadChanges,
-} from "../lib/repo";
+import { failMessage } from "../lib/repo";
+import { useRepoSource } from "../components/RepoSource";
 import { REVSETS } from "../constants";
 import { bookmarksByChange, type Change, type FileChange } from "adwaita-gpuix";
 import { RevsetDef } from "../types";
@@ -94,6 +90,8 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     setFileSel,
   } = useChangeFiles();
 
+  const source = useRepoSource();
+
   const liveRef = useRef<StackSnapshot>({ allChanges, sel, fileSel, files });
   liveRef.current = { allChanges, sel, fileSel, files };
 
@@ -103,9 +101,9 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     if (!enabled) return;
     try {
       const [chs, bms, cur] = await Promise.all([
-        loadChanges(revset.revset),
-        listBookmarks(),
-        getCurrentChangeId(),
+        source.changes(revset.revset),
+        source.bookmarks(),
+        source.currentChangeId(),
       ]);
       setAllChanges(chs);
       setBookmarks(bookmarksByChange(bms));
@@ -124,7 +122,7 @@ export function useChangeStackData(options: StackDataOptions): StackData {
     } catch (e) {
       setError(failMessage(e));
     }
-  }, [enabled, revset.revset, showFiles, setFileSel]);
+  }, [enabled, revset.revset, showFiles, setFileSel, source]);
 
   useEffect(() => {
     void refresh();

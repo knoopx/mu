@@ -6,8 +6,8 @@
  * a split or an agent's describe without being asked.
  */
 import { useEffect, useRef } from "react";
-import { createPollWatcher, fileSample, jjOpHeadPath } from "adwaita-gpuix";
-import { findWorkspaceRoot } from "../lib/repo";
+import { createPollWatcher, fileSample } from "adwaita-gpuix";
+import { useRepoSource } from "../components/RepoSource";
 
 export function useRepoWatch(
   cwd: string,
@@ -16,10 +16,12 @@ export function useRepoWatch(
 ): void {
   const onChangedRef = useRef(onChanged);
   onChangedRef.current = onChanged;
-
+  const source = useRepoSource();
   useEffect(() => {
     if (!enabled) return;
-    const target = jjOpHeadPath(findWorkspaceRoot(cwd));
+    // The source names what to watch, and can say nothing: a story paints one
+    // frozen moment and has nothing to notice moving.
+    const target = source.opHeadPath(cwd);
     if (target === null) return;
     const watcher = createPollWatcher(
       () => fileSample(target),
@@ -28,5 +30,5 @@ export function useRepoWatch(
       },
     );
     return () => watcher.stop();
-  }, [cwd, enabled]);
+  }, [cwd, enabled, source]);
 }

@@ -9,7 +9,7 @@
  * patch describes a picture.
  */
 import { useCallback, useRef, useState } from "react";
-import { getRawDiff, loadChangedFiles, loadFileBytes } from "../lib/repo";
+import { useRepoSource } from "../components/RepoSource";
 import { imageDataUrl, isImageFile } from "../lib/preview";
 import { type Change, type FileChange } from "adwaita-gpuix";
 
@@ -57,6 +57,8 @@ export function useChangeFiles(): ChangeFiles {
   const readRef = useRef({ files, fileSel });
   readRef.current = { files, fileSel };
 
+  const source = useRepoSource();
+
   /** A slow read must not land after a newer selection has. */
   const seqRef = useRef(0);
 
@@ -71,8 +73,8 @@ export function useChangeFiles(): ChangeFiles {
         loading: true,
       });
       const [before, after] = await Promise.all([
-        loadFileBytes(changeId, path, "parent"),
-        loadFileBytes(changeId, path, "change"),
+        source.fileBytes(changeId, path, "parent"),
+        source.fileBytes(changeId, path, "change"),
       ]);
       if (seq !== seqRef.current) return;
       setImage({
@@ -84,7 +86,7 @@ export function useChangeFiles(): ChangeFiles {
         loading: false,
       });
     },
-    [],
+    [source],
   );
 
   const read = useCallback(
@@ -95,7 +97,7 @@ export function useChangeFiles(): ChangeFiles {
     ): Promise<void> => {
       const isPicture = path !== undefined && isImageFile(path);
       const next =
-        path === undefined ? "" : await getRawDiff(change.change_id, path);
+        path === undefined ? "" : await source.diff(change.change_id, path);
       if (seq !== seqRef.current) return;
       setPatch(next);
       if (!isPicture || path === undefined) {
@@ -104,7 +106,7 @@ export function useChangeFiles(): ChangeFiles {
       }
       await readImage(change.change_id, path, seq);
     },
-    [readImage],
+    [readImage, source],
   );
 
   const show = useCallback(
@@ -117,7 +119,7 @@ export function useChangeFiles(): ChangeFiles {
         setImage(null);
         return;
       }
-      const fs = await loadChangedFiles(change.change_id);
+      const fs = await source.changedFiles(change.change_id);
       if (seq !== seqRef.current) return;
       setFiles(fs);
       const wanted =
@@ -126,7 +128,7 @@ export function useChangeFiles(): ChangeFiles {
       setFileSel(wanted);
       await read(change, fs[wanted]?.path, seq);
     },
-    [read],
+    [read, source],
   );
 
   const select = useCallback(
