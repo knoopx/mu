@@ -80,6 +80,7 @@ function emptyDetails(input: {
   note: string;
 }): GuardrailsTestDetails {
   return {
+    status: "failed",
     dir: input.dir,
     domain: input.domain,
     fixture: input.fixture,
@@ -310,6 +311,9 @@ export async function runGuardrailTests(
       },
     ],
     details: {
+      // The run's own state, said once: a suite that graded failures is still a
+      // call that worked, and only a call that never found fixtures is `empty`.
+      status: run.pass + run.fail === 0 ? "empty" : "ok",
       dir,
       domain: domain ?? null,
       fixture: fixture ?? null,

@@ -43,6 +43,13 @@ export const MAX_FIXTURES_PER_WRITE = 40;
 export const COVERAGE_DEFAULT_DAYS = 7;
 export const MAX_COVERAGE_FILES = 4_000;
 
+/** How many rows one answer draws in the log. The tool's own text answer keeps
+ *  every row for the model; a card that runs a hundred lines down the log hides
+ *  the ones it was opened for, so the header says how many fell off. */
+export const MAX_TEST_ROWS = 60;
+export const MAX_COVERAGE_ROWS = 40;
+export const MAX_FIXTURE_ROWS = 40;
+
 export const BLOCK_MARK = `${BLOCK_REASON_PREFIX}/`;
 
 export const SESSIONS_DIR_NAME = "sessions";

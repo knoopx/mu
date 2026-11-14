@@ -1,8 +1,4 @@
-import {
-  getFileIcon,
-  getFileIconColor,
-  type IconName,
-} from "adwaita-gpuix";
+import { getFileIcon, getFileIconColor, type IconName } from "adwaita-gpuix";
 import type {
   ComposerPanelRow,
   ComposerRowFigure,
@@ -34,7 +30,6 @@ export function engineLabel(engine: GuardrailEngineState): string {
   }
 }
 
-
 /**
  * The engine as the panel says it: one state word.
  *
@@ -46,12 +41,13 @@ export function engineLabel(engine: GuardrailEngineState): string {
 export function enginePanelLabel(engine: GuardrailEngineState): string {
   switch (engine.phase) {
     case "ready":
-      return engine.grammars.length === 0 ? "parser, no grammar" : "parser ready";
+      return engine.grammars.length === 0
+        ? "parser, no grammar"
+        : "parser ready";
     default:
       return engineLabel(engine);
   }
 }
-
 
 export const domainArmed = (
   snapshot: GuardrailsSnapshot,

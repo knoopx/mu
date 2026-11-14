@@ -7,6 +7,7 @@ import {
   deleteFixtures,
   fixtureSuiteFor,
   fixturesDirLabel,
+  suiteFileIn,
   upsertFixtures,
 } from "../lib/fixtures";
 import { ensureFixturesDir } from "../lib/rulesFile";
@@ -128,9 +129,11 @@ export function updateGuardrailFixtures(
         },
       ],
       details: {
+        status: "failed",
         dir: null,
         domain,
         path: "",
+        note: `no suite directory at ${fixturesDirLabel()}`,
         before: -1,
         ops: [],
         written: 0,
@@ -139,7 +142,9 @@ export function updateGuardrailFixtures(
       },
     };
 
-  const path = `${dir}/${domain}.json`;
+  // The suite is `<domain>.fixtures.json`, beside the `<domain>.json` rules it
+  // proves, and the log names the file a write actually landed in.
+  const path = suiteFileIn(dir, domain);
   const existing = fixtureSuiteFor(dir, domain);
   const writes = upsertFixtures(
     dir,
@@ -175,9 +180,13 @@ export function updateGuardrailFixtures(
   return {
     content: [{ type: "text", text }],
     details: {
+      status: ops.length === 0 ? "empty" : "ok",
       dir,
       domain,
       path,
+      // A write that happened has nothing to apologise for; the summary table is
+      // the answer, and a note beside it would be the same line twice.
+      note: "",
       before: existing === null ? -1 : existing.fixtures.length,
       ops,
       written,

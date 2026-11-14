@@ -12,9 +12,11 @@ import {
   PATH_INPUT_KEYS,
 } from "../../core/lib/agent/toolInput";
 import type {
+  GuardrailEvaluation,
   GuardrailFixture,
   GuardrailFixtureOp,
   GuardrailFixtureSuite,
+  GuardrailHit,
 } from "../types";
 import { blockReasonOf, evaluateToolCall } from "./engine";
 import { guardrailRules } from "./rules";
@@ -91,7 +93,8 @@ export const fixturesDirLabel = (
   env: NodeJS.ProcessEnv = process.env,
 ): string => fixturesDirDisplay(env);
 
-const suiteFileIn = (dir: string, domain: string): string =>
+/** The file one domain's suite lives in, beside the rules it proves. */
+export const suiteFileIn = (dir: string, domain: string): string =>
   join(dir, `${domain}${FIXTURES_FILE_SUFFIX}`);
 
 const parseSuite = (path: string, domain: string): GuardrailFixtureSuite => {
@@ -280,6 +283,56 @@ const verdict = (
   field: read.field,
 });
 
+/** What an engine answer is: the hit the app would act on, whether it was armed,
+ *  and whether anything matched at all. */
+interface EngineAnswer {
+  match: GuardrailHit | null;
+  armed: boolean;
+  got: boolean;
+}
+
+/**
+ * The engine's answer to one fixture, read the way the app would read it.
+ *
+ * `primary` is the hit the app would act on, and a hit carries `blocked` only
+ * while its domain is armed in the panel. A suite proves the rule, not the
+ * arming — a domain the user disarmed would otherwise fail its own block case and
+ * pass its ok case, so an unarmed match still counts as a match and the row says
+ * the switch is off.
+ */
+function answerOf(outcome: GuardrailEvaluation): EngineAnswer {
+  const match = outcome.primary ?? outcome.hits[0] ?? null;
+  return { match, armed: outcome.primary !== null, got: match !== null };
+}
+
+/** The row's words when the engine and the suite disagree: which rule answered,
+ *  or which one let the call through. */
+const disagreementOf = (
+  answer: EngineAnswer,
+  outcome: GuardrailEvaluation,
+): string =>
+  answer.match !== null
+    ? `matched by ${answer.match.ruleId ?? "?"}${answer.armed ? "" : " (disarmed)"} — the suite wants it released`
+    : `released by ${outcome.skip ?? "no rule"} — the suite wants it blocked`;
+
+/** A block case may pin the wording the app is handed; the rule firing with the
+ *  wrong note is still a failing suite. Empty when the wording landed. */
+function wordingFault(
+  fixture: GuardrailFixture,
+  match: GuardrailHit | null,
+): string {
+  const wants = fixture.expected.reason_contains;
+  if (wants === undefined || match === null) return "";
+  return blockReasonOf(match).includes(wants) ? "" : `reason lacks "${wants}"`;
+}
+
+/** A PASS that came from a disarmed domain still says so: the rule fired, the app
+ *  would have released the call. */
+const disarmedNote = (answer: EngineAnswer): string =>
+  answer.got && !answer.armed
+    ? `${answer.match?.domain ?? "?"} is disarmed — the rule matched, the app would release it`
+    : "";
+
 export async function runFixture(
   fixture: GuardrailFixture,
 ): Promise<GuardrailFixtureResult> {
@@ -290,53 +343,30 @@ export async function runFixture(
   };
   const shape = fixtureShapeError(fixture);
   if (shape !== "") return verdict(fixture, read, false, "FAIL", shape, 0);
+
   const outcome = await evaluateToolCall({
     toolName: fixtureToolOf(fixture),
     toolCallId: fixture.event.toolCallId ?? fixture.id,
     input: fixture.event.input ?? {},
   });
-  // `primary` is the hit the app would act on, and a hit carries `blocked` only
-  // while its domain is armed in the panel. A suite proves the rule, not the
-  // arming — a domain the user disarmed would otherwise fail its own block case
-  // and pass its ok case, so an unarmed match still counts as a match and the
-  // row says the switch is off.
-  const match = outcome.primary ?? outcome.hits[0] ?? null;
-  const armed = outcome.primary !== null;
-  const got = match !== null;
-  const agrees = got === fixture.expected.block;
+  const answer = answerOf(outcome);
+  const ms = outcome.engineMs;
 
-  if (!agrees)
+  if (answer.got !== fixture.expected.block)
     return verdict(
       fixture,
       read,
-      got,
+      answer.got,
       "FAIL",
-      got
-        ? `matched by ${match?.ruleId ?? "?"}${armed ? "" : " (disarmed)"} — the suite wants it released`
-        : `released by ${outcome.skip ?? "no rule"} — the suite wants it blocked`,
-      outcome.engineMs,
+      disagreementOf(answer, outcome),
+      ms,
     );
 
-  // The verdict is right; a block case that pins its wording still has to say
-  // the reason the app would hand back, or the rule fires with the wrong note.
-  const wants = fixture.expected.reason_contains;
-  if (wants !== undefined && got && match !== null) {
-    const reason = blockReasonOf(match);
-    if (!reason.includes(wants))
-      return verdict(
-        fixture,
-        read,
-        got,
-        "FAIL",
-        `reason lacks "${wants}"`,
-        outcome.engineMs,
-      );
-  }
-  const disarmedNote =
-    got && !armed
-      ? `${match?.domain ?? "?"} is disarmed — the rule matched, the app would release it`
-      : "";
-  return verdict(fixture, read, got, "PASS", disarmedNote, outcome.engineMs);
+  const wording = wordingFault(fixture, answer.match);
+  if (wording !== "")
+    return verdict(fixture, read, answer.got, "FAIL", wording, ms);
+
+  return verdict(fixture, read, answer.got, "PASS", disarmedNote(answer), ms);
 }
 
 export const ruledDomains = (): string[] => [

@@ -82,14 +82,22 @@ interface Observed {
   lastMs: number;
 }
 
-const domainOf = (text: string): string | null => {
-  const at = text.indexOf(BLOCK_MARK);
-  if (at !== 0) return null;
-  const rest = text.slice(BLOCK_MARK.length);
-  const end = rest.indexOf("):");
-  if (end <= 0) return null;
-  return rest.slice(0, end).trim();
-};
+/** A reason names its domain in one token, closed by `):` — nothing else. */
+const DOMAIN_AT_HEAD = /^([a-z0-9][a-z0-9-]*)\):/;
+
+/**
+ * The domain a block reason names.
+ *
+ * A reason is written `blocked(guardrails/<domain>): …`, so the domain is the one
+ * token standing between the mark and its `):`. Reading up to the first `):` *anywhere*
+ * in the text let a tool result that merely quotes reasons — a grep over transcripts,
+ * a message about a rule — invent a domain out of two quoted marks and a newline. So
+ * the token is checked at the head, never harvested from the middle.
+ */
+const domainOf = (text: string): string | null =>
+  text.indexOf(BLOCK_MARK) === 0
+    ? (DOMAIN_AT_HEAD.exec(text.slice(BLOCK_MARK.length))?.[1] ?? null)
+    : null;
 
 /** A transcript line that is a tool result, with its text blocks and its stamp. */
 interface ToolResultLine {
@@ -179,8 +187,9 @@ const ago = (ms: number, now: number): string => {
 };
 
 /**
- * The coverage report. The universe is the rule registry, so a domain that
- * fired in an old session and is no longer a rule shows as a legacy row.
+ * The coverage report. Its universe is the rule registry: a row is a domain a rule
+ * holds today, and an observed name that belongs to no current rule is not an answer
+ * about this rule set, so it is not reported.
  */
 export function guardrailCoverage(
   sessionsDir: string | undefined,
@@ -203,24 +212,19 @@ export function guardrailCoverage(
     const seen = observed.get(domain);
     return {
       domain,
-      source: rules.some((rule) => rule.domain === domain) ? "ruled" : "legacy",
       blocks: seen?.blocks ?? 0,
       last: ago(seen?.lastMs ?? 0, now),
       never: seen === undefined || seen.blocks === 0,
     };
   });
-  for (const [domain, seen] of [...observed].sort(([a], [b]) =>
-    a.localeCompare(b),
-  )) {
-    if (domains.includes(domain)) continue;
-    rows.push({
-      domain,
-      source: "legacy",
-      blocks: seen.blocks,
-      last: ago(seen.lastMs, now),
-      never: false,
-    });
-  }
+  // Busiest first, in the scan itself so the text answer and the card in the log
+  // lead with the same thing: a reader opened the call to see what stops work, and
+  // a domain that has never fired belongs at the end of that list, not in its
+  // middle. The name breaks a tie, so an equal count never swaps between runs.
+  rows.sort(
+    (left, right) =>
+      right.blocks - left.blocks || left.domain.localeCompare(right.domain),
+  );
   return {
     dir,
     dirExists,

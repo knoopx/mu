@@ -10,7 +10,7 @@ import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { defaultSessionsDir, guardrailCoverage } from "../lib/coverage";
 import { reportSummary, reportTable, yesNo } from "../lib/report";
 import { guardrailRules } from "../lib/rules";
-import type { GuardrailsCoverageDetails } from "../types";
+import type { GuardrailsCallStatus, GuardrailsCoverageDetails } from "../types";
 
 const CoverageParametersSchema = Type.Object({
   days: Type.Optional(
@@ -35,6 +35,15 @@ export function readGuardrailCoverage(
 ): AgentToolResult<GuardrailsCoverageDetails> {
   const report = guardrailCoverage(sessions, days ?? COVERAGE_DEFAULT_DAYS);
   const never = report.rows.filter((row) => row.never).map((row) => row.domain);
+  const caution = report.truncated
+    ? `scan capped at ${MAX_COVERAGE_FILES} files — the counts are a floor`
+    : "";
+  const status: GuardrailsCallStatus =
+    report.error !== null
+      ? "failed"
+      : report.rows.length === 0
+        ? "empty"
+        : "ok";
 
   const header =
     `guardrails-coverage · ${report.dir} · ` +
@@ -42,9 +51,7 @@ export function readGuardrailCoverage(
     ` · ${report.files} ${report.files === 1 ? "file" : "files"}`;
   const note = [
     report.error,
-    report.truncated
-      ? `scan capped at ${MAX_COVERAGE_FILES} files — the counts are a floor`
-      : "",
+    caution,
     report.rows.length === 0
       ? "no rules — nothing has had a chance to fire"
       : "",
@@ -61,10 +68,9 @@ export function readGuardrailCoverage(
     header,
     note,
     reportTable(
-      ["domain", "source", "blocks", "last", "never"],
+      ["domain", "blocks", "last", "never"],
       report.rows.map((row) => [
         row.domain,
-        row.source,
         String(row.blocks),
         row.last,
         yesNo(row.never),
@@ -83,23 +89,17 @@ export function readGuardrailCoverage(
 
   return {
     content: [{ type: "text", text }],
+    // `details` is what the log draws: the state once, the reason split from the
+    // caution, and the rows. The text above stays the model's whole report.
     details: {
+      status,
       dir: report.dir,
+      error: report.error ?? "",
       files: report.files,
       windowDays: report.windowDays,
       ruleCount: guardrailRules().length,
       truncated: report.truncated,
-      note: [
-        report.error,
-        report.truncated
-          ? `scan capped at ${MAX_COVERAGE_FILES} files — the counts are a floor`
-          : "",
-        report.rows.length === 0
-          ? "no rules — nothing has had a chance to fire"
-          : "",
-      ]
-        .filter((line) => line !== null && line !== "")
-        .join("\n"),
+      note: caution,
       rows: report.rows,
     },
   };
@@ -123,7 +123,7 @@ export const guardrailsCoverageTool: PluginTool<
   promptGuidelines: [
     "Run guardrails-coverage before trusting a rule set: a domain with zero blocks over a week of sessions is a rule nothing has tested against real work.",
     "`days=0` scans every saved session; the default window keeps the report about current work.",
-    "A `legacy` row is a domain that fired in an old session and is no longer a rule — a rule that was dropped quietly shows up here.",
+    "The rows are the domains the rule set holds today: a name no rule holds is not an answer about this rule set, so it is not reported.",
   ],
 
   executionMode: "parallel",

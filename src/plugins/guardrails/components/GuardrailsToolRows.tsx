@@ -1,41 +1,51 @@
-import type { JSX } from "react";
-import {
-  Badge,
-  Icon,
-  T,
-  useAdwaita,
-  type AdwaitaTheme,
-  type BadgeVariant,
-  type IconName,
-} from "adwaita-gpuix";
-import type { StyleDesc } from "@gpuix/react";
+/**
+ * Draws a guardrails call in the transcript.
+ *
+ * The header is the call's one summary — what it was pointed at, what it
+ * counted, and what the card left out — and the figures the call ran with ride
+ * that header as chips, because they are the call rather than its answer. What
+ * is left below is the answer itself: rows the log's own painter lays out, so a
+ * suite's verdicts and a coverage scan's domains stand in columns measured
+ * across the list instead of a word hugging whatever length its name had. This
+ * file owns only the words a guardrails answer has that no other answer has.
+ */
 
-import { StateSpinner } from "../../core/components/StateSpinner";
-import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
-import { ToolStateLine } from "../../core/components/ToolStateLine";
-import { mutedText } from "../../core/lib/ui/theme";
-import { STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
-import {
-  toolCell,
-  toolColumn,
-  toolGrow,
-  toolLine,
-  toolMark,
-  toolText,
-} from "../../core/lib/ui/toolRows";
-import { detailsAs } from "../../core/lib/agent/toolDetails";
+import type { JSX } from "react";
+import { T, useAdwaita, type IconName } from "adwaita-gpuix";
+
+import { firstLine } from "../../../utils/truncate";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
+import {
+  ToolRunning,
+  ToolSections,
+  ToolStatusNote,
+  ToolUnknownResult,
+} from "../../core/components/ToolDataRows";
+import {
+  headerLineOf,
+  toolPreviewLine,
+  type ToolPreviewVocabulary,
+} from "../../core/lib/agent/toolPreview";
+import { mutedText } from "../../core/lib/ui/theme";
+import {
+  toolBodyStack,
+  type ToolRowCell,
+  type ToolRowTone,
+} from "../../core/lib/ui/toolRowPaint";
+import { toolMonoOneLine } from "../../core/lib/ui/toolRows";
 import {
   GUARDRAILS_COVERAGE_TOOL,
   GUARDRAILS_FIXTURE_TOOL,
   GUARDRAILS_TEST_TOOL,
 } from "../constants";
-import { engineLabel } from "../lib/panelRows";
-import type {
-  GuardrailsCoverageDetails,
-  GuardrailsFixtureUpdateDetails,
-  GuardrailsTestDetails,
-} from "../types";
+import {
+  GUARDRAILS_BADGE_VARIANTS,
+  guardrailsNoteOf,
+  guardrailsScopeOf,
+  guardrailsTailOf,
+  guardrailsToolViewOf,
+  type GuardrailsToolView,
+} from "../lib/toolView";
 
 const TOOL_NAMES: readonly string[] = [
   GUARDRAILS_TEST_TOOL,
@@ -49,379 +59,116 @@ const RUNNING_TEXT: Record<string, string> = {
   [GUARDRAILS_COVERAGE_TOOL]: "reading sessions",
 };
 
+/** What a call that read everything and found nothing to grade says instead. */
+const EMPTY_TEXT: Record<string, string> = {
+  [GUARDRAILS_TEST_TOOL]: "the suites hold no fixtures",
+  [GUARDRAILS_FIXTURE_TOOL]: "nothing to write",
+  [GUARDRAILS_COVERAGE_TOOL]: "no rules to have fired",
+};
+
+const GUARDRAILS_WORDS: ToolPreviewVocabulary = {
+  running: RUNNING_TEXT,
+  runningDefault: "guardrails",
+  clean: ["empty"],
+  empty: EMPTY_TEXT,
+  emptyDefault: "nothing to report",
+  stated: {},
+};
+
+/** Nothing in the rule set failed because a call came back empty; a suite with
+ *  no fixtures is the one empty answer worth a warning, and it is the one that
+ *  leaves a rule unproven. */
+const GUARDRAILS_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
+  empty: "warn",
+};
+
+const GUARDRAILS_STATUS_ICONS: Readonly<Record<string, IconName>> = {
+  empty: "warning",
+  failed: "close",
+};
+
 export function isGuardrailsTool(name: string): boolean {
   return TOOL_NAMES.includes(name.toLowerCase());
 }
 
-export function guardrailsToolPreview(item: ToolTranscriptItem): string {
-  const name = item.name.toLowerCase();
-  if (item.status === "running") return RUNNING_TEXT[name] ?? "guardrails";
-  if (item.status === "error") return `${name} failed`;
+/** The header: the scope, the tallies, and the rows the card would not draw. */
+export const guardrailsToolPreviewOf = (item: ToolTranscriptItem): string =>
+  toolPreviewLine(
+    item,
+    guardrailsToolViewOf(item.name, item.details, item.status),
+    GUARDRAILS_WORDS,
+    (_tool, view) =>
+      headerLineOf(guardrailsScopeOf(view), guardrailsTailOf(view)),
+  );
 
-  if (name === GUARDRAILS_TEST_TOOL) {
-    const details = detailsAs<GuardrailsTestDetails>(item.details);
-    if (details === null) return detailsNoteOf(item);
-    if (details.total === 0) return details.note;
-    return details.fail === 0
-      ? `${details.pass}/${details.total} pass · ${details.suites.join(", ")}`
-      : `${details.pass}/${details.total} pass · ${details.fail} fail`;
-  }
-  if (name === GUARDRAILS_FIXTURE_TOOL) {
-    const details = detailsAs<GuardrailsFixtureUpdateDetails>(item.details);
-    if (details === null) return detailsNoteOf(item);
-    return `${details.written} written · ${details.deleted} deleted${
-      details.failed === 0 ? "" : ` · ${details.failed} failed`
-    }`;
-  }
-  if (name === GUARDRAILS_COVERAGE_TOOL) {
-    const details = detailsAs<GuardrailsCoverageDetails>(item.details);
-    if (details === null) return detailsNoteOf(item);
-    const never = details.rows.filter((row) => row.never).length;
-    return `${details.rows.length} domains · ${never} never fired`;
-  }
-  return "guardrails";
-}
+/**
+ * The chips: the scan's file count and rule count, the parser the suite ran
+ * against, the size of the suite before a write. They are the call's own
+ * figures, so they ride its header; the card below is its answer.
+ */
+export const guardrailsChipsOf = (
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] => {
+  const view = guardrailsToolViewOf(item.name, item.details, item.status);
+  return view === null ? [] : view.cells;
+};
 
-const detailsNoteOf = (item: ToolTranscriptItem): string =>
-  item.output.trim().split("\n")[0] ?? "";
-
-const mono = (t: AdwaitaTheme): StyleDesc => ({
-  flexShrink: 1,
-  minWidth: 0,
-  fontFamily: t.type.fontFamilyMono,
-});
-
-function Chip({
-  label,
-  variant,
-  icon,
-}: {
-  label: string;
-  variant: BadgeVariant;
-  icon?: IconName;
-}): JSX.Element {
+/** The suite a write landed in. A path, not a tally: it is content, and it is
+ *  the name of the file the next edit opens. */
+function SuitePath({ path }: { path: string }): JSX.Element | null {
+  const t = useAdwaita();
+  if (path === "") return null;
   return (
-    <Badge size="sm" variant={variant} icon={icon} style={{ flexShrink: 0 }}>
-      {label}
-    </Badge>
+    <T size="micro" color={mutedText(t)} style={toolMonoOneLine(t)}>
+      {path}
+    </T>
   );
 }
 
-function Head({ text }: { text: string }): JSX.Element {
-  const t = useAdwaita();
-  return <ToolCaptionLine text={text} color={mutedText(t)} />;
-}
-
-function Note({
-  text,
-  failed,
-}: {
-  text: string;
-  failed?: boolean;
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <ToolStateLine
-      icon={failed === true ? "warning" : "info"}
-      color={
-        failed === true
-          ? t.color.functional.destructive
-          : t.color.text.secondary
-      }
-      text={text}
-    />
-  );
-}
-
-function Summary({
-  parts,
-  tone,
-}: {
-  parts: readonly string[];
-  tone: "ok" | "bad";
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <ToolCaptionLine
-      text={parts.join(" · ")}
-      color={tone === "bad" ? t.color.functional.destructive : mutedText(t)}
-      weight={emphasisWeight(t)}
-    />
-  );
-}
-
-function Running({ text }: { text: string }): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div style={toolLine(t)}>
-      <StateSpinner style={toolMark} />
-      <T size="caption" color={mutedText(t)} style={toolText(t)}>
-        {text}
-      </T>
-    </div>
-  );
-}
-
-function Failed({ text }: { text: string }): JSX.Element {
-  return <Note text={text === "" ? "The tool call failed" : text} failed />;
-}
-
-function TestRows({
-  details,
-}: {
-  details: GuardrailsTestDetails;
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div style={toolColumn(t)}>
-      <Head
-        text={`${details.suites.length === 0 ? "no suites" : `suites ${details.suites.join(", ")}`} · ${engineLabel(details.engine)}`}
-      />
-      {details.note === "" ? null : <Note text={details.note} />}
-      <div>
-        {details.rows.map((row, index) => (
-          <div key={`${row.domain}/${row.id}`} style={toolCell(t, index === 0)}>
-            <div style={toolLine(t)}>
-              <Chip
-                label={row.status === "PASS" ? "pass" : "fail"}
-                variant={row.status === "PASS" ? "success" : "destructive"}
-                icon={row.status === "PASS" ? "check" : "close"}
-              />
-              <T size="list" style={mono(t)}>
-                {row.id}
-              </T>
-              <T
-                size="caption"
-                color={mutedText(t)}
-                align="right"
-                style={{ flexShrink: 0 }}
-              >
-                {row.status === "PASS"
-                  ? row.want
-                    ? "blocked"
-                    : "released"
-                  : row.want
-                    ? "wants a block"
-                    : "wants release"}
-              </T>
-            </div>
-            {row.detail === "" && row.status === "PASS" ? null : (
-              <div style={toolLine(t)}>
-                <T
-                  size="caption"
-                  color={
-                    row.status === "PASS"
-                      ? mutedText(t)
-                      : t.color.functional.destructive
-                  }
-                  style={mono(t)}
-                >
-                  {`$ ${row.command}`}
-                </T>
-              </div>
-            )}
-            {row.detail === "" ? null : (
-              <div style={toolLine(t)}>
-                <T
-                  size="caption"
-                  color={t.color.functional.destructive}
-                  style={toolGrow}
-                >
-                  {row.detail}
-                </T>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      {details.total === 0 ? null : (
-        <Summary
-          tone={details.fail === 0 ? "ok" : "bad"}
-          parts={[
-            `pass=${details.pass}`,
-            `fail=${details.fail}`,
-            `total=${details.total}`,
-          ]}
-        />
-      )}
-    </div>
-  );
-}
-
-function FixtureRows({
-  details,
-}: {
-  details: GuardrailsFixtureUpdateDetails;
-}): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div style={toolColumn(t)}>
-      <Head
-        text={
-          details.before < 0
-            ? `${details.domain} · new suite`
-            : `${details.domain} · ${details.before} ${
-                details.before === 1 ? "fixture" : "fixtures"
-              } before`
-        }
-      />
-      <div>
-        {details.ops.map((entry, index) => (
-          <div
-            key={`${entry.op}/${entry.id}/${index}`}
-            style={toolCell(t, index === 0)}
-          >
-            <div style={toolLine(t)}>
-              <Icon
-                name={entry.op === "write" ? "noteAdd" : "delete"}
-                size={STATE_GLYPH}
-                color={
-                  entry.status === "ok"
-                    ? mutedText(t)
-                    : t.color.functional.destructive
-                }
-                style={toolMark}
-              />
-              <T size="list" style={mono(t)}>
-                {entry.id}
-              </T>
-              <T
-                size="caption"
-                color={mutedText(t)}
-                align="right"
-                style={{ flexShrink: 0 }}
-              >
-                {entry.op === "write"
-                  ? entry.detail === "updated"
-                    ? "updated"
-                    : "added"
-                  : "deleted"}
-              </T>
-            </div>
-            {entry.status === "ok" ? null : (
-              <div style={toolLine(t)}>
-                <T
-                  size="caption"
-                  color={t.color.functional.destructive}
-                  style={toolGrow}
-                >
-                  {entry.detail}
-                </T>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      <Summary
-        tone={details.failed === 0 ? "ok" : "bad"}
-        parts={[
-          `written=${details.written}`,
-          `deleted=${details.deleted}`,
-          `failed=${details.failed}`,
-        ]}
-      />
-      {details.path === "" ? null : (
-        <div style={toolLine(t)}>
-          <T size="micro" color={mutedText(t)} style={mono(t)}>
-            {details.path}
-          </T>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CoverageRows({
-  details,
-}: {
-  details: GuardrailsCoverageDetails;
-}): JSX.Element {
-  const t = useAdwaita();
-  const window =
-    details.windowDays === 0 ? "every session" : `last ${details.windowDays}d`;
-  return (
-    <div style={toolColumn(t)}>
-      <Head text={`${details.dir} · ${window} · ${details.files} files`} />
-      {details.note === "" ? null : <Note text={details.note} />}
-      <div>
-        {details.rows.map((row, index) => (
-          <div key={row.domain} style={toolCell(t, index === 0)}>
-            <div style={toolLine(t)}>
-              <T
-                size="list"
-                color={row.blocks === 0 ? mutedText(t) : t.color.text.primary}
-                align="right"
-                style={{ width: t.space.xl, flexShrink: 0 }}
-              >
-                {String(row.blocks)}
-              </T>
-              <T size="list" style={toolGrow}>
-                {row.domain}
-              </T>
-              {row.source === "legacy" ? (
-                <Chip label="legacy" variant="secondary" />
-              ) : null}
-              {row.never ? (
-                <Chip label="never" variant="warning" icon="warning" />
-              ) : (
-                <T
-                  size="caption"
-                  color={mutedText(t)}
-                  align="right"
-                  style={{ flexShrink: 0 }}
-                >
-                  {row.last === "" ? "" : `${row.last} ago`}
-                </T>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      <Summary
-        tone="ok"
-        parts={[
-          `domains=${details.rows.length}`,
-          `rules=${details.ruleCount}`,
-          `never=${details.rows.filter((row) => row.never).length}`,
-        ]}
-      />
-    </div>
-  );
+export interface GuardrailsToolRowsProps {
+  item: ToolTranscriptItem;
 }
 
 export function GuardrailsToolRows({
   item,
-}: {
-  item: ToolTranscriptItem;
-}): JSX.Element {
-  const name = item.name.toLowerCase();
-  if (item.status === "error") return <Failed text={item.output.trim()} />;
-  if (item.status === "running")
-    return <Running text={RUNNING_TEXT[name] ?? "guardrails"} />;
+}: GuardrailsToolRowsProps): JSX.Element {
+  const t = useAdwaita();
+  const tool = item.name.toLowerCase();
 
-  if (name === GUARDRAILS_TEST_TOOL) {
-    const details = detailsAs<GuardrailsTestDetails>(item.details);
-    return details === null ? (
-      <Failed text={item.output.trim()} />
-    ) : (
-      <TestRows details={details} />
-    );
-  }
-  if (name === GUARDRAILS_FIXTURE_TOOL) {
-    const details = detailsAs<GuardrailsFixtureUpdateDetails>(item.details);
-    return details === null ? (
-      <Failed text={item.output.trim()} />
-    ) : (
-      <FixtureRows details={details} />
-    );
-  }
-  if (name === GUARDRAILS_COVERAGE_TOOL) {
-    const details = detailsAs<GuardrailsCoverageDetails>(item.details);
-    return details === null ? (
-      <Failed text={item.output.trim()} />
-    ) : (
-      <CoverageRows details={details} />
-    );
-  }
-  return <Failed text={item.output.trim()} />;
+  if (item.status === "running")
+    return <ToolRunning text={RUNNING_TEXT[tool] ?? "guardrails"} />;
+
+  const view: GuardrailsToolView | null = guardrailsToolViewOf(
+    item.name,
+    item.details,
+    item.status,
+  );
+  if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
+
+  // A refusal is said once, on the header: the card of a call that answered
+  // nothing has no content, so it ends at its header rather than repeating the
+  // reason underneath it.
+  const note = guardrailsNoteOf(view);
+
+  return (
+    <div style={toolBodyStack(t)}>
+      <ToolSections
+        sections={view.sections}
+        variants={GUARDRAILS_BADGE_VARIANTS}
+      />
+      <SuitePath path={view.path} />
+      <ToolStatusNote
+        status={view.status}
+        note={
+          note === ""
+            ? item.status === "error"
+              ? firstLine(item.output)
+              : ""
+            : note
+        }
+        tones={GUARDRAILS_STATUS_TONES}
+        icons={GUARDRAILS_STATUS_ICONS}
+      />
+    </div>
+  );
 }

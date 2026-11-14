@@ -70,7 +70,11 @@ export interface GuardrailHit {
 }
 
 export type GuardrailEnginePhase =
-  "idle" | "loading" | "ready" | "failed" | "unavailable";
+  | "idle"
+  | "loading"
+  | "ready"
+  | "failed"
+  | "unavailable";
 
 export interface GuardrailEngineState {
   phase: GuardrailEnginePhase;
@@ -159,14 +163,24 @@ export interface GuardrailFixtureOp {
 export interface GuardrailCoverageRow {
   domain: string;
 
-  source: string;
   blocks: number;
 
   last: string;
   never: boolean;
 }
 
+/**
+ * How a guardrails tool's own call ended, in the log's status vocabulary.
+ *
+ * `failed` is a call that refused (no suite directory, no suite of that name),
+ * `empty` is a call that read everything and had nothing to grade, and neither
+ * is a rule being wrong: a suite that grades two failures is still an `ok` run.
+ * The header says this once, so the fold never has to infer it from a zero.
+ */
+export type GuardrailsCallStatus = "ok" | "empty" | "failed";
+
 export interface GuardrailsTestDetails {
+  status: GuardrailsCallStatus;
   dir: string | null;
   domain: string | null;
   fixture: string | null;
@@ -190,9 +204,12 @@ export interface GuardrailsTestDetails {
 }
 
 export interface GuardrailsFixtureUpdateDetails {
+  status: GuardrailsCallStatus;
   dir: string | null;
   domain: string;
   path: string;
+  /** Why a write could not happen at all — the suite directory is not there. */
+  note: string;
 
   before: number;
   ops: { op: string; id: string; status: "ok" | "fail"; detail: string }[];
@@ -202,7 +219,10 @@ export interface GuardrailsFixtureUpdateDetails {
 }
 
 export interface GuardrailsCoverageDetails {
+  status: GuardrailsCallStatus;
   dir: string;
+  /** Why a scan read nothing at all — a session store that is not there. */
+  error: string;
   files: number;
   windowDays: number;
   ruleCount: number;

@@ -9,10 +9,7 @@
  * domains, and the agent has no say in either.
  */
 
-import {
-  definePlugin,
-  type PanelSurface,
-} from "../core/lib/plugin/manifest";
+import { definePlugin, type PanelSurface } from "../core/lib/plugin/manifest";
 import { panelHints } from "../core/lib/composer/shortcuts";
 import { useGuardrailsPanel } from "./hooks/useGuardrails";
 import type { GuardrailsPanelApi } from "./types";
@@ -22,7 +19,8 @@ import { guardrailsFixtureUpdateTool } from "./tools/guardrailsFixtureUpdate";
 import { guardrailsTestTool } from "./tools/guardrailsTest";
 import {
   GuardrailsToolRows,
-  guardrailsToolPreview,
+  guardrailsChipsOf,
+  guardrailsToolPreviewOf,
   isGuardrailsTool,
 } from "./components/GuardrailsToolRows";
 import {
@@ -52,7 +50,8 @@ export const guardrailsPlugin = definePlugin(
       key: "guardrails",
       owns: isGuardrailsTool,
       body: (item) => <GuardrailsToolRows item={item} />,
-      preview: guardrailsToolPreview,
+      preview: guardrailsToolPreviewOf,
+      chips: guardrailsChipsOf,
     });
 
     app.log.block((item) => {
