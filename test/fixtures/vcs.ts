@@ -96,7 +96,8 @@ export const VCS_DESCRIBE_FAILED_ITEM: ToolFixture = toolCallFixture(
       previous_change: "",
       message: "",
       status: "failed",
-      error: "cannot resolve revision zzzzzzzz in /home/knoopx/Projects/gpuix-apps/mu",
+      error:
+        "cannot resolve revision zzzzzzzz in /home/knoopx/Projects/gpuix-apps/mu",
     }),
   },
 );

@@ -7,8 +7,6 @@ import type {
   GuardrailRule,
 } from "../../src/plugins/guardrails/types";
 import { answer, at, failed, min, ran, userTurn } from "./turn";
-import { toolCallFixture } from "./tool";
-
 const rule = (
   id: string,
   domain: string,

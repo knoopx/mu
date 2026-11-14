@@ -21,16 +21,7 @@ import {
 } from "../prose";
 import { PASTED_IMAGES } from "../composer";
 import { photoFile, photoOf } from "../media";
-import {
-  answer,
-  at,
-  failed,
-  min,
-  ran,
-  running,
-  usage,
-  userTurn,
-} from "../turn";
+import { answer, at, failed, min, ran, usage, userTurn } from "../turn";
 
 const photo = photoOf;
 

@@ -17,11 +17,7 @@ import {
 } from "../../src/plugins/openui/lib/programStore/verbs";
 import { programStore } from "../../src/plugins/openui/lib/programStore/store";
 import { fenceKey, holdFence } from "../../src/plugins/openui/lib/fences/store";
-import {
-  programStatusRow,
-  programTable,
-  valueTable,
-} from "../../src/plugins/openui/lib/format";
+import { programTable, valueTable } from "../../src/plugins/openui/lib/format";
 import { statusTable, blocks } from "../../src/plugins/core/lib/agent/toolText";
 import { toolCallFixture, type ToolFixture } from "./tool";
 
@@ -323,48 +319,37 @@ export const REFERENCE_SCREEN_TEXT = [
   "Nothing here is typed twice: the figures name the file they came from.",
 ].join("\n");
 
-/** Hold that block in the store, and fail if it stops parsing. */
-export function seedReferenceScreen(): void {
-  holdFence(REPLY_MESSAGE, {
-    fence: 0,
-    source: REFERENCE_SCREEN_BLOCK,
-    status: "closed",
-  });
+/**
+ * Hold one of the fixture's ui blocks in the store, as painting the message
+ * does, and fail loudly if it stops parsing or validating.
+ *
+ * A scene whose block silently stopped drawing grades an empty page and looks
+ * green, so the check is part of seeding rather than part of the assertions.
+ */
+function seedUiBlock(source: string, what: string): void {
+  holdFence(REPLY_MESSAGE, { fence: 0, source, status: "closed" });
   const record = programStore.get(fenceKey(REPLY_MESSAGE, 0));
   if (record === undefined || record.parse.components.length === 0)
-    throw new Error("the reference vocabulary block did not parse");
+    throw new Error(`${what} did not parse`);
   // A component whose slots do not match its signature still parses; it draws
   // nothing. A fixture that mis-validates would grade an empty page.
-  const broken = record.parse.diagnostics.filter(    (note) => note.severity === "error",
+  const broken = record.parse.diagnostics.filter(
+    (note) => note.severity === "error",
   );
   if (broken.length > 0)
     throw new Error(
-      `the reference vocabulary block did not validate: ${broken
+      `${what} did not validate: ${broken
         .map((note) => `${note.component} ${note.message}`)
         .join("; ")}`,
     );
 }
 
-/**
- * Hold the reply's block in the store, as painting that message does. Held here
- * as well so the scene fails when the block stops parsing rather than painting a
- * blank where the screen should be.
- */
+/** The block that names every component of the library, in vocabulary order. */
+export function seedReferenceScreen(): void {
+  seedUiBlock(REFERENCE_SCREEN_BLOCK, "the reference vocabulary block");
+}
+
+/** The reply's own screen, as painting that message holds it. */
 export function seedReplyScreen(): void {
-  holdFence(REPLY_MESSAGE, {
-    fence: 0,
-    source: REPLY_SCREEN_BLOCK,
-    status: "closed",
-  });
-  const record = programStore.get(fenceKey(REPLY_MESSAGE, 0));
-  if (record === undefined || record.parse.components.length === 0)
-    throw new Error("the reply's ui block did not parse");
-  const broken = record.parse.diagnostics.filter(    (note) => note.severity === "error",
-  );
-  if (broken.length > 0)
-    throw new Error(
-      `the reply's ui block did not validate: ${broken
-        .map((note) => `${note.component} ${note.message}`)
-        .join("; ")}`,
-    );
+  seedUiBlock(REPLY_SCREEN_BLOCK, "the reply's ui block");
 }

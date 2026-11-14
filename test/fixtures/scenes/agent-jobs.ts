@@ -27,22 +27,6 @@ const PANEL_DIFF = [
   "+  const chrome = panelChromeHeight(t, { rows: 0, hints: true });",
   "+  return Math.floor((height - chrome) / ROW_HEIGHT);",
 ].join("\n");
-
-const SCREEN_ROWS = [
-  "panel        rows 1x  rows 2x  hints",
-  "commands        8       4     1",
-  "files          10       5     1",
-  "paths           9       4     1",
-  "sessions        7       3     1",
-  "models          6       3     1",
-  "thinking        6       3     1",
-  "changes        12       6     2",
-  "oplog          12       6     2",
-  "tree           14       7     1",
-  "theme           3       1     1",
-  "accent          9       4     1",
-].join("\n");
-
 export const AGENT_JOB_ITEMS: TranscriptItem[] = [
   userTurn(
     "u-two-x",

@@ -39,12 +39,12 @@ import { MuProvider } from "../src/theme";
 
 /** The window a component is laid out against. The app lays out against
  *  whatever window it is given, so a test names the width its claim is about. */
-export const DEFAULT_WIDTH = 1280;
-export const DEFAULT_HEIGHT = 800;
+const DEFAULT_WIDTH = 1280;
+const DEFAULT_HEIGHT = 800;
 
 /** The look a scene is painted under unless the test asks for another, so a
  *  colour or contrast claim means the same thing in every file. */
-export const DEFAULT_SCHEME: ColorScheme = "nightsky";
+const DEFAULT_SCHEME: ColorScheme = "nightsky";
 
 export interface StageOptions {
   width?: number;
@@ -79,7 +79,7 @@ const signatureOf = (renderer: TestRenderer): string => {
  *  True when the frame settled with something painted; false when the tree stopped
  *  changing while nothing was composited, which is a dead window rather than a slow
  *  one and is answered by opening another, not by pumping more frames. */
-export async function settle(renderer: TestRenderer): Promise<boolean> {
+async function settle(renderer: TestRenderer): Promise<boolean> {
   let last = signatureOf(renderer);
   let stable = 0;
   for (let frame = 0; frame < SETTLE_CEILING; frame++) {
@@ -368,12 +368,4 @@ export async function stage(
   };
   live.push(screen);
   return screen;
-}
-
-/** The ink that shares a line with `y`, left to right: one row read as a row. */
-export function lineOf(api: Screen, y: number, tolerance = 6): Ink[] {
-  return api
-    .inkOf("")
-    .filter((ink) => Math.abs(ink.y - y) <= tolerance)
-    .sort((a, b) => a.x - b.x);
 }

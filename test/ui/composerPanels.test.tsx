@@ -17,7 +17,7 @@ import {
   commandsMode,
   pickMode,
 } from "../../src/plugins/core/lib/composer/mode";
-import { stubChatSession, sessionRow, stubSessionList } from "../chatSource";
+import { stubChatSession, sessionRow } from "../chatSource";
 import {
   COMPOSER_MODEL_ROWS,
   COMPOSER_THINKING_ROWS,

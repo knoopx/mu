@@ -44,7 +44,8 @@ const LOG_ROWS = [
     commit: "563c2add2d1f",
     author: AUTHOR,
     date: "2026-11-14 12:31:12",
-    description: "fix(env): keep mu's loader paths out of the children it spawns",
+    description:
+      "fix(env): keep mu's loader paths out of the children it spawns",
     bookmarks: "",
     tags: "",
     files: "flake.nix",
@@ -147,7 +148,11 @@ export const OPLOG_ITEMS: TranscriptItem[] = [
       status: "ok",
       op_count: 4,
       rows: [
-        { op: "01k3f9c2", time: "12:41:07", description: "new change 8b2d63e0" },
+        {
+          op: "01k3f9c2",
+          time: "12:41:07",
+          description: "new change 8b2d63e0",
+        },
         {
           op: "01k3f9b7",
           time: "12:38:55",

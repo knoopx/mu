@@ -12,7 +12,7 @@
  * passes here is the row the window draws.
  */
 
-import type { JSX, ReactNode } from "react";
+import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 import { useAdwaita } from "adwaita-gpuix";
 import {
