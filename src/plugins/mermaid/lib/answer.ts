@@ -47,7 +47,10 @@ export function diagramFailureAnswer(picture: MermaidPicture): string {
 }
 
 /** A diagram that drew: its measurements, then what it says. */
-export function diagramAnswerOf(picture: MermaidPicture, writeNote = ""): string {
+export function diagramAnswerOf(
+  picture: MermaidPicture,
+  writeNote = "",
+): string {
   const head = statusTable({
     diagram: diagramName(picture),
     canvas: `${String(picture.width)}x${String(picture.height)}`,

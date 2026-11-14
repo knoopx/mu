@@ -26,7 +26,11 @@ import {
 import { gridOf } from "../lib/geometry";
 import { encodeKey, pasteOf } from "../lib/keys";
 import { terminalPalette } from "../lib/palette";
-import { startTerminal, terminalStatus, type TerminalSession } from "../lib/session";
+import {
+  startTerminal,
+  terminalStatus,
+  type TerminalSession,
+} from "../lib/session";
 import type { TerminalPanelState, TerminalView } from "../types";
 
 const noScreen: TerminalView = {
@@ -52,8 +56,7 @@ const isHistoryKey = (event: EventPayload, down: boolean): boolean =>
   event.modifiers?.shift === true;
 
 const isPromptKey = (event: EventPayload): boolean =>
-  (event.key ?? "").toLowerCase() === "end" &&
-  event.modifiers?.shift === true;
+  (event.key ?? "").toLowerCase() === "end" && event.modifiers?.shift === true;
 
 export interface TerminalPanelOptions {
   cwd: string;

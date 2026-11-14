@@ -33,11 +33,7 @@ export function numberOf(value: unknown): number {
 }
 
 /** The `at`th cell of a row: positional in a list, named in an object. */
-export function cellOf(
-  row: unknown,
-  names: RowNames,
-  at: number,
-): unknown {
+export function cellOf(row: unknown, names: RowNames, at: number): unknown {
   if (Array.isArray(row)) return row[at];
   if (typeof row === "object" && row !== null)
     return (row as Record<string, unknown>)[names[at] ?? ""];

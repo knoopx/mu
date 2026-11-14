@@ -51,8 +51,9 @@ function inputTextOf(
 }
 
 /** The command a call ran, whatever answers with it. */
-export const commandTextOf = (args: Record<string, unknown> | undefined): string =>
-  inputTextOf(args, COMMAND_INPUT_KEYS);
+export const commandTextOf = (
+  args: Record<string, unknown> | undefined,
+): string => inputTextOf(args, COMMAND_INPUT_KEYS);
 
 /** The file a call is pointed at. */
 export const pathTextOf = (args: Record<string, unknown> | undefined): string =>

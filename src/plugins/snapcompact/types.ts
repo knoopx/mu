@@ -1,9 +1,5 @@
 import type { ContextEvent } from "@earendil-works/pi-coding-agent";
-import type {
-  Archive,
-  CompactionDetails,
-  Shape,
-} from "@oh-my-pi/snapcompact";
+import type { Archive, CompactionDetails, Shape } from "@oh-my-pi/snapcompact";
 
 import { ARCHIVE_KEY } from "./constants";
 
@@ -71,4 +67,6 @@ export type CustomContextMessage = Extract<ContextMessage, { role: "custom" }>;
 /** One block of a replayed archive: a chunk of the transcript, or one page of it. */
 type BlockOf<T> = T extends readonly (infer Block)[] ? Block : never;
 
-export type ArchiveBlock = BlockOf<NonNullable<CustomContextMessage["content"]>>;
+export type ArchiveBlock = BlockOf<
+  NonNullable<CustomContextMessage["content"]>
+>;

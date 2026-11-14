@@ -71,17 +71,26 @@ export interface ProgramWrite {
 export type ProgramStoreListener = () => void;
 
 /** Two publications that say the same thing, so a repaint stays silent. */
-function samePublication(a: ProgramPublication, b: ProgramPublication): boolean {
+function samePublication(
+  a: ProgramPublication,
+  b: ProgramPublication,
+): boolean {
   return (
     a.drawn.join(",") === b.drawn.join(",") &&
     a.failures.join("\n") === b.failures.join("\n") &&
     a.renderErrors.map((row) => row.message).join("\n") ===
       b.renderErrors.map((row) => row.message).join("\n") &&
     a.queries
-      .map((query) => `${query.statementId}:${query.tool}:${query.served ? "1" : "0"}`)
+      .map(
+        (query) =>
+          `${query.statementId}:${query.tool}:${query.served ? "1" : "0"}`,
+      )
       .join(",") ===
       b.queries
-        .map((query) => `${query.statementId}:${query.tool}:${query.served ? "1" : "0"}`)
+        .map(
+          (query) =>
+            `${query.statementId}:${query.tool}:${query.served ? "1" : "0"}`,
+        )
         .join(",")
   );
 }
@@ -145,7 +154,8 @@ export class ProgramStore {
   }
 
   liveName(): string {
-    for (const record of this.programs.values()) if (record.live) return record.name;
+    for (const record of this.programs.values())
+      if (record.live) return record.name;
     return "";
   }
 
@@ -173,7 +183,10 @@ export class ProgramStore {
     // conversation full of blocks must not push the screen the agent is editing
     // out of the log, and a block whose message is still on screen is held again
     // the moment there is room for it.
-    if (existing === undefined && this.countOf(fence) >= (fence ? MAX_FENCE_PROGRAMS : MAX_PROGRAMS)) {
+    if (
+      existing === undefined &&
+      this.countOf(fence) >= (fence ? MAX_FENCE_PROGRAMS : MAX_PROGRAMS)
+    ) {
       const oldest = this.oldestUnlocked(fence);
       if (oldest !== "") {
         this.programs.delete(oldest);
@@ -254,7 +267,8 @@ export class ProgramStore {
   }
 
   private setLiveFlags(name: string): void {
-    for (const record of this.programs.values()) record.live = record.name === name;
+    for (const record of this.programs.values())
+      record.live = record.name === name;
   }
 
   /** The program the log gives up when it is full: a reply block before a screen
@@ -265,7 +279,8 @@ export class ProgramStore {
    */
   private countOf(fence: boolean): number {
     let count = 0;
-    for (const record of this.programs.values()) if (record.fence === fence) count += 1;
+    for (const record of this.programs.values())
+      if (record.fence === fence) count += 1;
     return count;
   }
 
@@ -308,7 +323,10 @@ export class ProgramStore {
     return this.fixtures;
   }
 
-  setFixtures(fixtures: Record<string, unknown>): { names: string[]; cleared: boolean } {
+  setFixtures(fixtures: Record<string, unknown>): {
+    names: string[];
+    cleared: boolean;
+  } {
     const names = Object.keys(fixtures);
     this.fixtures = names.length === 0 ? {} : { ...fixtures };
     for (const record of this.programs.values()) {
@@ -339,7 +357,11 @@ export class ProgramStore {
   }
 
   /** Read what is waiting. Draining is the default, because the agent acts on it. */
-  drain(name: string | undefined, limit: number, clear: boolean): {
+  drain(
+    name: string | undefined,
+    limit: number,
+    clear: boolean,
+  ): {
     events: OpenUIEventRecord[];
     omitted: number;
     waiting: number;
@@ -374,7 +396,12 @@ export class ProgramStore {
    * Only a change the human made counts as one they made: an action step that
    * sets a variable changes the page, it does not answer a question.
    */
-  setValue(name: string, variable: string, value: unknown, byHuman = true): void {
+  setValue(
+    name: string,
+    variable: string,
+    value: unknown,
+    byHuman = true,
+  ): void {
     const record = this.programs.get(name);
     if (record === undefined) return;
     record.values[variable] = value;
@@ -405,8 +432,8 @@ export class ProgramStore {
           : record.parse.components.length,
       unresolved: record.parse.unresolved.length,
       errors:
-        record.parse.diagnostics.filter((row) => row.severity === "error").length +
-        record.publication.renderErrors.length,
+        record.parse.diagnostics.filter((row) => row.severity === "error")
+          .length + record.publication.renderErrors.length,
       waiting: record.events.length,
       live: record.live,
       drawn: true,

@@ -33,7 +33,10 @@ export interface ProgramBinding<Value> {
 }
 
 /** What one component of the library draws with: the node it was given, and the screen it stands in. */
-export type ProgramDrawer = (node: ElementNode, ctx: ProgramContext) => JSX.Element;
+export type ProgramDrawer = (
+  node: ElementNode,
+  ctx: ProgramContext,
+) => JSX.Element;
 
 /** What a component draws with. */
 export interface ProgramContext {
@@ -196,7 +199,11 @@ export function ProgramFigureRow(props: {
 }
 
 /** The props of one drawn element, narrowed to what a definition expects. */
-export function prop<T>(props: Record<string, unknown>, key: string, fallback: T): T {
+export function prop<T>(
+  props: Record<string, unknown>,
+  key: string,
+  fallback: T,
+): T {
   const value = props[key];
   return value === undefined || value === null ? fallback : (value as T);
 }

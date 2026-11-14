@@ -12,7 +12,8 @@ export function passNote(pass: SnapcompactPass): string {
   // text between the two text edges, and saying "0 pages" would read as a failure.
   if (pass.frames === 0)
     return `Context compacted · history archived as text (${thousands(pass.chars)} chars${dropped})`;
-  const pages = pass.frames === 1 ? "1 bitmap page" : `${pass.frames} bitmap pages`;
+  const pages =
+    pass.frames === 1 ? "1 bitmap page" : `${pass.frames} bitmap pages`;
   const setting = `${pass.shape.font} ${pass.shape.cell} · ${pass.shape.cols}×${pass.shape.rows}`;
   return `Context compacted · ${pages} of archived history (${thousands(pass.chars)} chars, ${setting}${dropped})`;
 }

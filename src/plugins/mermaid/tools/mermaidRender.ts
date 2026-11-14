@@ -18,7 +18,11 @@ import type {
 import { Type } from "typebox";
 
 import { toolResult } from "../../core/lib/agent/toolText";
-import { MERMAID_RENDER_TOOL, MERMAID_TOOL_LABEL, MAX_SOURCE_CHARS } from "../constants";
+import {
+  MERMAID_RENDER_TOOL,
+  MERMAID_TOOL_LABEL,
+  MAX_SOURCE_CHARS,
+} from "../constants";
 import {
   diagramAnswerOf,
   diagramFailureAnswer,
@@ -82,7 +86,8 @@ export const mermaidRenderTool: ToolDefinition<
     "human. The answer states the kind that was drawn, the canvas it was laid out on, and every label the diagram " +
     "says, so a diagram that came out empty or wrong is visible without seeing it. A parse failure returns its code, " +
     "line, column and the source line it stopped on.",
-  promptSnippet: "Render Mermaid source as a diagram; the picture is painted in the transcript",
+  promptSnippet:
+    "Render Mermaid source as a diagram; the picture is painted in the transcript",
   promptGuidelines: [
     "Use mermaid-render when a diagram explains a thing better than prose: an architecture, a sequence, a state machine, a timeline, a decision.",
     "The source is complete Mermaid, header line included (`flowchart TD`, `sequenceDiagram`, `gitGraph`, `pie title …`); comments may start with `%%`.",

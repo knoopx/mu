@@ -77,7 +77,14 @@ export function writeProgram(
   }
 
   const { parse, result } = parseProgram(text);
-  const write = programStore.setSource(name, text, parse, result, toolCallId, opts);
+  const write = programStore.setSource(
+    name,
+    text,
+    parse,
+    result,
+    toolCallId,
+    opts,
+  );
 
   if (write.overflow !== "") {
     return {
@@ -121,7 +128,10 @@ export function appendChunk(
     const error = sourceTooBig(held.length, MAX_PROGRAM_CHARS);
     return {
       record: existing,
-      details: detailsOf(existing, { streaming: true, chunkChars: (chunk ?? "").length }),
+      details: detailsOf(existing, {
+        streaming: true,
+        chunkChars: (chunk ?? "").length,
+      }),
       error,
       replaced: false,
       evicted: [],
@@ -157,7 +167,9 @@ export function detailsOf(
   extra: { streaming: boolean; chunkChars: number },
 ): OpenUIProgramDetails {
   const info = programStore.infoOf(record);
-  const hard = record.parse.diagnostics.filter((row) => row.severity === "error");
+  const hard = record.parse.diagnostics.filter(
+    (row) => row.severity === "error",
+  );
 
   return {
     status: record.name === "" ? "failed" : "ok",
@@ -175,7 +187,10 @@ export function detailsOf(
     live: record.live,
     drawn: true,
     waiting: record.events.length,
-    queries: record.publication.queries.length > 0 ? record.publication.queries : record.parse.queries,
+    queries:
+      record.publication.queries.length > 0
+        ? record.publication.queries
+        : record.parse.queries,
   };
 }
 

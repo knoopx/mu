@@ -768,8 +768,7 @@ function patchSpan(lines: readonly string[]): [number, number] | null {
 
 export async function runOpPatch(op: string): Promise<OpPatchOutcome> {
   const wanted = op.trim();
-  if (wanted.length === 0)
-    return { status: "empty", patch: "", error: "" };
+  if (wanted.length === 0) return { status: "empty", patch: "", error: "" };
 
   const res = await vcs([
     "operation",
@@ -781,7 +780,11 @@ export async function runOpPatch(op: string): Promise<OpPatchOutcome> {
     "never",
   ]);
   if (res.code !== 0)
-    return { status: "failed", patch: "", error: cliFailure("jj op diff", res) };
+    return {
+      status: "failed",
+      patch: "",
+      error: cliFailure("jj op diff", res),
+    };
 
   const lines = res.stdout.split("\n");
   const span = patchSpan(lines);
@@ -794,7 +797,10 @@ export async function runOpPatch(op: string): Promise<OpPatchOutcome> {
     indent > 0 && line.startsWith(" ".repeat(indent))
       ? line.slice(indent)
       : line;
-  const patch = lines.slice(first, last + 1).map(strip).join("\n");
+  const patch = lines
+    .slice(first, last + 1)
+    .map(strip)
+    .join("\n");
 
   return {
     status: patch.trim().length === 0 ? "empty" : "ok",

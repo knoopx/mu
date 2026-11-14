@@ -36,16 +36,14 @@ import { formPosition } from "../lib/answer/positions";
 import { programStore } from "../lib/programStore/store";
 import { HAIRLINE } from "../../core/lib/ui/tokens";
 import { paneRadius, programGap, screenPad } from "../lib/tokens";
-import {
-  programEdge,
-  programTextColor,
-} from "../lib/theme";
+import { programEdge, programTextColor } from "../lib/theme";
 import type { ProgramBinding, ProgramContext } from "./library/context";
 import { isElementNode, listOf, textOf } from "./library/context";
 import { programDrawers } from "./library/registry";
 
 /** One drawn component, keyed by the statement it came from. */
-const keyOf = (value: unknown, index: number): string => segmentOf(value, index);
+const keyOf = (value: unknown, index: number): string =>
+  segmentOf(value, index);
 
 export function ProgramScreen(props: {
   name: string;
@@ -85,7 +83,12 @@ export function ProgramScreen(props: {
         answerSheet.stage(record.name, position, next);
         continue;
       }
-      waiting.push(setTimeout(() => answerSheet.stage(record.name, position, next), TYPED_ANSWER_MS));
+      waiting.push(
+        setTimeout(
+          () => answerSheet.stage(record.name, position, next),
+          TYPED_ANSWER_MS,
+        ),
+      );
     }
     return () => {
       for (const timer of waiting) clearTimeout(timer);
@@ -99,7 +102,8 @@ export function ProgramScreen(props: {
     const hard = (record?.parse.diagnostics ?? []).filter(
       (diagnostic) => diagnostic.severity === "error",
     );
-    const settled = record !== undefined && !record.streaming && !record.parse.incomplete;
+    const settled =
+      record !== undefined && !record.streaming && !record.parse.incomplete;
     return (
       <div
         style={{
@@ -110,7 +114,11 @@ export function ProgramScreen(props: {
           minWidth: 0,
         }}
       >
-        <T size="caption" color={programTextColor(t, "muted")} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={programTextColor(t, "muted")}
+          style={{ minWidth: 0 }}
+        >
           {record === undefined
             ? NOT_DRAWN_NOTE
             : "nothing drew: the program has no root that this library can name"}
@@ -146,7 +154,10 @@ export function ProgramScreen(props: {
       listOf(children)
         .map((entry, index) => draw(entry, index, ctx))
         .filter((entry) => entry !== null),
-    binding: <Value,>(value: unknown, fallback: Value): ProgramBinding<Value> => {
+    binding: <Value,>(
+      value: unknown,
+      fallback: Value,
+    ): ProgramBinding<Value> => {
       if (isReactiveAssign(value)) {
         const target = value.target;
         const held = values[target];
@@ -155,13 +166,17 @@ export function ProgramScreen(props: {
           // A value that converts without loss is read as the shape the input
           // needs: a `$seats` the program wrote as "12", or a query that answered
           // with a string, is still a slider's number.
-          value: (held === undefined || held === null ? fallback : coerce(held, fallback)) as Value,
+          value: (held === undefined || held === null
+            ? fallback
+            : coerce(held, fallback)) as Value,
           set: (next: Value) => programStore.setValue(name, target, next),
         };
       }
       return {
         name: "",
-        value: (value === undefined || value === null ? fallback : value) as Value,
+        value: (value === undefined || value === null
+          ? fallback
+          : value) as Value,
         set: () => {},
       };
     },
@@ -201,19 +216,30 @@ export function ProgramScreen(props: {
     },
     formState,
     keyOf,
-    stage: (position: string, text: string) => answerSheet.stage(name, position, text),
+    stage: (position: string, text: string) =>
+      answerSheet.stage(name, position, text),
     staged: (position: string) => answerSheet.stagedText(name, position),
     sentAnswer: (position: string) => answerSheet.sentText(name, position),
   };
 
-  function draw(value: unknown, index: number, parent: ProgramContext): JSX.Element | null {
+  function draw(
+    value: unknown,
+    index: number,
+    parent: ProgramContext,
+  ): JSX.Element | null {
     const path = childPath(parent.path, value, index);
     const child = { ...parent, path, group: parent.path };
 
     const text = textOf(value);
     if (text !== null)
       return (
-        <T key={keyOf(value, index)} size="body" color={t.color.text.primary} clamp={4} style={{ minWidth: 0, flexShrink: 1 }}>
+        <T
+          key={keyOf(value, index)}
+          size="body"
+          color={t.color.text.primary}
+          clamp={4}
+          style={{ minWidth: 0, flexShrink: 1 }}
+        >
           {text}
         </T>
       );
@@ -223,12 +249,24 @@ export function ProgramScreen(props: {
     const drawer = programDrawers[node.typeName];
     if (drawer === undefined)
       return (
-        <T key={keyOf(node, index)} size="caption" color={programTextColor(t, "warning")} style={{ minWidth: 0 }}>
+        <T
+          key={keyOf(node, index)}
+          size="caption"
+          color={programTextColor(t, "warning")}
+          style={{ minWidth: 0 }}
+        >
           {`no component named ${node.typeName} in this library`}
         </T>
       );
 
-    return <div key={keyOf(node, index)} style={{ display: "flex", minWidth: 0, flexGrow: 1 }}>{drawer(node, child)}</div>;
+    return (
+      <div
+        key={keyOf(node, index)}
+        style={{ display: "flex", minWidth: 0, flexGrow: 1 }}
+      >
+        {drawer(node, child)}
+      </div>
+    );
   }
 
   const unresolved = record.parse.unresolved;
@@ -248,7 +286,12 @@ export function ProgramScreen(props: {
       }}
     >
       {unresolved.length === 0 ? null : (
-        <T size="caption" color={programTextColor(t, "warning")} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={programTextColor(t, "warning")}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {`unresolved: ${unresolved.join(", ")}`}
         </T>
       )}

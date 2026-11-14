@@ -84,7 +84,12 @@ export function isChartTool(name: string): boolean {
 
 /** The tool header: what was plotted, over what span, and what fell off the cap. */
 export const chartToolPreviewOf = (item: ToolTranscriptItem): string =>
-  toolPreviewLine(item, chartToolViewOf(item.name, item.args, item.details, item.status), CHART_WORDS, headOf);
+  toolPreviewLine(
+    item,
+    chartToolViewOf(item.name, item.args, item.details, item.status),
+    CHART_WORDS,
+    headOf,
+  );
 
 function headOf(_tool: string, view: ChartToolView): string {
   const figure = view.figure;
@@ -125,7 +130,14 @@ export function ChartToolRows({ item }: ChartToolRowsProps): JSX.Element {
   const t = useAdwaita();
 
   if (item.status === "running") {
-    return <ToolRunning text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[CHART_RENDER_TOOL]} />;
+    return (
+      <ToolRunning
+        text={
+          RUNNING_TEXT[item.name.toLowerCase()] ??
+          RUNNING_TEXT[CHART_RENDER_TOOL]
+        }
+      />
+    );
   }
 
   const view = chartToolViewOf(item.name, item.args, item.details, item.status);

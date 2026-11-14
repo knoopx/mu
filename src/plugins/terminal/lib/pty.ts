@@ -20,7 +20,12 @@
 import { dlopen, FFIType, ptr } from "bun:ffi";
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, closeSync, openSync, read, write } from "node:fs";
-import { COLORTERM, PTY_READ_BYTES, TERM_EXIT_GRACE_MS, TERM_TYPE } from "../constants";
+import {
+  COLORTERM,
+  PTY_READ_BYTES,
+  TERM_EXIT_GRACE_MS,
+  TERM_TYPE,
+} from "../constants";
 import { withoutMuLoaderEnv } from "../../core/lib/utils/loaderEnv";
 
 const O_RDWR = 2;
@@ -51,7 +56,10 @@ function ptyCalls(): PtyCalls | null {
       args: [FFIType.i32, FFIType.ptr, FFIType.u64],
       returns: FFIType.i32,
     },
-    ioctl: { args: [FFIType.i32, FFIType.u64, FFIType.ptr], returns: FFIType.i32 },
+    ioctl: {
+      args: [FFIType.i32, FFIType.u64, FFIType.ptr],
+      returns: FFIType.i32,
+    },
   };
   for (const soname of ["libc.so.6", "libc.so", "libSystem.B.dylib"]) {
     try {
@@ -94,12 +102,19 @@ export interface ShellCommand {
 
 /** The shell to run: `$SHELL` when it is real, the first interactive shell on
  *  PATH otherwise. A PTY is only worth opening for something to sit in it. */
-function shellCommand(env: NodeJS.ProcessEnv = process.env): ShellCommand | undefined {
+function shellCommand(
+  env: NodeJS.ProcessEnv = process.env,
+): ShellCommand | undefined {
   const configured = env.SHELL;
   if (configured !== undefined && configured !== "" && existsSync(configured))
-    return { argv: [configured, "-i"], label: configured.split("/").pop() ?? configured };
+    return {
+      argv: [configured, "-i"],
+      label: configured.split("/").pop() ?? configured,
+    };
   for (const name of SHELL_CANDIDATES) {
-    const found = onPath(name) ?? ["/bin", "/usr/bin"].map((d) => `${d}/${name}`).find(existsSync);
+    const found =
+      onPath(name) ??
+      ["/bin", "/usr/bin"].map((d) => `${d}/${name}`).find(existsSync);
     if (found !== undefined)
       return { argv: [found, name === "fish" ? [] : "-i"].flat(), label: name };
   }
@@ -112,7 +127,9 @@ let setsid: string | null | undefined;
  *  terminal. Undefined means not asked yet; null means not installed. */
 function controllingTerminal(): string | null {
   if (setsid !== undefined) return setsid;
-  const probe = spawnSync("sh", ["-c", "command -v setsid"], { encoding: "utf8" });
+  const probe = spawnSync("sh", ["-c", "command -v setsid"], {
+    encoding: "utf8",
+  });
   const found = probe.status === 0 ? (probe.stdout ?? "").trim() : "";
   setsid = found !== "" && existsSync(found) ? found : null;
   return setsid;
@@ -142,7 +159,8 @@ export interface Pty {
   dispose(): void;
 }
 
-export type PtyOutcome = { pty: Pty; failure?: undefined } | { pty?: undefined; failure: string };
+export type PtyOutcome =
+  { pty: Pty; failure?: undefined } | { pty?: undefined; failure: string };
 
 /** Open a pty and put a shell in it. Every failure answers as a reason: the
  *  panel says what it could not do rather than drawing an empty screen. */
@@ -201,7 +219,12 @@ export function openPty(options: PtyOptions): PtyOutcome {
     // million. The shell builds projects, so it is told nothing about where mu
     // keeps its own bindings — a napi loader in there would load mu's library
     // and call it its own.
-    env: withoutMuLoaderEnv({ ...process.env, TERM: TERM_TYPE, COLORTERM, ...options.env }),
+    env: withoutMuLoaderEnv({
+      ...process.env,
+      TERM: TERM_TYPE,
+      COLORTERM,
+      ...options.env,
+    }),
   });
   child.on("error", (error) => end(error.message));
   child.on("exit", (code, signal) => {

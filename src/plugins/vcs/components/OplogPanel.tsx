@@ -17,11 +17,7 @@ import { PaneEmpty } from "./PaneEmpty";
 import { PanelList } from "./PanelList";
 import type { OplogPanelState } from "../hooks/useOplogPanel";
 
-export function OplogPanel({
-  panel,
-}: {
-  panel: OplogPanelState;
-}): JSX.Element {
+export function OplogPanel({ panel }: { panel: OplogPanelState }): JSX.Element {
   const s = usePanelChrome();
   const ops = panel.rows.slice(0, PANEL_LIST_CAP);
 

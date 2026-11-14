@@ -41,9 +41,17 @@ export const openUIStreamTool: ToolDefinition<
   executionMode: "sequential",
   parameters: StreamParametersSchema,
 
-  async execute(toolCallId, params): Promise<AgentToolResult<OpenUIProgramDetails>> {
+  async execute(
+    toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIProgramDetails>> {
     const name = params.name ?? DEFAULT_PROGRAM_NAME;
-    const outcome = appendChunk(name, params.chunk, params.done === true, toolCallId);
+    const outcome = appendChunk(
+      name,
+      params.chunk,
+      params.done === true,
+      toolCallId,
+    );
     const details = outcome.details;
 
     return programWriteAnswer(outcome, {

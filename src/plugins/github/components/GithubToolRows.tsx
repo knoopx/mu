@@ -30,7 +30,10 @@ import {
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
-import { MAX_OUTPUT_LINES, plainOutputOf } from "../../core/lib/ui/toolOutputMode";
+import {
+  MAX_OUTPUT_LINES,
+  plainOutputOf,
+} from "../../core/lib/ui/toolOutputMode";
 import { mutedText } from "../../core/lib/ui/theme";
 import { buildNativeTheme } from "../../core/lib/ui/theme";
 import {
@@ -112,7 +115,13 @@ const GITHUB_WORDS: ToolPreviewVocabulary = {
 };
 
 /** The target of a call, whichever of its possible names it answers under. */
-const TARGET_LABELS: readonly string[] = ["pr", "issue", "tag", "commit", "login"];
+const TARGET_LABELS: readonly string[] = [
+  "pr",
+  "issue",
+  "tag",
+  "commit",
+  "login",
+];
 
 /** True for the nine GitHub tools — matched by their names, never retyped. */
 export function isGithubTool(name: string): boolean {
@@ -243,9 +252,16 @@ export function GithubToolRows({
   if (item.status === "running")
     return <ToolRunning text={RUNNING_TEXT[tool] ?? "reading GitHub"} />;
 
-  const view = githubToolViewOf(item.name, item.args, item.details, item.status);
+  const view = githubToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
   if (view === null)
-    return <ToolUnknownResult item={item} tool={GITHUB_TOOL_LABELS[tool] ?? tool} />;
+    return (
+      <ToolUnknownResult item={item} tool={GITHUB_TOOL_LABELS[tool] ?? tool} />
+    );
 
   const note = omittedNote(view);
 
@@ -256,7 +272,11 @@ export function GithubToolRows({
         text={view.headline}
         tone={view.status === "ok" ? "neutral" : toneOf(view.status)}
       />
-      <ToolRowList rows={view.rows} variants={GITHUB_BADGE_VARIANTS} pressable={false} />
+      <ToolRowList
+        rows={view.rows}
+        variants={GITHUB_BADGE_VARIANTS}
+        pressable={false}
+      />
       <ToolStatusNote
         status={view.status}
         note={view.note}
@@ -265,7 +285,10 @@ export function GithubToolRows({
       />
       <ToolTruncated count={view.omitted + view.call.bodyOmitted} text={note} />
       {tool === GITHUB_FILE_TOOL ? (
-        <GithubFileBody path={toolCellOf(view.cells, "path")} content={view.body} />
+        <GithubFileBody
+          path={toolCellOf(view.cells, "path")}
+          content={view.body}
+        />
       ) : (
         <GithubProseBody source={view.body} />
       )}

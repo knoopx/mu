@@ -9,11 +9,7 @@
  * patch describes a picture.
  */
 import { useCallback, useRef, useState } from "react";
-import {
-  getRawDiff,
-  loadChangedFiles,
-  loadFileBytes,
-} from "../lib/repo";
+import { getRawDiff, loadChangedFiles, loadFileBytes } from "../lib/repo";
 import { imageDataUrl, isImageFile } from "../lib/preview";
 import { type Change, type FileChange } from "adwaita-gpuix";
 

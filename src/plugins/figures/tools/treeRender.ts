@@ -44,7 +44,8 @@ const LeafSchema = Type.String({
 const NodeSchema = Type.Object({
   name: Type.String({
     maxLength: MAX_NAME_CHARS,
-    description: "the node's own name — one segment (`plugins`), not a path (`src/plugins`)",
+    description:
+      "the node's own name — one segment (`plugins`), not a path (`src/plugins`)",
   }),
   kind: Type.Optional(
     Type.Union([Type.Literal("file"), Type.Literal("folder")], {
@@ -56,7 +57,7 @@ const NodeSchema = Type.Object({
     Type.Array(Type.Any(), {
       maxItems: MAX_NODES,
       description:
-        "what hangs under this node — the same shape again, or a bare name for a leaf: `children: [\"lib\", \"hooks\", \"tools\"]`",
+        'what hangs under this node — the same shape again, or a bare name for a leaf: `children: ["lib", "hooks", "tools"]`',
     }),
   ),
   added: Type.Optional(
@@ -74,17 +75,16 @@ const NodeSchema = Type.Object({
   ),
 });
 
-const ItemSchema = Type.Union(
-  [LeafSchema, NodeSchema],
-  { description: "a node with its children, or a bare name for a leaf" },
-);
+const ItemSchema = Type.Union([LeafSchema, NodeSchema], {
+  description: "a node with its children, or a bare name for a leaf",
+});
 
 const RenderParametersSchema = Type.Object({
   items: Type.Array(ItemSchema, {
     minItems: 0,
     maxItems: MAX_NODES,
     description:
-      "The roots, in the order they stand: `[{name: \"src\", children: [\"main.tsx\", {name: \"plugins\", children: [\"vcs\", \"figures\"]}]}]`.",
+      'The roots, in the order they stand: `[{name: "src", children: ["main.tsx", {name: "plugins", children: ["vcs", "figures"]}]}]`.',
   }),
   expanded: Type.Optional(
     Type.Array(Type.String(), {
@@ -127,7 +127,8 @@ export const treeRenderTool: ToolDefinition<
     "close under the cursor. The answer states how many nodes, folders and leaves there are, how deep it goes, " +
     "what moved when the nodes carry added/removed, and the tree itself as indented text — so a tree that came " +
     "out wrong is visible without seeing it. A node with no name refuses the call and names the path it hangs under.",
-  promptSnippet: "Draw a tree of nested nodes in the transcript; the answer walks the tree back as indented text",
+  promptSnippet:
+    "Draw a tree of nested nodes in the transcript; the answer walks the tree back as indented text",
   promptGuidelines: [
     "Use tree-render when the answer is containment: which files sit in which folder, what a module pulls in, who calls whom, what a package holds.",
     "A node names itself with `name` — one path segment, not a path — and `children` holds what hangs under it; a bare string in a children slot is a leaf.",

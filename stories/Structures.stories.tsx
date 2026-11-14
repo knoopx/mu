@@ -24,7 +24,11 @@ export default meta;
 export const structured = chromeStory("structured", () =>
   chat({
     items: [
-      userTurn("u-structure", "show me the plugin's shape, and what each tool cost", 0),
+      userTurn(
+        "u-structure",
+        "show me the plugin's shape, and what each tool cost",
+        0,
+      ),
       TREE_ITEM,
       TABLE_BAD_ITEM,
       TABLE_ITEM,

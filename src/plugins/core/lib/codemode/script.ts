@@ -24,9 +24,7 @@ function codemodeScriptOf(item: ToolTranscriptItem): string {
 export function codemodePreviewOf(item: ToolTranscriptItem): string {
   const lines = codemodeScriptOf(item).split("\n");
   const first =
-    lines.find(
-      (line) => line.trim() !== "" && !COMMENT_LINE.test(line),
-    ) ?? "";
+    lines.find((line) => line.trim() !== "" && !COMMENT_LINE.test(line)) ?? "";
   const text = first.trim();
   return text === "" ? CODEMODE_TOOL : clipText(text, TOOL_PREVIEW_MAX);
 }

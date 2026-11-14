@@ -45,23 +45,25 @@ export async function executeGithubRelease(
   return runRead(readRelease, { ...params, signal });
 }
 
-export const githubReleaseTool: ToolDefinition<typeof Parameters, GithubCall> = {
-  name: GITHUB_RELEASE_TOOL,
-  label: GITHUB_TOOL_LABELS[GITHUB_RELEASE_TOOL],
-  description:
-    "Reads GitHub releases. With a `tag` it reads one release — tag, name, whether it is a " +
-    "prerelease or draft, its author, asset count and its notes as text. With no tag it lists " +
-    "the recent releases, ranked, with their tags and dates. Read-only.",
-  promptSnippet: "Read one GitHub release's notes, or list the recent releases",
-  promptGuidelines: [
-    ...GITHUB_GUIDELINES,
-    "A version question is a release question: github-release with no tag says what the newest tags are, and with a tag it says what changed in that one.",
-  ],
+export const githubReleaseTool: ToolDefinition<typeof Parameters, GithubCall> =
+  {
+    name: GITHUB_RELEASE_TOOL,
+    label: GITHUB_TOOL_LABELS[GITHUB_RELEASE_TOOL],
+    description:
+      "Reads GitHub releases. With a `tag` it reads one release — tag, name, whether it is a " +
+      "prerelease or draft, its author, asset count and its notes as text. With no tag it lists " +
+      "the recent releases, ranked, with their tags and dates. Read-only.",
+    promptSnippet:
+      "Read one GitHub release's notes, or list the recent releases",
+    promptGuidelines: [
+      ...GITHUB_GUIDELINES,
+      "A version question is a release question: github-release with no tag says what the newest tags are, and with a tag it says what changed in that one.",
+    ],
 
-  executionMode: "parallel",
-  parameters: Parameters,
+    executionMode: "parallel",
+    parameters: Parameters,
 
-  async execute(_toolCallId, params, signal) {
-    return executeGithubRelease(params, signal);
-  },
-};
+    async execute(_toolCallId, params, signal) {
+      return executeGithubRelease(params, signal);
+    },
+  };

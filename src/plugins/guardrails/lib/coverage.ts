@@ -161,7 +161,8 @@ const scanFile = (path: string, observed: Map<string, Observed>): number => {
     lines += 1;
     const result = toolResultOf(line);
     if (result === null) continue;
-    for (const block of result.blocks) observeBlock(block, result.when, observed);
+    for (const block of result.blocks)
+      observeBlock(block, result.when, observed);
   }
   return lines;
 };

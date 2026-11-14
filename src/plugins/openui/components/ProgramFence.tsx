@@ -55,8 +55,15 @@ export function ProgramFence(props: {
     // reply is still writing.
     return (
       <div style={{ display: "flex", minWidth: 0 }}>
-        <T size="caption" color={mutedText(t)} clamp={1} style={{ minWidth: 0 }}>
-          {streaming || fence.source.trim() === "" ? "a screen is being drawn…" : "nothing drew from this block"}
+        <T
+          size="caption"
+          color={mutedText(t)}
+          clamp={1}
+          style={{ minWidth: 0 }}
+        >
+          {streaming || fence.source.trim() === ""
+            ? "a screen is being drawn…"
+            : "nothing drew from this block"}
         </T>
       </div>
     );
@@ -74,12 +81,15 @@ export function ProgramFence(props: {
     >
       <ProgramScreen name={name} answered={props.answered} />
       {fence.status === "closed" || streaming ? null : (
-        <T size="caption" color={mutedText(t)} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={mutedText(t)}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {"the reply ended before the block closed"}
         </T>
       )}
     </div>
   );
 }
-
-

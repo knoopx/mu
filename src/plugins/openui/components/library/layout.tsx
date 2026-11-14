@@ -14,11 +14,7 @@ import { z } from "zod/v4";
 
 import type { ElementNode } from "@openuidev/lang-core";
 
-import {
-  HAIRLINE,
-  INLINE_GLYPH,
-  figureGap,
-} from "../../../core/lib/ui/tokens";
+import { HAIRLINE, INLINE_GLYPH, figureGap } from "../../../core/lib/ui/tokens";
 import {
   groupGap,
   panePad,
@@ -118,7 +114,10 @@ export const Spacer = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawScreen(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawScreen(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   return (
     <div
       style={{
@@ -173,10 +172,7 @@ export function drawRow(node: ElementNode, ctx: ProgramContext): JSX.Element {
 }
 
 /** Children in rows of `columns`; the last row is padded so cells stay equal. */
-function inRows(
-  items: readonly unknown[],
-  columns: number,
-): unknown[][] {
+function inRows(items: readonly unknown[], columns: number): unknown[][] {
   const width = Math.max(1, Math.floor(columns));
   const rows: unknown[][] = [];
   for (let at = 0; at < items.length; at += width)
@@ -309,7 +305,10 @@ export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawDivider(_node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawDivider(
+  _node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   return (
     <div
       style={{
@@ -322,7 +321,10 @@ export function drawDivider(_node: ElementNode, ctx: ProgramContext): JSX.Elemen
   );
 }
 
-export function drawSpacer(_node: ElementNode, _ctx: ProgramContext): JSX.Element {
+export function drawSpacer(
+  _node: ElementNode,
+  _ctx: ProgramContext,
+): JSX.Element {
   return <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />;
 }
 
@@ -352,14 +354,20 @@ export const Tabs = defineComponent({
 const tabId = (index: number): string => `t${String(index)}`;
 
 export function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const titles = listProp(node.props, "titles").map((title) => String(title ?? ""));
+  const titles = listProp(node.props, "titles").map((title) =>
+    String(title ?? ""),
+  );
   const blocks = listProp(node.props, "blocks");
   const items = titles.map((label, index) => ({ id: tabId(index), label }));
   const binding = ctx.binding(node.props.value, items[0]?.id ?? "");
   const current = binding.value === "" ? (items[0]?.id ?? "") : binding.value;
 
   return (
-    <AdwaitaTabs items={items} value={current} onSelect={(id: string) => binding.set(id)}>
+    <AdwaitaTabs
+      items={items}
+      value={current}
+      onSelect={(id: string) => binding.set(id)}
+    >
       {blocks.map((block, index) => (
         <TabsContent key={`tab-${String(index)}`} value={tabId(index)}>
           {ctx.node(block)}
@@ -368,4 +376,3 @@ export function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
     </AdwaitaTabs>
   );
 }
-

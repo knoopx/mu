@@ -22,7 +22,10 @@ import {
   ToolTruncated,
 } from "../../core/components/ToolDataRows";
 import { partsLine } from "../../core/lib/agent/toolText";
-import { toolPreviewLine, type ToolPreviewVocabulary } from "../../core/lib/agent/toolPreview";
+import {
+  toolPreviewLine,
+  type ToolPreviewVocabulary,
+} from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
   toolStatusIcon,
@@ -65,14 +68,18 @@ const WORDS: ToolPreviewVocabulary = {
   clean: ["empty"],
   empty: openUIEmptyWords,
   emptyDefault: "nothing to report",
-  stated: { unknown: "no program by that name", failed: "the call was refused" },
+  stated: {
+    unknown: "no program by that name",
+    failed: "the call was refused",
+  },
 };
 
 export function isOpenUITool(name: string): boolean {
   return OPENUI_TOOL_NAMES.includes(name.toLowerCase());
 }
 
-const toneOf = (status: string): ToolRowTone => toolStatusTone(status, STATUS_TONES);
+const toneOf = (status: string): ToolRowTone =>
+  toolStatusTone(status, STATUS_TONES);
 
 /** The header line: which program, what the parse said, what waits. */
 export const openUIToolPreviewOf = (item: ToolTranscriptItem): string =>
@@ -87,7 +94,9 @@ function headOf(tool: string, view: OpenUIToolView): string {
 }
 
 /** A program, as a row: what it holds and whether it is the showing one. */
-const programRow = (program: OpenUIToolView["programs"][number]): ToolPaintRow => ({
+const programRow = (
+  program: OpenUIToolView["programs"][number],
+): ToolPaintRow => ({
   key: program.name,
   primary: program.name,
   secondary: partsLine(
@@ -102,7 +111,9 @@ const programRow = (program: OpenUIToolView["programs"][number]): ToolPaintRow =
 });
 
 /** A component of the library, as a row: its name and its arguments. */
-const componentRow = (component: OpenUIToolView["components"][number]): ToolPaintRow => ({
+const componentRow = (
+  component: OpenUIToolView["components"][number],
+): ToolPaintRow => ({
   key: component.name,
   primary: component.name,
   secondary:
@@ -125,7 +136,10 @@ const diagnosticRow = (
 });
 
 /** One thing the human did to the screen. */
-const eventRow = (event: OpenUIToolView["events"][number], index: number): ToolPaintRow => ({
+const eventRow = (
+  event: OpenUIToolView["events"][number],
+  index: number,
+): ToolPaintRow => ({
   key: `event-${String(index)}`,
   primary: event.message === "" ? event.type : event.message,
   secondary: event.type,
@@ -180,16 +194,25 @@ const BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
   group: "secondary",
 };
 
-export function OpenUIToolRows(props: { item: ToolTranscriptItem }): JSX.Element {
+export function OpenUIToolRows(props: {
+  item: ToolTranscriptItem;
+}): JSX.Element {
   const t = useAdwaita();
   const view = openUIToolViewOf(props.item);
 
   if (view === null)
-    return <ToolStateNote icon="info" text={props.item.output} tone="neutral" />;
+    return (
+      <ToolStateNote icon="info" text={props.item.output} tone="neutral" />
+    );
 
   if (props.item.status === "running")
     return (
-      <ToolRunning text={openUIRunningWords[props.item.name.toLowerCase()] ?? "working with the screen"} />
+      <ToolRunning
+        text={
+          openUIRunningWords[props.item.name.toLowerCase()] ??
+          "working with the screen"
+        }
+      />
     );
 
   const rows = rowsOf(view);
@@ -223,7 +246,11 @@ export function OpenUIToolRows(props: { item: ToolTranscriptItem }): JSX.Element
       )}
       {paints ? <ProgramScreen name={view.name} /> : null}
       {gone ? (
-        <ToolStateNote icon="info" text={`${view.name}: ${NOT_DRAWN_NOTE}`} tone="neutral" />
+        <ToolStateNote
+          icon="info"
+          text={`${view.name}: ${NOT_DRAWN_NOTE}`}
+          tone="neutral"
+        />
       ) : null}
       {rows.length === 0 ? null : (
         <ToolRowList rows={rows} variants={BADGE_VARIANTS} pressable={false} />
@@ -239,4 +266,3 @@ export function OpenUIToolRows(props: { item: ToolTranscriptItem }): JSX.Element
     </div>
   );
 }
-

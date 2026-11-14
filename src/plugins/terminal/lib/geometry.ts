@@ -50,11 +50,7 @@ function gridRoom(
     (windowWidth === undefined || windowWidth <= 0 ? 1280 : windowWidth) -
     2 * PAGE_INSET -
     2 * panelPageInset(t);
-  const height =
-    panelHeight -
-    2 * panelPadY(t) -
-    panelGap(t) -
-    statusBarHeight;
+  const height = panelHeight - 2 * panelPadY(t) - panelGap(t) - statusBarHeight;
   return { width, height };
 }
 

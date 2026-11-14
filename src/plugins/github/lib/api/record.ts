@@ -39,7 +39,8 @@ export function numberOf(value: unknown, fallback = 0): number {
 export const flagOf = (value: unknown): boolean => value === true;
 
 /** One level down: whatever GitHub put at a key, read as a record, or empty. */
-export const nested = (value: unknown): Record<string, unknown> => recordOf(value);
+export const nested = (value: unknown): Record<string, unknown> =>
+  recordOf(value);
 
 export const loginOf = (value: unknown): string =>
   stringOf(nested(value)["login"]) || stringOf(value);

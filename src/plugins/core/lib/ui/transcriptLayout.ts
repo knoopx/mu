@@ -33,10 +33,12 @@ export function toolPreviewWrap(
 }
 
 /** One line of a text preview, at the caption rhythm every preview keeps. */
-export const previewLineHeight = (t: AdwaitaTheme): number => lineBox(t, "caption");
+export const previewLineHeight = (t: AdwaitaTheme): number =>
+  lineBox(t, "caption");
 
 /** The line rhythm of a user's own words — looser than the theme's tight body. */
-export const userMessageLineHeight = (t: AdwaitaTheme): number => lineBox(t, "body");
+export const userMessageLineHeight = (t: AdwaitaTheme): number =>
+  lineBox(t, "body");
 
 export function outputPanel(t: AdwaitaTheme): StyleDesc {
   return {

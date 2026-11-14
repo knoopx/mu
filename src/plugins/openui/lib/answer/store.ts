@@ -134,7 +134,11 @@ export class AnswerSheet {
     }
     const tracked = trackBlock(this.lastDraft, next, this.written);
     if (tracked.kind === "present") {
-      this.written = { text: this.written.text, from: tracked.from, to: tracked.to };
+      this.written = {
+        text: this.written.text,
+        from: tracked.from,
+        to: tracked.to,
+      };
       this.lastDraft = next;
       return tracked;
     }
@@ -149,12 +153,15 @@ export class AnswerSheet {
 
   /** Where the sheet's block stands in the draft, if it stands anywhere. */
   get at(): { from: number; to: number } | null {
-    return this.written === null ? null : { from: this.written.from, to: this.written.to };
+    return this.written === null
+      ? null
+      : { from: this.written.from, to: this.written.to };
   }
 
   /** Record what the sheet wrote. */
   noteWritten(text: string, at: { from: number; to: number } | null): void {
-    this.written = at === null || text === "" ? null : { text, from: at.from, to: at.to };
+    this.written =
+      at === null || text === "" ? null : { text, from: at.from, to: at.to };
   }
 
   /**
@@ -167,7 +174,8 @@ export class AnswerSheet {
       this.lastDraft = "";
       return;
     }
-    for (const entry of this.entries.values()) this.sent.set(entry.key, entry.text);
+    for (const entry of this.entries.values())
+      this.sent.set(entry.key, entry.text);
     this.dropEntries();
     this.written = null;
     this.lastDraft = "";

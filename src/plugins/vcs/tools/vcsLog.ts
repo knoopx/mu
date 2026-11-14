@@ -12,11 +12,7 @@ import type {
 import { Type } from "typebox";
 
 import { VCS_LOG_TOOL } from "../constants";
-import {
-  failedResult,
-  noRepoResult,
-  type VcsBlank,
-} from "../lib/answer";
+import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
 import {
   formatParam,
   limitParam,
@@ -24,7 +20,12 @@ import {
   oldestFirstParam,
 } from "../lib/params";
 import { jjRoot, runLog } from "../lib/ops";
-import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  statusTable,
+  tableOf,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import type { VcsLogDetails, VcsLogParams } from "../types";
 
 const Parameters = Type.Object({

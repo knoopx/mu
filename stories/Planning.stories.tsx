@@ -24,7 +24,11 @@ export default meta;
 export const planned = chromeStory("planned", () =>
   chat({
     items: [
-      userTurn("u-plan", "add a plan tool to mu — write the work down first", 0),
+      userTurn(
+        "u-plan",
+        "add a plan tool to mu — write the work down first",
+        0,
+      ),
       PLAN_BAD_ITEM,
       PLAN_OPEN_ITEM,
       PLAN_LATER_ITEM,

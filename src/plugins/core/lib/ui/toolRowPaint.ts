@@ -186,12 +186,14 @@ export function figureColumnsOf(
     idChars = Math.max(idChars, toolIdText(row.key).trim().length);
     badgeChars = Math.max(badgeChars, row.badge.trim().length);
     trailingChars = Math.max(trailingChars, (row.trailing ?? "").trim().length);
-    if (row.meter !== null && row.meter !== undefined) meter = METER_TRACK_WIDTH;
+    if (row.meter !== null && row.meter !== undefined)
+      meter = METER_TRACK_WIDTH;
   }
   return {
     id: idColumn(t, idChars),
     meter,
-    trailing: trailingChars === 0 ? 0 : monoTextWidth(t, trailingChars, t.type.micro),
+    trailing:
+      trailingChars === 0 ? 0 : monoTextWidth(t, trailingChars, t.type.micro),
     badge: badgeChars === 0 ? 0 : badgeWidth(t, badgeChars),
   };
 }

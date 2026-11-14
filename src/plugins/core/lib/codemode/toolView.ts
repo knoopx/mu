@@ -51,7 +51,9 @@ function modelCostOf(calls: readonly CodemodeCall[]): string {
 
 function rowOf(call: CodemodeCall, index: number): ToolPaintRow {
   const args =
-    call.error !== "" && call.args === "" ? call.error : clipText(call.args, ARGS_MAX);
+    call.error !== "" && call.args === ""
+      ? call.error
+      : clipText(call.args, ARGS_MAX);
 
   return {
     key: String(index + 1),

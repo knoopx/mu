@@ -127,13 +127,12 @@ type StateRead = (variable: string) => unknown;
  * from there. A read that only knows the declared values draws every
  * query-backed list empty, which is the whole point of a `Query` missed.
  */
-const stateReader = (
-  values: Record<string, unknown>,
-  snapshot?: QuerySnapshot,
-): StateRead => (variable: string) =>
-  snapshot !== undefined && variable in snapshot
-    ? snapshot[variable]
-    : (values[variable] ?? null);
+const stateReader =
+  (values: Record<string, unknown>, snapshot?: QuerySnapshot): StateRead =>
+  (variable: string) =>
+    snapshot !== undefined && variable in snapshot
+      ? snapshot[variable]
+      : (values[variable] ?? null);
 
 /** A query the screen can draw from: it answered, and it is not still asking. */
 function answered(snapshot: QuerySnapshot, statementId: string): boolean {
@@ -160,7 +159,9 @@ const evalNode = (node: unknown, read: StateRead): unknown => {
 export function evaluateProgram(
   name: string,
   result?: ParseResult | null,
-  values: Record<string, unknown> = programStore.valuesOf(programStore.get(name)),
+  values: Record<string, unknown> = programStore.valuesOf(
+    programStore.get(name),
+  ),
 ): ProgramEvaluation {
   const runtime = runtimeFor(name);
   const renderErrors: OpenUIDiagnostic[] = [];
@@ -193,7 +194,9 @@ export function evaluateProgram(
       args: evalNode(query.argsAST, asking) ?? {},
       defaults: evalNode(query.defaultsAST, asking) ?? null,
       deps: (query.deps ?? []).map((dep) => asking(dep)),
-      ...(Number.isFinite(refresh) && refresh > 0 ? { refreshInterval: refresh } : {}),
+      ...(Number.isFinite(refresh) && refresh > 0
+        ? { refreshInterval: refresh }
+        : {}),
       complete: query.complete,
     };
   });
@@ -220,7 +223,8 @@ export function evaluateProgram(
   const root = evaluateRoot(parsed, {
     ctx: {
       getState: stateReader(values, snapshot),
-      resolveRef: (statementId: string) => runtime.qm.getResult(statementId) ?? null,
+      resolveRef: (statementId: string) =>
+        runtime.qm.getResult(statementId) ?? null,
       functions: {},
       actions: {},
       reportError: (message: string) =>

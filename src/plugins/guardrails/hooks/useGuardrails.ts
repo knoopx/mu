@@ -12,7 +12,6 @@ import {
 import { guardrailsStore } from "../lib/store";
 import type { GuardrailsPanelApi, GuardrailsSnapshot } from "../types";
 
-
 export function useGuardrailsSnapshot(): GuardrailsSnapshot {
   return useSyncExternalStore(
     guardrailsStore.subscribe,
@@ -21,16 +20,14 @@ export function useGuardrailsSnapshot(): GuardrailsSnapshot {
   );
 }
 
-
 export function useGuardrailsPanel(
   query: string,
   enabled: boolean,
 ): GuardrailsPanelApi {
   const snapshot = useGuardrailsSnapshot();
-  
+
   const theme = useAdwaita();
-  
-  
+
   const version = rulesVersion();
 
   useEffect(() => {

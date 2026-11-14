@@ -11,12 +11,7 @@
 import type { ToolRowCell } from "../core/lib/ui/toolRowPaint";
 
 /** The one status vocabulary the eleven tools answer in. */
-export type OpenUIToolStatus =
-  | "ok"
-  | "failed"
-  | "empty"
-  | "unknown"
-  | "open";
+export type OpenUIToolStatus = "ok" | "failed" | "empty" | "unknown" | "open";
 
 /**
  * What a program may call the state of one line of work: a section it settled,
@@ -27,12 +22,7 @@ export type OpenUIToolStatus =
  * `lib/theme.ts`.
  */
 export type ProgramStatus =
-  | "done"
-  | "running"
-  | "current"
-  | "pending"
-  | "skipped"
-  | "error";
+  "done" | "running" | "current" | "pending" | "skipped" | "error";
 
 /** One rejection of a program: a component the library has no name for, a
  * required argument that never arrived, a reference that stayed a name. */

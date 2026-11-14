@@ -33,5 +33,3 @@ export const plotted = chromeStory("plotted", () =>
     ],
   }),
 );
-
-

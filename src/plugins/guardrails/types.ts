@@ -1,6 +1,5 @@
 import type { ComposerPanelRow } from "../core/components/composer/Composer";
 
-
 export type GuardrailLanguage =
   | "bash"
   | "cpp"
@@ -31,10 +30,8 @@ export interface GuardrailRule {
 
   capture?: string;
 
-  
   tools?: readonly string[];
 
-  
   fields?: readonly string[];
 
   filters?: GuardrailFilter[];

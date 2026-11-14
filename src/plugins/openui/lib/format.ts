@@ -28,9 +28,7 @@ import {
 } from "../../core/lib/agent/toolText";
 
 /** The columns every list of programs reads from. */
-export const programTable = (
-  programs: readonly OpenUIProgramInfo[],
-): string =>
+export const programTable = (programs: readonly OpenUIProgramInfo[]): string =>
   tableOf(
     programs.map((program) => ({
       name: program.name,
@@ -40,7 +38,11 @@ export const programTable = (
       unresolved: program.unresolved,
       errors: program.errors,
       waiting: program.waiting,
-      state: program.streaming ? "streaming" : program.live ? "showing" : "idle",
+      state: program.streaming
+        ? "streaming"
+        : program.live
+          ? "showing"
+          : "idle",
     })),
   );
 
@@ -52,7 +54,8 @@ export const programStatusRow = (program: OpenUIProgramInfo): string => {
     counted(program.statements, "statement"),
     counted(program.components, "component") + " drawn",
   ];
-  if (program.unresolved > 0) parts.push(`${String(program.unresolved)} unresolved`);
+  if (program.unresolved > 0)
+    parts.push(`${String(program.unresolved)} unresolved`);
   if (program.errors > 0) parts.push(`${String(program.errors)} errors`);
   if (program.streaming) parts.push("still streaming");
   if (program.waiting > 0)
@@ -80,7 +83,9 @@ export const programWriteHead = (
   });
 
 /** Every rejection of a program, one `code · why` line per row. */
-export const diagnosticLines = (diagnostics: readonly OpenUIDiagnostic[]): string =>
+export const diagnosticLines = (
+  diagnostics: readonly OpenUIDiagnostic[],
+): string =>
   diagnostics
     .map((diagnostic) => `${diagnostic.code} · ${diagnostic.message}`)
     .join("\n");
@@ -91,14 +96,17 @@ export const diagnosticTable = (
 ): string =>
   tableOf(
     diagnostics.map((diagnostic) => ({
-      where: diagnostic.component === "" ? diagnostic.path : diagnostic.component,
+      where:
+        diagnostic.component === "" ? diagnostic.path : diagnostic.component,
       code: diagnostic.code,
       why: clipText(diagnostic.message, 96),
     })),
   );
 
 /** The library's index: one row per component. */
-export const libraryTable = (components: readonly OpenUIComponentInfo[]): string =>
+export const libraryTable = (
+  components: readonly OpenUIComponentInfo[],
+): string =>
   tableOf(
     components.map((component) => ({
       component: component.name,
@@ -112,7 +120,8 @@ export const libraryTable = (components: readonly OpenUIComponentInfo[]): string
 export function groupLines(groups: readonly OpenUIGroupInfo[]): string {
   return groups
     .map((group) => {
-      const notes = group.notes.length === 0 ? "" : `\n  ${group.notes.join("\n  ")}`;
+      const notes =
+        group.notes.length === 0 ? "" : `\n  ${group.notes.join("\n  ")}`;
       return `${group.name}: ${group.components.join(", ")}${notes}`;
     })
     .join("\n\n");
@@ -140,9 +149,7 @@ export function eventLines(events: readonly OpenUIEventRecord[]): string {
           ? ""
           : ` ${JSON.stringify(event.params)}`;
       const form =
-        event.formName === undefined
-          ? ""
-          : ` form=${String(event.formName)}`;
+        event.formName === undefined ? "" : ` form=${String(event.formName)}`;
       return `${event.type} · ${event.message}${params}${form}`;
     })
     .join("\n");
@@ -150,7 +157,9 @@ export function eventLines(events: readonly OpenUIEventRecord[]): string {
 
 /** The `$variable` values as the human left them. */
 export const valueTable = (values: readonly OpenUIValueRow[]): string =>
-  tableOf(values.map((value) => ({ variable: value.name, value: value.value })));
+  tableOf(
+    values.map((value) => ({ variable: value.name, value: value.value })),
+  );
 
 /** What a program's `Query` calls asked for, and whether they got data. */
 export const queryLines = (queries: readonly OpenUIQueryInfo[]): string =>
@@ -162,8 +171,12 @@ export const queryLines = (queries: readonly OpenUIQueryInfo[]): string =>
     .join("\n");
 
 /** The source an `openui-state` read prints back, cut to what a screen is. */
-export function stateSource(source: string): { text: string; truncated: boolean } {
-  if (source.length <= MAX_STATE_SOURCE_CHARS) return { text: source, truncated: false };
+export function stateSource(source: string): {
+  text: string;
+  truncated: boolean;
+} {
+  if (source.length <= MAX_STATE_SOURCE_CHARS)
+    return { text: source, truncated: false };
   return {
     text: `${source.slice(0, MAX_STATE_SOURCE_CHARS)}\n… cut`,
     truncated: true,
@@ -175,5 +188,6 @@ export const valueRows = (values: Record<string, unknown>): OpenUIValueRow[] =>
     .slice(0, MAX_VALUE_ROWS)
     .map(([name, value]) => ({
       name,
-      value: typeof value === "string" ? clipText(value, 48) : JSON.stringify(value),
+      value:
+        typeof value === "string" ? clipText(value, 48) : JSON.stringify(value),
     }));

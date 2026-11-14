@@ -119,7 +119,6 @@ function conversationLog(
   );
 }
 
-
 interface ComposerMeta {
   model: string | null;
   thinking: AgentSnapshot["thinking"] | null;
@@ -143,9 +142,7 @@ const emptyTranscript = (
   isStreaming: boolean,
 ): boolean => preview === null && items.length === 0 && !isStreaming;
 
-
 const cwdOf = (props: ChatAppProps): string => props.cwd ?? process.cwd();
-
 
 const openSessionOf = (
   props: ChatAppProps,
@@ -156,16 +153,13 @@ const openSessionOf = (
 const snapshotOf = (session: ChatSession | null): AgentSnapshot | null =>
   session?.snapshot() ?? null;
 
-
 const progressOf = (request: AskRequest | null): string | null =>
   request === null ? null : askProgressLabel(request);
-
 
 const followTopOf = (
   showProjectSummary: boolean,
   followTail: boolean,
 ): boolean => showProjectSummary || !followTail;
-
 
 const previewOf = (
   treePreview: SessionPreviewData | null,
@@ -173,7 +167,6 @@ const previewOf = (
   activeSessionRow: SessionListRow | undefined,
 ): SessionPreviewData | null =>
   treePreview ?? sessions.preview(activeSessionRow);
-
 
 function summaryRowsOf(
   open: boolean,
@@ -190,7 +183,6 @@ function summaryRowsOf(
     pills,
   });
 }
-
 
 function panelDataOf(
   panels: ChatPanels,
@@ -258,7 +250,6 @@ export function transcriptRowGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
 
-
 interface ComposerPanelView {
   rows: ComposerPanelRow[];
   panel: ComposerPanelSpec | undefined;
@@ -296,7 +287,6 @@ export function withRowSpacers(
   return out;
 }
 
-
 export const TranscriptRow = memo(function TranscriptRow({
   item,
   stats,
@@ -312,7 +302,12 @@ export const TranscriptRow = memo(function TranscriptRow({
     item.kind === "user" ? (
       <UserRow text={item.text} images={item.images} />
     ) : item.kind === "assistant" ? (
-      <AssistantMessage item={item} stats={stats} uiMessage={uiMessage} answered={answered} />
+      <AssistantMessage
+        item={item}
+        stats={stats}
+        uiMessage={uiMessage}
+        answered={answered}
+      />
     ) : item.kind === "tool" ? (
       <ToolExecution item={item} />
     ) : (
@@ -383,7 +378,6 @@ export function UserRow({
   );
 }
 
-
 const insetRow: StyleDesc = {
   display: "flex",
   flexDirection: "column",
@@ -393,7 +387,6 @@ const insetRow: StyleDesc = {
   paddingLeft: PAGE_INSET,
   paddingRight: PAGE_INSET,
 };
-
 
 export function SystemRow({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
@@ -427,7 +420,6 @@ export interface ChatAppProps {
 
   initialAttachments?: ComposerAttachment[];
 
-  
   now?: number;
 }
 
@@ -478,9 +470,7 @@ export function ToastLayer(props: {
           style={{
             pointerEvents: "auto",
             maxWidth: maxWidth ?? "100%",
-            
-            
-            
+
             ...(item.type && item.type !== "default"
               ? {}
               : { backgroundColor: t.color.surface.button }),
@@ -581,8 +571,6 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     active: showProjectSummary,
   });
 
-  
-  
   const running = preview === null && isStreaming;
   const tick = useRunningClock(running);
 
@@ -597,9 +585,6 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     followTail: composer.setFollowTail,
   });
 
-  
-  
-  
   const transcriptRows: JSX.Element[] = useMemo(
     () => conversationLog(t, transcript.source, transcript.stats),
     [t, transcript.source, transcript.stats],

@@ -8,9 +8,18 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { DEFAULT_EVENT_LIMIT, MAX_EVENT_LIMIT, OPENUI_EVENTS_TOOL } from "../constants";
+import {
+  DEFAULT_EVENT_LIMIT,
+  MAX_EVENT_LIMIT,
+  OPENUI_EVENTS_TOOL,
+} from "../constants";
 import type { OpenUIEventsDetails } from "../types";
-import { blocks, counted, statusTable, toolResult } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  counted,
+  statusTable,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import { eventLines } from "../lib/format";
 import { programStore } from "../lib/programStore/store";
 import { unknownProgram } from "../lib/answer";
@@ -20,11 +29,14 @@ const EventsParametersSchema = Type.Object({
   name: Type.Optional(
     Type.String({
       maxLength: 48,
-      description: "Program to read events from (default: every program in the log, oldest first).",
+      description:
+        "Program to read events from (default: every program in the log, oldest first).",
     }),
   ),
   clear: Type.Optional(
-    Type.Boolean({ description: "Drain the log after reading it (default true)." }),
+    Type.Boolean({
+      description: "Drain the log after reading it (default true).",
+    }),
   ),
 });
 
@@ -54,7 +66,10 @@ export const openUIEventsTool: ToolDefinition<
   executionMode: "sequential",
   parameters: EventsParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIEventsDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIEventsDetails>> {
     const clear = params.clear !== false;
     const named = params.name ?? "";
 
@@ -68,7 +83,10 @@ export const openUIEventsTool: ToolDefinition<
         omitted: 0,
         cleared: false,
       };
-      return toolResult(blocks("no program to read interactions from", details.error), details);
+      return toolResult(
+        blocks("no program to read interactions from", details.error),
+        details,
+      );
     }
 
     if (named === "") {
@@ -83,9 +101,16 @@ export const openUIEventsTool: ToolDefinition<
           omitted: 0,
           cleared: false,
         };
-        return toolResult(blocks("no interaction is waiting in any program"), details);
+        return toolResult(
+          blocks("no interaction is waiting in any program"),
+          details,
+        );
       }
-      const drained = programStore.drain(oldest.name, DEFAULT_EVENT_LIMIT, clear);
+      const drained = programStore.drain(
+        oldest.name,
+        DEFAULT_EVENT_LIMIT,
+        clear,
+      );
       const details: OpenUIEventsDetails = {
         status: "ok",
         error: "",
@@ -132,7 +157,9 @@ export const openUIEventsTool: ToolDefinition<
         details.events.length === 0
           ? "nobody used this program yet — change it rather than assume it worked"
           : counted(details.events.length, "interaction") +
-              (details.omitted === 0 ? "" : ` (${String(details.omitted)} still waiting)`),
+              (details.omitted === 0
+                ? ""
+                : ` (${String(details.omitted)} still waiting)`),
       ),
       details,
     );

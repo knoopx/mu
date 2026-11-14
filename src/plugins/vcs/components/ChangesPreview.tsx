@@ -87,11 +87,7 @@ function ImageTile({
           flexShrink: 0,
         }}
       >
-        <T
-          size="caption"
-          weight={emphasisWeight(t)}
-          color={mutedText(t)}
-        >
+        <T size="caption" weight={emphasisWeight(t)} color={mutedText(t)}>
           {label}
         </T>
         {bytes > 0 ? (
@@ -204,12 +200,7 @@ function TableDiff({
   diffRef: { current: PublicInstance | null };
 }): JSX.Element {
   return (
-    <DiffPanel
-      patch={patch}
-      tabular={tabular}
-      diffRef={diffRef}
-      name={path}
-    />
+    <DiffPanel patch={patch} tabular={tabular} diffRef={diffRef} name={path} />
   );
 }
 

@@ -99,7 +99,17 @@ export interface GithubCall {
 /** The scope fields of an answer, before any status is known. */
 export type GithubBlank = Omit<
   GithubCall,
-  "status" | "error" | "cached" | "ms" | "rate" | "fields" | "rows" | "body" | "total" | "omitted" | "bodyOmitted"
+  | "status"
+  | "error"
+  | "cached"
+  | "ms"
+  | "rate"
+  | "fields"
+  | "rows"
+  | "body"
+  | "total"
+  | "omitted"
+  | "bodyOmitted"
 >;
 
 /** What a call was pointed at, in the words a tool names it in. */

@@ -309,8 +309,7 @@ function logView(
     ["bookmark", bookmark],
     ["format", args.format === "full" ? "full" : ""],
   );
-  v.headline =
-    commits.length === 0 ? "" : counted(commits.length, "commit");
+  v.headline = commits.length === 0 ? "" : counted(commits.length, "commit");
   v.rows = commits.map((row) =>
     rowOf(
       row.change,
@@ -565,8 +564,7 @@ function hunkListView(
     ["change", textOf(details.change)],
     ["files", files.size === 0 ? "" : counted(files.size, "file")],
   );
-  v.headline =
-    hunks.length === 0 ? "" : counted(hunks.length, "hunk");
+  v.headline = hunks.length === 0 ? "" : counted(hunks.length, "hunk");
   // The badge says the hunk's type, so the muted line does not say it twice.
   v.rows = hunks.map((row) =>
     rowOf(row.hunk, row.file, `${row.before} → ${row.after}`, row.type),

@@ -69,7 +69,10 @@ const EMPTY_PLAN: PlanFigure = {
 
 /** A standing read back from `details` — the words the tool wrote, forgiving of case. */
 function statusWordOf(value: unknown): PlanStatus {
-  const word = detailText(value).trim().toLowerCase().replace(/[\s_-]/g, "");
+  const word = detailText(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
   if (word === "completed" || word === "complete" || word === "done") {
     return "completed";
   }
@@ -94,9 +97,10 @@ function badOf(value: unknown): PlanBadStep {
     at: detailNumber(record["at"]),
     content: detailText(record["content"]),
     status: detailText(record["status"]),
-    reason: detailText(record["reason"]) === "no such status"
-      ? "no such status"
-      : "no content",
+    reason:
+      detailText(record["reason"]) === "no such status"
+        ? "no such status"
+        : "no content",
   };
 }
 
@@ -175,7 +179,10 @@ function cellsOf(plan: PlanFigure, status: PlanCallStatus): ToolRowCell[] {
 }
 
 /** One row per step: its number in the log's id column, what it is, and where it stands. */
-export function planRowsOf(plan: PlanFigure, limit = MAX_PLAN_ROWS): ToolPaintRow[] {
+export function planRowsOf(
+  plan: PlanFigure,
+  limit = MAX_PLAN_ROWS,
+): ToolPaintRow[] {
   return plan.steps.slice(0, limit).map((step) => ({
     key: String(step.at),
     primary: step.content,
@@ -193,7 +200,10 @@ export function planBadRowsOf(
   return plan.bad.slice(0, limit).map((bad) => ({
     key: String(bad.at + 1),
     primary: bad.content === "" ? "(nothing to do)" : bad.content,
-    secondary: bad.reason === "no content" ? "" : `standing: ${bad.status === "" ? "(nothing)" : bad.status}`,
+    secondary:
+      bad.reason === "no content"
+        ? ""
+        : `standing: ${bad.status === "" ? "(nothing)" : bad.status}`,
     badge: bad.reason,
     tone: "bad" as ToolRowTone,
   }));
@@ -210,7 +220,8 @@ export function planToolViewOf(
   const plan = planFigureOf(details) ?? EMPTY_PLAN;
   // A call that errored before it answered has no plan in its details, and the
   // row must not read that silence as a plan that was cleared.
-  const status: PlanCallStatus = itemStatus === "error" ? "failed" : plan.status;
+  const status: PlanCallStatus =
+    itemStatus === "error" ? "failed" : plan.status;
 
   return {
     status,

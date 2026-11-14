@@ -49,7 +49,8 @@ export const limitParam = (unit: string, max: number = MAX_LIBRARY_LIMIT) =>
 /** Program source, bounded by what a screen can be. */
 export const codeParam = Type.String({
   maxLength: MAX_PROGRAM_CHARS,
-  description: "The complete OpenUI Lang program — one `root = Stack([ ... ])` statement and the statements it uses.",
+  description:
+    "The complete OpenUI Lang program — one `root = Stack([ ... ])` statement and the statements it uses.",
 });
 
 /** One streamed piece of program source. */

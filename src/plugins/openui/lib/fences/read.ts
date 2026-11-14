@@ -34,8 +34,7 @@ export interface ReplyFence {
 
 /** One part of a reply: prose the markdown block draws, or a screen mu paints. */
 export type ReplySegment =
-  | { kind: "prose"; text: string }
-  | { kind: "ui"; fence: ReplyFence };
+  { kind: "prose"; text: string } | { kind: "ui"; fence: ReplyFence };
 
 /** A reply, cut in document order into the prose the markdown block draws and the screens mu paints. */
 export interface ReplyBlocks {
@@ -48,10 +47,15 @@ export interface ReplyBlocks {
 }
 
 /** The opening delimiter of a fence: up to three spaces, three or more backticks, then the info string. */
-const openerOf = (line: string): { marker: string; language: string } | null => {
+const openerOf = (
+  line: string,
+): { marker: string; language: string } | null => {
   const match = /^ {0,3}(`{3,})[ \t]*(.*)$/.exec(line);
   if (match === null) return null;
-  return { marker: match[1] ?? "", language: (match[2] ?? "").trim().split(/\s+/)[0] ?? "" };
+  return {
+    marker: match[1] ?? "",
+    language: (match[2] ?? "").trim().split(/\s+/)[0] ?? "",
+  };
 };
 
 /** Whether `line` closes a fence opened with `marker` (a run of backticks at least as long, with no info string). */
@@ -134,7 +138,9 @@ export function replyBlocks(text: string, streaming: boolean): ReplyBlocks {
 /** Take the block's own indentation off every line of it. */
 function dedent(lines: readonly string[], indent: number): string {
   return lines
-    .map((line) => (line.startsWith(" ".repeat(indent)) ? line.slice(indent) : line))
+    .map((line) =>
+      line.startsWith(" ".repeat(indent)) ? line.slice(indent) : line,
+    )
     .join("\n")
     .trim();
 }

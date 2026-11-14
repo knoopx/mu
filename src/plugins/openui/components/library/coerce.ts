@@ -25,7 +25,8 @@ export function coerce<Value>(value: unknown, fallback: Value): Value {
   if (typeof fallback === "boolean") {
     if (typeof value === "boolean") return value as Value;
     if (value === "true" || value === 1 || value === "1") return true as Value;
-    if (value === "false" || value === 0 || value === "0") return false as Value;
+    if (value === "false" || value === 0 || value === "0")
+      return false as Value;
     return fallback;
   }
   if (Array.isArray(fallback)) {

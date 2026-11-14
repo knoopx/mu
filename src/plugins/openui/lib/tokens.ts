@@ -34,9 +34,11 @@ export const programGap = (
 };
 
 /** The three tiers a program's blocks nest in, when it leaves a gap unset. */
-export const innerGap = (t: AdwaitaTheme): number => programGap(t, PROGRAM_GAP_TIER.inner);
+export const innerGap = (t: AdwaitaTheme): number =>
+  programGap(t, PROGRAM_GAP_TIER.inner);
 
-export const groupGap = (t: AdwaitaTheme): number => programGap(t, PROGRAM_GAP_TIER.group);
+export const groupGap = (t: AdwaitaTheme): number =>
+  programGap(t, PROGRAM_GAP_TIER.group);
 
 export const sectionGap = (t: AdwaitaTheme): number =>
   programGap(t, PROGRAM_GAP_TIER.section);

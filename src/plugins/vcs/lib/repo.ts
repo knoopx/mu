@@ -490,4 +490,3 @@ export async function pushBookmarks(names: string[]): Promise<string> {
   for (const name of names) await vcsOk(["git", "push", "-b", name]);
   return `Pushed ${names.length} bookmark(s)`;
 }
-

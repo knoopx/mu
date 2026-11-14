@@ -14,7 +14,13 @@ import { Type } from "typebox";
 
 import { GITHUB_PR_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readPull } from "../lib/api/read";
-import { flagParam, numberParam, ownerParam, refreshParam, repoParam } from "../lib/params";
+import {
+  flagParam,
+  numberParam,
+  ownerParam,
+  refreshParam,
+  repoParam,
+} from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubPullParams } from "../types";
 import { GITHUB_GUIDELINES } from "./guidelines";
@@ -23,7 +29,9 @@ const Parameters = Type.Object({
   owner: ownerParam(),
   repo: repoParam(),
   number: numberParam("pull request"),
-  files: flagParam("Also list the files the pull request changes, with their status and line counts."),
+  files: flagParam(
+    "Also list the files the pull request changes, with their status and line counts.",
+  ),
   refresh: refreshParam(),
 });
 
@@ -42,7 +50,8 @@ export const githubPrTool: ToolDefinition<typeof Parameters, GithubCall> = {
     "head and base branches, commit and line counts, and its description. `files` adds the " +
     "changed files with their status and additions and deletions. Read-only — it never " +
     "merges, comments, closes or pushes anything.",
-  promptSnippet: "Read a GitHub pull request's state, description and changed files",
+  promptSnippet:
+    "Read a GitHub pull request's state, description and changed files",
   promptGuidelines: [
     ...GITHUB_GUIDELINES,
     "Ask github-pr before trusting a claim about an upstream change: its state line says whether it landed, and `files` says what it touched.",

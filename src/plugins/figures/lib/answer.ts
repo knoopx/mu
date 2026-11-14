@@ -27,12 +27,7 @@ import {
   MAX_TABLE_ROWS,
   MAX_TREE_LINES,
 } from "../constants";
-import type {
-  ChartFigure,
-  PlotPoint,
-  TableFigure,
-  TreeFigure,
-} from "../types";
+import type { ChartFigure, PlotPoint, TableFigure, TreeFigure } from "../types";
 import { plotFigure } from "./plot";
 import {
   tableBadCounts,
@@ -110,9 +105,7 @@ export function chartAnswerOf(figure: ChartFigure): string {
   const head = statusTable({
     chart: figure.kind,
     points: String(figure.plotted),
-    ...(figure.series.length === 0
-      ? {}
-      : { series: figure.series.join(", ") }),
+    ...(figure.series.length === 0 ? {} : { series: figure.series.join(", ") }),
     ...(axisOf(figure) === "" ? {} : { axis: axisOf(figure) }),
     ...(measure === null
       ? {}
@@ -264,7 +257,10 @@ export function tableAnswerOf(figure: TableFigure): string {
 function widestRowOf(figure: TableFigure): number {
   return figure.rows.reduce(
     (wide, row) =>
-      Math.max(wide, row.reduce((sum, cell) => sum + cell.length + 3, 0)),
+      Math.max(
+        wide,
+        row.reduce((sum, cell) => sum + cell.length + 3, 0),
+      ),
     0,
   );
 }
@@ -283,8 +279,12 @@ export function tableInvalidAnswer(figure: TableFigure): string {
     statusTable({
       table: "0 rows",
       columns: counted(figure.columns.length, "column"),
-      ...(kinds.overflow === 0 ? {} : { overflow: counted(kinds.overflow, "cell") }),
-      ...(kinds.unreadable === 0 ? {} : { "not text": counted(kinds.unreadable, "cell") }),
+      ...(kinds.overflow === 0
+        ? {}
+        : { overflow: counted(kinds.overflow, "cell") }),
+      ...(kinds.unreadable === 0
+        ? {}
+        : { "not text": counted(kinds.unreadable, "cell") }),
     }),
     rows.length === 0 ? "" : tableOf(rows),
     figure.error,

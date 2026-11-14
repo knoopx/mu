@@ -40,7 +40,6 @@ const Parameters = Type.Object({
   ),
 });
 
-
 /** An omitted `to` is the parent of `from`, resolved first so the second end is an identity and not a guess. */
 export async function executeVcsFileDiff(
   params: VcsFileDiffParams,

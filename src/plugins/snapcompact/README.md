@@ -15,12 +15,12 @@ rasterizer of its own.
 
 ## The shape of a pass
 
-| Stage | Who owns it |
-| --- | --- |
-| When to compact at all, and where the cut point is | pi (`compaction.*` settings) |
-| Serializing the discarded span, folding in the previous archive, planning the layout, rasterizing, encoding | the package |
-| Which shape a reader earns, how many frames it may carry, what its provider takes inline | the package, read off the reader |
-| Holding the frames in the compaction entry, re-attaching them to every request, the transcript's words | mu |
+| Stage                                                                                                       | Who owns it                      |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| When to compact at all, and where the cut point is                                                          | pi (`compaction.*` settings)     |
+| Serializing the discarded span, folding in the previous archive, planning the layout, rasterizing, encoding | the package                      |
+| Which shape a reader earns, how many frames it may carry, what its provider takes inline                    | the package, read off the reader |
+| Holding the frames in the compaction entry, re-attaching them to every request, the transcript's words      | mu                               |
 
 Frames are **not** stored in the context. pi rebuilds every request from the
 session file, so `lib/replay.ts` rebuilds the archive from the entry's `details`
@@ -30,7 +30,7 @@ and images).
 
 A pass that would produce no pages — a short history fits between the two text
 edges, so nothing was compressed — is declined, and pi's summarizer answers
-instead. Same for `/compact focus on X`, which asks for a *reading* of the
+instead. Same for `/compact focus on X`, which asks for a _reading_ of the
 history, and for a reader that takes no images: there is nothing to read a page
 with. A session that moves to a text-only model after an archived pass still gets
 its history, as text, through the package's own `viewWithoutFrames`.
@@ -47,11 +47,11 @@ its history, as text, through the package's own `viewWithoutFrames`.
 }
 ```
 
-| Key | Meaning |
-| --- | --- |
-| `enabled` | `false` leaves every compaction to pi's summarizer |
-| `maxFrames` | mu's ceiling on pages per archive (1–80; the package clamps to its own 80) |
-| `shape` | `"auto"`, or a package variant name such as `"11on16-bw"` or `"8on22-bw"` to force one |
+| Key         | Meaning                                                                                |
+| ----------- | -------------------------------------------------------------------------------------- |
+| `enabled`   | `false` leaves every compaction to pi's summarizer                                     |
+| `maxFrames` | mu's ceiling on pages per archive (1–80; the package clamps to its own 80)             |
+| `shape`     | `"auto"`, or a package variant name such as `"11on16-bw"` or `"8on22-bw"` to force one |
 
 `MU_SNAPCOMPACT_CONFIG` overrides the path of that file. A missing file, an
 unreadable one, or a key of the wrong type all answer with the defaults: mu

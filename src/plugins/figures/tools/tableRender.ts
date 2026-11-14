@@ -35,7 +35,7 @@ import type { TableFigure, TableRenderParams } from "../types";
 /** One cell: text, or a figure the log can line up and add. */
 const CellSchema = Type.Union([
   Type.String({ maxLength: MAX_CELL_CHARS, description: "a word" }),
-  Type.Number({ description: "a figure — a bare number, never `\"1,234\"`" }),
+  Type.Number({ description: 'a figure — a bare number, never `"1,234"`' }),
   Type.Boolean({ description: "drawn as `yes` or `no`" }),
 ]);
 
@@ -52,7 +52,7 @@ const RowSchema = Type.Union(
   ],
   {
     description:
-      "a row: `[\"vcs\", 12, \"ok\"]`, or `{tool: \"vcs\", calls: 12, state: \"ok\"}` keyed by the column names",
+      'a row: `["vcs", 12, "ok"]`, or `{tool: "vcs", calls: 12, state: "ok"}` keyed by the column names',
   },
 );
 
@@ -61,7 +61,7 @@ const RenderParametersSchema = Type.Object({
     minItems: 0,
     maxItems: 400,
     description:
-      "The rows, in the order they stand: `[[\"core\", 41, \"settled\"], [\"vcs\", 12, \"moving\"]]`.",
+      'The rows, in the order they stand: `[["core", 41, "settled"], ["vcs", 12, "moving"]]`.',
   }),
   columns: Type.Optional(
     Type.Array(Type.String({ maxLength: MAX_CELL_CHARS }), {
@@ -104,7 +104,8 @@ export const tableRenderTool: ToolDefinition<
     "is set in mono and right-aligned. The answer states the header, the rows as an aligned table, and what each " +
     "column of figures sums to and ranges between — so a table that came out wrong is visible without seeing it. A " +
     "row wider than the header refuses the call and names the cell that had no column to stand in.",
-  promptSnippet: "Draw a table in the transcript; the answer reads the rows and the column figures back",
+  promptSnippet:
+    "Draw a table in the transcript; the answer reads the rows and the column figures back",
   promptGuidelines: [
     "Use table-render when the answer is several things measured the same way: a survey, a comparison, a per-file count, a status board.",
     "`columns` names the header, one name per column; a row is a list of cells in that order, or an object keyed by those names.",

@@ -1,9 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import {
-  displayPath,
-  muConfigDir,
-} from "../../core/lib/utils/paths";
+import { displayPath, muConfigDir } from "../../core/lib/utils/paths";
 import {
   AUTO_SHAPE,
   CONFIG_FILE_ENV,
@@ -31,10 +28,7 @@ const clampFrames = (value: unknown): number => {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return DEFAULT_MAX_FRAMES;
   }
-  return Math.min(
-    MAX_MAX_FRAMES,
-    Math.max(MIN_MAX_FRAMES, Math.round(value)),
-  );
+  return Math.min(MAX_MAX_FRAMES, Math.max(MIN_MAX_FRAMES, Math.round(value)));
 };
 
 const variantOf = (value: unknown): string | null => {
@@ -56,7 +50,8 @@ export function readSnapcompactConfig(
       readFileSync(snapcompactConfigPath(env), "utf8"),
     ) as Record<string, unknown>;
     return {
-      enabled: parsed["enabled"] === undefined ? true : parsed["enabled"] === true,
+      enabled:
+        parsed["enabled"] === undefined ? true : parsed["enabled"] === true,
       maxFrames: clampFrames(parsed["maxFrames"]),
       shapeVariant: variantOf(parsed["shape"]),
     };

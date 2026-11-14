@@ -23,10 +23,29 @@ import {
   MAX_TREE_ROWS,
   SEARCH_KINDS,
 } from "../../constants";
-import { answered, blankCall, bodyOf, fieldList, rankedRows, refused } from "../call";
+import {
+  answered,
+  blankCall,
+  bodyOf,
+  fieldList,
+  rankedRows,
+  refused,
+} from "../call";
 import type { GithubFound, GithubRowDraft } from "../call";
-import type { GithubBlank, GithubCall, GithubField, GithubKind } from "../../types";
-import { apiGet, encodePath, hasToken, queryOf, rawGet, TOKEN_HINT } from "./client";
+import type {
+  GithubBlank,
+  GithubCall,
+  GithubField,
+  GithubKind,
+} from "../../types";
+import {
+  apiGet,
+  encodePath,
+  hasToken,
+  queryOf,
+  rawGet,
+  TOKEN_HINT,
+} from "./client";
 import type { GithubReply, RequestOptions } from "./client";
 import {
   countsOf,
@@ -98,7 +117,8 @@ const refQuery = (ref = ""): string => {
 };
 
 /** The ref the raw host wants: whatever was asked for, or the repo's head. */
-const rawRef = (ref = ""): string => ((ref ?? "").trim() === "" ? "HEAD" : (ref ?? "").trim());
+const rawRef = (ref = ""): string =>
+  (ref ?? "").trim() === "" ? "HEAD" : (ref ?? "").trim();
 
 /** A repo-scoped call that was not given a repo is not a call worth making. */
 function needRepo(
@@ -107,7 +127,10 @@ function needRepo(
 ): { blank: GithubBlank; answer: GithubCall | null } {
   const blank = blankCall(kind, input);
   if (repoPath(input.owner, input.repo) !== "") return { blank, answer: null };
-  return { blank, answer: refused(blank, "missing required parameters: owner and repo") };
+  return {
+    blank,
+    answer: refused(blank, "missing required parameters: owner and repo"),
+  };
 }
 
 /** `owner/repo` in the words an error names it with. */
@@ -129,7 +152,10 @@ export async function readRepo(input: GithubReadInput): Promise<GithubCall> {
   const { blank, answer } = needRepo(input, "repo");
   if (answer !== null) return answer;
 
-  const reply = await apiGet(repoPath(input.owner, input.repo), optionsOf(input));
+  const reply = await apiGet(
+    repoPath(input.owner, input.repo),
+    optionsOf(input),
+  );
   const stop = refusedBy(reply, blank);
   if (stop !== null) return stop;
 
@@ -292,7 +318,10 @@ export async function readFile(input: GithubReadInput): Promise<GithubCall> {
   const clipped = bodyOf(text, MAX_FILE_CHARS);
   return answered(blank, text.trim() === "" ? "empty" : "ok", "", {
     ...read.costs,
-    fields: [...where, ...fieldList([["lines", String(text.split("\n").length)]])],
+    fields: [
+      ...where,
+      ...fieldList([["lines", String(text.split("\n").length)]]),
+    ],
     body: clipped.body,
     bodyOmitted: clipped.omitted,
   });
@@ -308,7 +337,8 @@ async function numberedOf(
   input: GithubReadInput,
   kind: GithubKind,
 ): Promise<
-  { answer: GithubCall } | { blank: GithubBlank; reply: GithubReply; number: number }
+  | { answer: GithubCall }
+  | { blank: GithubBlank; reply: GithubReply; number: number }
 > {
   const guard = needRepo(input, kind);
   if (guard.answer !== null) return { answer: guard.answer };
@@ -327,7 +357,9 @@ async function numberedOf(
 }
 
 /** What a pull request and an issue both say about themselves. */
-function sharedFields(record: Record<string, unknown>): (readonly [string, string])[] {
+function sharedFields(
+  record: Record<string, unknown>,
+): (readonly [string, string])[] {
   return [
     ["title", textOf(record["title"])],
     ["author", loginOf(record["user"])],
@@ -336,7 +368,8 @@ function sharedFields(record: Record<string, unknown>): (readonly [string, strin
 }
 
 /** The page a human can open, when GitHub gave one. */
-const urlOf = (record: Record<string, unknown>): string => stringOf(record["html_url"]);
+const urlOf = (record: Record<string, unknown>): string =>
+  stringOf(record["html_url"]);
 
 export async function readPull(input: GithubReadInput): Promise<GithubCall> {
   const read = await numberedOf(input, "pr");
@@ -372,7 +405,12 @@ export async function readPull(input: GithubReadInput): Promise<GithubCall> {
       optionsOf(input),
     );
     if (files.status === "ok")
-      found = foldRows(found, files, listOf(files.json).map(fileRow), MAX_PR_FILES);
+      found = foldRows(
+        found,
+        files,
+        listOf(files.json).map(fileRow),
+        MAX_PR_FILES,
+      );
   }
 
   return answered(blank, "ok", "", found);
@@ -389,7 +427,12 @@ function recordFound(
   fields: GithubField[],
 ): GithubFound {
   const body = bodyOf(stringOf(record["body"]), MAX_BODY_CHARS);
-  return { ...costsOf(reply), fields, body: body.body, bodyOmitted: body.omitted };
+  return {
+    ...costsOf(reply),
+    fields,
+    body: body.body,
+    bodyOmitted: body.omitted,
+  };
 }
 
 /**
@@ -456,7 +499,12 @@ export async function readIssue(input: GithubReadInput): Promise<GithubCall> {
   ]);
   let found = recordFound(reply, record, fields);
 
-  const wanted = bounded(input.limit, DEFAULT_COMMENT_LIMIT, MAX_COMMENT_LIMIT, 0);
+  const wanted = bounded(
+    input.limit,
+    DEFAULT_COMMENT_LIMIT,
+    MAX_COMMENT_LIMIT,
+    0,
+  );
   if (wanted > 0 && numberOf(record["comments"]) > 0) {
     const comments = await apiGet(
       `${base}/issues/${String(number)}/comments?${queryOf({ per_page: wanted })}`,
@@ -490,10 +538,17 @@ export async function readRelease(input: GithubReadInput): Promise<GithubCall> {
 
   const base = repoPath(input.owner, input.repo);
   const tag = (input.tag ?? "").trim();
-  const blank = blankCall(tag === "" ? "releases" : "release", { ...input, target: tag });
+  const blank = blankCall(tag === "" ? "releases" : "release", {
+    ...input,
+    target: tag,
+  });
 
   if (tag === "") {
-    const limit = bounded(input.limit, DEFAULT_RELEASE_LIMIT, MAX_RELEASE_LIMIT);
+    const limit = bounded(
+      input.limit,
+      DEFAULT_RELEASE_LIMIT,
+      MAX_RELEASE_LIMIT,
+    );
     const reply = await apiGet(
       `${base}/releases?${queryOf({ per_page: limit })}`,
       optionsOf(input),
@@ -557,7 +612,8 @@ export async function readCommit(input: GithubReadInput): Promise<GithubCall> {
   const guard = needRepo(input, "commit");
   if (guard.answer !== null) return guard.answer;
   const sha = (input.sha ?? "").trim();
-  if (sha === "") return refused(guard.blank, "missing required parameter: sha");
+  if (sha === "")
+    return refused(guard.blank, "missing required parameter: sha");
 
   const reply = await apiGet(
     `${repoPath(input.owner, input.repo)}/commits/${encodeURIComponent(sha)}`,
@@ -573,7 +629,9 @@ export async function readCommit(input: GithubReadInput): Promise<GithubCall> {
   const full = stringOf(commit["message"]);
   const subject = full.split("\n")[0] ?? "";
   const named = loginOf(record["author"]);
-  const message = full.includes("\n") ? bodyOf(full, MAX_BODY_CHARS) : { body: "", omitted: 0 };
+  const message = full.includes("\n")
+    ? bodyOf(full, MAX_BODY_CHARS)
+    : { body: "", omitted: 0 };
 
   const listed = listOf(record["files"]).map(fileRow);
   const { rows, omitted } = rankedRows(listed, MAX_COMMIT_FILES);
@@ -612,11 +670,18 @@ export async function readSearch(input: GithubReadInput): Promise<GithubCall> {
 
   const endpoint = searchEndpoint(kind);
   if (endpoint === "")
-    return refused(blank, `unknown search kind: ${kind} — mu offers ${SEARCH_KINDS.join(", ")}`);
+    return refused(
+      blank,
+      `unknown search kind: ${kind} — mu offers ${SEARCH_KINDS.join(", ")}`,
+    );
 
   // Code and commit search are signed-in reads at GitHub, whatever the repo is.
   if (AUTH_ONLY_SEARCH_KINDS.includes(kind) && !hasToken())
-    return refused(blank, `${kind} search needs a signed-in read: ${TOKEN_HINT}`, "unsupported");
+    return refused(
+      blank,
+      `${kind} search needs a signed-in read: ${TOKEN_HINT}`,
+      "unsupported",
+    );
 
   const limit = bounded(input.limit, DEFAULT_SEARCH_LIMIT, MAX_SEARCH_LIMIT);
   const reply = await apiGet(
@@ -627,7 +692,9 @@ export async function readSearch(input: GithubReadInput): Promise<GithubCall> {
   if (stop !== null) return stop;
 
   const record = recordOf(reply.json);
-  const listed = listOf(record["items"]).map((item) => searchRow(kind, recordOf(item)));
+  const listed = listOf(record["items"]).map((item) =>
+    searchRow(kind, recordOf(item)),
+  );
   const { rows, omitted } = rankedRows(listed, limit);
 
   return answered(blank, rows.length === 0 ? "empty" : "ok", "", {
@@ -648,12 +715,20 @@ function searchRow(kind: string, item: Record<string, unknown>) {
   const repo = stringOf(nested(item["repository"])["full_name"]);
 
   if (kind === "code")
-    return { name: stringOf(item["path"]), detail: repo, state: "", figure: "" };
+    return {
+      name: stringOf(item["path"]),
+      detail: repo,
+      state: "",
+      figure: "",
+    };
 
   if (kind === "issues")
     return {
       name: textOf(item["title"], 120),
-      detail: repo === "" ? `#${String(numberOf(item["number"]))}` : `${repo}#${String(numberOf(item["number"]))}`,
+      detail:
+        repo === ""
+          ? `#${String(numberOf(item["number"]))}`
+          : `${repo}#${String(numberOf(item["number"]))}`,
       state: stringOf(item["state"], "open"),
       figure: `${String(numberOf(item["comments"]))} comments`,
     };
@@ -687,7 +762,10 @@ export async function readUser(input: GithubReadInput): Promise<GithubCall> {
   const blank = blankCall("user", { ...input, target: login });
   if (login === "") return refused(blank, "missing required parameter: login");
 
-  const reply = await apiGet(`users/${encodeURIComponent(login)}`, optionsOf(input));
+  const reply = await apiGet(
+    `users/${encodeURIComponent(login)}`,
+    optionsOf(input),
+  );
   const stop = refusedBy(reply, blank);
   if (stop !== null) return stop;
 

@@ -19,7 +19,12 @@ import {
   toolResult,
 } from "../../core/lib/agent/toolText";
 import { codeParam } from "../lib/params";
-import { diagnosticTable, queryLines, stateSource, valueRows } from "../lib/format";
+import {
+  diagnosticTable,
+  queryLines,
+  stateSource,
+  valueRows,
+} from "../lib/format";
 import { declaresRoot, parseProgram } from "../lib/analysis/parse";
 import { noRootHint } from "../lib/answer";
 import { VALIDATE_GUIDELINES } from "./guidelines";
@@ -36,13 +41,17 @@ export const openUIValidateTool: ToolDefinition<
   label: OPENUI_VALIDATE_TOOL,
   description:
     "Parse OpenUI Lang source against this app's library and answer with the diagnostics — statements, the components it would draw, unresolved names, and every error with the move that clears it — without rendering anything. Use it to check a program, or to re-check an edit, before committing it with openui-render.",
-  promptSnippet: "Parse an OpenUI Lang program for diagnostics without rendering it",
+  promptSnippet:
+    "Parse an OpenUI Lang program for diagnostics without rendering it",
   promptGuidelines: [...VALIDATE_GUIDELINES],
 
   executionMode: "parallel",
   parameters: ValidateParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIValidateDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIValidateDetails>> {
     const source = stateSource(params.code ?? "");
     const { parse } = parseProgram(source.text);
     const hard = parse.diagnostics.filter((row) => row.severity === "error");
@@ -87,9 +96,7 @@ export const openUIValidateTool: ToolDefinition<
         : `never reached from root: ${parse.orphaned.join(", ")}`,
       parse.queries.length === 0 ? "" : queryLines(parse.queries),
       hard.length === 0 ? "" : diagnosticTable(hard),
-      hard.length === 0 || declaresRoot(source.text)
-        ? ""
-        : noRootHint(),
+      hard.length === 0 || declaresRoot(source.text) ? "" : noRootHint(),
       moreLine(omitted, "component"),
     ];
 

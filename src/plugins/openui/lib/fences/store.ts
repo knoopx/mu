@@ -44,7 +44,10 @@ interface HeldParse {
 }
 
 /** A parse that produced a tree the renderer can walk. */
-const drew = (outcome: { parse: OpenUIProgramParse; result: ParseResult }): boolean =>
+const drew = (outcome: {
+  parse: OpenUIProgramParse;
+  result: ParseResult;
+}): boolean =>
   outcome.result.root !== null && outcome.parse.components.length > 0;
 
 /** The last frame of a block that still drew, so a bad prefix never blanks it. */
@@ -61,14 +64,21 @@ export function holdFence(message: number, block: ReplyFence): string {
   const streaming = block.status === "streaming";
   const existing = programStore.get(name);
 
-  if (existing !== undefined && existing.source === block.source && existing.streaming === streaming)
+  if (
+    existing !== undefined &&
+    existing.source === block.source &&
+    existing.streaming === streaming
+  )
     return name;
 
   const source = block.source.slice(0, MAX_PROGRAM_CHARS);
   const outcome = streaming ? parseStreaming(source) : parseProgram(source);
   const held: HeldParse = drew(outcome)
     ? outcome
-    : (lastGood.get(name) ?? (existing !== undefined && drew(existing) ? { parse: existing.parse, result: existing.result } : outcome));
+    : (lastGood.get(name) ??
+      (existing !== undefined && drew(existing)
+        ? { parse: existing.parse, result: existing.result }
+        : outcome));
   if (drew(outcome)) lastGood.set(name, outcome);
 
   programStore.setSource(name, source, held.parse, held.result, "", {

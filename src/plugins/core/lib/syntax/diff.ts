@@ -28,10 +28,7 @@ const MAX_HUNKS = 64;
 /** Wall time spent reading one patch, after which the rest is left plain. */
 const READ_BUDGET_MS = 250;
 
-const sidesOf = (
-  rows: readonly DiffRow[],
-  side: "old" | "new",
-): DiffRow[] =>
+const sidesOf = (rows: readonly DiffRow[], side: "old" | "new"): DiffRow[] =>
   rows.filter(
     (row) =>
       row.kind === "ctx" ||

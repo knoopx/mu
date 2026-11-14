@@ -65,7 +65,6 @@ const PANEL_CHOOSE: Record<string, string> = {
   guardrails: "arm",
 };
 
-
 export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
   const rows: Shortcut[] = [];
   rows.push(...navShortcuts({ select: "move" }));
@@ -89,7 +88,6 @@ export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
 export function panelHints(panel: ComposerTarget | "commands"): Shortcut[] {
   return hints(panelShortcuts(panel));
 }
-
 
 export function pathCompletionShortcuts(): Shortcut[] {
   return [

@@ -13,8 +13,18 @@
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 
 import { jjRoot, rebaseAfter, resolveIds } from "./ops";
-import { failedResult, missingResult, noRepoResult, type VcsBlank } from "./answer";
-import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
+import {
+  failedResult,
+  missingResult,
+  noRepoResult,
+  type VcsBlank,
+} from "./answer";
+import {
+  blocks,
+  statusTable,
+  tableOf,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import type {
   RevisionIds,
   SplitOutcome,
@@ -50,7 +60,12 @@ const splitFailure = <D extends VcsSplitDetails>(
 ): AgentToolResult<D> =>
   // `base` carries the tool's own fields and the overrides its post-state, so the
   // assembled object is the tool's details type whatever D it was called with.
-  toolResult(text, { ...base, status: "failed", error: text, ...overrides } as D);
+  toolResult(text, {
+    ...base,
+    status: "failed",
+    error: text,
+    ...overrides,
+  } as D);
 
 /** The four fields both halves of a split always fill in. */
 const halvesOf = (

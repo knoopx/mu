@@ -16,10 +16,7 @@ import {
   writeProgram,
 } from "../../src/plugins/openui/lib/programStore/verbs";
 import { programStore } from "../../src/plugins/openui/lib/programStore/store";
-import {
-  fenceKey,
-  holdFence,
-} from "../../src/plugins/openui/lib/fences/store";
+import { fenceKey, holdFence } from "../../src/plugins/openui/lib/fences/store";
 import {
   programStatusRow,
   programTable,

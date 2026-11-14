@@ -7,7 +7,13 @@
  * panels only choose the empty words above them.
  */
 import type { JSX } from "react";
-import { useAdwaita, DiffHistogram, DiffStats, fileRowStats, type FileChange } from "adwaita-gpuix";
+import {
+  useAdwaita,
+  DiffHistogram,
+  DiffStats,
+  fileRowStats,
+  type FileChange,
+} from "adwaita-gpuix";
 import type { PublicInstance } from "@gpuix/react";
 import { figureGap } from "../../core/lib/ui/tokens";
 import { ComposerOptionRow } from "../../core/components/composer/rows";

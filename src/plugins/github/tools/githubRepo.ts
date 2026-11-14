@@ -38,7 +38,8 @@ export const githubRepoTool: ToolDefinition<typeof Parameters, GithubCall> = {
     "The default branch is what a later `ref` stands beside; the description and licence " +
     "are the answer when the question is what a project is and whether it can be used. " +
     "Read-only.",
-  promptSnippet: "Read a GitHub repository's metadata, counts and default branch",
+  promptSnippet:
+    "Read a GitHub repository's metadata, counts and default branch",
   promptGuidelines: [
     ...GITHUB_GUIDELINES,
     "Start a repo you have not read with github-repo: its default branch, star count and licence decide whether the rest of the reads are worth making.",

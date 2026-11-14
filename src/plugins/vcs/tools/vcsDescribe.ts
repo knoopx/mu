@@ -32,7 +32,6 @@ const Parameters = Type.Object({
   }),
 });
 
-
 /** Resolved before and after: a write that cannot name what it changed has not proved it ran. */
 export async function executeVcsDescribe(
   params: VcsDescribeParams,
@@ -56,15 +55,16 @@ export async function executeVcsDescribe(
 
   const previous = await resolveIdentity(hash);
   if (previous.change.length === 0)
-    return failedResult(
-      blank,
-      `cannot resolve revision ${hash} in ${root}`,
-    );
+    return failedResult(blank, `cannot resolve revision ${hash} in ${root}`);
 
   const write = await runDescribe(hash, message);
   if (write.error.length > 0)
     return failedResult(
-      { ...blank, previous_commit: previous.git, previous_change: previous.change },
+      {
+        ...blank,
+        previous_commit: previous.git,
+        previous_change: previous.change,
+      },
       write.error,
     );
 

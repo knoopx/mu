@@ -24,7 +24,9 @@ export interface ReaderModel {
 /** The package's own model records, read back off its exported functions so mu
  *  never names the other fork's package to cast against it. */
 type PackageModel = Parameters<Snapcompact["readerIncludesThinking"]>[0];
-type PackageShapeTarget = NonNullable<Parameters<Snapcompact["resolveShape"]>[0]>;
+type PackageShapeTarget = NonNullable<
+  Parameters<Snapcompact["resolveShape"]>[0]
+>;
 
 const asPackageModel = (model: ReaderModel): PackageModel =>
   model as unknown as PackageModel;
@@ -68,7 +70,10 @@ export function frameCeiling(
   model: ReaderModel,
   maxFrames: number,
 ): number {
-  return Math.max(1, Math.min(maxFrames, snap.providerFrameBudget(asPackageModel(model))));
+  return Math.max(
+    1,
+    Math.min(maxFrames, snap.providerFrameBudget(asPackageModel(model))),
+  );
 }
 
 /** How much frame payload one rebuilt context may carry, in base64 bytes. The
@@ -80,10 +85,8 @@ export const replayBytesCeiling = (
 ): number => snap.frameDataBytesBudget(asPackageModel(model));
 
 /** The page geometry a shape prints, for the label a row keeps beside an archive. */
-export const shapeGeometry = (
-  snap: Snapcompact,
-  shape: Shape,
-): Geometry => snap.geometry(shape);
+export const shapeGeometry = (snap: Snapcompact, shape: Shape): Geometry =>
+  snap.geometry(shape);
 
 /** One shape, in words. The archive's own frames win where they disagree with
  *  the shape mu resolved (the package swaps the font when a text cannot be drawn

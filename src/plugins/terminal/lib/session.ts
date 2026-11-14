@@ -206,7 +206,8 @@ export function terminalStatus(
   scroll: number,
 ): string {
   if (session.state === "failed") return session.note;
-  if (session.state === "exited") return `${session.note} — press the key again for a new shell`;
+  if (session.state === "exited")
+    return `${session.note} — press the key again for a new shell`;
   if (session.state === "starting") return "starting a shell…";
   const size = `${session.cols}×${session.rows}`;
   const where =

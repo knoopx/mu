@@ -10,7 +10,12 @@
  * description — follows as itself, after the tables, where newlines survive.
  */
 
-import { blocks, moreLine, statusTable, tableOf } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  moreLine,
+  statusTable,
+  tableOf,
+} from "../../core/lib/agent/toolText";
 import type { GithubCall, GithubKind, GithubRow } from "../types";
 
 /** What one kind of list calls its rows, in the note that counts them. */
@@ -166,7 +171,8 @@ export function githubAnswerOf(call: GithubCall): string {
   if (call.status === "failed" || call.status === "unsupported")
     return blocks(head, call.error);
 
-  if (call.status === "binary") return blocks(head, call.error, fieldsTable(call));
+  if (call.status === "binary")
+    return blocks(head, call.error, fieldsTable(call));
 
   if (call.status === "empty") return blocks(head, emptyNote(call));
 
@@ -178,4 +184,3 @@ export function githubAnswerOf(call: GithubCall): string {
     omissionNote(call),
   );
 }
-

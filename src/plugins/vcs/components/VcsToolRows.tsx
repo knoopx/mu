@@ -7,11 +7,7 @@
  */
 
 import type { JSX, ReactNode } from "react";
-import {
-  useAdwaita,
-  type AdwaitaTheme,
-  type IconName,
-} from "adwaita-gpuix";
+import { useAdwaita, type AdwaitaTheme, type IconName } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 
 import {
@@ -144,9 +140,15 @@ function scopeOf(tool: string, view: VcsToolView): string {
   if (tool === VCS_OPLOG_TOOL) return "op log";
   if (PATH_TOOLS.includes(tool)) return toolCellOf(view.cells, "path");
   if (tool === VCS_DESCRIBE_TOOL)
-    return join([toolCellOf(view.cells, "rev"), toolCellOf(view.cells, "change")]);
+    return join([
+      toolCellOf(view.cells, "rev"),
+      toolCellOf(view.cells, "change"),
+    ]);
   if (tool === VCS_FILE_SPLIT_TOOL)
-    return join([toolCellOf(view.cells, "rev"), toolCellOf(view.cells, "files")]);
+    return join([
+      toolCellOf(view.cells, "rev"),
+      toolCellOf(view.cells, "files"),
+    ]);
   return toolCellOf(view.cells, "rev");
 }
 
@@ -258,9 +260,7 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
     return (
       <>
         <VcsViewBody view={view} />
-        {view.patch === "" ? null : (
-          <PatchDiff patch={view.patch} fileHeader />
-        )}
+        {view.patch === "" ? null : <PatchDiff patch={view.patch} fileHeader />}
       </>
     );
 
@@ -268,7 +268,10 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
     return (
       <>
         <VcsViewBody view={view} />
-        <VcsFileBody path={toolCellOf(view.cells, "path")} content={view.content} />
+        <VcsFileBody
+          path={toolCellOf(view.cells, "path")}
+          content={view.content}
+        />
       </>
     );
 

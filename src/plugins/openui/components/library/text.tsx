@@ -39,7 +39,8 @@ const DETAIL_NAMES = ["label", "value", "tone"] as const;
 
 export const Title = defineComponent({
   name: "Title",
-  description: "a heading: sm inside a Pane, lg or xl only for the screen itself",
+  description:
+    "a heading: sm inside a Pane, lg or xl only for the screen itself",
   props: z.object({
     text: z.union([z.string(), z.number()]),
     size: SIZE_WORD.nullable().optional(),
@@ -149,7 +150,10 @@ export function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawCaption(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawCaption(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   return (
     <T
       size="caption"
@@ -171,7 +175,10 @@ export function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawKeyValue(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const tone = toneOfValue(node.props.tone);
   const value = textProp(node.props, "value");
   return (
@@ -185,7 +192,12 @@ export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Elemen
         gap: innerGap(ctx.t),
       }}
     >
-      <ProgramText value={node.props.label} ctx={ctx} size="caption" color={mutedText(ctx.t)} />
+      <ProgramText
+        value={node.props.label}
+        ctx={ctx}
+        size="caption"
+        color={mutedText(ctx.t)}
+      />
       <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />
       <ProgramText
         value={value}
@@ -206,7 +218,10 @@ export function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Elemen
  * fact ends. The label stands quiet on the left in mono and the value on the right
  * — mono when it is a figure, so a column of them lines up on its digits.
  */
-export function drawDetails(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawDetails(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const rows = listProp(node.props, "rows");
 
   return (
@@ -321,7 +336,11 @@ export function drawCode(node: ElementNode, ctx: ProgramContext): JSX.Element {
         size="caption"
         color={ctx.t.color.text.primary}
         clamp={20}
-        style={{ fontFamily: ctx.t.type.fontFamilyMono, flexShrink: 1, minWidth: 0 }}
+        style={{
+          fontFamily: ctx.t.type.fontFamilyMono,
+          flexShrink: 1,
+          minWidth: 0,
+        }}
       >
         {textProp(node.props, "text")}
       </T>

@@ -14,7 +14,13 @@ import { Type } from "typebox";
 
 import { GITHUB_TOOL_LABELS, GITHUB_TREE_TOOL } from "../constants";
 import { readTree } from "../lib/api/read";
-import { ownerParam, pathParam, refreshParam, refParam, repoParam } from "../lib/params";
+import {
+  ownerParam,
+  pathParam,
+  refreshParam,
+  refParam,
+  repoParam,
+} from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubTreeParams } from "../types";
 import { GITHUB_GUIDELINES } from "./guidelines";

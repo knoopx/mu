@@ -108,7 +108,9 @@ const validateHeadline: Headline = (details) => {
   return partsLine(
     countOf(view.statements, "statement"),
     countOf(view.components.length, "component"),
-    view.diagnostics.length === 0 ? "" : `${String(view.diagnostics.length)} errors`,
+    view.diagnostics.length === 0
+      ? ""
+      : `${String(view.diagnostics.length)} errors`,
   );
 };
 
@@ -132,7 +134,9 @@ const writeHeadline: Headline = (details) => {
     `${String(view.chars)} chars`,
     countOf(view.statements, "statement"),
     view.components === 0 ? "" : `${String(view.components)} drawn`,
-    view.diagnostics.length === 0 ? "" : `${String(view.diagnostics.length)} errors`,
+    view.diagnostics.length === 0
+      ? ""
+      : `${String(view.diagnostics.length)} errors`,
   );
 };
 
@@ -218,7 +222,10 @@ export function openUIToolViewOf(
 }
 
 /** The four sections a tool's answer fills, per tool rather than per field. */
-function sectionsOf(tool: string, details: unknown): {
+function sectionsOf(
+  tool: string,
+  details: unknown,
+): {
   components: OpenUILibraryDetails["components"];
   diagnostics: OpenUIDiagnostic[];
   values: OpenUIValueRow[];
@@ -256,7 +263,11 @@ function sectionsOf(tool: string, details: unknown): {
 }
 
 /** Whether this call is the row its program is painted from. */
-function drawnFrom(tool: string, item: ToolTranscriptItem, name: string): boolean {
+function drawnFrom(
+  tool: string,
+  item: ToolTranscriptItem,
+  name: string,
+): boolean {
   if (tool !== OPENUI_RENDER_TOOL && tool !== OPENUI_STREAM_TOOL) return false;
   if (name === "") return false;
   return programStore.get(name)?.anchor === item.toolCallId;

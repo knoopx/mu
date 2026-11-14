@@ -19,7 +19,9 @@ const DIFF_HEAD = "diff --git ";
 /** The `b/…` path of a `diff --git a/old b/new` header, as adwaita's own list reads it. */
 function pathOfHeader(line: string): string {
   const token = line.split(" ")[3] ?? "";
-  return token.startsWith("a/") || token.startsWith("b/") ? token.slice(2) : token;
+  return token.startsWith("a/") || token.startsWith("b/")
+    ? token.slice(2)
+    : token;
 }
 
 /**

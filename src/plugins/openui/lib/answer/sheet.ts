@@ -39,10 +39,15 @@ export const entryKey = (block: string, position: string): string =>
  * Blocks in the order their answers read: the order their first answer was
  * staged, and within a block the order the questions stand in it.
  */
-export function orderEntries<E extends StagedEntry>(entries: readonly E[]): E[] {
+export function orderEntries<E extends StagedEntry>(
+  entries: readonly E[],
+): E[] {
   const first = new Map<string, number>();
   for (const entry of entries)
-    first.set(entry.block, Math.min(first.get(entry.block) ?? Number.POSITIVE_INFINITY, entry.seq));
+    first.set(
+      entry.block,
+      Math.min(first.get(entry.block) ?? Number.POSITIVE_INFINITY, entry.seq),
+    );
   return [...entries].sort((a, b) =>
     a.block === b.block
       ? a.seq - b.seq
@@ -84,14 +89,17 @@ export function sameBlock(region: string, block: string): boolean {
   return (
     ours.length === theirs.length &&
     ours.every((part, index) =>
-      index % 2 === 0 ? part === theirs[index] : (theirs[index] ?? "").length >= part.length,
+      index % 2 === 0
+        ? part === theirs[index]
+        : (theirs[index] ?? "").length >= part.length,
     )
   );
 }
 
 /** Lines of the draft that are whole and the block's own: it starts and ends at a line boundary. */
 const ownLines = (text: string, from: number, to: number): boolean =>
-  (from === 0 || text[from - 1] === "\n") && (to === text.length || text[to] === "\n");
+  (from === 0 || text[from - 1] === "\n") &&
+  (to === text.length || text[to] === "\n");
 
 /** One alignment of a text change: `before[from, end)` became `after[from, from + inserted.length)`. */
 function diff(
@@ -107,7 +115,10 @@ function diff(
   };
   const suffix = (limit: number): number => {
     let length = 0;
-    while (length < limit && before[before.length - 1 - length] === after[after.length - 1 - length])
+    while (
+      length < limit &&
+      before[before.length - 1 - length] === after[after.length - 1 - length]
+    )
       length += 1;
     return length;
   };
@@ -136,7 +147,10 @@ function rebase(
 
   // Wholly before or after the block: it moves, and must still be lines of its own.
   if (change.end <= from || change.from >= to) {
-    const moved = change.end <= from ? { from: from + shift, to: to + shift } : { from, to };
+    const moved =
+      change.end <= from
+        ? { from: from + shift, to: to + shift }
+        : { from, to };
     return ownLines(after, moved.from, moved.to) &&
       sameBlock(after.slice(moved.from, moved.to), block.text)
       ? { kind: "present", ...moved }
@@ -148,13 +162,18 @@ function rebase(
   let end = Math.max(to, change.end) + shift;
   while (start < end && after[start] === "\n") start += 1;
   while (end > start && after[end - 1] === "\n") end -= 1;
-  if (sameBlock(after.slice(start, end), block.text) && ownLines(after, start, end))
+  if (
+    sameBlock(after.slice(start, end), block.text) &&
+    ownLines(after, start, end)
+  )
     return { kind: "present", from: start, to: end };
 
   if (change.from <= from && change.end >= to) {
     const kept = block.text
       .split("\n")
-      .some((line) => line.trim() !== "" && change.inserted.includes(line.trim()));
+      .some(
+        (line) => line.trim() !== "" && change.inserted.includes(line.trim()),
+      );
     return kept ? { kind: "edited" } : { kind: "deleted" };
   }
   return { kind: "edited" };
@@ -175,11 +194,16 @@ export function trackBlock(
   after: string,
   block: WrittenBlock,
 ): Tracked {
-  if (before === after) return { kind: "present", from: block.from, to: block.to };
+  if (before === after)
+    return { kind: "present", from: block.from, to: block.to };
   const left = rebase(before, after, block, "prefix");
   const right = rebase(before, after, block, "suffix");
   if (left.kind !== right.kind) return { kind: "edited" };
-  if (left.kind === "present" && right.kind === "present" && (left.from !== right.from || left.to !== right.to))
+  if (
+    left.kind === "present" &&
+    right.kind === "present" &&
+    (left.from !== right.from || left.to !== right.to)
+  )
     return { kind: "edited" };
   return left;
 }
@@ -207,10 +231,18 @@ export function writeBlock(
   if (at === null) {
     if (next === null) return null;
     // A draft of only whitespace holds nothing of the person's.
-    if (draft.trim() === "") return { text: next, at: { from: 0, to: next.length } };
-    const gap = draft.endsWith("\n\n") ? "" : draft.endsWith("\n") ? "\n" : "\n\n";
+    if (draft.trim() === "")
+      return { text: next, at: { from: 0, to: next.length } };
+    const gap = draft.endsWith("\n\n")
+      ? ""
+      : draft.endsWith("\n")
+        ? "\n"
+        : "\n\n";
     const from = draft.length + gap.length;
-    return { text: `${draft}${gap}${next}`, at: { from, to: from + next.length } };
+    return {
+      text: `${draft}${gap}${next}`,
+      at: { from, to: from + next.length },
+    };
   }
 
   if (next === draft.slice(at.from, at.to)) return null;
@@ -220,7 +252,8 @@ export function writeBlock(
     // Take the paragraph break that set the block apart with it: before it, or
     // after it when the block opens the draft.
     if (from > 0) {
-      while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n") from -= 1;
+      while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n")
+        from -= 1;
     } else {
       while (to < draft.length && to - at.to < 2 && draft[to] === "\n") to += 1;
     }

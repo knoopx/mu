@@ -42,7 +42,6 @@ const Parameters = Type.Object({
   ),
 });
 
-
 /** The revision is resolved even when there are no hunks, so the chips still say what was read. */
 export async function executeVcsHunkList(
   params: VcsHunkListParams,
@@ -74,7 +73,11 @@ export async function executeVcsHunkList(
   if (found.status === "failed") return failedResult(read, found.error);
 
   if (found.rows.length === 0)
-    return toolResult(`no hunks for ${rev}`, { ...read, status: "empty", error: "" });
+    return toolResult(`no hunks for ${rev}`, {
+      ...read,
+      status: "empty",
+      error: "",
+    });
 
   const text = blocks(
     statusTable({ rev, git: ids.git, change: ids.change, status: "ok" }),

@@ -306,7 +306,11 @@ function ToolDataRow({
       }}
     >
       {columns.id === 0 ? null : (
-        <T size="caption" color={mutedText(t)} style={toolKeyColumn(t, columns.id)}>
+        <T
+          size="caption"
+          color={mutedText(t)}
+          style={toolKeyColumn(t, columns.id)}
+        >
           {toolIdText(row.key)}
         </T>
       )}

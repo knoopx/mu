@@ -36,18 +36,8 @@ import {
   Toggle,
 } from "./inputs";
 import { Header, StatusLine } from "./screen";
-import {
-  Breakdown,
-  Heatmap,
-  Timeline,
-  Trace,
-  Tree,
-} from "./figures";
-import {
-  Sections,
-  Steps,
-  Todos,
-} from "./lists";
+import { Breakdown, Heatmap, Timeline, Trace, Tree } from "./figures";
+import { Sections, Steps, Todos } from "./lists";
 import {
   Badge,
   Caption,
@@ -111,7 +101,10 @@ export const programDefinitions = [
  * component can be in the library and not have a drawer only by a type error.
  */
 export const programDrawers: Record<string, ProgramDrawer> = Object.fromEntries(
-  programDefinitions.map((definition) => [definition.name, definition.component]),
+  programDefinitions.map((definition) => [
+    definition.name,
+    definition.component,
+  ]),
 );
 
 /**

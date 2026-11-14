@@ -17,13 +17,7 @@ export type PlotKind = "bar" | "line";
 
 /** The colour words a plot takes, the same words a program's `tone` takes. */
 export type PlotTone =
-  | "ink"
-  | "muted"
-  | "accent"
-  | "info"
-  | "success"
-  | "warning"
-  | "danger";
+  "ink" | "muted" | "accent" | "info" | "success" | "warning" | "danger";
 
 /** One tick of the axis: its label, and one value per series. */
 export interface PlotPoint {

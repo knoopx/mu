@@ -113,7 +113,12 @@ const messageOf = (json: unknown): string => {
 };
 
 /** What a refusal means, in the words a reader can act on. */
-function failureNote(code: number, json: unknown, rate: GithubRate, url: string): string {
+function failureNote(
+  code: number,
+  json: unknown,
+  rate: GithubRate,
+  url: string,
+): string {
   const message = messageOf(json);
   const scope = scopeOf(url);
 
@@ -127,9 +132,12 @@ function failureNote(code: number, json: unknown, rate: GithubRate, url: string)
       : `GitHub's rate limit for unauthenticated reads is spent — ${TOKEN_HINT}`;
   if (code === 403) return `GitHub refused the call: ${message}`;
   if (code === 422) return `GitHub could not use the request: ${message}`;
-  if (code === 451) return `the repository is unavailable for legal reasons where this request was made: ${scope}`;
-  if (code === 401 || code === 403) return `GitHub refused the call: ${message}`;
-  if (code >= 500) return `GitHub answered ${String(code)} for ${scope} — try again shortly`;
+  if (code === 451)
+    return `the repository is unavailable for legal reasons where this request was made: ${scope}`;
+  if (code === 401 || code === 403)
+    return `GitHub refused the call: ${message}`;
+  if (code >= 500)
+    return `GitHub answered ${String(code)} for ${scope} — try again shortly`;
   return message === ""
     ? `GitHub answered ${String(code)} for ${scope}`
     : `GitHub answered ${String(code)} for ${scope}: ${message}`;
@@ -151,7 +159,8 @@ async function cachedEntry(url: string): Promise<CacheEntry | null> {
   try {
     const raw = await readFile(cacheFile(url), "utf8");
     const entry = JSON.parse(raw) as CacheEntry;
-    if (typeof entry?.at !== "number" || typeof entry?.text !== "string") return null;
+    if (typeof entry?.at !== "number" || typeof entry?.text !== "string")
+      return null;
     if (Date.now() - entry.at > CACHE_TTL_MS) return null;
     return entry;
   } catch {
@@ -185,7 +194,12 @@ function requestSignal(signal?: AbortSignal): {
   };
 }
 
-const ok = (code: number, body: unknown, text: string, reply: Partial<GithubReply>): GithubReply => ({
+const ok = (
+  code: number,
+  body: unknown,
+  text: string,
+  reply: Partial<GithubReply>,
+): GithubReply => ({
   status: "ok",
   code,
   json: body,
@@ -251,7 +265,12 @@ async function settledOf(
   const text = await response.text();
 
   if (!response.ok)
-    return refused(response.status, failureNote(response.status, parseJson(text), rate, url), rate, ms);
+    return refused(
+      response.status,
+      failureNote(response.status, parseJson(text), rate, url),
+      rate,
+      ms,
+    );
 
   const json = raw ? null : parseJson(text);
   if (!raw && json === null)
@@ -295,9 +314,13 @@ async function get(
     });
     return await settledOf(response, raw, url, Date.now() - started);
   } catch (error: unknown) {
-    if (cancelled()) return unreachable("the call was cancelled", Date.now() - started);
+    if (cancelled())
+      return unreachable("the call was cancelled", Date.now() - started);
     const reason = error instanceof Error ? error.message : String(error);
-    return unreachable(`GitHub is unreachable: ${reason}`, Date.now() - started);
+    return unreachable(
+      `GitHub is unreachable: ${reason}`,
+      Date.now() - started,
+    );
   } finally {
     done();
   }
@@ -312,11 +335,15 @@ function parseJson(text: string): unknown {
 }
 
 /** A REST read: `repos/cli/cli`, `search/issues?q=…`, and the reply it answers with. */
-export const apiGet = (path: string, options: RequestOptions = {}): Promise<GithubReply> =>
+export const apiGet = (
+  path: string,
+  options: RequestOptions = {},
+): Promise<GithubReply> =>
   get(`${API_ROOT}/${path.replace(/^\//, "")}`, false, options);
 
 /** A raw file read: `owner/repo/ref/path`, answered as text rather than base64. */
-export const rawGet = (path: string, options: RequestOptions = {}): Promise<GithubReply> =>
+export const rawGet = (
+  path: string,
+  options: RequestOptions = {},
+): Promise<GithubReply> =>
   get(`${RAW_ROOT}/${path.replace(/^\//, "")}`, true, options);
-
-

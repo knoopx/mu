@@ -15,11 +15,7 @@ import type {
 import { Type } from "typebox";
 
 import { toolResult } from "../../core/lib/agent/toolText";
-import {
-  CHART_RENDER_TOOL,
-  CHART_TOOL_LABEL,
-  MAX_SERIES,
-} from "../constants";
+import { CHART_RENDER_TOOL, CHART_TOOL_LABEL, MAX_SERIES } from "../constants";
 import {
   chartAnswerOf,
   chartEmptyAnswer,
@@ -47,13 +43,13 @@ const RenderParametersSchema = Type.Object({
     minItems: 0,
     maxItems: 400,
     description:
-      "The points to plot, in the order they stand on the axis: `[[\"Jan\", 120], [\"Feb\", 98], [\"Mar\", 412]]`. A value is a bare number — `412`, not `\"412 ms\"`.",
+      'The points to plot, in the order they stand on the axis: `[["Jan", 120], ["Feb", 98], ["Mar", 412]]`. A value is a bare number — `412`, not `"412 ms"`.',
   }),
   series: Type.Optional(
     Type.Array(Type.String({ maxLength: 32 }), {
       maxItems: MAX_SERIES,
       description:
-        "Names for the series, in the order their values sit in each point — `[\"builds\", \"tests\"]` plots two values per point and labels them. Omit it for one value per point.",
+        'Names for the series, in the order their values sit in each point — `["builds", "tests"]` plots two values per point and labels them. Omit it for one value per point.',
     }),
   ),
   kind: Type.Optional(
@@ -100,16 +96,24 @@ const RenderParametersSchema = Type.Object({
     }),
   ),
   grid: Type.Optional(
-    Type.Boolean({ description: "Draw the grid lines behind the plot (default false)." }),
+    Type.Boolean({
+      description: "Draw the grid lines behind the plot (default false).",
+    }),
   ),
   markers: Type.Optional(
-    Type.Boolean({ description: "Draw a marker per point on a line (default true)." }),
+    Type.Boolean({
+      description: "Draw a marker per point on a line (default true).",
+    }),
   ),
   fill: Type.Optional(
-    Type.Boolean({ description: "Fill under a line, to its baseline (default false)." }),
+    Type.Boolean({
+      description: "Fill under a line, to its baseline (default false).",
+    }),
   ),
   labels: Type.Optional(
-    Type.Boolean({ description: "Draw the axis labels under the plot (default true)." }),
+    Type.Boolean({
+      description: "Draw the axis labels under the plot (default true).",
+    }),
   ),
   dash: Type.Optional(
     Type.Number({
@@ -153,11 +157,12 @@ export const chartRenderTool: ToolDefinition<
     "points were plotted, the span of the axis, the range, total, mean and peak, and the points as figures — so a " +
     "plot that came out wrong is visible without seeing it. A value that is not a number refuses the call and names " +
     "the point and the cell it sat on.",
-  promptSnippet: "Plot numbers as a chart in the transcript; the answer reads the plot back",
+  promptSnippet:
+    "Plot numbers as a chart in the transcript; the answer reads the plot back",
   promptGuidelines: [
     "Use chart-render when the answer is a set of numbers and their shape: counts per bucket, a series over time, several series on one axis.",
     "Points are `[label, value, …]`: the first cell is the axis label, every cell after it is a value — one per series, in the order `series` names them.",
-    "A value is a bare number: `412`, not `\"412 ms\"`. The unit goes in `unit` and in the label, never in a value's cell.",
+    'A value is a bare number: `412`, not `"412 ms"`. The unit goes in `unit` and in the label, never in a value\'s cell.',
     "You cannot see the plot — read the axis, range, total, mean and peak the answer gives you. A peak in the wrong bucket means the points went in the wrong order.",
     "More than 64 points is a texture, not a picture: group the values (by day, by week, the top N) and send those; the answer says how many were not plotted.",
     "A value that is not a number refuses the whole call rather than drawing a short bar: fix the named cell and re-send.",

@@ -71,7 +71,10 @@ export const partsLine = (...parts: readonly (string | number)[]): string =>
  * spends the whole of a tool header's one-line budget on directories the reader
  * already stands in, and spends it again in the chip under it.
  */
-export const scopeLabel = (path: string, cwd: string = process.cwd()): string => {
+export const scopeLabel = (
+  path: string,
+  cwd: string = process.cwd(),
+): string => {
   const clean = path.trim();
   if (clean === "") return "(cwd)";
   if (!isAbsolute(clean)) return clean;

@@ -41,7 +41,7 @@ const LibraryParametersSchema = Type.Object({
     Type.String({
       maxLength: 48,
       description:
-        "Component to read, e.g. \"Table\" — omit for the whole component index (default \"screen\").",
+        'Component to read, e.g. "Table" — omit for the whole component index (default "screen").',
     }),
   ),
   limit: limitParam("component"),
@@ -56,13 +56,17 @@ export const openUILibraryTool: ToolDefinition<
   description:
     "Inspect the component library this app renders. Without `name`: the component index (name, description, group), the root component and the counts. " +
     "With `name`: that component's JSON Schema, its props as one row each with the type it takes and whether it is required, and the rules its group is taught by. Read this before and while authoring — a guessed component name is a hard parse error.",
-  promptSnippet: "Read the component index, or one component's exact props and JSON Schema",
+  promptSnippet:
+    "Read the component index, or one component's exact props and JSON Schema",
   promptGuidelines: [...LIBRARY_GUIDELINES],
 
   executionMode: "parallel",
   parameters: LibraryParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUILibraryDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUILibraryDetails>> {
     const all = componentIndex();
     const groups = libraryGroups();
     const wanted = params.name ?? "";
@@ -106,7 +110,11 @@ export const openUILibraryTool: ToolDefinition<
 
       return toolResult(
         blocks(
-          statusTable({ component: component.name, group: component.group, args: component.props.length }),
+          statusTable({
+            component: component.name,
+            group: component.group,
+            args: component.props.length,
+          }),
           componentLines(component),
           group === undefined || group.notes.length === 0
             ? ""
@@ -131,7 +139,11 @@ export const openUILibraryTool: ToolDefinition<
 
     return toolResult(
       blocks(
-        statusTable({ root: rootComponent, components: details.count, groups: groups.length }),
+        statusTable({
+          root: rootComponent,
+          components: details.count,
+          groups: groups.length,
+        }),
         libraryTable(shown),
         groupLines(groups),
         moreLine(details.omitted, "component"),

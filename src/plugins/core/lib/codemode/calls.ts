@@ -76,6 +76,8 @@ export function codemodeCallsOf(details: unknown): CodemodeCalls {
           )
           .map(callOf)
       : [],
-    fullOutputPath: asString((details as { fullOutputPath?: unknown }).fullOutputPath),
+    fullOutputPath: asString(
+      (details as { fullOutputPath?: unknown }).fullOutputPath,
+    ),
   };
 }

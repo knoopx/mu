@@ -64,7 +64,9 @@ const missingSuitesNote = (): string =>
 const disarmedNote = (suites: readonly GuardrailFixtureSuite[]): string => {
   const off = guardrailsStore
     .getSnapshot()
-    .disarmed.filter((domain) => suites.some((suite) => suite.domain === domain));
+    .disarmed.filter((domain) =>
+      suites.some((suite) => suite.domain === domain),
+    );
   if (off.length === 0) return "";
   return `disarmed in this run: ${off.join(", ")} — the suite proves the rule, not the arming; the app would release these hits`;
 };
@@ -347,7 +349,7 @@ export const guardrailsTestTool: ToolDefinition<
     "Every rule needs one block-* fixture and one ok-* fixture: the first proves the rule fires, the second proves it does not fire on a command that only looks alike.",
     "A suite is a `<domain>.json` file in mu's own guardrails directory under the user's config, next to the rules it proves; run one suite with `domain`, one case with `domain` and `fixture`.",
     "A file-domain fixture is a `write`/`edit` call: its `path` names the grammar the text is parsed in, so a `.py` fixture is checked against python rules and a `.json` path is released unread.",
-    "A suite grades the rule, never the arming: a disarmed domain still passes its block-* case, and the run names those domains so a green suite is not read as \"this domain is blocking\".",
+    'A suite grades the rule, never the arming: a disarmed domain still passes its block-* case, and the run names those domains so a green suite is not read as "this domain is blocking".',
   ],
 
   executionMode: "sequential",

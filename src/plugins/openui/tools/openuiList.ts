@@ -10,7 +10,12 @@ import { Type } from "typebox";
 
 import { OPENUI_LIST_TOOL } from "../constants";
 import type { OpenUIListDetails } from "../types";
-import { blocks, counted, statusTable, toolResult } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  counted,
+  statusTable,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import { programTable } from "../lib/format";
 import { programStore } from "../lib/programStore/store";
 import { LIST_GUIDELINES } from "./guidelines";
@@ -33,7 +38,9 @@ export const openUIListTool: ToolDefinition<
   parameters: ListParametersSchema,
 
   async execute(): Promise<AgentToolResult<OpenUIListDetails>> {
-    const programs = programStore.list().map((record) => programStore.infoOf(record));
+    const programs = programStore
+      .list()
+      .map((record) => programStore.infoOf(record));
     const showing = programStore.liveName();
     const details: OpenUIListDetails = {
       status: programs.length === 0 ? "empty" : "ok",

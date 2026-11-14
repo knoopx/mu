@@ -37,7 +37,7 @@ export const githubUserTool: ToolDefinition<typeof Parameters, GithubCall> = {
   promptSnippet: "Read a GitHub user or organisation profile",
   promptGuidelines: [
     ...GITHUB_GUIDELINES,
-    "A maintainer's profile answers who stands behind a dependency; github-search with kind=\"repositories\" lists what they publish.",
+    'A maintainer\'s profile answers who stands behind a dependency; github-search with kind="repositories" lists what they publish.',
   ],
 
   executionMode: "parallel",

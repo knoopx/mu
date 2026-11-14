@@ -32,13 +32,7 @@ export function guardrailBlockOf(
  * line hangs into the page inset rather than taking a column of its own, so
  * every line of the block already starts at the log's text column.
  */
-function Detail({
-  text,
-  color,
-}: {
-  text: string;
-  color: string;
-}): JSX.Element {
+function Detail({ text, color }: { text: string; color: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <div style={toolLineFlush(t)}>

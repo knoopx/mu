@@ -14,7 +14,13 @@ import type { ToolRowCell, ToolPaintRow } from "../../core/lib/ui/toolRowPaint";
 import { GITHUB_TOOL_NAMES } from "../constants";
 import { emptyNote, targetLabel, unitOf } from "./answer";
 import { listOf, numberOf, recordOf, stringOf } from "./api/record";
-import type { GithubCall, GithubField, GithubKind, GithubRow, GithubStatus } from "../types";
+import type {
+  GithubCall,
+  GithubField,
+  GithubKind,
+  GithubRow,
+  GithubStatus,
+} from "../types";
 
 export interface GithubToolView {
   status: GithubStatus;
@@ -51,7 +57,13 @@ const KINDS: readonly string[] = [
   "user",
 ];
 
-const STATUSES: readonly string[] = ["ok", "empty", "failed", "unsupported", "binary"];
+const STATUSES: readonly string[] = [
+  "ok",
+  "empty",
+  "failed",
+  "unsupported",
+  "binary",
+];
 
 const fieldOf = (value: unknown): GithubField | null => {
   const record = recordOf(value);
@@ -99,7 +111,10 @@ export function githubCallOf(details: unknown): GithubCall | null {
     total: numberOf(record["total"]),
     cached: record["cached"] === true,
     ms: numberOf(record["ms"]),
-    rate: { limit: numberOf(rate["limit"]), remaining: numberOf(rate["remaining"]) },
+    rate: {
+      limit: numberOf(rate["limit"]),
+      remaining: numberOf(rate["remaining"]),
+    },
     error: stringOf(record["error"]),
   };
 }
@@ -155,7 +170,10 @@ function headlineOf(call: GithubCall): string {
     );
 
   if (call.kind === "commit")
-    return partsLine(fieldNamed(call, "description"), fieldNamed(call, "changes"));
+    return partsLine(
+      fieldNamed(call, "description"),
+      fieldNamed(call, "changes"),
+    );
 
   if (call.kind === "release")
     return partsLine(fieldNamed(call, "state"), fieldNamed(call, "published"));
@@ -186,7 +204,10 @@ export function githubToolViewOf(
 
   const cells: ToolRowCell[] = [
     { label: "repo", value: call.repo },
-    { label: targetLabel(call.kind), value: call.kind === "search" ? "" : call.target },
+    {
+      label: targetLabel(call.kind),
+      value: call.kind === "search" ? "" : call.target,
+    },
     { label: "query", value: call.query },
     { label: "ref", value: call.ref },
     { label: "path", value: call.path },

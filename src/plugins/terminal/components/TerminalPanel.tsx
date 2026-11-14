@@ -18,7 +18,12 @@ import { T, useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 import { mixHex } from "../../core/lib/ui/theme";
 import { terminalPalette } from "../lib/palette";
-import type { TerminalCellStyle, TerminalGrid, TerminalRow, TerminalView } from "../types";
+import type {
+  TerminalCellStyle,
+  TerminalGrid,
+  TerminalRow,
+  TerminalView,
+} from "../types";
 
 /** How far a `dim` run moves off its colour and into what it stands on — the same
  *  step a command's own dim text takes elsewhere in the app. */

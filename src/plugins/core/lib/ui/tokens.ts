@@ -132,7 +132,8 @@ export const codeLineBox = (
 
 /** The weight a line wears when it is the lead of its block: a tool's caption,
  *  a section's title, the row the keyboard is on. */
-export const emphasisWeight = (t: AdwaitaTheme): number => t.type.weight.semibold;
+export const emphasisWeight = (t: AdwaitaTheme): number =>
+  t.type.weight.semibold;
 
 /** The weight of a heading. */
 export const titleWeight = (t: AdwaitaTheme): number => t.type.weight.bold;

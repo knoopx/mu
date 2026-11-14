@@ -20,7 +20,7 @@ const ClearParametersSchema = Type.Object({
     Type.String({
       maxLength: MAX_PROGRAM_NAME,
       description:
-        "Program to remove — omit to remove every program in the log (default \"screen\").",
+        'Program to remove — omit to remove every program in the log (default "screen").',
     }),
   ),
 });
@@ -40,15 +40,23 @@ export const openUIClearTool: ToolDefinition<
   executionMode: "sequential",
   parameters: ClearParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIClearDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIClearDetails>> {
     const name = params.name ?? "";
     const names =
-      name === "" ? programStore.clearAll() : programStore.remove(name) ? [name] : [];
+      name === ""
+        ? programStore.clearAll()
+        : programStore.remove(name)
+          ? [name]
+          : [];
     dropPrograms(names);
 
     const details: OpenUIClearDetails = {
       status: names.length === 0 ? "unknown" : "ok",
-      error: names.length === 0 ? `no program named "${name}" is in the log` : "",
+      error:
+        names.length === 0 ? `no program named "${name}" is in the log` : "",
       names,
       removed: names.length,
       remaining: programStore.list().map((record) => record.name),
@@ -56,8 +64,13 @@ export const openUIClearTool: ToolDefinition<
 
     return toolResult(
       blocks(
-        statusTable({ removed: details.removed, remaining: details.remaining.length }),
-        names.length === 0 ? details.error : `out of the log: ${names.join(", ")}`,
+        statusTable({
+          removed: details.removed,
+          remaining: details.remaining.length,
+        }),
+        names.length === 0
+          ? details.error
+          : `out of the log: ${names.join(", ")}`,
         details.remaining.length === 0
           ? ""
           : `still in the log: ${details.remaining.join(", ")}`,

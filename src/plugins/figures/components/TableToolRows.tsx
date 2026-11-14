@@ -46,7 +46,11 @@ import {
 } from "../../core/lib/ui/toolRowPaint";
 import { mutedText } from "../../core/lib/ui/theme";
 import { TABLE_RENDER_TOOL } from "../constants";
-import { tableFailureLine, tableToolViewOf, type TableToolView } from "../lib/toolView";
+import {
+  tableFailureLine,
+  tableToolViewOf,
+  type TableToolView,
+} from "../lib/toolView";
 
 const RUNNING_TEXT: Record<string, string> = {
   [TABLE_RENDER_TOOL]: "drawing the table",
@@ -111,9 +115,10 @@ function badRows(view: TableToolView): ToolPaintRow[] {
   return view.table.bad.map((bad, index) => ({
     key: `r-${String(bad.at)}-${String(index)}`,
     primary: `row ${String(bad.at + 1)} · ${bad.column}`,
-    secondary: bad.reason === "unreadable"
-      ? `${bad.value === "" ? "(nothing)" : bad.value} is not text`
-      : `${bad.value === "" ? "(nothing)" : bad.value} has no column to stand in`,
+    secondary:
+      bad.reason === "unreadable"
+        ? `${bad.value === "" ? "(nothing)" : bad.value} is not text`
+        : `${bad.value === "" ? "(nothing)" : bad.value} has no column to stand in`,
     badge: bad.reason,
     tone: "bad" as ToolRowTone,
   }));
@@ -128,7 +133,12 @@ export function TableToolRows({ item }: TableToolRowsProps): JSX.Element {
 
   if (item.status === "running") {
     return (
-      <ToolRunning text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[TABLE_RENDER_TOOL]} />
+      <ToolRunning
+        text={
+          RUNNING_TEXT[item.name.toLowerCase()] ??
+          RUNNING_TEXT[TABLE_RENDER_TOOL]
+        }
+      />
     );
   }
 
@@ -139,7 +149,8 @@ export function TableToolRows({ item }: TableToolRowsProps): JSX.Element {
   const tone = toolStatusTone(view.status, TABLE_STATUS_TONES);
 
   /** A column of figures is set in mono and right-aligned, header included. */
-  const figureColumn = (at: number): boolean => table.stats[at]?.figure === true;
+  const figureColumn = (at: number): boolean =>
+    table.stats[at]?.figure === true;
   const figureStyle = (at: number): StyleDesc | undefined =>
     figureColumn(at)
       ? { fontFamily: t.type.fontFamilyMono, whiteSpace: "nowrap" }

@@ -185,7 +185,6 @@ function toToolState(item: ToolTranscriptItem): ToolState {
   }
 }
 
-
 function ownsItsRows(item: ToolTranscriptItem): boolean {
   return (
     isAskTool(item.name) ||
@@ -205,7 +204,6 @@ function ownsItsRows(item: ToolTranscriptItem): boolean {
   );
 }
 
-
 interface ToolRowLook {
   state: ToolState;
   args: string;
@@ -215,7 +213,6 @@ interface ToolRowLook {
   patch?: string;
   showOutput: boolean;
 }
-
 
 function argsLineOf(
   item: ToolTranscriptItem,
@@ -268,7 +265,6 @@ function toolRowLookOf(
       !(isWrite && state !== "output-error"),
   };
 }
-
 
 function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
   const panels: JSX.Element[] = [];
@@ -378,7 +374,6 @@ function ownedPanelsOf(item: ToolTranscriptItem): JSX.Element[] {
   return panels;
 }
 
-
 function ToolOutputBody(props: {
   item: ToolTranscriptItem;
   state: ToolState;
@@ -435,9 +430,7 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
       {look.writePreview !== undefined ? (
         <WritePreview preview={look.writePreview} />
       ) : null}
-      {look.patch !== undefined ? (
-        <PatchDiff patch={look.patch} />
-      ) : null}
+      {look.patch !== undefined ? <PatchDiff patch={look.patch} /> : null}
       {look.showOutput ? (
         <ToolOutputBody
           item={item}

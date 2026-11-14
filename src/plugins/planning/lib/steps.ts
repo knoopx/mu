@@ -43,7 +43,14 @@ function listOf(value: unknown): unknown[] {
   return [value];
 }
 
-const CONTENT_KEYS = ["content", "step", "text", "title", "label", "name"] as const;
+const CONTENT_KEYS = [
+  "content",
+  "step",
+  "text",
+  "title",
+  "label",
+  "name",
+] as const;
 const STATUS_KEYS = ["status", "state"] as const;
 
 /** The order a step written as an array puts its parts in. */
@@ -53,7 +60,8 @@ const AT_STATUS = 1;
 const keyOf = (
   row: Record<string, unknown>,
   keys: readonly string[],
-): unknown => keys.reduce<unknown>((found, key) => found ?? row[key], undefined);
+): unknown =>
+  keys.reduce<unknown>((found, key) => found ?? row[key], undefined);
 
 /** A step clipped to a step's measure: one line of intent, not a paragraph. */
 const stepText = (value: unknown): string =>
@@ -103,7 +111,10 @@ const STATUS_WORDS: Readonly<Record<string, PlanStatus>> = {
 function statusOf(value: unknown): PlanStatus | null {
   if (value === undefined || value === null) return "pending";
   if (typeof value !== "string") return null;
-  const word = value.trim().toLowerCase().replace(/[\s_-]/g, "");
+  const word = value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
   if (word === "") return "pending";
   return STATUS_WORDS[word] ?? null;
 }

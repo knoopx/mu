@@ -8,7 +8,7 @@ The language itself is not invented here: the parser, the evaluator, the action
 plan and the prompt generator are `@openuidev/lang-core`. What mu owns is the
 **component library** (what a program may name), the **renderer** (how a program
 is drawn with `adwaita-gpuix`, with no DOM), and the **store** (what a program
-*is* in a conversation).
+_is_ in a conversation).
 
 ## A program, not a tool call
 
@@ -20,7 +20,7 @@ A tool call is the shortest-lived thing in this plugin. The unit is the program:
   agent, and what the last paint published back (components drawn, query
   failures, render errors);
 - the **anchor** is the tool call whose row paints it. A render or a stream that
-  *creates* a program takes the anchor; a later call that edits it keeps the
+  _creates_ a program takes the anchor; a later call that edits it keeps the
   anchor, so a screen is painted once in the log and keeps being live;
 - one program is **live** (showing): the one `openui-state`, `openui-events` and
   `openui-switch` read by default;
@@ -47,7 +47,7 @@ block stands: it costs no extra turn, and it draws while the reply streams.
   while the reply arrives, `closed` when it was shut, `unclosed` when the reply
   ended mid-block. A block keeps its index among its reply's blocks.
 - `components/ProgramFence.tsx` draws one block; `lib/fences/store.ts` holds it
-  in the *same* store under `ui#<reply>#<block>` — the same parser, the same
+  in the _same_ store under `ui#<reply>#<block>` — the same parser, the same
   renderer, the same `$variable` state, and `openui-state` can read it by that
   name. The key is a place rather than an id because mu's transcript rows are
   re-numbered when a session is resumed: a block keeps being the block the human
@@ -74,7 +74,7 @@ question's place in its tree (`lib/answer/positions.ts`: `form@…` for a `Form`
 `run@…` for a run of choice buttons) — and `lib/answer/sheet.ts` writes those
 answers into the composer draft as one paragraph. `hooks/useAnswerSheet.ts`
 reconciles the two, and the person wins: the draft is theirs, so the sheet
-*tracks* the block it wrote instead of insisting on its own text. A change beside
+_tracks_ the block it wrote instead of insisting on its own text. A change beside
 the block moves it, a change inside it makes that text the person's and the sheet
 stops writing it, and a change that removed it takes those answers out, because
 the draft is the truth about what will be sent. Sending turns each staged answer
@@ -84,7 +84,7 @@ into that question's **sent** answer, which is what folds an answered choice.
   one question, not several; its label is the answer.
 - A `Form` is one question asked as a block of fields, with no submit button: the
   first edit stages every field as its own `Label: answer` line (`lib/answer/form.ts`
-  — a field with no answer says `—`, and a multi-select says what was picked *and*
+  — a field with no answer says `—`, and a multi-select says what was picked _and_
   what was not, because "not" is otherwise the agent's guess). A form with a field
   the person types into waits `TYPED_ANSWER_MS` in the typing: rewriting that line
   on every keystroke would be rewriting the draft under their hands.
@@ -114,7 +114,7 @@ Seven groups teach it, and a group's notes are part of the prompt: **Screen**,
 (Table, Stat, Bar, Progress, Sparkline, Chart), **Figures** (Tree, Timeline,
 Trace, Heatmap, Breakdown), **Status** (Sections, Todos, Steps) and **Inputs**
 (Button, Form, Toggle, Choice, Radio, Select, Checklist, Rating, Slider, Field,
-TextArea, Stepper). The last three areas are the ones that draw a *shape* rather than
+TextArea, Stepper). The last three areas are the ones that draw a _shape_ rather than
 cells: the files a change moved, the spans of a run, the days of a period, the
 parts of a total, the standing of a list of work. Each is an `adwaita-gpuix`
 widget — `FileTree` (`variant: "list"`, with the `+N -M` columns aligned across
@@ -165,7 +165,7 @@ puts the mark before the title, the way a tool header does.
 ## Data and interactions
 
 A program's `Query("name", args, default)` has no backend but the JSON the agent
-served with `openui-tools` (`tools/openuiTools.ts`), and what it answered *is*
+served with `openui-tools` (`tools/openuiTools.ts`), and what it answered _is_
 the value of its `$name` while painting: `evaluateProgram` reads the query
 snapshot over the declared values, which is what puts a query-backed `Table` on
 the screen instead of an empty one. A name that was never served fails as a

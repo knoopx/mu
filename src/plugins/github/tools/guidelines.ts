@@ -8,7 +8,7 @@
 
 export const GITHUB_GUIDELINES: readonly string[] = [
   "Read GitHub with the github-* tools — repository facts, remote files and folders, pull requests, issues, releases, commits and search — rather than shelling out to `gh` or curling api.github.com.",
-  "Every repository read names `owner` and `repo`; a name you are unsure of comes from github-search with kind=\"repositories\".",
+  'Every repository read names `owner` and `repo`; a name you are unsure of comes from github-search with kind="repositories".',
   "A 404 means the owner, repo, ref, path or number is wrong, not that GitHub is down — re-read the scope in the row's chips before calling again.",
   "Answers are cached for 24 hours, so a research session does not spend its rate limit rereading the same page; pass `refresh` when the answer has to be current.",
 ];

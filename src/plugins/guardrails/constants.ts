@@ -2,7 +2,6 @@ export const GUARDRAILS_COMMAND = "guardrails";
 export const GUARDRAILS_PANEL_KEY = "guardrails";
 export const GUARDRAILS_OPEN_BINDING = "composer.guardrails";
 
-
 export const GUARDED_COMMAND_TOOLS: readonly string[] = [
   "bash",
   "shell",
@@ -24,7 +23,6 @@ export const BLOCK_REASON_PREFIX = "blocked(guardrails";
 export const PARSE_BUDGET_MS = 25;
 
 export const MAX_GUARDED_BYTES = 64 * 1024;
-
 
 export const MAX_PANEL_HITS = 24;
 

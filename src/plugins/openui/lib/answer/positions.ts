@@ -13,5 +13,3 @@ export const formPosition = (path: string): string => `form@${path}`;
 
 /** A run of choice Buttons — the buttons beside each other are one question, not several. */
 export const choiceRunPosition = (group: string): string => `run@${group}`;
-
-

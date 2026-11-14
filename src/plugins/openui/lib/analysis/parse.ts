@@ -65,7 +65,10 @@ type Ast = Parameters<typeof evaluate>[0];
 /** The tool name a `Query("name", …)` call asks for, or "" when it is not a word. */
 function queryToolOf(node: unknown): string {
   if (node === null || node === undefined) return "";
-  const value = evaluate(node as Ast, { getState: () => null, resolveRef: () => null });
+  const value = evaluate(node as Ast, {
+    getState: () => null,
+    resolveRef: () => null,
+  });
   return typeof value === "string" ? value : "";
 }
 
@@ -121,8 +124,7 @@ export function parseProgram(source: string): ProgramParseOutcome {
 export function parseStreaming(source: string): ProgramParseOutcome {
   const whole = parser.parse(source);
   const wholeParse = describeParse(whole);
-  if (whole.root !== null)
-    return { parse: wholeParse, result: whole };
+  if (whole.root !== null) return { parse: wholeParse, result: whole };
 
   const closed = autoClose(source);
   const result = parser.parse(closed.text);
@@ -133,7 +135,10 @@ export function parseStreaming(source: string): ProgramParseOutcome {
       incomplete: true,
       // A prefix that draws says nothing about the syntax of the text that has
       // not arrived yet, so the whole source's complaints are the honest ones.
-      diagnostics: wholeParse.diagnostics.length > 0 ? wholeParse.diagnostics : parse.diagnostics,
+      diagnostics:
+        wholeParse.diagnostics.length > 0
+          ? wholeParse.diagnostics
+          : parse.diagnostics,
     },
     result,
   };

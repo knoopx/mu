@@ -11,6 +11,4 @@ export default meta;
 
 /** Every row state at once: a call still open, one that failed and kept its
  *  error, a photo read, an edit with its diff, an answer cut short at 2x. */
-export const work = chromeStory("work", () =>
-  chat({ items: AGENT_JOB_ITEMS }),
-);
+export const work = chromeStory("work", () => chat({ items: AGENT_JOB_ITEMS }));

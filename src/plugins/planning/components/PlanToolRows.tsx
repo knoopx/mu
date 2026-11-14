@@ -123,7 +123,11 @@ export function PlanToolRows({ item }: PlanToolRowsProps): JSX.Element {
   const t = useAdwaita();
 
   if (item.status === "running") {
-    return <ToolRunning text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[PLAN_TOOL]} />;
+    return (
+      <ToolRunning
+        text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[PLAN_TOOL]}
+      />
+    );
   }
 
   const view = planToolViewOf(item.name, item.args, item.details, item.status);

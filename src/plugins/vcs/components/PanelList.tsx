@@ -8,11 +8,7 @@
  */
 import { useEffect, type JSX, type ReactNode } from "react";
 import { useGpuixRequired, type PublicInstance } from "@gpuix/react";
-import {
-  useListFollow,
-  useListWindow,
-  VirtualListPanel,
-} from "adwaita-gpuix";
+import { useListFollow, useListWindow, VirtualListPanel } from "adwaita-gpuix";
 import { ROW_HEIGHT } from "../../core/lib/ui/tokens";
 import { usePanelChrome } from "../../core/lib/composer/chrome";
 

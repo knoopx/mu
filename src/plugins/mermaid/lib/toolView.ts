@@ -79,7 +79,9 @@ function pictureOf(details: unknown): MermaidPicture | null {
     svg: stringOf(record["svg"]),
     svgBytes: numberOf(record["svgBytes"]),
     labels: Array.isArray(record["labels"])
-      ? record["labels"].filter((label): label is string => typeof label === "string")
+      ? record["labels"].filter(
+          (label): label is string => typeof label === "string",
+        )
       : [],
     labelsOmitted: numberOf(record["labelsOmitted"]),
     written: stringOf(record["written"]),
@@ -127,18 +129,25 @@ export function mermaidToolViewOf(
     },
     {
       label: "labels",
-      value: picture.status === "ok" ? counted(picture.labels.length, "label") : "",
+      value:
+        picture.status === "ok" ? counted(picture.labels.length, "label") : "",
     },
     {
       label: "svg",
       value: picture.svgBytes === 0 ? "" : formatSize(picture.svgBytes),
     },
-    { label: "drew in", value: picture.ms === 0 ? "" : `${String(picture.ms)} ms` },
+    {
+      label: "drew in",
+      value: picture.ms === 0 ? "" : `${String(picture.ms)} ms`,
+    },
     { label: "wrote", value: picture.written },
   ];
 
   return {
-    status: itemStatus === "error" && picture.status === "ok" ? "failed" : picture.status,
+    status:
+      itemStatus === "error" && picture.status === "ok"
+        ? "failed"
+        : picture.status,
     picture,
     cells,
     written: picture.written,

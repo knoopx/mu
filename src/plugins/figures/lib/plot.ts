@@ -115,8 +115,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /** A cell as the text the axis shows. */
 export function cellText(value: unknown): string {
-  if (typeof value === "string") return truncateToWidth(value.trim(), MAX_LABEL_CHARS);
-  if (typeof value === "number" && Number.isFinite(value)) return plotFigure(value);
+  if (typeof value === "string")
+    return truncateToWidth(value.trim(), MAX_LABEL_CHARS);
+  if (typeof value === "number" && Number.isFinite(value))
+    return plotFigure(value);
   if (typeof value === "boolean") return value ? "yes" : "no";
   return "";
 }
@@ -139,7 +141,8 @@ export function numberOf(value: unknown): number | null {
 /** A figure the way it was sent: no more decimals than it has. */
 export function plotFigure(value: number): string {
   if (!Number.isFinite(value)) return "0";
-  const rounded = Math.abs(value) < 1_000 ? Math.round(value * 100) / 100 : Math.round(value);
+  const rounded =
+    Math.abs(value) < 1_000 ? Math.round(value * 100) / 100 : Math.round(value);
   return String(rounded);
 }
 
@@ -214,7 +217,10 @@ export function coercePlot(entries: readonly unknown[]): PlotCoercion {
 
     points.push({
       label,
-      values: Array.from({ length: values.length }, (_unused, slot) => values[slot] ?? 0),
+      values: Array.from(
+        { length: values.length },
+        (_unused, slot) => values[slot] ?? 0,
+      ),
     });
   });
 
@@ -224,7 +230,10 @@ export function coercePlot(entries: readonly unknown[]): PlotCoercion {
   );
   const filled = points.map((point) => ({
     label: point.label,
-    values: Array.from({ length: width }, (_unused, slot) => point.values[slot] ?? 0),
+    values: Array.from(
+      { length: width },
+      (_unused, slot) => point.values[slot] ?? 0,
+    ),
   }));
 
   return {
@@ -282,7 +291,10 @@ export interface PlotCap {
 }
 
 /** A plot the log can read: the first `max` points, and the count of what fell off. */
-export function capPlot(points: readonly PlotPoint[], max: number = MAX_POINTS): PlotCap {
+export function capPlot(
+  points: readonly PlotPoint[],
+  max: number = MAX_POINTS,
+): PlotCap {
   if (points.length <= max) return { points: [...points], omitted: 0 };
   return { points: points.slice(0, max), omitted: points.length - max };
 }
@@ -306,7 +318,12 @@ const boundedNumber = (
  */
 export function chartPlotOf(params: ChartPlotParams): ChartFigure {
   const kind = plotKindOf(params.kind);
-  const height = boundedNumber(params.height, CHART_HEIGHT, MIN_PLOT_HEIGHT, MAX_PLOT_HEIGHT);
+  const height = boundedNumber(
+    params.height,
+    CHART_HEIGHT,
+    MIN_PLOT_HEIGHT,
+    MAX_PLOT_HEIGHT,
+  );
   const width = boundedNumber(params.width, CHART_CANVAS_WIDTH, 120, 4_096);
   const named = (params.series ?? []).map((name) => cellText(name));
 
@@ -320,7 +337,9 @@ export function chartPlotOf(params: ChartPlotParams): ChartFigure {
     fill: params.fill === true,
     labels: params.labels !== false,
     dash:
-      typeof params.dash === "number" && Number.isFinite(params.dash) && params.dash > 0
+      typeof params.dash === "number" &&
+      Number.isFinite(params.dash) &&
+      params.dash > 0
         ? params.dash
         : null,
     emphasis:

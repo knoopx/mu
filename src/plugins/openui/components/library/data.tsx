@@ -53,13 +53,7 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import {
-  ProgramFigureRow,
-  listProp,
-  prop,
-  textOf,
-  textProp,
-} from "./context";
+import { ProgramFigureRow, listProp, prop, textOf, textProp } from "./context";
 import { cellText, isFigure } from "./rows";
 
 export const Table = defineComponent({
@@ -122,7 +116,10 @@ export const Chart = defineComponent({
     points: z.array(z.any()),
 
     /** Names for the series, in the order their values sit in each point. */
-    series: z.array(z.union([z.string(), z.number()])).nullable().optional(),
+    series: z
+      .array(z.union([z.string(), z.number()]))
+      .nullable()
+      .optional(),
 
     kind: z.enum(["bar", "line"]).nullable().optional(),
     height: z.number().nullable().optional(),
@@ -144,8 +141,7 @@ export const Chart = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-const cellsOf = (row: unknown): unknown[] =>
-  Array.isArray(row) ? row : [row];
+const cellsOf = (row: unknown): unknown[] => (Array.isArray(row) ? row : [row]);
 
 export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const columns = listProp(node.props, "columns").map(cellText);
@@ -219,7 +215,12 @@ export function drawStat(node: ElementNode, ctx: ProgramContext): JSX.Element {
         gap: innerGap(ctx.t),
       }}
     >
-      <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+      <T
+        size="caption"
+        color={mutedText(ctx.t)}
+        clamp={2}
+        style={{ minWidth: 0 }}
+      >
         {textProp(node.props, "label")}
       </T>
       <T
@@ -276,7 +277,9 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         fill={kind === "line" ? prop(node.props, "fill", false) : false}
         labels={prop(node.props, "labels", true)}
         dash={prop<number | null>(node.props, "dash", null) ?? undefined}
-        emphasis={prop<number | null>(node.props, "emphasis", null) ?? undefined}
+        emphasis={
+          prop<number | null>(node.props, "emphasis", null) ?? undefined
+        }
         style={{ width: "100%", minWidth: 0 }}
       />
       {series.length === 0 ? null : (
@@ -292,8 +295,11 @@ export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const tone = toneOfValue(node.props.tone);
   const weight = textOf(node.props.weight);
   const caption = textOf(node.props.caption);
-  const percent = max === null || max <= 0 ? 0 : Math.round((value / max) * 100);
-  const figure = Number.isFinite(value) ? String(Math.round(value * 100) / 100) : "0";
+  const percent =
+    max === null || max <= 0 ? 0 : Math.round((value / max) * 100);
+  const figure = Number.isFinite(value)
+    ? String(Math.round(value * 100) / 100)
+    : "0";
 
   return (
     <ProgramFigureRow
@@ -323,7 +329,12 @@ export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
             color={programProgressTone(tone)}
           />
           {caption === null ? null : (
-            <T size="body" color={mutedText(ctx.t)} clamp={3} style={{ minWidth: 0 }}>
+            <T
+              size="body"
+              color={mutedText(ctx.t)}
+              clamp={3}
+              style={{ minWidth: 0 }}
+            >
               {caption}
             </T>
           )}
@@ -363,7 +374,10 @@ export const Sparkline = defineComponent({
   component: drawSparkline,
 });
 
-export function drawProgress(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawProgress(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const value = prop(node.props, "value", 0);
   const max = prop(node.props, "max", 100);
   const tone = toneOfValue(node.props.tone);
@@ -383,7 +397,12 @@ export function drawProgress(node: ElementNode, ctx: ProgramContext): JSX.Elemen
             color={programProgressTone(tone)}
           />
           {caption === null ? null : (
-            <T size="body" color={mutedText(ctx.t)} clamp={3} style={{ minWidth: 0 }}>
+            <T
+              size="body"
+              color={mutedText(ctx.t)}
+              clamp={3}
+              style={{ minWidth: 0 }}
+            >
               {caption}
             </T>
           )}
@@ -393,7 +412,10 @@ export function drawProgress(node: ElementNode, ctx: ProgramContext): JSX.Elemen
   );
 }
 
-export function drawSparkline(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawSparkline(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const values = listProp(node.props, "values")
     .map((entry) => Number(entry))
     .filter((entry) => Number.isFinite(entry));
@@ -417,7 +439,12 @@ export function drawSparkline(node: ElementNode, ctx: ProgramContext): JSX.Eleme
         style={{ flexShrink: 0 }}
       />
       {label === "" ? null : (
-        <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={mutedText(ctx.t)}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {label}
         </T>
       )}

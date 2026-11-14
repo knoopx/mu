@@ -105,7 +105,8 @@ export async function loadScreen(cols: number, rows: number): Promise<Screen> {
       // The scrollback is addressed newest-first, the viewport oldest-first; the
       // single line of addressing is kept here so nothing downstream has to
       // remember which end each one starts at.
-      if (line < history) return core.getScrollbackCell(history - 1 - line, col);
+      if (line < history)
+        return core.getScrollbackCell(history - 1 - line, col);
       return core.getCell(line - history, col);
     },
     dispose(): void {

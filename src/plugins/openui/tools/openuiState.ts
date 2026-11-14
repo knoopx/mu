@@ -47,13 +47,17 @@ export const openUIStateTool: ToolDefinition<
   label: OPENUI_STATE_TOOL,
   description:
     "Read a program's source plus what the renderer published for it: the render errors, the `$variable` values as the human left them, the components that were actually drawn, the names that never resolved, how many interactions are waiting, and the query failures. `name` defaults to the program the log is painting.",
-  promptSnippet: "Read a program's source and what the renderer published about it",
+  promptSnippet:
+    "Read a program's source and what the renderer published about it",
   promptGuidelines: [...STATE_GUIDELINES],
 
   executionMode: "parallel",
   parameters: StateParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIStateDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIStateDetails>> {
     const record = programStore.resolve(params.name);
 
     if (record === undefined) {
@@ -141,7 +145,9 @@ export const openUIStateTool: ToolDefinition<
         details.waiting === 0
           ? ""
           : `${String(details.waiting)} interactions waiting — read them with openui-events`,
-        details.truncated ? "the source is cut: read it in pieces with a limit" : "",
+        details.truncated
+          ? "the source is cut: read it in pieces with a limit"
+          : "",
         moreLine(omitted, "component"),
       ),
       details,

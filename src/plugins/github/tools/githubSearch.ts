@@ -52,7 +52,8 @@ export const githubSearchTool: ToolDefinition<typeof Parameters, GithubCall> = {
     "columns — a repository search says `repo description language stars`, a code search says " +
     "`path repo`. `code` and `commits` need a token in the environment and answer `unsupported` " +
     "without one. Read-only.",
-  promptSnippet: "Search GitHub for repositories, code, issues, commits or users",
+  promptSnippet:
+    "Search GitHub for repositories, code, issues, commits or users",
   promptGuidelines: [
     ...GITHUB_GUIDELINES,
     "Use github-search to find the owner and repo a later read needs, and keep the query in GitHub's syntax (`language:`, `stars:>`, `repo:`) rather than a sentence.",

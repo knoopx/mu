@@ -126,7 +126,8 @@ function modifierCode(shift: boolean, alt: boolean, ctrl: boolean): number {
 function controlOf(key: string): string | undefined {
   if (key.length === 1) {
     const code = key.toUpperCase().charCodeAt(0);
-    if (code >= 65 && code <= 90) return String.fromCharCode((code - 64) % 0x20);
+    if (code >= 65 && code <= 90)
+      return String.fromCharCode((code - 64) % 0x20);
     const mapped = CONTROL_CODES[key];
     if (mapped !== undefined) return mapped;
   }

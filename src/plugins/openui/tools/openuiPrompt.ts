@@ -17,29 +17,45 @@ import { Type } from "typebox";
 
 import { OPENUI_PROMPT_TOOL } from "../constants";
 import type { OpenUIPromptDetails } from "../types";
-import { blocks, counted, statusTable, toolResult } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  counted,
+  statusTable,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import { buildLanguagePrompt } from "../lib/analysis/prompt";
-import { componentCount, libraryGroups, rootComponent } from "../lib/schema/library";
+import {
+  componentCount,
+  libraryGroups,
+  rootComponent,
+} from "../lib/schema/library";
 import { PROMPT_GUIDELINES } from "./guidelines";
 
 const PromptParametersSchema = Type.Object({
   preamble: Type.Optional(
-    Type.String({ maxLength: 2_000, description: "Extra instructions to place above the language reference." }),
+    Type.String({
+      maxLength: 2_000,
+      description: "Extra instructions to place above the language reference.",
+    }),
   ),
   tools: Type.Optional(
     Type.Array(Type.String({ maxLength: 64 }), {
       maxItems: 40,
-      description: "Names of the tools your program will call through Query(name, args, default).",
+      description:
+        "Names of the tools your program will call through Query(name, args, default).",
     }),
   ),
   examples: Type.Optional(
     Type.Array(Type.String({ maxLength: 4_000 }), {
       maxItems: 8,
-      description: "OpenUI Lang snippets to show in the reference — the only examples it carries.",
+      description:
+        "OpenUI Lang snippets to show in the reference — the only examples it carries.",
     }),
   ),
   editMode: Type.Optional(
-    Type.Boolean({ description: "Add the rules for patching a program already in the log." }),
+    Type.Boolean({
+      description: "Add the rules for patching a program already in the log.",
+    }),
   ),
 });
 
@@ -52,13 +68,17 @@ export const openUIPromptTool: ToolDefinition<
   description:
     "Get the OpenUI Lang reference for THIS app's component library: the syntax rules, the signature of every component this app can actually render, and how a program wires Query() data and actions. " +
     "Call it once before writing a program — it is how you learn the language, and the component list it prints is the whole truth about what will draw. Returned as plain text.",
-  promptSnippet: "Get the OpenUI Lang language reference for this app's library",
+  promptSnippet:
+    "Get the OpenUI Lang language reference for this app's library",
   promptGuidelines: [...PROMPT_GUIDELINES],
 
   executionMode: "parallel",
   parameters: PromptParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUIPromptDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIPromptDetails>> {
     const tools = params.tools ?? [];
     const examples = params.examples ?? [];
     const preamble = params.preamble ?? "";

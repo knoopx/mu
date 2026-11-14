@@ -48,9 +48,14 @@ const boundName = (value: unknown): string =>
 export function answer(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number") return Number.isFinite(value) ? NUMBER.format(value) : "";
+  if (typeof value === "number")
+    return Number.isFinite(value) ? NUMBER.format(value) : "";
   if (typeof value === "string") return value.trim();
-  if (Array.isArray(value)) return value.map(answer).filter((item) => item !== "").join(", ");
+  if (Array.isArray(value))
+    return value
+      .map(answer)
+      .filter((item) => item !== "")
+      .join(", ");
   return JSON.stringify(value);
 }
 
@@ -65,9 +70,15 @@ const optionValues = (options: unknown): unknown[] =>
  * so the agent learns both — `CSV, JSON (not: XLSX, PDF)`. Nothing picked says
  * so with the options; everything picked says `(all)`.
  */
-export function picks(picked: readonly unknown[], options: readonly unknown[]): string {
+export function picks(
+  picked: readonly unknown[],
+  options: readonly unknown[],
+): string {
   const shown = (values: readonly unknown[]): string =>
-    values.map(answer).filter((item) => item !== "").join(", ");
+    values
+      .map(answer)
+      .filter((item) => item !== "")
+      .join(", ");
   if (options.length === 0) return shown(picked);
   const chosen = [
     ...options.filter((option) => picked.includes(option)),
@@ -88,14 +99,19 @@ export interface FormField {
 }
 
 /** Every field at any depth, in document order. */
-function collect(node: unknown, read: (variable: string) => unknown, fields: FormField[]): void {
+function collect(
+  node: unknown,
+  read: (variable: string) => unknown,
+  fields: FormField[],
+): void {
   if (Array.isArray(node)) {
     for (const entry of node) collect(entry, read, fields);
     return;
   }
   if (typeof node !== "object" || node === null) return;
   if (!isElement(node)) {
-    for (const value of Object.values(node as Record<string, unknown>)) collect(value, read, fields);
+    for (const value of Object.values(node as Record<string, unknown>))
+      collect(value, read, fields);
     return;
   }
 
@@ -124,14 +140,20 @@ function collect(node: unknown, read: (variable: string) => unknown, fields: For
 }
 
 /** A Form's fields in document order, each with its answer line. */
-export function formFields(form: unknown, read: (variable: string) => unknown): FormField[] {
+export function formFields(
+  form: unknown,
+  read: (variable: string) => unknown,
+): FormField[] {
   const fields: FormField[] = [];
   collect((form as ElementNode)?.props?.children ?? null, read, fields);
   return fields;
 }
 
 /** A Form's answer: `label: value` per field inside it, joined as one paragraph. */
-export function formMessage(form: unknown, read: (variable: string) => unknown): string {
+export function formMessage(
+  form: unknown,
+  read: (variable: string) => unknown,
+): string {
   return formFields(form, read)
     .map((field) => field.line)
     .join("\n");

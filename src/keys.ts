@@ -119,7 +119,9 @@ export function keyCodes(id: KeyId): string[] {
     tokens.pop();
     tokens.push("+");
   }
-  return tokens.filter((token) => token !== "").map((token) => token.toLowerCase());
+  return tokens
+    .filter((token) => token !== "")
+    .map((token) => token.toLowerCase());
 }
 
 export function keyHint(id: KeyId): string {

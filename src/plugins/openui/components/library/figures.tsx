@@ -68,7 +68,10 @@ export const Tree = defineComponent({
     items: z.array(z.any()),
 
     /** Which folders stand open, by their path. Leave it out and the top level does. */
-    expanded: z.array(z.union([z.string(), z.number()])).nullable().optional(),
+    expanded: z
+      .array(z.union([z.string(), z.number()]))
+      .nullable()
+      .optional(),
   }),
   component: drawTree,
 });
@@ -86,7 +89,9 @@ function treeNodeOf(row: unknown): FileTreeNode {
       ? { children: children.map((child) => treeNodeOf(child)) }
       : {}),
     ...(added === undefined ? {} : { added: numberCell(row, TREE_NAMES, 3) }),
-    ...(removed === undefined ? {} : { removed: numberCell(row, TREE_NAMES, 4) }),
+    ...(removed === undefined
+      ? {}
+      : { removed: numberCell(row, TREE_NAMES, 4) }),
   };
 }
 
@@ -98,7 +103,9 @@ export function drawTree(node: ElementNode, ctx: ProgramContext): JSX.Element {
     <FileTree
       items={items.map(treeNodeOf)}
       variant="list"
-      defaultExpandedPaths={expanded.length > 0 ? expanded : topLevelFolders(items)}
+      defaultExpandedPaths={
+        expanded.length > 0 ? expanded : topLevelFolders(items)
+      }
       style={{ width: "100%", minWidth: 0 }}
     />
   );
@@ -134,7 +141,10 @@ function timelineStatus(value: unknown): TimelineStatus {
   return programStatusToTimeline(status);
 }
 
-export function drawTimeline(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawTimeline(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const items = listProp(node.props, "items");
   const rows: TimelineItem[] = items.map((row, index) => ({
     at: textCell(row, TIMELINE_NAMES, 0) ?? String(index + 1),
@@ -156,7 +166,14 @@ export function drawTimeline(node: ElementNode, ctx: ProgramContext): JSX.Elemen
 
 /* ----------------------------------------------------------------- trace */
 
-const SPAN_NAMES = ["label", "offset", "duration", "tone", "depth", "figure"] as const;
+const SPAN_NAMES = [
+  "label",
+  "offset",
+  "duration",
+  "tone",
+  "depth",
+  "figure",
+] as const;
 
 export const Trace = defineComponent({
   name: "Trace",
@@ -190,7 +207,9 @@ export function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <AdwaitaTrace
       spans={spans}
-      total={prop<number | null>(node.props, "total", null) ?? traceTotal(spans)}
+      total={
+        prop<number | null>(node.props, "total", null) ?? traceTotal(spans)
+      }
       labelWidth={traceLabelWidth(ctx.t)}
       figureWidth={traceFigureWidth(ctx.t)}
       style={{ width: "100%", minWidth: 0 }}
@@ -209,10 +228,16 @@ export const Heatmap = defineComponent({
     values: z.array(z.any()),
 
     /** Which of the seven day rows is named. Leave it out for Tue, Thu, Sat. */
-    dayLabels: z.array(z.union([z.string(), z.number()])).nullable().optional(),
+    dayLabels: z
+      .array(z.union([z.string(), z.number()]))
+      .nullable()
+      .optional(),
 
     /** Month names spread across the columns, oldest first. */
-    months: z.array(z.union([z.string(), z.number()])).nullable().optional(),
+    months: z
+      .array(z.union([z.string(), z.number()]))
+      .nullable()
+      .optional(),
   }),
   component: drawHeatmap,
 });
@@ -245,9 +270,7 @@ function heatWeeks(
   // One name per `stride` columns, so six months over 26 columns says the month
   // where the month actually starts rather than all in the first third.
   const stride =
-    months.length === 0
-      ? 0
-      : Math.max(1, Math.floor(columns / months.length));
+    months.length === 0 ? 0 : Math.max(1, Math.floor(columns / months.length));
   const weeks: HeatWeek[] = [];
 
   for (let column = 0; column < columns; column += 1) {
@@ -257,20 +280,21 @@ function heatWeeks(
         stride > 0 && column % stride === 0
           ? (months[Math.floor(column / stride)] ?? "")
           : "",
-      cells: values
-        .slice(at, at + 7)
-        .map((value, day) => ({
-          key: `d${String(at + day)}`,
-          count: value,
-          level: heatLevel(value, max),
-          future: false,
-        })),
+      cells: values.slice(at, at + 7).map((value, day) => ({
+        key: `d${String(at + day)}`,
+        count: value,
+        level: heatLevel(value, max),
+        future: false,
+      })),
     });
   }
   return weeks;
 }
 
-export function drawHeatmap(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawHeatmap(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const values = heatValues(listProp(node.props, "values"));
   const months = listProp(node.props, "months").map((month) => String(month));
   const dayLabels = listProp(node.props, "dayLabels", DAY_LABELS).map((label) =>
@@ -386,11 +410,7 @@ export function drawBreakdown(
       </div>
 
       {segments.length === 0 ? null : (
-        <SegmentBar
-          segments={segments}
-          tail={tail}
-          style={{ minWidth: 0 }}
-        />
+        <SegmentBar segments={segments} tail={tail} style={{ minWidth: 0 }} />
       )}
 
       {figureRows.map((row, index) => (

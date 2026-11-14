@@ -14,7 +14,8 @@ export const ownerParam = () =>
   Type.String({
     minLength: 1,
     pattern: "^\\s*\\S",
-    description: "Repository owner — the user or organisation login, as the URL has it.",
+    description:
+      "Repository owner — the user or organisation login, as the URL has it.",
   });
 
 /** The repository half, without its owner. */
@@ -75,7 +76,8 @@ export const shaParam = () =>
   Type.String({
     minLength: 4,
     pattern: "^\\s*[0-9a-fA-F]",
-    description: "Commit SHA — full or abbreviated, as any GitHub URL shows it.",
+    description:
+      "Commit SHA — full or abbreviated, as any GitHub URL shows it.",
   });
 
 /** A user or organisation, whether or not they own a repository. */
@@ -83,7 +85,8 @@ export const loginParam = () =>
   Type.String({
     minLength: 1,
     pattern: "^\\s*\\S",
-    description: "A GitHub login — a user or an organisation, without the leading `@`.",
+    description:
+      "A GitHub login — a user or an organisation, without the leading `@`.",
   });
 
 /** How many rows a bounded read answers with. */

@@ -35,7 +35,11 @@ export function diagramDirection(source: string): string {
   for (const line of source.split("\n")) {
     const trimmed = line.trim();
     if (trimmed === "" || trimmed.startsWith("%%")) continue;
-    if (!/^(?:flowchart|graph|gitGraph|direction|stateDiagram|journey)\b/.test(trimmed)) {
+    if (
+      !/^(?:flowchart|graph|gitGraph|direction|stateDiagram|journey)\b/.test(
+        trimmed,
+      )
+    ) {
       continue;
     }
     const found = DIRECTION_TOKENS.find((token) =>
@@ -47,7 +51,10 @@ export function diagramDirection(source: string): string {
 }
 
 /** A parser's exception, in the plugin's own words and fields. */
-function failureOf(error: unknown): { error: string; failure: MermaidParseFailure } {
+function failureOf(error: unknown): {
+  error: string;
+  failure: MermaidParseFailure;
+} {
   const asRecord = (error ?? {}) as {
     message?: unknown;
     code?: unknown;
@@ -56,7 +63,9 @@ function failureOf(error: unknown): { error: string; failure: MermaidParseFailur
     snippet?: unknown;
   };
   const message =
-    typeof asRecord.message === "string" ? asRecord.message.split("\n")[0] : String(error);
+    typeof asRecord.message === "string"
+      ? asRecord.message.split("\n")[0]
+      : String(error);
   const code =
     typeof asRecord.code === "string" && asRecord.code !== ""
       ? asRecord.code
@@ -92,7 +101,10 @@ function diagramLabels(svg: string): { labels: string[]; omitted: number } {
     if (text !== "") seen.add(text);
   }
   const labels = [...seen];
-  return { labels: labels.slice(0, MAX_LABELS), omitted: Math.max(0, labels.length - MAX_LABELS) };
+  return {
+    labels: labels.slice(0, MAX_LABELS),
+    omitted: Math.max(0, labels.length - MAX_LABELS),
+  };
 }
 
 const BLANK_PICTURE: Omit<MermaidPicture, "status" | "ms"> = {

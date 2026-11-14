@@ -5,9 +5,7 @@ export const DOWN = "↓";
 export const DOT = "·";
 export const BAR = "|";
 
-
 const CHARS_PER_TOKEN = 4;
-
 
 const LIVE_MIN_MS = 250;
 
@@ -32,15 +30,12 @@ export interface TurnStats extends StatsFigures {
 export interface ConversationStats extends StatsFigures {
   turns: number;
 
-  
   live: boolean;
 }
-
 
 export interface SessionClock {
   now: number;
 
-  
   running: boolean;
 }
 
@@ -86,8 +81,6 @@ export function formatOutbound(tokens: number): string {
 }
 
 export function formatInboundOutbound(input: number, output: number): string {
-  
-  
   const inbound = input === 0 ? "" : formatTokens(input);
   const outbound = output === 0 ? "" : formatTokens(output);
   if (inbound === "" && outbound === "") return "";
@@ -108,7 +101,6 @@ function usageOf(item: TranscriptItem): AssistantUsage | undefined {
     : undefined;
 }
 
-
 function startTsOf(item: TranscriptItem): number | undefined {
   if (item.kind === "user") return item.ts;
   if (item.kind === "assistant" || item.kind === "tool")
@@ -124,7 +116,6 @@ function tokensOf(chars: number): number {
   return Math.round(chars / CHARS_PER_TOKEN);
 }
 
-
 interface LiveDecode {
   startTs: number | undefined;
 
@@ -136,12 +127,10 @@ interface Scan {
 
   decode: LiveDecode | null;
 
-  
   endTs: number;
 
   runningTools: number;
 }
-
 
 function scan(items: readonly TranscriptItem[]): Scan {
   const used: UsageItem[] = [];
@@ -171,10 +160,7 @@ function scan(items: readonly TranscriptItem[]): Scan {
   return { used, decode, endTs, runningTools };
 }
 
-
-function earliestStartOf(
-  items: readonly TranscriptItem[],
-): number | undefined {
+function earliestStartOf(items: readonly TranscriptItem[]): number | undefined {
   let earliest: number | undefined;
   for (const item of items) {
     const ts = startTsOf(item);
@@ -192,7 +178,6 @@ function callCharsOf(item: ToolItem): number {
   return JSON.stringify(item.args).length;
 }
 
-
 interface Measured {
   input: number;
 
@@ -208,7 +193,6 @@ interface Measured {
 
   live: boolean;
 }
-
 
 function liveRateOf(
   decode: LiveDecode,
@@ -230,14 +214,13 @@ function measuredOf(rows: Scan, now: number): Measured {
       sumBy(used, (a) => a.usage.output) +
       (decode === null ? 0 : tokensOf(decode.chars)),
     cost: sumBy(used, (a) => a.usage.cost),
-    tpsOutput: rate?.tpsOutput ?? (last?.usage.output ?? 0),
-    genMs: rate?.genMs ?? (last?.usage.genMs ?? 0),
+    tpsOutput: rate?.tpsOutput ?? last?.usage.output ?? 0,
+    genMs: rate?.genMs ?? last?.usage.genMs ?? 0,
 
     endTs: decode === null ? rows.endTs : Math.max(rows.endTs, now),
     live: decode !== null,
   };
 }
-
 
 function sessionSpanOf(
   items: readonly TranscriptItem[],
@@ -252,7 +235,6 @@ function sessionSpanOf(
   return Math.max(0, endTs - startTs);
 }
 
-
 interface Turn {
   startTs?: number;
   rows: TranscriptItem[];
@@ -263,8 +245,7 @@ interface Turn {
 function statsOfTurn(turn: Turn): TurnStats | null {
   const rows = scan(turn.rows);
   if (rows.used.length === 0) return null;
-  
-  
+
   const figures = measuredOf({ ...rows, decode: null }, 0);
   const startTs =
     turn.startTs ?? earliestStartOf(turn.rows) ?? rows.used[0].usage.startTs;
@@ -280,9 +261,7 @@ function statsOfTurn(turn: Turn): TurnStats | null {
   };
 }
 
-
 const statsCache = new Map<string, TurnStats>();
-
 
 const STATS_CACHE_MAX = 1_024;
 
@@ -327,7 +306,7 @@ export function turnStatsById(
       continue;
     }
     turn.rows.push(item);
-    
+
     if (item.kind === "assistant" && item.usage !== undefined)
       turn.footerId = item.id;
     if (turn.startTs === undefined) {
@@ -348,8 +327,6 @@ export function conversationStats(
   if (rows.used.length === 0 && rows.decode === null) return null;
   const figures = measuredOf(rows, clock.now);
   return {
-    
-    
     turns: rows.used.length + (rows.decode === null ? 0 : 1),
     input: figures.input,
     output: figures.output,

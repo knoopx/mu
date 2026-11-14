@@ -19,9 +19,7 @@ export interface PanelListRefs {
   scrollDiff(down: boolean): void;
 }
 
-export function usePanelListRefs(
-  renderer: NativeRenderer,
-): PanelListRefs {
+export function usePanelListRefs(renderer: NativeRenderer): PanelListRefs {
   const stackListRef = useRef<PublicInstance | null>(null);
   const fileListRef = useRef<PublicInstance | null>(null);
   const diffRef = useRef<PublicInstance | null>(null);

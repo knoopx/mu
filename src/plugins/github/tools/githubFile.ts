@@ -14,7 +14,13 @@ import { Type } from "typebox";
 
 import { GITHUB_FILE_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readFile } from "../lib/api/read";
-import { ownerParam, pathParam, refreshParam, refParam, repoParam } from "../lib/params";
+import {
+  ownerParam,
+  pathParam,
+  refreshParam,
+  refParam,
+  repoParam,
+} from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubFileParams } from "../types";
 import { FILE_OR_FOLDER, GITHUB_GUIDELINES } from "./guidelines";

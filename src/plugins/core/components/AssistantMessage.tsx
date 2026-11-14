@@ -50,7 +50,11 @@ function bodyOf(
     <>
       {blocks.segments.map((segment, index) =>
         segment.kind === "prose" ? (
-          <Markdown key={`prose-${String(index)}`} source={segment.text} style={{ padding: 0 }} />
+          <Markdown
+            key={`prose-${String(index)}`}
+            source={segment.text}
+            style={{ padding: 0 }}
+          />
         ) : (
           <ProgramFence
             key={`ui-${String(index)}`}

@@ -154,7 +154,10 @@ export function BookmarkDialog({
 
   return (
     <DialogFrame width={PICKER_WIDTH} dim>
-      <DialogHeading icon="bookmark" title={`Bookmark ${changeId.slice(0, 8)}`} />
+      <DialogHeading
+        icon="bookmark"
+        title={`Bookmark ${changeId.slice(0, 8)}`}
+      />
       <OverlayInput
         value={picker.value}
         placeholder="bookmark name"
@@ -165,7 +168,9 @@ export function BookmarkDialog({
       <CandidateList
         visible={win.end - win.start}
         placeholder={
-          loading ? "Loading bookmarks…" : "No bookmarks yet. Type to create one."
+          loading
+            ? "Loading bookmarks…"
+            : "No bookmarks yet. Type to create one."
         }
       >
         {candidates.slice(win.start, win.end).map((name, off) => {

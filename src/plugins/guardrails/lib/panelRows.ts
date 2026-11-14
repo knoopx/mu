@@ -39,7 +39,6 @@ export function engineLabel(engine: GuardrailEngineState): string {
   }
 }
 
-
 export const domainArmed = (
   snapshot: GuardrailsSnapshot,
   domain: string,
@@ -52,7 +51,6 @@ function armedDomainCount(snapshot: GuardrailsSnapshot): number {
 
 const ruleCountText = (count: number): string =>
   `${count} ${count === 1 ? "rule" : "rules"}`;
-
 
 const GRAMMAR_FILE: Partial<Record<GuardrailLanguage, string>> = {
   bash: "rule.sh",
@@ -82,7 +80,9 @@ function grammarFigure(
 ): ComposerRowFigure {
   const file = GRAMMAR_FILE[language];
   const icon =
-    file === undefined ? (GRAMMAR_ICON[language] ?? "description") : getFileIcon(file);
+    file === undefined
+      ? (GRAMMAR_ICON[language] ?? "description")
+      : getFileIcon(file);
   const color = file === undefined ? null : getFileIconColor(file);
   return { icon, ...(color === null ? {} : { color }), text: "", width };
 }
@@ -108,7 +108,6 @@ function domainRows(): DomainRow[] {
 const searchable = (row: DomainRow): string =>
   `${row.domain} ${ruleCountText(row.count)} ${row.languages.join(" ")}`;
 
-
 export function guardrailPanelRows(
   snapshot: GuardrailsSnapshot,
   theme: AdwaitaTheme,
@@ -130,7 +129,9 @@ export function guardrailPanelRows(
   return visible.map((entry) => {
     const figures: ComposerRowFigure[] = [
       { text: ruleCountText(entry.count), width: rulesColumn },
-      ...entry.languages.map((language) => grammarFigure(language, glyphColumn)),
+      ...entry.languages.map((language) =>
+        grammarFigure(language, glyphColumn),
+      ),
     ];
     return {
       kind: "option",
@@ -148,7 +149,6 @@ export function toggleGuardrail(key: string): string {
     return guardrailsStore.toggleDomain(key.slice("domain:".length));
   return "Nothing to arm here";
 }
-
 
 export function guardrailsEmptyText(snapshot: GuardrailsSnapshot): string {
   return snapshot.ruleFiles === 0

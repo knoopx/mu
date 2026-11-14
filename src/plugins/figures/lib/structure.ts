@@ -98,7 +98,8 @@ const kindText = (value: unknown): string =>
 const keyOf = (
   row: Record<string, unknown>,
   keys: readonly string[],
-): unknown => keys.reduce<unknown>((found, key) => found ?? row[key], undefined);
+): unknown =>
+  keys.reduce<unknown>((found, key) => found ?? row[key], undefined);
 
 /** The shape one node was written in, whatever it was written in. */
 function nodeShapeOf(value: unknown): NodeShape | null {
@@ -233,7 +234,13 @@ export function treeShapeOf(params: TreeRenderParams): TreeFigure {
     .map((item) => readNode(item, "", 1, read))
     .filter((node): node is StructureNode => node !== null);
 
-  const count: TreeCount = { folders: 0, leaves: 0, depth: 0, added: 0, removed: 0 };
+  const count: TreeCount = {
+    folders: 0,
+    leaves: 0,
+    depth: 0,
+    added: 0,
+    removed: 0,
+  };
   countTree(roots, 1, count);
 
   const asked = listOf(params.expanded)
@@ -245,7 +252,10 @@ export function treeShapeOf(params: TreeRenderParams): TreeFigure {
     nodes: roots,
     // A tree nobody said anything about opens its first level, so the leaves are
     // what the log shows rather than a row of closed folders.
-    expanded: asked.length > 0 ? asked : roots.filter((node) => node.folder).map((node) => node.name),
+    expanded:
+      asked.length > 0
+        ? asked
+        : roots.filter((node) => node.folder).map((node) => node.name),
     caption: (params.caption ?? "").trim(),
     counted: read.drawn + read.cut,
     drawn: read.drawn,
@@ -278,7 +288,9 @@ export function fileTreeOf(nodes: readonly StructureNode[]): FileTreeNode[] {
   return nodes.map((node) => ({
     name: node.name,
     type: node.folder ? "folder" : "file",
-    ...(node.children.length === 0 ? {} : { children: fileTreeOf(node.children) }),
+    ...(node.children.length === 0
+      ? {}
+      : { children: fileTreeOf(node.children) }),
     ...(node.added === 0 ? {} : { added: node.added }),
     ...(node.removed === 0 ? {} : { removed: node.removed }),
   }));
@@ -332,7 +344,11 @@ function columnsOfRows(rows: readonly unknown[]): string[] {
  */
 /** A cell that is a shape rather than text, named for what it is. */
 const shapeOf = (value: unknown): string =>
-  Array.isArray(value) ? "(a list)" : value === null ? "(nothing)" : "(an object)";
+  Array.isArray(value)
+    ? "(a list)"
+    : value === null
+      ? "(nothing)"
+      : "(an object)";
 
 function rowCellsOf(
   row: unknown,
@@ -387,17 +403,22 @@ function rowCellsOf(
 }
 
 /** What a column adds up to — and whether it is a column of figures at all. */
-function statsOf(rows: readonly string[][], columns: readonly string[]): TableColumnStat[] {
+function statsOf(
+  rows: readonly string[][],
+  columns: readonly string[],
+): TableColumnStat[] {
   return columns.map((name, at) => {
     const values: number[] = [];
     for (const row of rows) {
       const cell = row[at] ?? "";
       if (cell === "") continue;
       const number = numberOf(cell);
-      if (number === null) return { name, figure: false, total: 0, min: 0, max: 0 };
+      if (number === null)
+        return { name, figure: false, total: 0, min: 0, max: 0 };
       values.push(number);
     }
-    if (values.length === 0) return { name, figure: false, total: 0, min: 0, max: 0 };
+    if (values.length === 0)
+      return { name, figure: false, total: 0, min: 0, max: 0 };
     return {
       name,
       figure: true,
@@ -461,7 +482,9 @@ function tableErrorOf(bad: readonly TableBadCell[]): string {
   if (overflow > 0 && unreadable > 0) {
     return "a row does not fit its header, and a cell is a shape rather than text";
   }
-  return unreadable > 0 ? "a cell is a shape rather than text" : "a row does not fit the header";
+  return unreadable > 0
+    ? "a cell is a shape rather than text"
+    : "a row does not fit the header";
 }
 
 /** Counts of each kind of refusal, for the head a refused table answers with. */
@@ -478,9 +501,13 @@ export function tableRowsOf(
   figure: TableFigure,
   max: number,
 ): { rows: Record<string, string>[]; notRead: number } {
-  const rows = figure.rows.slice(0, max).map((cells) =>
-    Object.fromEntries(figure.columns.map((column, at) => [column, cells[at] ?? ""])),
-  );
+  const rows = figure.rows
+    .slice(0, max)
+    .map((cells) =>
+      Object.fromEntries(
+        figure.columns.map((column, at) => [column, cells[at] ?? ""]),
+      ),
+    );
   return { rows, notRead: figure.drawn - rows.length };
 }
 

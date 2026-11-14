@@ -95,7 +95,10 @@ function resolveVars(svg: string, vars: Record<string, string>): string {
     out = out.replace(
       /var\(\s*(--_[A-Za-z0-9]+)\s*(?:,\s*([^)]+?))?\s*\)/g,
       (all, name: string, fallback: string | undefined) =>
-        aliases.get(name) ?? vars[`--${name.slice(2)}`] ?? fallback?.trim() ?? all,
+        aliases.get(name) ??
+        vars[`--${name.slice(2)}`] ??
+        fallback?.trim() ??
+        all,
     );
   }
   return out;
@@ -130,4 +133,3 @@ export function paintDiagram(svg: string, t: AdwaitaTheme): string {
   const painted = resolveVars(svg, vars);
   return drawText(painted, t, vars["--pele-fg"]);
 }
-

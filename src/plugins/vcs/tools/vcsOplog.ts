@@ -20,7 +20,12 @@ import {
   oldestFirstParam,
 } from "../lib/params";
 import { jjRoot, runOplog } from "../lib/ops";
-import { blocks, statusTable, tableOf, toolResult } from "../../core/lib/agent/toolText";
+import {
+  blocks,
+  statusTable,
+  tableOf,
+  toolResult,
+} from "../../core/lib/agent/toolText";
 import type { VcsOplogDetails, VcsOplogParams } from "../types";
 
 const Parameters = Type.Object({

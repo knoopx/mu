@@ -16,5 +16,3 @@ export const triggered = chromeStory("triggered", () =>
     initialMode: pickMode("guardrails"),
   }),
 );
-
-

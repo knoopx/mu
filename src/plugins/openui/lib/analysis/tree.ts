@@ -49,14 +49,20 @@ export function nodesNamed(root: unknown, typeName: string): TreePlace[] {
   const found: TreePlace[] = [];
   const walk = (value: unknown, path: string): void => {
     if (Array.isArray(value)) {
-      value.forEach((entry, index) => walk(entry, childPath(path, entry, index)));
+      value.forEach((entry, index) =>
+        walk(entry, childPath(path, entry, index)),
+      );
       return;
     }
     if (!isElement(value)) return;
     if (value.typeName === typeName) found.push({ path, node: value });
-    for (const prop of Object.values((value.props ?? {}) as Record<string, unknown>)) {
+    for (const prop of Object.values(
+      (value.props ?? {}) as Record<string, unknown>,
+    )) {
       if (Array.isArray(prop))
-        prop.forEach((entry, index) => walk(entry, childPath(path, entry, index)));
+        prop.forEach((entry, index) =>
+          walk(entry, childPath(path, entry, index)),
+        );
     }
   };
   walk(root, "");

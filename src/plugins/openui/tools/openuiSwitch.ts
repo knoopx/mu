@@ -34,9 +34,14 @@ export const openUISwitchTool: ToolDefinition<
   executionMode: "sequential",
   parameters: SwitchParametersSchema,
 
-  async execute(_toolCallId, params): Promise<AgentToolResult<OpenUISwitchDetails>> {
+  async execute(
+    _toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUISwitchDetails>> {
     const name = params.name ?? "";
-    const before = programStore.list().map((record) => programStore.infoOf(record));
+    const before = programStore
+      .list()
+      .map((record) => programStore.infoOf(record));
 
     if (name === "" || !programStore.setLive(name)) {
       const details: OpenUISwitchDetails = {
@@ -50,7 +55,11 @@ export const openUISwitchTool: ToolDefinition<
         programs: before,
       };
       return toolResult(
-        blocks("the log holds no program by that name", details.error, programTable(before)),
+        blocks(
+          "the log holds no program by that name",
+          details.error,
+          programTable(before),
+        ),
         details,
       );
     }
@@ -60,7 +69,9 @@ export const openUISwitchTool: ToolDefinition<
       error: "",
       name,
       showing: programStore.liveName(),
-      programs: programStore.list().map((record) => programStore.infoOf(record)),
+      programs: programStore
+        .list()
+        .map((record) => programStore.infoOf(record)),
     };
 
     return toolResult(

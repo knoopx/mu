@@ -225,4 +225,3 @@ const ELEVATION_INK = "rgba(0,0,0,0.55)";
 export function elevatedShadow(): NonNullable<StyleDesc["boxShadow"]> {
   return { offsetX: 0, ...ELEVATION, color: ELEVATION_INK };
 }
-

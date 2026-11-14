@@ -39,7 +39,11 @@ import {
 import { mutedText } from "../../core/lib/ui/theme";
 import { TREE_RENDER_TOOL } from "../constants";
 import { fileTreeOf } from "../lib/structure";
-import { treeFailureLine, treeToolViewOf, type TreeToolView } from "../lib/toolView";
+import {
+  treeFailureLine,
+  treeToolViewOf,
+  type TreeToolView,
+} from "../lib/toolView";
 
 const RUNNING_TEXT: Record<string, string> = {
   [TREE_RENDER_TOOL]: "drawing the tree",
@@ -119,7 +123,12 @@ export function TreeToolRows({ item }: TreeToolRowsProps): JSX.Element {
 
   if (item.status === "running") {
     return (
-      <ToolRunning text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[TREE_RENDER_TOOL]} />
+      <ToolRunning
+        text={
+          RUNNING_TEXT[item.name.toLowerCase()] ??
+          RUNNING_TEXT[TREE_RENDER_TOOL]
+        }
+      />
     );
   }
 

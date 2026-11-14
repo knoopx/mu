@@ -38,13 +38,10 @@ export function useChangeWrites(options: ChangeWritesOptions): ChangeWrites {
       latest.current.data.setError(message),
   });
 
-  const selectedChange = useCallback(
-    (): Change | undefined => {
-      const live = latest.current.data.live();
-      return live.allChanges[live.sel];
-    },
-    [],
-  );
+  const selectedChange = useCallback((): Change | undefined => {
+    const live = latest.current.data.live();
+    return live.allChanges[live.sel];
+  }, []);
 
   return {
     selectedChange,

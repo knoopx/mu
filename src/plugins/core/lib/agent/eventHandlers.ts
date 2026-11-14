@@ -47,7 +47,8 @@ const asNumber = (v: unknown): number =>
  * keeps them out of the transcript: pi records them on the parent's result and
  * draws them inside its row.
  */
-const isNestedCall = (e: AnyEvent): boolean => asString(e.parentToolCallId) !== "";
+const isNestedCall = (e: AnyEvent): boolean =>
+  asString(e.parentToolCallId) !== "";
 
 function assistantUsageOf(
   message: Record<string, unknown>,

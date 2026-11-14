@@ -160,8 +160,7 @@ export function viewOf(
   const cursor = screen.cursor();
   const cursorLine = history + cursor.row;
 
-  const cursorRow =
-    scroll === 0 && cursor.visible ? cursorLine - top : -1;
+  const cursorRow = scroll === 0 && cursor.visible ? cursorLine - top : -1;
   const view: TerminalView = {
     rows: [],
     cursorRow,

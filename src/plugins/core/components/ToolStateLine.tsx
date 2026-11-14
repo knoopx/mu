@@ -26,12 +26,7 @@ export function ToolStateLine({
   const t = useAdwaita();
   return (
     <div style={toolLine(t)}>
-      <Icon
-        name={icon}
-        size={STATE_GLYPH}
-        color={color}
-        style={toolMark}
-      />
+      <Icon name={icon} size={STATE_GLYPH} color={color} style={toolMark} />
       <T size="caption" color={color} style={toolText(t)}>
         {text}
       </T>

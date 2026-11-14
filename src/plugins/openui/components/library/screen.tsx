@@ -37,7 +37,10 @@ export const StatusLine = defineComponent({
   component: drawStatusLine,
 });
 
-export function drawHeader(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawHeader(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const title = textProp(node.props, "title");
   const subtitle = textProp(node.props, "subtitle");
   const chips = listProp(node.props, "chips");
@@ -109,9 +112,13 @@ export function drawHeader(node: ElementNode, ctx: ProgramContext): JSX.Element 
   );
 }
 
-export function drawStatusLine(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawStatusLine(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const items = listProp(node.props, "items");
-  if (items.length === 0) return <ProgramText value="" ctx={ctx} size="caption" />;
+  if (items.length === 0)
+    return <ProgramText value="" ctx={ctx} size="caption" />;
 
   return (
     <div

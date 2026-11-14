@@ -153,9 +153,7 @@ export function programProgressTone(
  * a bar through it. A running line is a spinner, so this answers null and the
  * caller knows to turn something.
  */
-export function programStatusGlyph(
-  status: ProgramStatus,
-): IconName | null {
+export function programStatusGlyph(status: ProgramStatus): IconName | null {
   switch (status) {
     case "done":
       return "checkCircleOutline";
@@ -260,4 +258,3 @@ export function programEdge(
   if (tone === "success") return withAlpha(t.color.functional.success, 0.4);
   return programRule(t);
 }
-

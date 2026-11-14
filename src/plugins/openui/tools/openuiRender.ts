@@ -23,10 +23,16 @@ const RenderParametersSchema = Type.Object({
   name: Type.Optional(namedParam),
   code: codeParam,
   done: Type.Optional(
-    Type.Boolean({ description: "true closes the program and stops the live render mid-stream (default true)." }),
+    Type.Boolean({
+      description:
+        "true closes the program and stops the live render mid-stream (default true).",
+    }),
   ),
   activate: Type.Optional(
-    Type.Boolean({ description: "Make this program the one the log paints live (default true)." }),
+    Type.Boolean({
+      description:
+        "Make this program the one the log paints live (default true).",
+    }),
   ),
 });
 
@@ -46,7 +52,10 @@ export const openUIRenderTool: ToolDefinition<
   executionMode: "sequential",
   parameters: RenderParametersSchema,
 
-  async execute(toolCallId, params): Promise<AgentToolResult<OpenUIProgramDetails>> {
+  async execute(
+    toolCallId,
+    params,
+  ): Promise<AgentToolResult<OpenUIProgramDetails>> {
     const name = params.name ?? DEFAULT_PROGRAM_NAME;
     const outcome = writeProgram(name, params.code, toolCallId, {
       streaming: params.done === false,

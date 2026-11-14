@@ -19,5 +19,3 @@ export const session = chromeStory("session", () =>
     streaming: true,
   }),
 );
-
-

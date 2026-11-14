@@ -58,7 +58,10 @@ export const Sections = defineComponent({
  * the line that says what it holds. A rule between sections, none after the last —
  * the same rule the screen's other lists wear.
  */
-export function drawSections(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawSections(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const items = listProp(node.props, "items");
 
   return (
@@ -240,9 +243,7 @@ export function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
               <StatusMark status={status} ctx={ctx} />
               <T
                 size="list"
-                color={
-                  settled ? mutedText(ctx.t) : ctx.t.color.text.primary
-                }
+                color={settled ? mutedText(ctx.t) : ctx.t.color.text.primary}
                 clamp={2}
                 style={{
                   flexGrow: 1,
@@ -369,4 +370,3 @@ export function drawSteps(node: ElementNode, ctx: ProgramContext): JSX.Element {
     </div>
   );
 }
-

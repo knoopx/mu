@@ -46,10 +46,7 @@ import {
   programTextColor,
   type ProgramTone,
 } from "../../lib/theme";
-import {
-  choiceRunPosition,
-  formPosition,
-} from "../../lib/answer/positions";
+import { choiceRunPosition, formPosition } from "../../lib/answer/positions";
 import type { ProgramContext } from "./context";
 import {
   ProgramFigureRow,
@@ -144,7 +141,8 @@ export const Checklist = defineComponent({
 
 export const Rating = defineComponent({
   name: "Rating",
-  description: "how many of a number of marks: the $variable it holds, then how many there are",
+  description:
+    "how many of a number of marks: the $variable it holds, then how many there are",
   props: z.object({
     value: reactive(z.number()),
     max: z.number().nullable().optional(),
@@ -203,7 +201,10 @@ export const Stepper = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawButton(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawButton(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const label = textProp(node.props, "label");
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
   const disabled = prop<boolean>(node.props, "disabled", false);
@@ -256,7 +257,12 @@ export function drawButton(node: ElementNode, ctx: ProgramContext): JSX.Element 
 /** The line that says where an answer stands: staged in the draft, or gone out. */
 function StagedNote(props: { ctx: ProgramContext; text: string }): JSX.Element {
   return (
-    <T size="caption" color={programTextColor(props.ctx.t, "muted")} clamp={2} style={{ minWidth: 0 }}>
+    <T
+      size="caption"
+      color={programTextColor(props.ctx.t, "muted")}
+      clamp={2}
+      style={{ minWidth: 0 }}
+    >
       {props.text}
     </T>
   );
@@ -284,19 +290,35 @@ export function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
       }}
     >
       {title === "" ? null : (
-        <T size="list" weight={programEmphasisWeight(ctx.t)} color={ctx.t.color.text.primary} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="list"
+          weight={programEmphasisWeight(ctx.t)}
+          color={ctx.t.color.text.primary}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {title}
         </T>
       )}
       {closed ? (
-        <T size="caption" color={programTextColor(ctx.t, "muted")} clamp={6} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={programTextColor(ctx.t, "muted")}
+          clamp={6}
+          style={{ minWidth: 0 }}
+        >
           {sent === "" ? "sent" : sent}
         </T>
       ) : (
         ctx.nodes(node.props.children)
       )}
       {closed || staged === "" ? null : (
-        <T size="caption" color={programTextColor(ctx.t, "muted")} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={programTextColor(ctx.t, "muted")}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {"in your message — send it with your reply"}
         </T>
       )}
@@ -304,7 +326,10 @@ export function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawToggle(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawToggle(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, false);
 
@@ -336,7 +361,10 @@ export function drawToggle(node: ElementNode, ctx: ProgramContext): JSX.Element 
 }
 
 /** The label a list of options stands under, when the program gave it one. */
-function OptionsLabel(props: { ctx: ProgramContext; label: string }): JSX.Element | null {
+function OptionsLabel(props: {
+  ctx: ProgramContext;
+  label: string;
+}): JSX.Element | null {
   if (props.label === "") return null;
   return (
     <Label size="caption" variant="dim">
@@ -348,7 +376,10 @@ function OptionsLabel(props: { ctx: ProgramContext; label: string }): JSX.Elemen
 const optionsOf = (node: ElementNode): string[] =>
   listProp(node.props, "options").map((option) => String(option ?? ""));
 
-export function drawChoice(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawChoice(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const options = optionsOf(node);
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, options[0] ?? "");
@@ -403,16 +434,26 @@ export function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
       }}
     >
       <OptionsLabel ctx={ctx} label={label} />
-      <RadioGroup value={binding.value} onValueChange={(next: string) => binding.set(next)}>
+      <RadioGroup
+        value={binding.value}
+        onValueChange={(next: string) => binding.set(next)}
+      >
         {options.map((option, index) => (
-          <RadioGroupItem key={`r-${String(index)}`} value={option} label={option} />
+          <RadioGroupItem
+            key={`r-${String(index)}`}
+            value={option}
+            label={option}
+          />
         ))}
       </RadioGroup>
     </div>
   );
 }
 
-export function drawSelect(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawSelect(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const options = optionsOf(node);
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, options[0] ?? "");
@@ -437,7 +478,10 @@ export function drawSelect(node: ElementNode, ctx: ProgramContext): JSX.Element 
   );
 }
 
-export function drawChecklist(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawChecklist(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const options = optionsOf(node);
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.values, [] as string[]);
@@ -460,7 +504,9 @@ export function drawChecklist(node: ElementNode, ctx: ProgramContext): JSX.Eleme
           label={option}
           checked={held.includes(option)}
           onCheckedChange={(next: boolean) =>
-            binding.set(next ? [...held, option] : held.filter((item) => item !== option))
+            binding.set(
+              next ? [...held, option] : held.filter((item) => item !== option),
+            )
           }
         />
       ))}
@@ -468,11 +514,16 @@ export function drawChecklist(node: ElementNode, ctx: ProgramContext): JSX.Eleme
   );
 }
 
-export function drawRating(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawRating(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const max = Math.max(1, Math.round(prop<number>(node.props, "max", 5)));
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, 0);
-  const current = Number.isFinite(binding.value) ? Math.round(binding.value) : 0;
+  const current = Number.isFinite(binding.value)
+    ? Math.round(binding.value)
+    : 0;
 
   return (
     <div
@@ -494,7 +545,12 @@ export function drawRating(node: ElementNode, ctx: ProgramContext): JSX.Element 
         />
       ))}
       {label === "" ? null : (
-        <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={mutedText(ctx.t)}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {label}
         </T>
       )}
@@ -502,7 +558,10 @@ export function drawRating(node: ElementNode, ctx: ProgramContext): JSX.Element 
   );
 }
 
-export function drawSliderInput(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawSliderInput(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const min = prop(node.props, "min", 0);
   const max = prop(node.props, "max", 100);
   const label = textProp(node.props, "label");
@@ -565,7 +624,10 @@ export function drawField(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawTextArea(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawTextArea(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, "");
 
@@ -590,7 +652,10 @@ export function drawTextArea(node: ElementNode, ctx: ProgramContext): JSX.Elemen
   );
 }
 
-export function drawStepper(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawStepper(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const min = prop<number | null>(node.props, "min", null) ?? 0;
   const max = prop<number | null>(node.props, "max", null) ?? 99;
   const label = textProp(node.props, "label");
@@ -635,7 +700,12 @@ export function drawStepper(node: ElementNode, ctx: ProgramContext): JSX.Element
         onClick={() => step(current + 1)}
       />
       {label === "" ? null : (
-        <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={mutedText(ctx.t)}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
           {label}
         </T>
       )}

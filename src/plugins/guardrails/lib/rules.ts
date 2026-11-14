@@ -44,7 +44,10 @@ function assertScopeIsNotEmpty(rule: GuardrailRule): void {
     throw new Error(`guardrail rule ${rule.id} names no field in \`fields\``);
 }
 
-function assertFilterCompiles(rule: GuardrailRule, filter: GuardrailFilter): void {
+function assertFilterCompiles(
+  rule: GuardrailRule,
+  filter: GuardrailFilter,
+): void {
   if (filter.regex.trim() === "")
     throw new Error(`guardrail rule ${rule.id} has a filter with no regex`);
   try {

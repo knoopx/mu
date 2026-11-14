@@ -56,8 +56,7 @@ function typeWord(fragment: unknown): string {
     return items === "any" ? "any[]" : `${items}[]`;
   }
   if (schema.type === "object") return "object";
-  if (Array.isArray(schema.type))
-    return (schema.type as string[]).join(" | ");
+  if (Array.isArray(schema.type)) return (schema.type as string[]).join(" | ");
   if (typeof schema.type === "string") return schema.type;
   return "any";
 }

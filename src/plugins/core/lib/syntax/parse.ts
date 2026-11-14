@@ -95,10 +95,7 @@ function kindsOf(text: string, root: Node): (DiffTokenKind | null)[] {
  * block comment that crosses ten lines answers with ten comment runs, one for
  * each of the rows it colours.
  */
-function linesOf(
-  text: string,
-  kinds: (DiffTokenKind | null)[],
-): DiffToken[][] {
+function linesOf(text: string, kinds: (DiffTokenKind | null)[]): DiffToken[][] {
   const out: DiffToken[][] = [];
   let start = 0;
 

@@ -19,7 +19,13 @@ import {
   MAX_COMMENT_LIMIT,
 } from "../constants";
 import { readIssue } from "../lib/api/read";
-import { limitParam, numberParam, ownerParam, refreshParam, repoParam } from "../lib/params";
+import {
+  limitParam,
+  numberParam,
+  ownerParam,
+  refreshParam,
+  repoParam,
+} from "../lib/params";
 import { runRead } from "../lib/reader";
 import type { GithubCall, GithubIssueParams } from "../types";
 import { GITHUB_GUIDELINES } from "./guidelines";

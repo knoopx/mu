@@ -14,10 +14,7 @@ import { StateSpinner } from "../../core/components/StateSpinner";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { ToolStateLine } from "../../core/components/ToolStateLine";
 import { mutedText } from "../../core/lib/ui/theme";
-import {
-  STATE_GLYPH,
-  emphasisWeight,
-} from "../../core/lib/ui/tokens";
+import { STATE_GLYPH, emphasisWeight } from "../../core/lib/ui/tokens";
 import {
   toolCell,
   toolColumn,

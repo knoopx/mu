@@ -310,10 +310,7 @@ export type PanelOpenContext = OpenFileContext & {
   mode: ComposerMode;
 };
 
-export function openPanelRow(
-  row: ComposerPanelRow,
-  a: PanelOpenContext,
-): void {
+export function openPanelRow(row: ComposerPanelRow, a: PanelOpenContext): void {
   if (a.mode.kind !== "pick") return;
   if (a.mode.target === "file") openFileRow(row, a);
 }

@@ -63,9 +63,7 @@ function keepSelection(
 ): number {
   const keep = before.rows[before.sel]?.op;
   const found =
-    keep === undefined
-      ? before.sel
-      : next.findIndex((row) => row.op === keep);
+    keep === undefined ? before.sel : next.findIndex((row) => row.op === keep);
   return Math.min(Math.max(found, 0), Math.max(next.length - 1, 0));
 }
 
@@ -94,27 +92,30 @@ export function useOplogData(options: OplogDataOptions): OplogData {
   const seqRef = useRef(0);
   const cacheRef = useRef(new Map<string, string>());
 
-  const readPatch = useCallback(async (op: string | undefined): Promise<void> => {
-    const seq = ++seqRef.current;
-    if (op === undefined) {
-      setOpPatch("");
-      return;
-    }
-    const held = cacheRef.current.get(op);
-    if (held !== undefined) {
-      setOpPatch(held);
-      return;
-    }
-    const out = await runOpPatch(op);
-    if (seq !== seqRef.current) return;
-    if (out.status === "failed") {
-      setError(out.error);
-      return;
-    }
-    if (cacheRef.current.size >= OP_PATCH_CACHE) cacheRef.current.clear();
-    cacheRef.current.set(op, out.patch);
-    setOpPatch(out.patch);
-  }, []);
+  const readPatch = useCallback(
+    async (op: string | undefined): Promise<void> => {
+      const seq = ++seqRef.current;
+      if (op === undefined) {
+        setOpPatch("");
+        return;
+      }
+      const held = cacheRef.current.get(op);
+      if (held !== undefined) {
+        setOpPatch(held);
+        return;
+      }
+      const out = await runOpPatch(op);
+      if (seq !== seqRef.current) return;
+      if (out.status === "failed") {
+        setError(out.error);
+        return;
+      }
+      if (cacheRef.current.size >= OP_PATCH_CACHE) cacheRef.current.clear();
+      cacheRef.current.set(op, out.patch);
+      setOpPatch(out.patch);
+    },
+    [],
+  );
 
   const refresh = useCallback(async (): Promise<void> => {
     if (!enabled) return;

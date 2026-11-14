@@ -42,7 +42,11 @@ import {
   MERMAID_RENDER_TOOL,
   MERMAID_TOOL_NAMES,
 } from "../constants";
-import { diagramName, diagramFailureLine, mermaidToolViewOf } from "../lib/toolView";
+import {
+  diagramName,
+  diagramFailureLine,
+  mermaidToolViewOf,
+} from "../lib/toolView";
 import { paintDiagram } from "../lib/palette";
 import type { MermaidToolView } from "../lib/toolView";
 
@@ -93,7 +97,9 @@ function headOf(_tool: string, view: MermaidToolView): string {
     return `${diagramName(picture) === "" ? "diagram" : diagramName(picture)} · ${diagramFailureLine(picture)}`;
   }
   const canvas =
-    picture.width === 0 ? "" : `${String(picture.width)}×${String(picture.height)}`;
+    picture.width === 0
+      ? ""
+      : `${String(picture.width)}×${String(picture.height)}`;
   return [
     diagramName(picture),
     canvas,
@@ -106,7 +112,10 @@ function headOf(_tool: string, view: MermaidToolView): string {
 
 /** How big the picture is drawn: never bigger than the log, never smaller than
  *  it was laid out to be by more than it has to be. */
-function boxOf(width: number, height: number): { w: number; h: number; scale: number } {
+function boxOf(
+  width: number,
+  height: number,
+): { w: number; h: number; scale: number } {
   if (width <= 0 || height <= 0) return { w: 0, h: 0, scale: 1 };
   const scale = Math.min(
     DIAGRAM_BOX_WIDTH / width,
@@ -151,10 +160,22 @@ export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
   const t = useAdwaita();
 
   if (item.status === "running") {
-    return <ToolRunning text={RUNNING_TEXT[item.name.toLowerCase()] ?? RUNNING_TEXT[MERMAID_RENDER_TOOL]} />;
+    return (
+      <ToolRunning
+        text={
+          RUNNING_TEXT[item.name.toLowerCase()] ??
+          RUNNING_TEXT[MERMAID_RENDER_TOOL]
+        }
+      />
+    );
   }
 
-  const view = mermaidToolViewOf(item.name, item.args, item.details, item.status);
+  const view = mermaidToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
   if (view === null) return <ToolUnknownResult item={item} tool={item.name} />;
 
   const { picture } = view;

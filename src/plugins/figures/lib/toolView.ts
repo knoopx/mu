@@ -76,7 +76,8 @@ function figureOf(value: unknown): ChartFigure | null {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
   const status = detailText(record["status"]);
-  if (status !== "ok" && status !== "empty" && status !== "invalid") return null;
+  if (status !== "ok" && status !== "empty" && status !== "invalid")
+    return null;
 
   const kind = detailText(record["kind"]);
   const measure = record["measure"];
@@ -95,14 +96,19 @@ function figureOf(value: unknown): ChartFigure | null {
     fill: detailFlag(record["fill"], false),
     labels: detailFlag(record["labels"], true),
     dash: typeof record["dash"] === "number" ? record["dash"] : null,
-    emphasis: typeof record["emphasis"] === "number" ? record["emphasis"] : null,
+    emphasis:
+      typeof record["emphasis"] === "number" ? record["emphasis"] : null,
     unit: detailText(record["unit"]),
     caption: detailText(record["caption"]),
     series: Array.isArray(record["series"])
-      ? record["series"].filter((name): name is string => typeof name === "string")
+      ? record["series"].filter(
+          (name): name is string => typeof name === "string",
+        )
       : [],
     points: Array.isArray(record["points"])
-      ? record["points"].map(pointOf).filter((point): point is PlotPoint => point !== null)
+      ? record["points"]
+          .map(pointOf)
+          .filter((point): point is PlotPoint => point !== null)
       : [],
     plotted: detailNumber(record["plotted"]),
     omitted: detailNumber(record["omitted"]),
@@ -114,11 +120,13 @@ function figureOf(value: unknown): ChartFigure | null {
             total: detailNumber((measure as Record<string, unknown>)["total"]),
             mean: detailNumber((measure as Record<string, unknown>)["mean"]),
             peak: detailText((measure as Record<string, unknown>)["peak"]),
-            peakValue: detailNumber((measure as Record<string, unknown>)["peakValue"]),
+            peakValue: detailNumber(
+              (measure as Record<string, unknown>)["peakValue"],
+            ),
             first: detailText((measure as Record<string, unknown>)["first"]),
             last: detailText((measure as Record<string, unknown>)["last"]),
           }
-      : null,
+        : null,
     bad: Array.isArray(record["bad"]) ? record["bad"].map(badOf) : [],
     error: detailText(record["error"]),
   };
@@ -191,10 +199,7 @@ export function chartToolViewOf(
       { label: "chart", value: status === "empty" ? "" : figure.kind },
       {
         label: "points",
-        value:
-          figure.status === "ok"
-            ? counted(figure.plotted, "point")
-            : "",
+        value: figure.status === "ok" ? counted(figure.plotted, "point") : "",
       },
       {
         label: "series",
@@ -270,7 +275,9 @@ function nodeOf(value: unknown): StructureNode | null {
   const name = detailText(record["name"]);
   if (name === "") return null;
   const children = Array.isArray(record["children"])
-    ? record["children"].map(nodeOf).filter((node): node is StructureNode => node !== null)
+    ? record["children"]
+        .map(nodeOf)
+        .filter((node): node is StructureNode => node !== null)
     : [];
   return {
     name,
@@ -282,10 +289,14 @@ function nodeOf(value: unknown): StructureNode | null {
 }
 
 function treeBadOf(value: unknown): TreeBadNode {
-  const record = typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : {};
-  return { under: detailText(record["under"]), value: detailText(record["value"]) };
+  const record =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
+  return {
+    under: detailText(record["under"]),
+    value: detailText(record["value"]),
+  };
 }
 
 /** The one guard both structure readers open with: a record, and a status word. */
@@ -296,7 +307,8 @@ function detailsOf(details: unknown): {
   if (typeof details !== "object" || details === null) return null;
   const record = details as Record<string, unknown>;
   const status = detailText(record["status"]);
-  if (status !== "ok" && status !== "empty" && status !== "invalid") return null;
+  if (status !== "ok" && status !== "empty" && status !== "invalid")
+    return null;
   return { record, status: status as StructureStatus };
 }
 
@@ -309,9 +321,13 @@ function treeFigureOf(details: unknown): TreeFigure | null {
 
   return {
     status,
-    nodes: record["nodes"].map(nodeOf).filter((node): node is StructureNode => node !== null),
+    nodes: record["nodes"]
+      .map(nodeOf)
+      .filter((node): node is StructureNode => node !== null),
     expanded: Array.isArray(record["expanded"])
-      ? record["expanded"].filter((path): path is string => typeof path === "string")
+      ? record["expanded"].filter(
+          (path): path is string => typeof path === "string",
+        )
       : [],
     caption: detailText(record["caption"]),
     counted: detailNumber(record["counted"]),
@@ -355,17 +371,26 @@ export function treeToolViewOf(
     status,
     tree,
     cells: [
-      { label: "tree", value: status === "empty" ? "" : counted(tree.drawn, "node") },
+      {
+        label: "tree",
+        value: status === "empty" ? "" : counted(tree.drawn, "node"),
+      },
       { label: "folders", value: status === "ok" ? String(tree.folders) : "" },
       { label: "leaves", value: status === "ok" ? String(tree.leaves) : "" },
       { label: "depth", value: status === "ok" ? String(tree.depth) : "" },
       {
         label: "moved",
-        value: status === "ok" && moved > 0 ? `+${String(tree.added)} −${String(tree.removed)}` : "",
+        value:
+          status === "ok" && moved > 0
+            ? `+${String(tree.added)} −${String(tree.removed)}`
+            : "",
       },
       {
         label: "open",
-        value: status === "ok" && tree.expanded.length > 0 ? String(tree.expanded.length) : "",
+        value:
+          status === "ok" && tree.expanded.length > 0
+            ? String(tree.expanded.length)
+            : "",
       },
       {
         label: "cut",
@@ -387,9 +412,10 @@ export interface TableToolView {
 }
 
 function statOf(value: unknown): TableColumnStat {
-  const record = typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : {};
+  const record =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
   return {
     name: detailText(record["name"]),
     figure: detailFlag(record["figure"], false),
@@ -400,9 +426,10 @@ function statOf(value: unknown): TableColumnStat {
 }
 
 function tableBadOf(value: unknown): TableBadCell {
-  const record = typeof value === "object" && value !== null
-    ? (value as Record<string, unknown>)
-    : {};
+  const record =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)
+      : {};
   const reason = detailText(record["reason"]);
   return {
     at: detailNumber(record["at"]),
@@ -417,11 +444,14 @@ function tableFigureOf(details: unknown): TableFigure | null {
   const read = detailsOf(details);
   if (read === null) return null;
   const { record, status } = read;
-  if (!Array.isArray(record["columns"]) || !Array.isArray(record["rows"])) return null;
+  if (!Array.isArray(record["columns"]) || !Array.isArray(record["rows"]))
+    return null;
 
   return {
     status,
-    columns: record["columns"].filter((name): name is string => typeof name === "string"),
+    columns: record["columns"].filter(
+      (name): name is string => typeof name === "string",
+    ),
     stats: Array.isArray(record["stats"]) ? record["stats"].map(statOf) : [],
     rows: record["rows"]
       .map((row) =>
@@ -478,7 +508,10 @@ export function tableToolViewOf(
     cells: [
       // The header row's own names are the head line, not a chip: the table
       // prints them again above its rows.
-      { label: "table", value: status === "empty" ? "" : counted(table.drawn, "row") },
+      {
+        label: "table",
+        value: status === "empty" ? "" : counted(table.drawn, "row"),
+      },
       { label: "columns", value: counted(table.columns.length, "column") },
       { label: "figures", value: status === "ok" ? figureCell(table) : "" },
       {
