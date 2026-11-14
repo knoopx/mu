@@ -6,12 +6,10 @@
  * "where does this project keep the thing".
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_TOOL_LABELS, GITHUB_TREE_TOOL } from "../constants";
 import { readTree } from "../lib/api/read/tree";
 import {
@@ -40,8 +38,9 @@ export async function executeGithubTree(
   return runRead(readTree, { ...params, signal });
 }
 
-export const githubTreeTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubTreeTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_TREE_TOOL,
+  icon: "folderOpen",
   label: GITHUB_TOOL_LABELS[GITHUB_TREE_TOOL],
   description:
     "Lists one folder of a GitHub repository — name, type (dir, file, symlink, submodule), " +

@@ -2,12 +2,10 @@
  * `openui-switch` — which program the log paints live.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { OPENUI_SWITCH_TOOL } from "../constants";
 import type { OpenUISwitchDetails } from "../types";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
@@ -20,11 +18,12 @@ const SwitchParametersSchema = Type.Object({
   name: Type.Optional(namedParam),
 });
 
-export const openUISwitchTool: ToolDefinition<
+export const openUISwitchTool: PluginTool<
   typeof SwitchParametersSchema,
   OpenUISwitchDetails
 > = {
   name: OPENUI_SWITCH_TOOL,
+  icon: "swapHoriz",
   label: OPENUI_SWITCH_TOOL,
   description:
     "Make an existing program the one the log paints live and the one `openui-state` and `openui-events` read by default. An unknown name fails with the program list rather than guessing.",

@@ -9,12 +9,10 @@
  * where it hangs.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { toolResult } from "../../core/lib/agent/toolText";
 import {
   MAX_NAME_CHARS,
@@ -115,11 +113,12 @@ export function executeTreeRender(
   return toolResult(treeAnswerOf(figure), figure);
 }
 
-export const treeRenderTool: ToolDefinition<
+export const treeRenderTool: PluginTool<
   typeof RenderParametersSchema,
   TreeFigure
 > = {
   name: TREE_RENDER_TOOL,
+  icon: "accountTree",
   label: TREE_TOOL_LABEL,
   description:
     "Draw a tree of named things nested in groups: a package's folders, a module graph, a call chain, an " +

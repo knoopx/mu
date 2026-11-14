@@ -7,12 +7,10 @@
  * post-state both halves report is `lib/splitOutcome.ts`.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_HUNK_SPLIT_TOOL, VCS_TOOL_LABELS } from "../constants";
 import { unresolvedResult, type VcsBlank } from "../lib/answer";
 import { requiredText } from "../lib/params";
@@ -85,11 +83,12 @@ export async function executeVcsHunkSplit(
 }
 
 /** A write — the hunks came from the user's own split-hunk key on one file row. */
-export const vcsHunkSplitTool: ToolDefinition<
+export const vcsHunkSplitTool: PluginTool<
   typeof Parameters,
   VcsSplitDetails
 > = {
   name: VCS_HUNK_SPLIT_TOOL,
+  icon: "callSplit",
   label: VCS_TOOL_LABELS[VCS_HUNK_SPLIT_TOOL],
   description:
     "Splits one revision of a jujutsu repo at HUNK granularity: the target is rewritten IN " +

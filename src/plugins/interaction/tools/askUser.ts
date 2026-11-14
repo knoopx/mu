@@ -2,10 +2,10 @@ import type {
   AgentToolResult,
   AgentToolUpdateCallback,
   ExtensionToolContext,
-  ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { ASK_TOOL_NAME } from "../constants";
 import {
   assertUniqueOptionLabels,
@@ -103,11 +103,12 @@ export async function executeAskUser(
   return buildToolResult(answers, cancelled);
 }
 
-export const askUserTool: ToolDefinition<
+export const askUserTool: PluginTool<
   typeof AskUserParametersSchema,
   AskUserDetails
 > = {
   name: ASK_TOOL_NAME,
+  icon: "help",
   label: "Ask User",
   description:
     "Ask the user one or more multiple-choice questions and receive their selections. " +

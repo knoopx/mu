@@ -3,12 +3,10 @@
  * what its default branch is called, which is what every later read inherits.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_REPO_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readRepo } from "../lib/api/read/repo";
 import { ownerParam, refreshParam, repoParam } from "../lib/params";
@@ -29,8 +27,9 @@ export async function executeGithubRepo(
   return runRead(readRepo, { ...params, signal });
 }
 
-export const githubRepoTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubRepoTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_REPO_TOOL,
+  icon: "book",
   label: GITHUB_TOOL_LABELS[GITHUB_REPO_TOOL],
   description:
     "Reads one GitHub repository: description, stars, forks, language, licence, " +

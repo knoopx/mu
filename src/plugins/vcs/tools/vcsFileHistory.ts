@@ -6,12 +6,10 @@
  * why this tool comes before the one that shows a file's body.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_FILE_HISTORY_TOOL } from "../constants";
 import {
   failedResult,
@@ -75,11 +73,12 @@ export async function executeVcsFileHistory(
 }
 
 /** Read-only, and always bounded — an unbounded answer is the whole repo's history. */
-export const vcsFileHistoryTool: ToolDefinition<
+export const vcsFileHistoryTool: PluginTool<
   typeof Parameters,
   VcsFileHistoryDetails
 > = {
   name: VCS_FILE_HISTORY_TOOL,
+  icon: "history",
   label: "VCS file history",
   description:
     "Lists the revisions that touched a file in a jujutsu repo, newest first: the RESOLVED " +

@@ -9,8 +9,13 @@
  * domains, and the agent has no say in either.
  */
 
-import { definePlugin } from "../core/lib/plugin/manifest";
+import {
+  definePlugin,
+  type PanelSurface,
+} from "../core/lib/plugin/manifest";
 import { panelHints } from "../core/lib/composer/shortcuts";
+import { useGuardrailsPanel } from "./hooks/useGuardrails";
+import type { GuardrailsPanelApi } from "./types";
 import { guardrailsExtension } from "./lib/guardrailsExtension";
 import { guardrailsCoverageTool } from "./tools/guardrailsCoverage";
 import { guardrailsFixtureUpdateTool } from "./tools/guardrailsFixtureUpdate";
@@ -46,23 +51,30 @@ export const guardrailsPlugin = definePlugin("guardrails", (app) => {
     return hit === null ? null : <GuardrailBlockRows hit={hit} />;
   });
 
-  app.composer.panel({
+  // The panel reads the domains, arms them, and says what it has to say about an
+  // empty rule set — all of it its own state, built by its own hook. The composer
+  // holds that state by target and hands it back, and never reads it.
+  const panel: PanelSurface<GuardrailsPanelApi> = {
     target: "guardrails",
     keybinding: "composer.guardrails",
     open: { type: "openPick", target: "guardrails" },
     choose: "arm",
-    // The panel's rows are the domains and each wears whether it is armed; what
-    // the panel says when there are no rules is the panel's own news, not a
-    // generic "no matches".
-    panel: (data) => ({
-      rows: [...data.guardrails.rows],
+    use: (ctx) => useGuardrailsPanel(ctx.query, ctx.open),
+    panel: (state) => ({
+      rows: [...state.rows],
       status: {
-        message: data.guardrails.statusText,
+        message: state.statusText,
         hints: panelHints("guardrails"),
       },
-      emptyText: data.guardrails.emptyText,
+      emptyText: state.emptyText,
     }),
-  });
+    // Arming is a switch, not a choice: the panel stays open and the cursor stays
+    // put, so the row can be flipped and read again.
+    pick: (row, state, actions) => {
+      actions.toast(state.toggle(row.key));
+    },
+  };
+  app.composer.panel(panel);
 
   app.composer.command({
     name: "guardrails",

@@ -6,12 +6,10 @@
  * reported as `binary` rather than shown as noise.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_FILE_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readFile } from "../lib/api/read/file";
 import {
@@ -40,8 +38,9 @@ export async function executeGithubFile(
   return runRead(readFile, { ...params, signal });
 }
 
-export const githubFileTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubFileTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_FILE_TOOL,
+  icon: "description",
   label: GITHUB_TOOL_LABELS[GITHUB_FILE_TOOL],
   description:
     "Reads one file from a GitHub repository at a ref — its text after a metadata table " +

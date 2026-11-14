@@ -2,12 +2,10 @@
  * `openui-list` — every program the log holds.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { OPENUI_LIST_TOOL } from "../constants";
 import type { OpenUIListDetails } from "../types";
 import {
@@ -22,11 +20,12 @@ import { LIST_GUIDELINES } from "./guidelines";
 
 const ListParametersSchema = Type.Object({});
 
-export const openUIListTool: ToolDefinition<
+export const openUIListTool: PluginTool<
   typeof ListParametersSchema,
   OpenUIListDetails
 > = {
   name: OPENUI_LIST_TOOL,
+  icon: "list",
   label: OPENUI_LIST_TOOL,
   description:
     "List every program in the log with its size, whether it is still streaming, how many statements the renderer counted, how many errors and unread interactions it holds, and which one is showing. " +

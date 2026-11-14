@@ -12,7 +12,12 @@ import type {
   ExtensionFactory,
   ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
+import type { IconName } from "adwaita-gpuix";
+import {
+  BUILT_IN_TOOL_ICONS,
+  DEFAULT_TOOL_ICON,
+} from "../agent/builtInTools";
 import type { ToolTranscriptItem } from "../agent/transcriptState";
 import type { ComposerEvent, ComposerTarget } from "../composer/mode";
 import type { ComposerPanelData } from "../composer/panelData";
@@ -56,6 +61,22 @@ function claimedBy(
   item: ToolTranscriptItem,
 ): ToolRowSurface[] {
   return rowSurfaces(host).filter((surface) => surface.owns(item.name));
+}
+
+/**
+ * The mark a call's row wears.
+ *
+ * A plugin's tool says what it is drawn as when it registers it, so no table in
+ * core names a plugin's tools; pi's own built-ins, which no plugin registers, are
+ * core's to name, and a call whose tool named nothing still gets a mark.
+ */
+export function toolIconFor(host: PluginHost, name: string): IconName {
+  const key = name.toLowerCase();
+  return (
+    host.slots.toolIcons.get(key) ??
+    BUILT_IN_TOOL_ICONS[key] ??
+    DEFAULT_TOOL_ICON
+  );
 }
 
 /** The whole log row of a call whose plugin draws the header too. */
@@ -121,6 +142,11 @@ export function ownsItsRows(
   return blockBodiesOf(host, item).length > 0;
 }
 
+/** Every panel every plugin owns, in registration order — the order their state hooks run in. */
+export function panelSurfaces(host: PluginHost): PanelSurface[] {
+  return host.slots.panels;
+}
+
 /** The panel registered for a composer target, if a plugin owns it. */
 export function panelForTarget(
   host: PluginHost,
@@ -146,11 +172,49 @@ export const panelIsWide = (
 export function panelViewOf(
   host: PluginHost,
   target: ComposerTarget,
+  state: unknown,
   data: ComposerPanelData,
 ): PanelView | null {
   const surface = panelForTarget(host, target);
   if (surface?.panel === undefined) return null;
-  return surface.panel(data);
+  // The state is the one the surface's own `use` produced for this target, so
+  // `unknown` here is the widening at the registry, not a shape core guesses at.
+  return surface.panel(state, data);
+}
+
+/**
+ * What the panels put over the window rather than in the band, in registration
+ * order — a dialog a row opened, drawn from the state the panel made for itself.
+ *
+ * Core asks every surface it holds and draws what answers; it owns no panel's
+ * dialog and names no panel to find one.
+ */
+export function panelOverlays(
+  host: PluginHost,
+  state: ReadonlyMap<ComposerTarget, unknown>,
+): { key: string; node: ReactNode }[] {
+  const drawn: { key: string; node: ReactNode }[] = [];
+  for (const surface of panelSurfaces(host)) {
+    if (surface.overlay === undefined) continue;
+    const node = surface.overlay(state.get(surface.target));
+    if (node !== null && node !== undefined)
+      drawn.push({ key: `overlay-${surface.target}`, node });
+  }
+  return drawn;
+}
+
+/**
+ * What a pick on one of a panel's rows does, in the panel's own words.
+ *
+ * Core routes a list pick only for the panels whose rows mean the same thing to
+ * every list — a model, a session, a path. A panel whose rows mean something of
+ * their own says so, and the composer asks it.
+ */
+export function panelPickFor(
+  host: PluginHost,
+  target: ComposerTarget,
+): PanelSurface["pick"] {
+  return panelForTarget(host, target)?.pick;
 }
 
 /**

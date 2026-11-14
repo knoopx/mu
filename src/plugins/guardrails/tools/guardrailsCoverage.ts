@@ -1,7 +1,4 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -9,6 +6,7 @@ import {
   GUARDRAILS_COVERAGE_TOOL,
   MAX_COVERAGE_FILES,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { defaultSessionsDir, guardrailCoverage } from "../lib/coverage";
 import { reportSummary, reportTable, yesNo } from "../lib/report";
 import { guardrailRules } from "../lib/rules";
@@ -107,11 +105,12 @@ export function readGuardrailCoverage(
   };
 }
 
-export const guardrailsCoverageTool: ToolDefinition<
+export const guardrailsCoverageTool: PluginTool<
   typeof CoverageParametersSchema,
   GuardrailsCoverageDetails
 > = {
   name: GUARDRAILS_COVERAGE_TOOL,
+  icon: "queryStats",
   label: "guardrails coverage",
   description:
     "Reports which guardrail domains fired in recent sessions and which never did, by reading " +

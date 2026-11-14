@@ -15,16 +15,19 @@ import { PatchDiff } from "./PatchDiff";
 import { StateSpinner } from "./StateSpinner";
 import {
   ReadPreview,
-  isReadTool,
   readPreviewOf,
   type ReadPreviewData,
 } from "./ReadPreview";
 import {
   WritePreview,
-  isWriteTool,
   writePreviewOf,
   type WritePreviewData,
 } from "./WritePreview";
+import {
+  isReadTool,
+  isWriteTool,
+  patchOfCall,
+} from "../lib/agent/builtInTools";
 import { useProjectSource, type ProjectSource } from "./ProjectSource";
 import {
   outputModeFor,
@@ -32,7 +35,6 @@ import {
   type OutputMode,
 } from "../lib/ui/toolOutputMode";
 import { commandTextOf, pathTextOf } from "../lib/agent/toolInput";
-import { toolIconOf } from "../lib/ui/toolIcon";
 import { PAGE_INSET } from "../lib/ui/transcriptLayout";
 import { ToolBand } from "./ToolBand";
 import { buildNativeTheme } from "../lib/ui/theme";
@@ -41,6 +43,7 @@ import {
   answerBodiesOf,
   blockBodiesOf,
   ownsItsRows,
+  toolIconFor,
   toolPreviewOf,
 } from "../lib/plugin/surfaces";
 import { headerSnippet } from "../lib/agent/toolPreview";
@@ -51,8 +54,6 @@ export interface ToolExecutionProps {
   item: ToolTranscriptItem;
   style?: Partial<StyleDesc>;
 }
-
-const DIFF_TOOLS = new Set(["edit"]);
 
 function formatArgs(args: Record<string, unknown>): string {
   return Object.entries(args)
@@ -76,14 +77,6 @@ function previewFor(item: ToolTranscriptItem): string {
   if (path !== "") return headerSnippet(path);
 
   return headerSnippet(formatArgs(args));
-}
-
-function patchOf(item: ToolTranscriptItem): string | undefined {
-  const details = item.details as { patch?: unknown } | undefined;
-  if (details === undefined || details === null) return undefined;
-  const patch = details.patch;
-  if (typeof patch !== "string") return undefined;
-  return patch.trim() === "" ? undefined : patch;
 }
 
 function toToolState(item: ToolTranscriptItem): ToolState {
@@ -134,9 +127,7 @@ function toolRowLookOf(
   const writePreview = isWriteTool(item.name)
     ? writePreviewOf(item)
     : undefined;
-  const patch = DIFF_TOOLS.has(item.name.toLowerCase())
-    ? patchOf(item)
-    : undefined;
+  const patch = patchOfCall(item);
   const isWrite = isWriteTool(item.name);
   return {
     state,
@@ -246,7 +237,7 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
         state={look.state}
         title={item.name}
         args={look.args}
-        icon={toolIconOf(item.name)}
+        icon={toolIconFor(HOST, item.name)}
         spinnerSlot={<StateSpinner />}
       />
       {answerPanelsOf(item)}

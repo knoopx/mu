@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GUARDRAILS_TEST_TOOL, MAX_TEST_FIXTURES } from "../constants";
 import { reloadGuardrails } from "../lib/guardrailsExtension";
 import {
@@ -326,11 +324,12 @@ export async function runGuardrailTests(
   };
 }
 
-export const guardrailsTestTool: ToolDefinition<
+export const guardrailsTestTool: PluginTool<
   typeof TestParametersSchema,
   GuardrailsTestDetails
 > = {
   name: GUARDRAILS_TEST_TOOL,
+  icon: "rule",
   label: "guardrails test",
   description:
     "Runs the guardrails fixture suites against the live tree-sitter engine and reports " +

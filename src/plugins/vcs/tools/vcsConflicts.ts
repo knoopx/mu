@@ -6,12 +6,10 @@
  * alone — the one conflict the user can be standing in.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_CONFLICTS_TOOL } from "../constants";
 import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
 import { jjRoot, runConflicts } from "../lib/ops";
@@ -80,11 +78,12 @@ export async function executeVcsConflicts(
 }
 
 /** Read-only — a conflict is reported, never merged, and no merge tool is started. */
-export const vcsConflictsTool: ToolDefinition<
+export const vcsConflictsTool: PluginTool<
   typeof Parameters,
   VcsConflictsDetails
 > = {
   name: VCS_CONFLICTS_TOOL,
+  icon: "merge",
   label: "VCS conflicts",
   description:
     "Reports the ACTUAL unresolved conflicts of a jujutsu repo: the conflicted revisions (the " +

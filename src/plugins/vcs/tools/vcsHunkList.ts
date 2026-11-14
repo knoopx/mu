@@ -6,12 +6,10 @@
  * stale id comes back `empty-selected`. No patch lines — that is vcs-file-diff.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_HUNK_LIST_TOOL, VCS_TOOL_LABELS } from "../constants";
 import {
   failedResult,
@@ -102,11 +100,12 @@ export async function executeVcsHunkList(
 }
 
 /** Read-only, and the only place a `hunk-` id is ever shown. */
-export const vcsHunkListTool: ToolDefinition<
+export const vcsHunkListTool: PluginTool<
   typeof Parameters,
   VcsHunkListDetails
 > = {
   name: VCS_HUNK_LIST_TOOL,
+  icon: "layers",
   label: VCS_TOOL_LABELS[VCS_HUNK_LIST_TOOL],
   description:
     "Lists the diff hunks of one revision of a jujutsu repo (it wraps the jj-hunk CLI): a " +

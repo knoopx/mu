@@ -1,7 +1,4 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -10,6 +7,7 @@ import {
   DEFAULT_TRACE_DEPTH,
   MAX_TRACE_DEPTH,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { fallowTrace } from "../lib/fallow";
 import {
   blocks,
@@ -162,11 +160,12 @@ async function executeCodeSymbolReferences(
   );
 }
 
-export const codeSymbolReferencesTool: ToolDefinition<
+export const codeSymbolReferencesTool: PluginTool<
   typeof Parameters,
   CodeSymbolReferencesDetails
 > = {
   name: CODE_SYMBOL_REFERENCES_TOOL,
+  icon: "accountTree",
   label: "Symbol references",
   description:
     "Traces a symbol's call chain — the files that import it (callers) and the symbols it " +

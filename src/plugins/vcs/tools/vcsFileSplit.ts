@@ -7,12 +7,10 @@
  * and `lib/splitOutcome.ts` states that ceremony once for both split tools.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_FILE_SPLIT_TOOL, VCS_TOOL_LABELS } from "../constants";
 import { unresolvedResult, type VcsBlank } from "../lib/answer";
 import { requiredText } from "../lib/params";
@@ -92,11 +90,12 @@ export async function executeVcsFileSplit(
 }
 
 /** A write — the files are the user's own selection in the panel, the message is the agent's. */
-export const vcsFileSplitTool: ToolDefinition<
+export const vcsFileSplitTool: PluginTool<
   typeof Parameters,
   VcsFileSplitDetails
 > = {
   name: VCS_FILE_SPLIT_TOOL,
+  icon: "verticalSplit",
   label: VCS_TOOL_LABELS[VCS_FILE_SPLIT_TOOL],
   description:
     "Splits one revision of a jujutsu repo at FILE granularity: the named `files` (paths or " +

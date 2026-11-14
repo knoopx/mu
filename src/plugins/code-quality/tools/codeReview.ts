@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { CODE_REVIEW_TOOL, DEFAULT_FINDING_LIMIT } from "../constants";
 import { inspectDiff } from "../lib/review";
 import {
@@ -132,11 +130,12 @@ async function executeCodeReview(
   );
 }
 
-export const codeReviewTool: ToolDefinition<
+export const codeReviewTool: PluginTool<
   typeof Parameters,
   CodeReviewDetails
 > = {
   name: CODE_REVIEW_TOOL,
+  icon: "rateReview",
   label: "Change review",
   description:
     "Runs entity-level change analysis on a commit or range and answers with one row per " +

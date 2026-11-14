@@ -30,11 +30,14 @@ import type {
 } from "./manifest";
 import type { ToolTranscriptItem } from "../agent/transcriptState";
 import type { JSX } from "react";
+import type { IconName } from "adwaita-gpuix";
 
 /** What a plugin contributes, and what the app draws from. */
 export interface PluginSlots {
   /** the tools the agent may call, in registration order */
   tools: PluginTool[];
+  /** the mark each registered tool wears in the log, by tool name */
+  toolIcons: Map<string, IconName>;
   /** the pi extension factories every session loads */
   extensions: ExtensionFactory[];
   /** how a plugin's own tool calls are drawn in the log */
@@ -102,6 +105,7 @@ export function createPluginHost(
 ): PluginHost {
   const slots: PluginSlots = {
     tools: [],
+    toolIcons: new Map<string, IconName>(),
     extensions: [],
     rows: [],
     blocks: [],
@@ -136,7 +140,12 @@ export function createPluginHost(
           const name = tool?.name ?? "";
           if (name.trim() === "")
             throw new Error(`plugin ${plugin} registered a tool with no name`);
+          if (typeof tool?.icon !== "string" || tool.icon.trim() === "")
+            throw new Error(
+              `plugin ${plugin} registered the tool ${JSON.stringify(name)} without the mark its log row wears`,
+            );
           claim(owners, name, "tool", plugin);
+          slots.toolIcons.set(name.toLowerCase(), tool.icon);
           slots.tools.push(tool);
         }
       },

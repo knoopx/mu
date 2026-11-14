@@ -25,6 +25,7 @@ import {
   type PromptOptions,
   type SessionTreeNode,
 } from "@earendil-works/pi-coding-agent";
+import { PI_TOOL_NAMES } from "./builtInTools";
 import { agentSettingsManager } from "./settings";
 import { HOST } from "../../../registry";
 import {
@@ -52,13 +53,6 @@ export interface AgentOptions {
 }
 
 /**
- * pi's own tools. mu names them because pi asks which tools are active by name;
- * every other name in the session is a plugin's, read off its manifest, so a
- * tool can never be declared to the model in one file and implemented in another.
- */
-const PI_TOOL_NAMES = ["read", "bash", "edit", "write", "codemode"];
-
-/**
  * The names of every tool the session may use.
  *
  * Read when a session starts, not when this module loads: the plugin host is what
@@ -66,6 +60,9 @@ const PI_TOOL_NAMES = ["read", "bash", "edit", "write", "codemode"];
  * of building it — the composer's data bag names the session, the session names the
  * agent, and the host is what pulls the plugins in.
  */
+// pi's own tools are named once, in `builtInTools.ts`; every other name in the
+// session is a plugin's, read off its manifest, so a tool can never be declared
+// to the model in one file and implemented in another.
 const appToolNames = (): string[] => [...PI_TOOL_NAMES, ...agentToolNames(HOST)];
 
 /**

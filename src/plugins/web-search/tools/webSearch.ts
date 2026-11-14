@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { MAX_RESULT_LIMIT } from "../lib/duckduckgo/constants";
 import { searchDuckDuckGo } from "../lib/duckduckgo/search";
 import { SEARCH_TOOL_LABEL, SEARCH_TOOL_NAME } from "../constants";
@@ -47,11 +45,12 @@ export async function executeWebSearch(
   };
 }
 
-export const webSearchTool: ToolDefinition<
+export const webSearchTool: PluginTool<
   typeof SearchParametersSchema,
   WebSearchDetails
 > = {
   name: SEARCH_TOOL_NAME,
+  icon: "search",
   label: SEARCH_TOOL_LABEL,
   description:
     "Search the web and return ranked results as title, URL and snippet. " +

@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { CODE_SYMBOL_INSPECT_TOOL, DEFAULT_FINDING_LIMIT } from "../constants";
 import { fallowInspect } from "../lib/fallow";
 import {
@@ -140,11 +138,12 @@ async function executeCodeSymbolInspect(
   );
 }
 
-export const codeSymbolInspectTool: ToolDefinition<
+export const codeSymbolInspectTool: PluginTool<
   typeof Parameters,
   CodeSymbolInspectDetails
 > = {
   name: CODE_SYMBOL_INSPECT_TOOL,
+  icon: "category",
   label: "File surface",
   description:
     "Answers what a file exposes and who uses it: one row per export with the number of " +

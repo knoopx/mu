@@ -2,7 +2,7 @@ import { resolve } from "node:path";
 import type { ToastFn } from "adwaita-gpuix";
 import { truncateToWidth } from "../../../../utils/truncate";
 import { HOST } from "../../../registry";
-import { commandByName } from "../plugin/surfaces";
+import { commandByName, panelPickFor } from "../plugin/surfaces";
 import {
   accentOfThemeRow,
   parseInvocation,
@@ -43,8 +43,11 @@ export interface ComposerActionContext {
   setThinking(level: ThinkingLevel): void;
   resumeSession(path: string, done: () => void): void;
 
-  /** Arms or disarms a guardrail row; the text it returns is the toast. */
-  toggleGuardrail(key: string): string;
+  /**
+   * The state each open panel built for itself, by target. A panel asked what a
+   * pick on its own row does is handed the state it made, and nothing else.
+   */
+  panelState: ReadonlyMap<ComposerTarget, unknown>;
 }
 
 function pickThemeRow(row: ComposerPanelRow, a: ComposerActionContext): void {
@@ -110,11 +113,15 @@ function pickPanelRow(
       a.setInput(row.key);
       a.setMode(draftMode());
       break;
-    case "guardrails":
-      // Arming is a switch, not a choice: the panel stays open and the cursor
-      // stays put, so the row can be flipped and read again.
-      a.toast(a.toggleGuardrail(row.key));
+    default: {
+      // A panel whose rows mean something of their own — arming a guardrail is a
+      // switch, not a choice — says what a pick does, and the composer's list
+      // routing stays out of it.
+      const pick = panelPickFor(HOST, a.mode.target);
+      if (pick === undefined) return;
+      pick(row, a.panelState.get(a.mode.target), { toast: a.toast });
       break;
+    }
   }
 }
 

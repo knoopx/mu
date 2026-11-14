@@ -2,12 +2,10 @@
  * `openui-render` — put a program in the log and draw it now.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { DEFAULT_PROGRAM_NAME, OPENUI_RENDER_TOOL } from "../constants";
 import type { OpenUIProgramDetails } from "../types";
 import { namedParam, codeParam } from "../lib/params";
@@ -36,11 +34,12 @@ const RenderParametersSchema = Type.Object({
   ),
 });
 
-export const openUIRenderTool: ToolDefinition<
+export const openUIRenderTool: PluginTool<
   typeof RenderParametersSchema,
   OpenUIProgramDetails
 > = {
   name: OPENUI_RENDER_TOOL,
+  icon: "dashboard",
   label: OPENUI_RENDER_TOOL,
   description:
     "Replace program `name` with this OpenUI Lang source and draw it in the conversation log immediately. " +

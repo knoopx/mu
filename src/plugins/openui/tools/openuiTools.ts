@@ -6,10 +6,7 @@
  * fails as a missing tool rather than inventing a row.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -17,6 +14,7 @@ import {
   MAX_FIXTURE_KEYS,
   OPENUI_TOOLS_TOOL,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import type { OpenUIFixturesDetails } from "../types";
 import {
   blocks,
@@ -48,11 +46,12 @@ const sizeOf = (fixtures: Record<string, unknown>): number => {
   }
 };
 
-export const openUIToolsTool: ToolDefinition<
+export const openUIToolsTool: PluginTool<
   typeof FixturesParametersSchema,
   OpenUIFixturesDetails
 > = {
   name: OPENUI_TOOLS_TOOL,
+  icon: "widgets",
   label: OPENUI_TOOLS_TOOL,
   description:
     'Replace the data served to a program\'s `Query("tool", args, default)` calls. ' +

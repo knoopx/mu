@@ -11,12 +11,10 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { toolResult } from "../../core/lib/agent/toolText";
 import {
   MERMAID_RENDER_TOOL,
@@ -74,11 +72,12 @@ export async function executeMermaidRender(
   return toolResult(diagramAnswerOf(picture, writeNote), picture);
 }
 
-export const mermaidRenderTool: ToolDefinition<
+export const mermaidRenderTool: PluginTool<
   typeof RenderParametersSchema,
   MermaidPicture
 > = {
   name: MERMAID_RENDER_TOOL,
+  icon: "schema",
   label: MERMAID_TOOL_LABEL,
   description:
     "Draw Mermaid source as a diagram: flowcharts, sequence, state and class diagrams, ER, gantt, pie, git graphs, " +

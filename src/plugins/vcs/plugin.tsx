@@ -8,10 +8,19 @@
  * `changes` opens with its own event because it keeps the query it was left with.
  */
 
-import { definePlugin } from "../core/lib/plugin/manifest";
+import {
+  definePlugin,
+  type PanelSurface,
+} from "../core/lib/plugin/manifest";
+import { ChangesOverlayHost } from "./components/ChangesOverlayHost";
 import { ChangesPanel } from "./components/ChangesPanel";
 import { OplogPanel } from "./components/OplogPanel";
 import { changesStatus, oplogStatus } from "./lib/panelStatus";
+import {
+  useChangesPanel,
+  type ChangesPanelState,
+} from "./hooks/useChangesPanel";
+import { useOplogPanel, type OplogPanelState } from "./hooks/useOplogPanel";
 import { vcsConflictsTool } from "./tools/vcsConflicts";
 import { vcsDescribeTool } from "./tools/vcsDescribe";
 import { vcsFileDiffTool } from "./tools/vcsFileDiff";
@@ -51,30 +60,47 @@ export const vcsPlugin = definePlugin("vcs", (app) => {
 
   // Both repo panels fill the band: the list on the left, the preview on the
   // right, and the keys of whichever half has the cursor. Core never asks which
-  // component a repo panel is — this file says so.
-  app.composer.panel({
+  // component a repo panel is, and never holds the panel's state — this file says
+  // what the panel is, and its own hook reads the repo for it.
+  const changes: PanelSurface<ChangesPanelState> = {
     target: "changes",
     keybinding: "composer.changes",
     open: { type: "openChanges" },
     wide: true,
     choose: "open",
-    panel: (data) => ({
-      node: <ChangesPanel panel={data.changes} />,
-      status: changesStatus(data.changes),
-      onKey: (event) => data.changes.onKey(event),
+    use: (ctx) =>
+      useChangesPanel({
+        cwd: ctx.cwd,
+        toast: ctx.toast,
+        enabled: ctx.open,
+        onPickText: ctx.actions.pickText,
+        onInstruction: ctx.actions.sendInstruction,
+      }),
+    panel: (state) => ({
+      node: <ChangesPanel panel={state} />,
+      status: changesStatus(state),
+      onKey: (event) => state.onKey(event),
     }),
-  });
-  app.composer.panel({
+    // A write asked for from the stack is confirmed over the window, not inside
+    // the band that asked for it.
+    overlay: (state) => <ChangesOverlayHost panel={state} />,
+  };
+  app.composer.panel(changes);
+
+  const oplog: PanelSurface<OplogPanelState> = {
     target: "oplog",
     keybinding: "composer.oplog",
     open: { type: "openPick", target: "oplog" },
     wide: true,
-    panel: (data) => ({
-      node: <OplogPanel panel={data.oplog} />,
-      status: oplogStatus(data.oplog),
-      onKey: (event) => data.oplog.onKey(event),
+    use: (ctx) =>
+      useOplogPanel({ cwd: ctx.cwd, toast: ctx.toast, enabled: ctx.open }),
+    panel: (state) => ({
+      node: <OplogPanel panel={state} />,
+      status: oplogStatus(state),
+      onKey: (event) => state.onKey(event),
     }),
-  });
+  };
+  app.composer.panel(oplog);
 
   app.composer.command({
     name: "changes",

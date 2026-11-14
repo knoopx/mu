@@ -8,12 +8,10 @@
  * back naming the point it sat on.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { toolResult } from "../../core/lib/agent/toolText";
 import { CHART_RENDER_TOOL, CHART_TOOL_LABEL, MAX_SERIES } from "../constants";
 import {
@@ -146,11 +144,12 @@ export function executeChartRender(
   return toolResult(chartAnswerOf(figure), figure);
 }
 
-export const chartRenderTool: ToolDefinition<
+export const chartRenderTool: PluginTool<
   typeof RenderParametersSchema,
   ChartFigure
 > = {
   name: CHART_RENDER_TOOL,
+  icon: "barChart",
   label: CHART_TOOL_LABEL,
   description:
     "Plot numbers as a chart: bars across a category axis, or a line with markers and an optional fill, one or " +

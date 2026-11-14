@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { CODE_DUPLICATES_TOOL, DEFAULT_FINDING_LIMIT } from "../constants";
 import { fallowDupes } from "../lib/fallow";
 import {
@@ -91,11 +89,12 @@ async function executeCodeDuplicates(
   );
 }
 
-export const codeDuplicatesTool: ToolDefinition<
+export const codeDuplicatesTool: PluginTool<
   typeof Parameters,
   CodeDuplicatesDetails
 > = {
   name: CODE_DUPLICATES_TOOL,
+  icon: "contentCopy",
   label: "Duplicate code",
   description:
     "Compares a project directory against itself and answers with one row per clone " +

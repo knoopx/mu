@@ -9,6 +9,7 @@ import {
   pickMode,
   transition,
   type ComposerMode,
+  type ComposerTarget,
   type PickIntent,
 } from "../lib/composer/mode";
 import {
@@ -31,7 +32,8 @@ import { useClipboardPaste } from "./useClipboardPaste";
 import type { ComposerState } from "./useComposerState";
 import type { ChatSessionState } from "./useChatSession";
 import type { ThemePanelState } from "./useThemePanel";
-import type { GuardrailsPanelApi } from "../../guardrails/types";
+
+const NO_PANEL_STATE: ReadonlyMap<ComposerTarget, unknown> = new Map();
 
 export interface ChatComposerOptions {
   toast: ToastFn;
@@ -50,8 +52,6 @@ export interface ChatComposerOptions {
 
   editFile(path: string): Promise<FileOpenResult>;
 
-  guardrails: GuardrailsPanelApi;
-
   composer: ComposerState;
 }
 
@@ -60,10 +60,18 @@ export interface ChatComposerActions {
 
   onSubmit(value: string): void;
 
-  pickRow(row: ComposerPanelRow, intent: PickIntent): void;
+  /**
+   * A row picked in an open panel. The panel's own state travels with the call,
+   * because a panel that says what its rows mean is asked what the pick does.
+   */
+  pickRow(
+    row: ComposerPanelRow,
+    intent: PickIntent,
+    panelState: ReadonlyMap<ComposerTarget, unknown>,
+  ): void;
 
-  /** What the changes panel's Enter takes: the token it names into the draft. */
-  pickChangesText(text: string): void;
+  /** What a panel's Enter takes: the token it names into the draft. */
+  pickText(text: string): void;
 
   /** Tab: open the path completion panel over the path the draft is typing. */
   completePath(): void;
@@ -122,7 +130,6 @@ export function useChatComposer(
     removeFile,
     openFile,
     editFile,
-    guardrails,
     composer,
   } = opts;
   const {
@@ -153,7 +160,10 @@ export function useChatComposer(
       system: chat.system,
     });
 
+  // The panel state travels with the pick rather than with this object: a pick is
+  // answered by the panel that made the state, and it is handed there.
   const actions: ComposerActionContext = {
+    panelState: NO_PANEL_STATE,
     mode,
     toast,
     setInput: (text) => setInput(text),
@@ -165,10 +175,9 @@ export function useChatComposer(
     setModel: chat.setModel,
     setThinking: chat.setThinking,
     resumeSession: chat.resume,
-    toggleGuardrail: (key) => guardrails.toggle(key),
   };
 
-  const pickChangesText = (text: string): void => {
+  const pickText = (text: string): void => {
     appendPath(text);
     setMode(draftMode());
   };
@@ -208,8 +217,11 @@ export function useChatComposer(
     chat.send(text, images, userImages);
   };
 
-  const pickRow = (row: ComposerPanelRow, intent: PickIntent): void =>
-    pickComposerRow(row, actions, intent);
+  const pickRow = (
+    row: ComposerPanelRow,
+    intent: PickIntent,
+    panelState: ReadonlyMap<ComposerTarget, unknown>,
+  ): void => pickComposerRow(row, { ...actions, panelState }, intent);
 
   const deleteRow = (row: ComposerPanelRow): void =>
     deletePanelRow(row, {
@@ -261,7 +273,7 @@ export function useChatComposer(
     actions,
     onSubmit,
     pickRow,
-    pickChangesText,
+    pickText,
     completePath,
     deleteRow,
     openRow,

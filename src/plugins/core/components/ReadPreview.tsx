@@ -15,16 +15,10 @@ import {
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
-export const READ_TOOL_NAMES = new Set(["read"]);
-
 /** How many lines of a file the log quotes before it says "more lines". */
 const MAX_PREVIEW_LINES = 8;
 
 const CONTINUATION_NOTICE = /^\[(\d+ more lines|Showing lines|Line \d+ is)/;
-
-export function isReadTool(name: string): boolean {
-  return READ_TOOL_NAMES.has(name.toLowerCase());
-}
 
 interface ReadArgs {
   path: string;

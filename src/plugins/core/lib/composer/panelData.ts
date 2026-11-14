@@ -3,10 +3,11 @@
  *
  * A panel is not given a bag of everything the window holds by accident: these are
  * the read-only facts of the composer itself — the draft, the query, the mode, the
- * window's size, the actions a row can be picked with — and the state a plugin's
- * own panel hook produced for it. What a panel _does_ with them is the plugin's
- * business: it picks the fields it owns and returns a `PanelView`
- * (`core/lib/plugin/manifest.ts`), and core draws that.
+ * window's size, the actions a row can be picked with — and the state a panel built
+ * for itself, held by the target that owns it and handed back to the surface that
+ * produced it. What a panel _does_ with them is the plugin's business: it makes its
+ * own state, returns a `PanelView` (`core/lib/plugin/manifest.ts`), and core draws
+ * that.
  */
 
 import type { AdwaitaTheme } from "adwaita-gpuix";
@@ -19,11 +20,7 @@ import type { ChatSession } from "../session/chatSession";
 import type { SessionListRow } from "../session/sessionList";
 import type { SessionTreeApi } from "../../hooks/useSessionTree";
 import type { ThemePanelState } from "../../hooks/useThemePanel";
-import type { GuardrailsPanelApi } from "../../../guardrails/types";
-import type { TerminalPanelState } from "../../../terminal/types";
-import type { ChangesPanelState } from "../../../vcs/hooks/useChangesPanel";
-import type { OplogPanelState } from "../../../vcs/hooks/useOplogPanel";
-import type { ComposerMode, PickIntent } from "./mode";
+import type { ComposerMode, ComposerTarget, PickIntent } from "./mode";
 import type { UserMessage } from "./userMessageHistory";
 
 export interface ComposerPanelData {
@@ -40,11 +37,14 @@ export interface ComposerPanelData {
   userMessages: readonly UserMessage[];
   userMessagesLoading: boolean;
   userMessagesError: string | null;
-  changes: ChangesPanelState;
-  oplog: OplogPanelState;
   tree: SessionTreeApi;
-  guardrails: GuardrailsPanelApi;
-  terminal: TerminalPanelState;
+  /**
+   * The state each open panel built for itself, by the target that owns it.
+   *
+   * Core hands it back to the surface that made it and never reads it: a plugin's
+   * panel state is its own type, in its own file, and this bag names none of them.
+   */
+  panelState: ReadonlyMap<ComposerTarget, unknown>;
   previewFor(path: string): ComposerPreviewSpec;
   windowHeight: number | undefined;
   onPick: (row: ComposerPanelRow, intent: PickIntent) => void;

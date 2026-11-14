@@ -1,4 +1,6 @@
 import { T, useAdwaita } from "adwaita-gpuix";
+import { isWriteTool } from "../lib/agent/builtInTools";
+import { pathTextOf } from "../lib/agent/toolInput";
 import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
@@ -12,23 +14,7 @@ import { toolText } from "../lib/ui/toolRows";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
-export const WRITE_TOOL_NAMES = new Set(["write"]);
-
 export const MAX_WRITE_PREVIEW_LINES = 12;
-
-const PATH_KEYS = ["path", "file_path", "filePath", "file", "notebook_path"];
-
-export function isWriteTool(name: string): boolean {
-  return WRITE_TOOL_NAMES.has(name.toLowerCase());
-}
-
-function pathOf(args: Record<string, unknown>): string {
-  for (const key of PATH_KEYS) {
-    const value = args[key];
-    if (typeof value === "string" && value.trim() !== "") return value.trim();
-  }
-  return "";
-}
 
 /** The file as it is displayed: tabs widened, trailing blank lines dropped. */
 function contentLines(content: string): string[] {
@@ -87,7 +73,7 @@ export function writePreviewOf(
       : lineCount(total);
 
   return {
-    path: pathOf(args),
+    path: pathTextOf(args).trim(),
     lines: kept,
     total,
     truncated,

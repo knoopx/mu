@@ -2,12 +2,10 @@
  * `openui-clear` — take a program, or every program, out of the log.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { MAX_PROGRAM_NAME, OPENUI_CLEAR_TOOL } from "../constants";
 import type { OpenUIClearDetails } from "../types";
 import { blocks, statusTable, toolResult } from "../../core/lib/agent/toolText";
@@ -25,11 +23,12 @@ const ClearParametersSchema = Type.Object({
   ),
 });
 
-export const openUIClearTool: ToolDefinition<
+export const openUIClearTool: PluginTool<
   typeof ClearParametersSchema,
   OpenUIClearDetails
 > = {
   name: OPENUI_CLEAR_TOOL,
+  icon: "deleteSweep",
   label: OPENUI_CLEAR_TOOL,
   description:
     "Remove one program from the log, or every program when `name` is omitted. Its source, its bound state and its queued interactions go with it, and the log stops painting it. " +

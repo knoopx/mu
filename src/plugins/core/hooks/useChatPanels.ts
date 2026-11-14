@@ -25,18 +25,9 @@ import { liveSessionList, type SessionList } from "../lib/session/sessionList";
 import type { ChatSessionState } from "./useChatSession";
 import type { ComposerState } from "./useComposerState";
 import { useChatComposer, type ChatComposerActions } from "./useChatComposer";
-import {
-  useChangesPanel,
-  type ChangesPanelState,
-} from "../../vcs/hooks/useChangesPanel";
-import {
-  useOplogPanel,
-  type OplogPanelState,
-} from "../../vcs/hooks/useOplogPanel";
-import { useGuardrailsPanel } from "../../guardrails/hooks/useGuardrails";
-import type { GuardrailsPanelApi } from "../../guardrails/types";
-import { useTerminalPanel } from "../../terminal/hooks/useTerminalPanel";
-import type { TerminalPanelState } from "../../terminal/types";
+import { panelSurfaces } from "../lib/plugin/surfaces";
+import type { PanelServices } from "../lib/plugin/manifest";
+import { HOST } from "../../registry";
 import { useFileList } from "./useFileList";
 import { useFilePreview } from "./useFilePreview";
 import { useSessionList, type SessionListState } from "./useSessionList";
@@ -73,10 +64,8 @@ export interface ChatPanels {
   sessions: SessionListState;
   userMessages: UserMessagesState;
   themePanel: ThemePanelState;
-  guardrails: GuardrailsPanelApi;
-  changesPanel: ChangesPanelState;
-  oplogPanel: OplogPanelState;
-  terminal: TerminalPanelState;
+  /** each open panel's own state, by the target that owns it */
+  panelState: ReadonlyMap<ComposerTarget, unknown>;
   composerActions: ChatComposerActions;
   previewFor(path: string): ComposerPreviewSpec;
 
@@ -131,7 +120,6 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
 
   const themePanel = useThemePanel(mode);
   const previewFor = useFilePreview(cwd);
-  const guardrails = useGuardrailsPanel(query, target === "guardrails");
 
   const composerActions = useChatComposer({
     toast,
@@ -142,33 +130,36 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     removeFile: files.remove,
     openFile: files.open,
     editFile: files.edit,
-    guardrails,
     composer,
   });
 
-  const changesPanel = useChangesPanel({
-    cwd,
-    toast,
-    enabled: target === "changes",
-    onPickText: composerActions.pickChangesText,
-    onInstruction: composerActions.sendInstruction,
-  });
-
-  const oplogPanel = useOplogPanel({
-    cwd,
-    toast,
-    enabled: target === "oplog",
-  });
-
-  // The shell is started by the first open and kept for the window: closing the
-  // panel puts the terminal away, it does not stop the program that was running in
-  // it, and the panel that comes back shows the screen where it was left.
-  const terminal = useTerminalPanel({
-    cwd,
-    enabled: target === "terminal",
-    windowWidth: windowSize?.width,
-    windowHeight: windowSize?.height,
-  });
+  // Every panel the composer can open builds its own state, through the surface
+  // that owns it, from the composer's facts and the services above. The panel list
+  // is the host's and is fixed once the plugins are loaded, so the surfaces — and
+  // with them the hooks each one runs — are the same ones, in the same order,
+  // every render. What a panel keeps is its own type, in its own plugin: this hook
+  // only hands back the map, keyed by target, and core reads none of it.
+  const surfaces = useMemo(() => panelSurfaces(HOST), []);
+  const panelServices: PanelServices = {
+    pickText: composerActions.pickText,
+    sendInstruction: composerActions.sendInstruction,
+  };
+  const panelState = new Map<ComposerTarget, unknown>();
+  for (const surface of surfaces) {
+    if (surface.use === undefined) continue;
+    panelState.set(
+      surface.target,
+      surface.use({
+        cwd,
+        toast,
+        query,
+        open: target === surface.target,
+        windowWidth: windowSize?.width,
+        windowHeight: windowSize?.height,
+        actions: panelServices,
+      }),
+    );
+  }
 
   const treeSnapshot = useMemo(
     () => treeSnapshotOf(target === "tree", session),
@@ -201,10 +192,7 @@ export function useChatPanels(options: ChatPanelsOptions): ChatPanels {
     sessions,
     userMessages,
     themePanel,
-    guardrails,
-    changesPanel,
-    oplogPanel,
-    terminal,
+    panelState,
     composerActions,
     previewFor,
     treeSnapshot,

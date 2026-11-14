@@ -6,12 +6,10 @@
  * for reading it.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_FILE_HISTORY_SHOW_TOOL } from "../constants";
 import {
   failedResult,
@@ -89,11 +87,12 @@ export async function executeVcsFileHistoryShow(
 }
 
 /** Read-only; the body it returns is painted as code, never parsed back apart. */
-export const vcsFileHistoryShowTool: ToolDefinition<
+export const vcsFileHistoryShowTool: PluginTool<
   typeof Parameters,
   VcsFileShowDetails
 > = {
   name: VCS_FILE_HISTORY_SHOW_TOOL,
+  icon: "description",
   label: "VCS file at revision",
   description:
     "Shows a file's content at one revision of a jujutsu repo — `hash` is a jj change ID, jj " +

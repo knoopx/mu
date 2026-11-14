@@ -11,7 +11,11 @@
  * you must add the reader, or the registration is a feature nobody can use.
  */
 
+import type { ToolDefinition } from "@earendil-works/pi-coding-agent";
 import type { EventPayload } from "@gpuix/native";
+import type { ToastFn } from "adwaita-gpuix";
+import type { IconName } from "adwaita-gpuix";
+import type { TSchema } from "typebox";
 import type { SlashCommand } from "../../../../autocomplete";
 import type { ComposerEvent, ComposerTarget } from "../composer/mode";
 import type { ComposerPanelData } from "../composer/panelData";
@@ -32,13 +36,22 @@ import type { PluginApi } from "./host";
  * as the bare default and mu has to cast at that list. The host holds every
  * plugin's real tools, so the wide type is named here and `agentTools` hands the
  * list back to pi at the one boundary that has to take it.
+ *
+ * `icon` is mu's own field, and it belongs to the tool rather than to the log: the
+ * mark a call wears is part of what the tool *is*, so core keeps no table of
+ * plugin tools and adding one stays one file in `tools/` plus one line in
+ * `plugin.tsx`. The host refuses a tool that names no mark — a row that quietly
+ * loses its glyph is a feature nobody can report.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type PluginTool = import("@earendil-works/pi-coding-agent").ToolDefinition<
-  any,
-  any,
-  any
->;
+export interface PluginTool<
+  TParams extends TSchema = any,
+  TDetails = any,
+  TState = any,
+> extends ToolDefinition<TParams, TDetails, TState> {
+  /** the mark this tool's row wears in the log */
+  icon: IconName;
+};
 
 /** One plugin's claim on how its tool calls are drawn in the log. */
 export interface ToolRowSurface {
@@ -72,8 +85,51 @@ export interface ToolRowSurface {
   preview?(item: ToolTranscriptItem): string;
 }
 
-/** A composer panel a plugin owns, and the way in to it. */
-export interface PanelSurface {
+/**
+ * The composer services a panel's own state is built from.
+ *
+ * A panel makes its own state — its list, its cursor, its pending writes — and
+ * these are the only facts of the window it is allowed to ask for. What a panel
+ * keeps is never named in core: the type it returns is the plugin's own.
+ */
+export interface PanelServices {
+  /** put a row's text into the draft and close the panel */
+  pickText(text: string): void;
+
+  /** ask the agent to do what the row names, in a turn of its own */
+  sendInstruction(text: string): void;
+}
+
+/** What core hands a panel that builds its own state, on every render. */
+export interface PanelContext {
+  cwd: string;
+  toast: ToastFn;
+
+  /** the panel's filter, which for path completion is the draft itself */
+  query: string;
+
+  /** this panel is the one that is open, which is when its rows are worth reading */
+  open: boolean;
+
+  windowWidth: number | undefined;
+  windowHeight: number | undefined;
+
+  actions: PanelServices;
+}
+
+/** What a panel may do when one of its own rows is picked. */
+export interface PanelPickActions {
+  toast(message: string): void;
+}
+
+/**
+ * A composer panel a plugin owns, and the way in to it.
+ *
+ * `State` is the panel's own shape. `use` builds it each render from the
+ * composer's facts, and `panel` and `pick` are handed it back — so a plugin that
+ * takes a panel takes it whole, and the composer's data bag names no plugin.
+ */
+export interface PanelSurface<State = any> {
   /** the id the composer's pick mode carries while the panel is open */
   target: ComposerTarget;
 
@@ -101,7 +157,30 @@ export interface PanelSurface {
    * panel that fills the band — with the words, the keys and the caveats only the
    * panel can name. Core keeps no panel's facts of its own.
    */
-  panel?(data: ComposerPanelData): PanelView;
+  /**
+   * the panel's own state, built by the plugin's own hook on every render.
+   *
+   * It is a hook and it runs through the registry, which is sound because the
+   * panel list is the host's and is fixed once the plugins are loaded: the same
+   * surfaces, in the same order, render after render, so a panel's hooks are the
+   * same hooks it had a moment ago.
+   */
+  use?(ctx: PanelContext): State;
+
+  panel?(state: State, data: ComposerPanelData): PanelView;
+
+  /**
+   * what a pick on one of this panel's rows does. A panel that names none lets
+   * the composer take its rows the way it takes any list.
+   */
+  pick?(row: ComposerPanelRow, state: State, actions: PanelPickActions): void;
+
+  /**
+   * what the panel puts over the window rather than in its band — a dialog a row
+   * opened, which outlives the band that asked for it. Core frames nothing around
+   * it: the panel brings the dialog.
+   */
+  overlay?(state: State): ReactNode;
 
   /** the word beside Enter in the panel's hint line; none means the panel offers no single choice */
   choose?: string;

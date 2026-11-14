@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { CODE_DEAD_CODE_TOOL, DEFAULT_FINDING_LIMIT } from "../constants";
 import { fallowDeadCode } from "../lib/fallow";
 import {
@@ -92,11 +90,12 @@ async function executeCodeDeadCode(
   );
 }
 
-export const codeDeadCodeTool: ToolDefinition<
+export const codeDeadCodeTool: PluginTool<
   typeof Parameters,
   CodeDeadCodeDetails
 > = {
   name: CODE_DEAD_CODE_TOOL,
+  icon: "sweep",
   label: "Dead code",
   description:
     "Reads a project directory and answers with one row per " +

@@ -3,12 +3,10 @@
  * putting it in the log.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { MAX_COMPONENT_ROWS, OPENUI_VALIDATE_TOOL } from "../constants";
 import type { OpenUIValidateDetails } from "../types";
 import {
@@ -33,11 +31,12 @@ const ValidateParametersSchema = Type.Object({
   code: codeParam,
 });
 
-export const openUIValidateTool: ToolDefinition<
+export const openUIValidateTool: PluginTool<
   typeof ValidateParametersSchema,
   OpenUIValidateDetails
 > = {
   name: OPENUI_VALIDATE_TOOL,
+  icon: "factCheck",
   label: OPENUI_VALIDATE_TOOL,
   description:
     "Parse OpenUI Lang source against this app's library and answer with the diagnostics — statements, the components it would draw, unresolved names, and every error with the move that clears it — without rendering anything. Use it to check a program, or to re-check an edit, before committing it with openui-render.",

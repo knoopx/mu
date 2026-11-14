@@ -61,7 +61,12 @@ function viewOf(data: ComposerPanelData): PanelView | null {
   let view: PanelView | null = null;
   if (data.mode.kind === "commands") view = commandsView(data);
   else if (data.mode.kind === "pick")
-    view = panelViewOf(HOST, data.mode.target, data);
+    view = panelViewOf(
+      HOST,
+      data.mode.target,
+      data.panelState.get(data.mode.target),
+      data,
+    );
   asked.set(data, view);
   return view;
 }

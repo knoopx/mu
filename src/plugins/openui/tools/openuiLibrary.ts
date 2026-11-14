@@ -6,10 +6,7 @@
  * which positional order.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -17,6 +14,7 @@ import {
   MAX_LIBRARY_LIMIT,
   OPENUI_LIBRARY_TOOL,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import type { OpenUILibraryDetails } from "../types";
 import {
   blocks,
@@ -47,11 +45,12 @@ const LibraryParametersSchema = Type.Object({
   limit: limitParam("component"),
 });
 
-export const openUILibraryTool: ToolDefinition<
+export const openUILibraryTool: PluginTool<
   typeof LibraryParametersSchema,
   OpenUILibraryDetails
 > = {
   name: OPENUI_LIBRARY_TOOL,
+  icon: "category",
   label: OPENUI_LIBRARY_TOOL,
   description:
     "Inspect the component library this app renders. Without `name`: the component index (name, description, group), the root component and the counts. " +

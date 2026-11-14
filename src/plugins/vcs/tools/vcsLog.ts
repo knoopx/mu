@@ -5,12 +5,10 @@
  * caller ask for a format flag.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_LOG_TOOL } from "../constants";
 import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
 import {
@@ -109,8 +107,9 @@ export async function executeVcsLog(
 }
 
 /** Read-only, and the name the user's guardrail rules hand an agent instead of a raw CLI call. */
-export const vcsLogTool: ToolDefinition<typeof Parameters, VcsLogDetails> = {
+export const vcsLogTool: PluginTool<typeof Parameters, VcsLogDetails> = {
   name: VCS_LOG_TOOL,
+  icon: "list",
   label: "VCS log",
   description:
     "Lists the commits of a jujutsu repo — the change id, commit hash, author, date and " +

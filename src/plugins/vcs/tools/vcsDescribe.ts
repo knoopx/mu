@@ -6,12 +6,10 @@
  * rewriting the working copy mints a new change id, and the log shows both.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_DESCRIBE_TOOL } from "../constants";
 import {
   failedResult,
@@ -101,11 +99,12 @@ export async function executeVcsDescribe(
 }
 
 /** A write — it runs on an instruction the user asked for, never speculatively and never as an undo. */
-export const vcsDescribeTool: ToolDefinition<
+export const vcsDescribeTool: PluginTool<
   typeof Parameters,
   VcsDescribeDetails
 > = {
   name: VCS_DESCRIBE_TOOL,
+  icon: "article",
   label: "VCS describe",
   description:
     "Sets the description message of a revision in a jujutsu repo — a jj change ID, jj commit " +

@@ -3,12 +3,10 @@
  * components it actually drew, the values the human left, and what is waiting.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { MAX_COMPONENT_ROWS, OPENUI_STATE_TOOL } from "../constants";
 import type { OpenUIStateDetails } from "../types";
 import {
@@ -39,11 +37,12 @@ const StateParametersSchema = Type.Object({
   ),
 });
 
-export const openUIStateTool: ToolDefinition<
+export const openUIStateTool: PluginTool<
   typeof StateParametersSchema,
   OpenUIStateDetails
 > = {
   name: OPENUI_STATE_TOOL,
+  icon: "queryStats",
   label: OPENUI_STATE_TOOL,
   description:
     "Read a program's source plus what the renderer published for it: the render errors, the `$variable` values as the human left them, the components that were actually drawn, the names that never resolved, how many interactions are waiting, and the query failures. `name` defaults to the program the log is painting.",

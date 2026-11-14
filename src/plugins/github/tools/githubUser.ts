@@ -2,12 +2,10 @@
  * `github-user` — a person or organisation: what they say they are, and what they publish.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_TOOL_LABELS, GITHUB_USER_TOOL } from "../constants";
 import { readUser } from "../lib/api/read/user";
 import { loginParam, refreshParam } from "../lib/params";
@@ -27,8 +25,9 @@ export async function executeGithubUser(
   return runRead(readUser, { ...params, signal });
 }
 
-export const githubUserTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubUserTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_USER_TOOL,
+  icon: "accountCircleOutline",
   label: GITHUB_TOOL_LABELS[GITHUB_USER_TOOL],
   description:
     "Reads a GitHub profile: name, bio, whether it is a user or an organisation, company, " +

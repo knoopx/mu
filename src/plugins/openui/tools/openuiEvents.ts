@@ -2,10 +2,7 @@
  * `openui-events` — read what the human did in a drawn program.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -13,6 +10,7 @@ import {
   MAX_EVENT_LIMIT,
   OPENUI_EVENTS_TOOL,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import type { OpenUIEventsDetails } from "../types";
 import {
   blocks,
@@ -52,11 +50,12 @@ function oldestAcross(programs: string[]): { name: string; at: number } | null {
   return oldest;
 }
 
-export const openUIEventsTool: ToolDefinition<
+export const openUIEventsTool: PluginTool<
   typeof EventsParametersSchema,
   OpenUIEventsDetails
 > = {
   name: OPENUI_EVENTS_TOOL,
+  icon: "notifications",
   label: OPENUI_EVENTS_TOOL,
   description:
     "Read the interaction the human produced in the rendered program — button clicks, form submits with their field values, selection and switch changes — each `{ at, type, message, params?, formState?, formName? }`. Draining by default, so every event is delivered exactly once. This closes the loop: render, let the human operate the screen, then act on what they did.",

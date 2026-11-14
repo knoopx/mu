@@ -6,10 +6,7 @@
  * answered as one and sent to `github-pr`.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -18,6 +15,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_COMMENT_LIMIT,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { readIssue } from "../lib/api/read/issue";
 import {
   limitParam,
@@ -45,8 +43,9 @@ export async function executeGithubIssue(
   return runRead(readIssue, { ...params, signal });
 }
 
-export const githubIssueTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubIssueTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_ISSUE_TOOL,
+  icon: "circleOutline",
   label: GITHUB_TOOL_LABELS[GITHUB_ISSUE_TOOL],
   description:
     "Reads one GitHub issue: title, state (with why it was closed), author, labels, dates, " +

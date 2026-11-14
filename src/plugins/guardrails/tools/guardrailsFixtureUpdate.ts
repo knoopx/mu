@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GUARDRAILS_FIXTURE_TOOL, MAX_FIXTURES_PER_WRITE } from "../constants";
 import {
   deleteFixtures,
@@ -189,11 +187,12 @@ export function updateGuardrailFixtures(
   };
 }
 
-export const guardrailsFixtureUpdateTool: ToolDefinition<
+export const guardrailsFixtureUpdateTool: PluginTool<
   typeof FixtureUpdateParametersSchema,
   GuardrailsFixtureUpdateDetails
 > = {
   name: GUARDRAILS_FIXTURE_TOOL,
+  icon: "ruleSettings",
   label: "guardrails fixture update",
   description:
     "Creates, updates and deletes guardrails fixtures in a suite (`<domain>.fixtures.json`, beside the rules). " +

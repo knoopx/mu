@@ -1,4 +1,11 @@
-import { memo, useEffect, useMemo, useRef, type JSX } from "react";
+import {
+  Fragment,
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  type JSX,
+} from "react";
 import {
   Message,
   MessageContent,
@@ -34,6 +41,7 @@ import { HOST } from "../../registry";
 import {
   commandSurfaces,
   dedicatedRowOf,
+  panelOverlays,
 } from "../lib/plugin/surfaces";
 import {
   composerGap,
@@ -70,7 +78,6 @@ import {
   type ProjectSummaryState,
 } from "../hooks/useProjectSummary";
 import type { PromptPill } from "../lib/project/promptTemplates";
-import { ChangesOverlayHost } from "../../vcs/components/ChangesOverlayHost";
 import type { SlashCommand } from "../../../autocomplete";
 import { openChatSession, type ChatSession } from "../lib/session/chatSession";
 import {
@@ -209,14 +216,14 @@ function panelDataOf(
     userMessages: userMessages.messages,
     userMessagesLoading: userMessages.loading,
     userMessagesError: userMessages.error,
-    changes: panels.changesPanel,
-    oplog: panels.oplogPanel,
     tree: panels.tree,
-    terminal: panels.terminal,
-    guardrails: panels.guardrails,
+    panelState: panels.panelState,
     previewFor: panels.previewFor,
     windowHeight: panels.windowHeight,
-    onPick: composerActions.pickRow,
+    // The panel's own state travels with the pick: what the row means is the
+    // panel's business, and the state it built is what it acts on.
+    onPick: (row, intent) =>
+      composerActions.pickRow(row, intent, panels.panelState),
     onDelete: composerActions.deleteRow,
     onOpen: composerActions.openRow,
     onEdit: composerActions.editRow,
@@ -552,14 +559,8 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
     sessionList: props.sessionList,
     noteReloadAll: reloadAll.note,
   });
-  const {
-    workspace,
-    sessions,
-    composerActions,
-    changesPanel,
-    treePreview,
-    promptPills,
-  } = panels;
+  const { workspace, sessions, composerActions, treePreview, promptPills } =
+    panels;
 
   const transcriptListRef = useRef<PublicInstance | null>(null);
 
@@ -687,7 +688,9 @@ function ChatAppBody(props: ChatAppProps & { toast: ToastFn }): JSX.Element {
           stats={transcript.conversation}
           progress={progressOf(ask.request)}
         />
-        <ChangesOverlayHost panel={changesPanel} />
+        {panelOverlays(HOST, panels.panelState).map(({ key, node }) => (
+          <Fragment key={key}>{node}</Fragment>
+        ))}
       </div>
     </div>
   );

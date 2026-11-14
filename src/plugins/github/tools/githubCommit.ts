@@ -5,12 +5,10 @@
  * has one; the file rows carry what a change actually touched.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_COMMIT_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readCommit } from "../lib/api/read/commit";
 import { ownerParam, refreshParam, repoParam, shaParam } from "../lib/params";
@@ -32,8 +30,9 @@ export async function executeGithubCommit(
   return runRead(readCommit, { ...params, signal });
 }
 
-export const githubCommitTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubCommitTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_COMMIT_TOOL,
+  icon: "history",
   label: GITHUB_TOOL_LABELS[GITHUB_COMMIT_TOOL],
   description:
     "Reads one GitHub commit: its subject and full message, author and date, the line counts " +

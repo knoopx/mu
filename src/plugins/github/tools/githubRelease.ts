@@ -6,10 +6,7 @@
  * tag it answers as the release and its notes.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -18,6 +15,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_RELEASE_LIMIT,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { readRelease } from "../lib/api/read/release";
 import { limitParam, ownerParam, refreshParam, repoParam } from "../lib/params";
 import { runRead } from "../lib/reader";
@@ -45,9 +43,10 @@ export async function executeGithubRelease(
   return runRead(readRelease, { ...params, signal });
 }
 
-export const githubReleaseTool: ToolDefinition<typeof Parameters, GithubCall> =
+export const githubReleaseTool: PluginTool<typeof Parameters, GithubCall> =
   {
     name: GITHUB_RELEASE_TOOL,
+    icon: "tagOutline",
     label: GITHUB_TOOL_LABELS[GITHUB_RELEASE_TOOL],
     description:
       "Reads GitHub releases. With a `tag` it reads one release — tag, name, whether it is a " +

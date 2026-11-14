@@ -9,12 +9,10 @@
  * reference with nothing but the rules and the signatures to work from.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { OPENUI_PROMPT_TOOL } from "../constants";
 import type { OpenUIPromptDetails } from "../types";
 import {
@@ -59,11 +57,12 @@ const PromptParametersSchema = Type.Object({
   ),
 });
 
-export const openUIPromptTool: ToolDefinition<
+export const openUIPromptTool: PluginTool<
   typeof PromptParametersSchema,
   OpenUIPromptDetails
 > = {
   name: OPENUI_PROMPT_TOOL,
+  icon: "libraryBooks",
   label: OPENUI_PROMPT_TOOL,
   description:
     "Get the OpenUI Lang reference for THIS app's component library: the syntax rules, the signature of every component this app can actually render, and how a program wires Query() data and actions. " +

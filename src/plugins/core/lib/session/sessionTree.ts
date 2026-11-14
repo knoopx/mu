@@ -13,7 +13,8 @@ import { fitOneLine } from "../../../../utils/truncate";
 import { isSnapcompactDetails } from "../../../snapcompact/lib/archive";
 import { detailsNote } from "../../../snapcompact/lib/note";
 import { relativeAge } from "../utils/time";
-import { toolIconOf } from "../ui/toolIcon";
+import { toolIconFor } from "../plugin/surfaces";
+import { HOST } from "../../../registry";
 
 export type TreeFilter =
   "no-tools" | "default" | "user-only" | "labeled-only" | "all";
@@ -397,9 +398,12 @@ const rowSearchText = (
 const matchesQuery = (search: string, tokens: readonly string[]): boolean =>
   tokens.length === 0 || tokens.every((token) => search.includes(token));
 
+// HOST is read inside the function, never at module scope: the host is still
+// being built while these modules are pulled in, and a tool's mark is only ever
+// asked for once every plugin has registered.
 const rowIcon = (described: EntryDescription, entry: SessionEntry): IconName =>
   described.role === "tool"
-    ? toolIconOf(messageOf(entry).toolName ?? "")
+    ? toolIconFor(HOST, messageOf(entry).toolName ?? "")
     : ROLE_ICON[described.role];
 
 function leafIndexOf(

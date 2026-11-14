@@ -6,10 +6,7 @@
  * the call.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import {
@@ -18,6 +15,7 @@ import {
   GITHUB_TOOL_LABELS,
   MAX_SEARCH_LIMIT,
 } from "../constants";
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { readSearch } from "../lib/api/read/search";
 import { kindParam, limitParam, refreshParam } from "../lib/params";
 import { runRead } from "../lib/reader";
@@ -43,8 +41,9 @@ export async function executeGithubSearch(
   return runRead(readSearch, { ...params, signal });
 }
 
-export const githubSearchTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubSearchTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_SEARCH_TOOL,
+  icon: "search",
   label: GITHUB_TOOL_LABELS[GITHUB_SEARCH_TOOL],
   description:
     "Searches GitHub for repositories, code, issues, commits or users, ranked. The answer " +

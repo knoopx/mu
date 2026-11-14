@@ -6,12 +6,10 @@
  * reader is asking about. `files` brings the changed files along with it.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { GITHUB_PR_TOOL, GITHUB_TOOL_LABELS } from "../constants";
 import { readPull } from "../lib/api/read/pr";
 import {
@@ -42,8 +40,9 @@ export async function executeGithubPr(
   return runRead(readPull, { ...params, signal });
 }
 
-export const githubPrTool: ToolDefinition<typeof Parameters, GithubCall> = {
+export const githubPrTool: PluginTool<typeof Parameters, GithubCall> = {
   name: GITHUB_PR_TOOL,
+  icon: "pullRequest",
   label: GITHUB_TOOL_LABELS[GITHUB_PR_TOOL],
   description:
     "Reads one GitHub pull request: title, state (open, draft, closed, merged), author, " +

@@ -6,12 +6,10 @@
  * was actually read. `path="*"` is the tree; one path is one section of it.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_FILE_DIFF_TOOL } from "../constants";
 import {
   failedResult,
@@ -110,11 +108,12 @@ export async function executeVcsFileDiff(
 }
 
 /** Read-only, and the only vcs answer that carries a patch the transcript draws as a diff. */
-export const vcsFileDiffTool: ToolDefinition<
+export const vcsFileDiffTool: PluginTool<
   typeof Parameters,
   VcsFileDiffDetails
 > = {
   name: VCS_FILE_DIFF_TOOL,
+  icon: "difference",
   label: "VCS diff",
   description:
     'Shows the unified diff of one file, or of the whole tree (`path="*"`), between two ' +

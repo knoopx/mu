@@ -2,12 +2,10 @@
  * `openui-stream` — append one piece of a program and re-draw what has arrived.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { DEFAULT_PROGRAM_NAME, OPENUI_STREAM_TOOL } from "../constants";
 import type { OpenUIProgramDetails } from "../types";
 import { chunkParam, namedParam } from "../lib/params";
@@ -26,11 +24,12 @@ const StreamParametersSchema = Type.Object({
   ),
 });
 
-export const openUIStreamTool: ToolDefinition<
+export const openUIStreamTool: PluginTool<
   typeof StreamParametersSchema,
   OpenUIProgramDetails
 > = {
   name: OPENUI_STREAM_TOOL,
+  icon: "stream",
   label: OPENUI_STREAM_TOOL,
   description:
     "Append one chunk of OpenUI Lang source to program `name`, re-parse the whole accumulated text and draw the partial result live in the log until `done: true` closes the program. " +

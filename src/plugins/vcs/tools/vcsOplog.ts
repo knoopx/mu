@@ -5,12 +5,10 @@
  * by a write the user has to ask for, and mu ships no tool for one.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { VCS_OPLOG_TOOL } from "../constants";
 import { failedResult, noRepoResult, type VcsBlank } from "../lib/answer";
 import {
@@ -79,9 +77,10 @@ export async function executeVcsOplog(
 }
 
 /** Read-only: it says what happened, and never undoes it. */
-export const vcsOplogTool: ToolDefinition<typeof Parameters, VcsOplogDetails> =
+export const vcsOplogTool: PluginTool<typeof Parameters, VcsOplogDetails> =
   {
     name: VCS_OPLOG_TOOL,
+    icon: "changeHistory",
     label: "VCS operation log",
     description:
       "Lists the jujutsu operation log — one row per operation, with its id, its start/end " +

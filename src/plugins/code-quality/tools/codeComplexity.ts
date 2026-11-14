@@ -1,9 +1,7 @@
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { CODE_COMPLEXITY_TOOL, DEFAULT_FINDING_LIMIT } from "../constants";
 import { fallowComplexity } from "../lib/fallow";
 import {
@@ -87,11 +85,12 @@ async function executeCodeComplexity(
   );
 }
 
-export const codeComplexityTool: ToolDefinition<
+export const codeComplexityTool: PluginTool<
   typeof Parameters,
   CodeComplexityDetails
 > = {
   name: CODE_COMPLEXITY_TOOL,
+  icon: "analytics",
   label: "Code complexity",
   description:
     "Analyses a project directory and answers with one row per " +

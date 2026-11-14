@@ -10,12 +10,10 @@
  * colour of where it stands.
  */
 
-import type {
-  AgentToolResult,
-  ToolDefinition,
-} from "@earendil-works/pi-coding-agent";
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
+import type { PluginTool } from "../../core/lib/plugin/manifest";
 import { toolResult } from "../../core/lib/agent/toolText";
 import {
   MAX_STEP_CHARS,
@@ -78,9 +76,10 @@ export function executePlan(params: PlanParams): AgentToolResult<PlanFigure> {
   return toolResult(planAnswerOf(plan), plan);
 }
 
-export const planTool: ToolDefinition<typeof PlanParametersSchema, PlanFigure> =
+export const planTool: PluginTool<typeof PlanParametersSchema, PlanFigure> =
   {
     name: PLAN_TOOL,
+    icon: "taskAlt",
     label: PLAN_TOOL_LABEL,
     description:
       "Write down and update the plan for the work in hand. Send the ENTIRE list every call: it REPLACES the " +
