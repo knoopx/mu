@@ -6,8 +6,24 @@
  * details into one `QualityToolView` — the chips of what was read, the tally
  * line, and rows in the shape the shared row painter already knows — so the
  * components never parse an analyser's shape and never learn a tool's name.
+ *
+ * Each fold takes the details interface its own tool answered with, and the
+ * analyser's JSON reader (`lib/json.ts`) stays with the analyser: that reader is
+ * how an external CLI's envelope is made safe, and borrowing it to read the
+ * plugin's own answer put both boundaries behind one set of string keys, where a
+ * renamed field reads as zero rather than failing the build. The coercion stays
+ * — a session resumed this week holds JSON, not the object the tool returned —
+ * but it is applied to a field the interface says is there.
  */
 
+import {
+  detailFlag,
+  detailList,
+  detailNumber,
+  detailRecord,
+  detailText,
+  detailWord,
+} from "../../core/lib/agent/toolDetails";
 import { counted, partsLine, scopeLabel } from "../../core/lib/agent/toolText";
 import type {
   ToolPaintRow,
@@ -24,40 +40,71 @@ import {
   CODE_SYMBOL_REFERENCES_TOOL,
 } from "../constants";
 import { analyzerCell } from "./answer";
-import { listOf, numberOf, recordOf, textOf, type JsonRecord } from "./json";
 import type {
+  CodeComplexityDetails,
+  CodeComplexityParams,
+  CodeDeadCodeDetails,
+  CodeDeadCodeParams,
+  CodeDuplicatesDetails,
+  CodeDuplicatesParams,
+  CodeReviewDetails,
+  CodeReviewParams,
+  CodeSymbolInspectDetails,
+  CodeSymbolInspectParams,
+  CodeSymbolReferencesDetails,
+  CodeSymbolReferencesParams,
   ComplexityRow,
+  DeadCodeRow,
+  DuplicateRow,
+  QualityAnswer,
   QualityCell,
+  QualityCount,
   QualityToolStatus,
   QualityToolView,
+  ReferenceRow,
   RiskRow,
   SurfaceRow,
 } from "../types";
 
-const STATUSES: readonly string[] = [
+/** The status vocabulary the six tools answer in. */
+const STATUSES = [
   "ok",
   "failed",
   "unsupported",
   "empty",
   "none",
-];
+] as const satisfies readonly QualityToolStatus[];
 
-type Args = JsonRecord;
-type Details = JsonRecord;
+/** The arguments as they arrive on the call: JSON, whatever the tool asked for. */
+type Args = Record<string, unknown>;
 
-type Fold = (
+/** A fold in the shape the table holds it: the answer arrives as JSON. */
+type ErasedFold = (
   args: Args,
-  details: Details,
+  details: Args,
   itemStatus: string,
 ) => QualityToolView;
 
-const FOLD_OF_TOOL: ReadonlyMap<string, Fold> = new Map([
-  [CODE_COMPLEXITY_TOOL, complexityView],
-  [CODE_DEAD_CODE_TOOL, deadCodeView],
-  [CODE_DUPLICATES_TOOL, duplicatesView],
-  [CODE_REVIEW_TOOL, reviewView],
-  [CODE_SYMBOL_INSPECT_TOOL, surfaceView],
-  [CODE_SYMBOL_REFERENCES_TOOL, referencesView],
+/**
+ * One tool's fold, read from its own details and params shapes. This is the
+ * single place an answer stops being `unknown`: the field names are then the
+ * tool's own interface's, and the values are still read through a reader, so a
+ * field an older session never answered paints as absent.
+ */
+const foldOf = <P, D>(
+  fold: (args: P, details: D, itemStatus: string) => QualityToolView,
+): ErasedFold =>
+  // The one erased read: the fold is only ever handed the answer its own tool
+  // wrote, once `qualityToolViewOf` has checked it is an answer at all.
+  fold as ErasedFold;
+
+const FOLD_OF_TOOL: ReadonlyMap<string, ErasedFold> = new Map([
+  [CODE_COMPLEXITY_TOOL, foldOf(complexityView)],
+  [CODE_DEAD_CODE_TOOL, foldOf(deadCodeView)],
+  [CODE_DUPLICATES_TOOL, foldOf(duplicatesView)],
+  [CODE_REVIEW_TOOL, foldOf(reviewView)],
+  [CODE_SYMBOL_INSPECT_TOOL, foldOf(surfaceView)],
+  [CODE_SYMBOL_REFERENCES_TOOL, foldOf(referencesView)],
 ]);
 
 export function qualityToolViewOf(
@@ -69,35 +116,24 @@ export function qualityToolViewOf(
   const fold = FOLD_OF_TOOL.get(name.toLowerCase());
   if (fold === undefined) return null;
 
-  const found = recordOf(details);
+  const found = detailRecord(details);
   if (found === null || typeof found["status"] !== "string") return null;
 
-  return fold(recordOf(args) ?? {}, found, itemStatus);
+  return fold(detailRecord(args) ?? {}, found, itemStatus);
 }
 
-const rowsOf = <T>(value: unknown): T[] => listOf(value) as T[];
-
-function countsOf(value: unknown): { kind: string; count: number }[] {
-  return rowsOf<JsonRecord>(value).map((entry) => ({
-    kind: textOf(entry, "kind"),
-    count: numberOf(entry, "count"),
-  }));
-}
-
-const argOf = (args: Args, key: string): string => textOf(args, key).trim();
+/** A filter the call was pointed at, in the chip's words. */
+const argOf = (value: unknown): string => detailText(value).trim();
 
 function view(
   tool: string,
-  details: Details,
+  details: QualityAnswer,
   itemStatus: string,
 ): QualityToolView {
-  const stated = textOf(details, "status").trim();
   const status: QualityToolStatus =
     itemStatus === "error"
       ? "failed"
-      : STATUSES.includes(stated)
-        ? (stated as QualityToolStatus)
-        : "ok";
+      : (detailWord(details.status, STATUSES) ?? "ok");
 
   return {
     tool,
@@ -105,7 +141,7 @@ function view(
     headline: "",
     cells: [],
     sections: [],
-    omitted: numberOf(details, "omitted"),
+    omitted: detailNumber(details.omitted),
     note: "",
   };
 }
@@ -119,9 +155,11 @@ function cellsOf(
 }
 
 /** The two cells every analyser view states: what ran, and the scope it ran on. */
-const analyserPairs = (details: Details): (readonly [string, string])[] => [
-  ["analyzer", analyzerCell("fallow", textOf(details, "version"))],
-  ["scope", scopeLabel(textOf(details, "path"))],
+const analyserPairs = (
+  details: { version: string; path: string },
+): (readonly [string, string])[] => [
+  ["analyzer", analyzerCell("fallow", detailText(details.version))],
+  ["scope", scopeLabel(detailText(details.path))],
 ];
 
 function section(
@@ -131,13 +169,13 @@ function section(
   return rows.length === 0 ? [] : [{ title, rows }];
 }
 
-const errorOf = (details: Details): string =>
-  textOf(details, "error").split("\n")[0] ?? "";
+const errorOf = (details: QualityAnswer): string =>
+  detailText(details.error).split("\n")[0] ?? "";
 
 /** A run that found nothing, or failed, says so in one line; a run with rows says nothing. */
 function noteFor(
   status: QualityToolStatus | "",
-  details: Details,
+  details: QualityAnswer,
   nothingFound: string,
 ): string {
   if (status === "failed" || status === "unsupported") return errorOf(details);
@@ -152,11 +190,11 @@ function severityTone(severity: string): ToolRowTone {
   return "neutral";
 }
 
-const meterOf = (details: unknown): ToolRowMeter | null => {
-  const meter = recordOf(details);
-  if (meter === null) return null;
-  const worst = numberOf(meter, "worst");
-  return worst === 0 ? null : { score: numberOf(meter, "score"), worst };
+const meterOf = (meter: unknown): ToolRowMeter | null => {
+  const record = detailRecord(meter);
+  if (record === null) return null;
+  const worst = detailNumber(record["worst"]);
+  return worst === 0 ? null : { score: detailNumber(record["score"]), worst };
 };
 
 /** One finding: a location in the key column, the thing and where it is, the
@@ -189,32 +227,32 @@ const complexityFigures = (row: ComplexityRow): string =>
   );
 
 function complexityView(
-  args: Args,
-  details: Details,
+  args: CodeComplexityParams,
+  details: CodeComplexityDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_COMPLEXITY_TOOL, details, itemStatus);
-  const thresholds = recordOf(details["thresholds"]);
-  const rows = rowsOf<ComplexityRow>(details["rows"]);
+  const thresholds = detailRecord(details.thresholds);
+  const rows = detailList<ComplexityRow>(details.rows);
 
   v.cells = cellsOf(
     ...analyserPairs(details),
     [
       "thresholds",
       partsLine(
-        `CC ${String(numberOf(thresholds, "cyclomatic"))}`,
-        `cognitive ${String(numberOf(thresholds, "cognitive"))}`,
-        `CRAP ${String(numberOf(thresholds, "crap"))}`,
+        `CC ${String(detailNumber(thresholds?.cyclomatic))}`,
+        `cognitive ${String(detailNumber(thresholds?.cognitive))}`,
+        `CRAP ${String(detailNumber(thresholds?.crap))}`,
       ),
     ],
-    ["functions", numberOf(details, "functions_analyzed")],
-    ["sort", argOf(args, "sort")],
+    ["functions", detailNumber(details.functions_analyzed)],
+    ["sort", argOf(args.sort)],
   );
   v.headline =
     rows.length === 0
       ? ""
       : partsLine(
-          `${counted(numberOf(details, "above_threshold"), "function")} over threshold`,
+          `${counted(detailNumber(details.above_threshold), "function")} over threshold`,
         );
   v.sections = section(
     "",
@@ -235,32 +273,25 @@ function complexityView(
 }
 
 function deadCodeView(
-  args: Args,
-  details: Details,
+  args: CodeDeadCodeParams,
+  details: CodeDeadCodeDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_DEAD_CODE_TOOL, details, itemStatus);
-  const rows = rowsOf<{
-    kind: string;
-    path: string;
-    symbol: string;
-    at: string;
-    severity: string;
-    fixable: boolean;
-  }>(details["rows"]);
+  const rows = detailList<DeadCodeRow>(details.rows);
 
   v.cells = cellsOf(
     ...analyserPairs(details),
-    ["scope filter", argOf(args, "scope")],
-    ["entry points", numberOf(details, "entry_points")],
-    ...countsOf(details["counts"]).map(
+    ["scope filter", argOf(args.scope)],
+    ["entry points", detailNumber(details.entry_points)],
+    ...detailList<QualityCount>(details.counts).map(
       (entry) => [entry.kind, entry.count] as const,
     ),
   );
   v.headline =
     rows.length === 0
       ? ""
-      : partsLine(counted(numberOf(details, "total_issues"), "issue"));
+      : partsLine(counted(detailNumber(details.total_issues), "issue"));
   v.sections = section(
     "",
     rows.map((row, index) =>
@@ -279,31 +310,24 @@ function deadCodeView(
 }
 
 function duplicatesView(
-  _args: Args,
-  details: Details,
+  _args: CodeDuplicatesParams,
+  details: CodeDuplicatesDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_DUPLICATES_TOOL, details, itemStatus);
-  const rows = rowsOf<{
-    fingerprint: string;
-    lines: number;
-    tokens: number;
-    spread: number;
-    instances: { file: string; from: number; to: number }[];
-    fixable: boolean;
-  }>(details["rows"]);
-  const percentage = numberOf(details, "duplication_percentage");
+  const rows = detailList<DuplicateRow>(details.rows);
+  const percentage = detailNumber(details.duplication_percentage);
 
   v.cells = cellsOf(
     ...analyserPairs(details),
-    ["files", numberOf(details, "total_files")],
+    ["files", detailNumber(details.total_files)],
     [
       "duplicated",
-      `${String(numberOf(details, "duplicated_lines"))} of ${String(
-        numberOf(details, "total_lines"),
+      `${String(detailNumber(details.duplicated_lines))} of ${String(
+        detailNumber(details.total_lines),
       )} lines`,
     ],
-    ["files with clones", numberOf(details, "files_with_clones")],
+    ["files with clones", detailNumber(details.files_with_clones)],
   );
   v.headline =
     rows.length === 0
@@ -341,27 +365,28 @@ function duplicatesView(
 }
 
 function reviewView(
-  args: Args,
-  details: Details,
+  args: CodeReviewParams,
+  details: CodeReviewDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_REVIEW_TOOL, details, itemStatus);
-  const rows = rowsOf<RiskRow>(details["rows"]);
-  const risks = countsOf(details["risk_counts"]);
+  const rows = detailList<RiskRow>(details.rows);
+  const risks = detailList<QualityCount>(details.risk_counts);
+  const target = detailText(details.target);
 
   v.cells = cellsOf(
     ["analyzer", "inspect"],
-    ["target", textOf(details, "target")],
-    ["repo", scopeLabel(textOf(details, "repo"))],
-    ["min risk", argOf(args, "min_risk")],
-    ["groups", numberOf(details, "groups")],
-    ["in graph", numberOf(details, "entities_in_graph")],
+    ["target", target],
+    ["repo", scopeLabel(detailText(details.repo))],
+    ["min risk", argOf(args.min_risk)],
+    ["groups", detailNumber(details.groups)],
+    ["in graph", detailNumber(details.entities_in_graph)],
   );
   v.headline =
     rows.length === 0
       ? ""
       : partsLine(
-          `${counted(numberOf(details, "entities_changed"), "entity")} changed`,
+          `${counted(detailNumber(details.entities_changed), "entity")} changed`,
           ...risks.map((risk) => `${String(risk.count)} ${risk.kind}`),
         );
   v.sections = section(
@@ -381,39 +406,37 @@ function reviewView(
       ),
     ),
   );
-  v.note = noteFor(
-    v.status,
-    details,
-    `no entities changed in ${textOf(details, "target")}`,
-  );
+  v.note = noteFor(v.status, details, `no entities changed in ${target}`);
   return v;
 }
 
 function surfaceView(
-  args: Args,
-  details: Details,
+  _args: CodeSymbolInspectParams,
+  details: CodeSymbolInspectDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_SYMBOL_INSPECT_TOOL, details, itemStatus);
-  const rows = rowsOf<SurfaceRow>(details["rows"]);
-  const hotspots = rowsOf<ComplexityRow>(details["hotspots"]);
+  const rows = detailList<SurfaceRow>(details.rows);
+  const hotspots = detailList<ComplexityRow>(details.hotspots);
+  const path = detailText(details.path);
+  const symbol = detailText(details.symbol);
 
   v.cells = cellsOf(
-    ["analyzer", analyzerCell("fallow", textOf(details, "version"))],
-    ["file", textOf(details, "path")],
-    ["symbol", textOf(details, "symbol")],
-    ["reachable", details["reachable"] === true ? "yes" : "no"],
-    ["entry point", details["entry_point"] === true ? "yes" : ""],
-    ["imports", numberOf(details, "import_count")],
-    ["read by", numberOf(details, "imported_by_count")],
+    ["analyzer", analyzerCell("fallow", detailText(details.version))],
+    ["file", path],
+    ["symbol", symbol],
+    ["reachable", detailFlag(details.reachable, false) ? "yes" : "no"],
+    ["entry point", detailFlag(details.entry_point, false) ? "yes" : ""],
+    ["imports", detailNumber(details.import_count)],
+    ["read by", detailNumber(details.imported_by_count)],
   );
   v.headline =
-    rows.length === 0 && textOf(details, "symbol") === ""
+    rows.length === 0 && symbol === ""
       ? ""
       : partsLine(
           counted(rows.length, "export"),
-          numberOf(details, "duplicates") > 0
-            ? `${String(numberOf(details, "duplicates"))} clone matches`
+          detailNumber(details.duplicates) > 0
+            ? `${String(detailNumber(details.duplicates))} clone matches`
             : "",
         );
 
@@ -444,40 +467,28 @@ function surfaceView(
   v.note = noteFor(
     v.status,
     details,
-    textOf(details, "reason") === ""
-      ? `${textOf(details, "path")} has no exports`
-      : textOf(details, "reason"),
+    detailText(details.reason) === "" ? `${path} has no exports` : detailText(details.reason),
   );
   return v;
 }
 
 function referencesView(
-  args: Args,
-  details: Details,
+  args: CodeSymbolReferencesParams,
+  details: CodeSymbolReferencesDetails,
   itemStatus: string,
 ): QualityToolView {
   const v = view(CODE_SYMBOL_REFERENCES_TOOL, details, itemStatus);
-  const callers = rowsOf<{
-    name: string;
-    file: string;
-    depth: number;
-    type_only: boolean;
-    via: string;
-  }>(details["callers"]);
-  const callees = rowsOf<{
-    name: string;
-    file: string;
-    depth: number;
-    type_only: boolean;
-    via: string;
-  }>(details["callees"]);
+  const callers = detailList<ReferenceRow>(details.callers);
+  const callees = detailList<ReferenceRow>(details.callees);
+  const file = detailText(details.file);
+  const symbol = detailText(details.symbol);
 
   v.cells = cellsOf(
-    ["analyzer", analyzerCell("fallow", textOf(details, "version"))],
-    ["file", textOf(details, "file")],
-    ["symbol", textOf(details, "symbol")],
-    ["depth", numberOf(details, "depth")],
-    ["scope", argOf(args, "root")],
+    ["analyzer", analyzerCell("fallow", detailText(details.version))],
+    ["file", file],
+    ["symbol", symbol],
+    ["depth", detailNumber(details.depth)],
+    ["scope", argOf(args.root)],
   );
   v.headline =
     callers.length + callees.length === 0
@@ -485,15 +496,15 @@ function referencesView(
       : partsLine(
           counted(callers.length, "caller"),
           counted(callees.length, "callee"),
-          numberOf(details, "unresolved_count") > 0
-            ? `${String(numberOf(details, "unresolved_count"))} unresolved`
+          detailNumber(details.unresolved_count) > 0
+            ? `${String(detailNumber(details.unresolved_count))} unresolved`
             : "",
         );
 
   // The id column is the hop number and nothing else: the section head above the
   // rows already says which way the chain runs, so a direction word in every id
   // was ink that repeated a head and widened the narrowest column in the table.
-  const paint = (edges: typeof callers): ToolPaintRow[] =>
+  const paint = (edges: readonly ReferenceRow[]): ToolPaintRow[] =>
     edges.map((row) => ({
       key: String(row.depth),
       primary: row.name === "" ? row.file : row.name,
@@ -505,28 +516,24 @@ function referencesView(
 
   v.sections = [
     ...section(
-      `callers — ${String(numberOf(details, "caller_count"))}`,
+      `callers — ${String(detailNumber(details.caller_count))}`,
       paint(callers),
     ),
     ...section(
-      `callees — ${String(numberOf(details, "callee_count"))}`,
+      `callees — ${String(detailNumber(details.callee_count))}`,
       paint(callees),
     ),
   ];
   v.note = noteFor(
     v.status,
     details,
-    textOf(details, "reason") === ""
-      ? `no call chain reaches ${textOf(details, "file")}:${textOf(details, "symbol")}`
-      : textOf(details, "reason"),
+    detailText(details.reason) === ""
+      ? `no call chain reaches ${file}:${symbol}`
+      : detailText(details.reason),
   );
   return v;
 }
 
 export function qualityCellOf(view: QualityToolView, label: string): string {
   return view.cells.find((cell) => cell.label === label)?.value ?? "";
-}
-
-export function qualityRowsOf(view: QualityToolView): ToolPaintRow[] {
-  return view.sections.flatMap((entry) => [...entry.rows]);
 }

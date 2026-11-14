@@ -23,6 +23,7 @@ import {
   toolMark,
   toolText,
 } from "../../core/lib/ui/toolRows";
+import { detailsAs } from "../../core/lib/agent/toolDetails";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
   GUARDRAILS_COVERAGE_TOOL,
@@ -52,20 +53,13 @@ export function isGuardrailsTool(name: string): boolean {
   return TOOL_NAMES.includes(name.toLowerCase());
 }
 
-function detailsOf<T>(item: ToolTranscriptItem): T | null {
-  const details = item.details;
-  return typeof details === "object" && details !== null
-    ? (details as T)
-    : null;
-}
-
 export function guardrailsToolPreview(item: ToolTranscriptItem): string {
   const name = item.name.toLowerCase();
   if (item.status === "running") return RUNNING_TEXT[name] ?? "guardrails";
   if (item.status === "error") return `${name} failed`;
 
   if (name === GUARDRAILS_TEST_TOOL) {
-    const details = detailsOf<GuardrailsTestDetails>(item);
+    const details = detailsAs<GuardrailsTestDetails>(item.details);
     if (details === null) return detailsNoteOf(item);
     if (details.total === 0) return details.note;
     return details.fail === 0
@@ -73,14 +67,14 @@ export function guardrailsToolPreview(item: ToolTranscriptItem): string {
       : `${details.pass}/${details.total} pass · ${details.fail} fail`;
   }
   if (name === GUARDRAILS_FIXTURE_TOOL) {
-    const details = detailsOf<GuardrailsFixtureUpdateDetails>(item);
+    const details = detailsAs<GuardrailsFixtureUpdateDetails>(item.details);
     if (details === null) return detailsNoteOf(item);
     return `${details.written} written · ${details.deleted} deleted${
       details.failed === 0 ? "" : ` · ${details.failed} failed`
     }`;
   }
   if (name === GUARDRAILS_COVERAGE_TOOL) {
-    const details = detailsOf<GuardrailsCoverageDetails>(item);
+    const details = detailsAs<GuardrailsCoverageDetails>(item.details);
     if (details === null) return detailsNoteOf(item);
     const never = details.rows.filter((row) => row.never).length;
     return `${details.rows.length} domains · ${never} never fired`;
@@ -406,7 +400,7 @@ export function GuardrailsToolRows({
     return <Running text={RUNNING_TEXT[name] ?? "guardrails"} />;
 
   if (name === GUARDRAILS_TEST_TOOL) {
-    const details = detailsOf<GuardrailsTestDetails>(item);
+    const details = detailsAs<GuardrailsTestDetails>(item.details);
     return details === null ? (
       <Failed text={item.output.trim()} />
     ) : (
@@ -414,7 +408,7 @@ export function GuardrailsToolRows({
     );
   }
   if (name === GUARDRAILS_FIXTURE_TOOL) {
-    const details = detailsOf<GuardrailsFixtureUpdateDetails>(item);
+    const details = detailsAs<GuardrailsFixtureUpdateDetails>(item.details);
     return details === null ? (
       <Failed text={item.output.trim()} />
     ) : (
@@ -422,7 +416,7 @@ export function GuardrailsToolRows({
     );
   }
   if (name === GUARDRAILS_COVERAGE_TOOL) {
-    const details = detailsOf<GuardrailsCoverageDetails>(item);
+    const details = detailsAs<GuardrailsCoverageDetails>(item.details);
     return details === null ? (
       <Failed text={item.output.trim()} />
     ) : (

@@ -10,9 +10,14 @@
  */
 
 import {
+  detailsAs,
   detailFlag,
+  detailList,
   detailNumber,
+  detailOptionalNumber,
+  detailStrings,
   detailText,
+  detailWord,
 } from "../../core/lib/agent/toolDetails";
 import { counted } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
@@ -32,7 +37,7 @@ import type {
   TreeBadNode,
   TreeFigure,
 } from "../types";
-import { plotFigure } from "./plot";
+import { plotFigure, plotKindOf, plotToneOf } from "./plot";
 
 export interface ChartToolView {
   status: FigureStatus;
@@ -70,91 +75,90 @@ const EMPTY: ChartFigure = {
 };
 
 /** The statuses a plot answer can carry; anything else is not a plot. */
-const FIGURE_STATUSES: readonly string[] = ["ok", "empty", "invalid"];
+const FIGURE_STATUSES = [
+  "ok",
+  "empty",
+  "invalid",
+] as const satisfies readonly FigureStatus[];
 
-/** A number the call may have left out — where the figure holds null, not 0. */
-const optionalNumber = (value: unknown): number | null =>
-  typeof value === "number" ? value : null;
-
-/** The colour word the call may have left out. */
-const optionalTone = (value: unknown): PlotTone | null =>
-  typeof value === "string" ? (value as PlotTone) : null;
-
-/** The series names, dropping what a JSON answer turned into something else. */
-const namesOf = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value.filter((name): name is string => typeof name === "string")
-    : [];
+/** The statuses a structure answer can carry. */
+const STRUCTURE_STATUSES = [
+  "ok",
+  "empty",
+  "invalid",
+] as const satisfies readonly StructureStatus[];
 
 /** The axis a plot was measured across — the figures the answer reads back. */
 function measureOf(value: unknown): PlotMeasure | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
+  const measure = detailsAs<PlotMeasure>(value);
+  if (measure === null) return null;
   return {
-    min: detailNumber(record["min"]),
-    max: detailNumber(record["max"]),
-    total: detailNumber(record["total"]),
-    mean: detailNumber(record["mean"]),
-    peak: detailText(record["peak"]),
-    peakValue: detailNumber(record["peakValue"]),
-    first: detailText(record["first"]),
-    last: detailText(record["last"]),
+    min: detailNumber(measure.min),
+    max: detailNumber(measure.max),
+    total: detailNumber(measure.total),
+    mean: detailNumber(measure.mean),
+    peak: detailText(measure.peak),
+    peakValue: detailNumber(measure.peakValue),
+    first: detailText(measure.first),
+    last: detailText(measure.last),
   };
 }
 
+/**
+ * The plot a call left in its details.
+ *
+ * The answer is read through `ChartFigure` — the interface the tool wrote — so a
+ * field this reader names has to be a field that interface has; each value is
+ * still read through a reader, because the details of a session resumed this
+ * week are JSON rather than the object the call returned.
+ */
 function figureOf(value: unknown): ChartFigure | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
-  const status = detailText(record["status"]);
-  if (!FIGURE_STATUSES.includes(status)) return null;
+  const answer = detailsAs<ChartFigure>(value);
+  if (answer === null) return null;
+  const status = detailWord(answer.status, FIGURE_STATUSES);
+  if (status === null) return null;
 
   return {
-    status: status as FigureStatus,
-    kind: detailText(record["kind"]) === "line" ? "line" : "bar",
-    tone: optionalTone(record["tone"]),
-    height: detailNumber(record["height"]),
-    width: detailNumber(record["width"]),
-    grid: detailFlag(record["grid"], false),
-    markers: detailFlag(record["markers"], true),
-    fill: detailFlag(record["fill"], false),
-    labels: detailFlag(record["labels"], true),
-    dash: optionalNumber(record["dash"]),
-    emphasis: optionalNumber(record["emphasis"]),
-    unit: detailText(record["unit"]),
-    caption: detailText(record["caption"]),
-    series: namesOf(record["series"]),
-    points: Array.isArray(record["points"])
-      ? record["points"]
-          .map(pointOf)
-          .filter((point): point is PlotPoint => point !== null)
-      : [],
-    plotted: detailNumber(record["plotted"]),
-    omitted: detailNumber(record["omitted"]),
-    measure: measureOf(record["measure"]),
-    bad: Array.isArray(record["bad"]) ? record["bad"].map(badOf) : [],
-    error: detailText(record["error"]),
+    status,
+    kind: plotKindOf(answer.kind),
+    tone: plotToneOf(answer.tone),
+    height: detailNumber(answer.height),
+    width: detailNumber(answer.width),
+    grid: detailFlag(answer.grid, false),
+    markers: detailFlag(answer.markers, true),
+    fill: detailFlag(answer.fill, false),
+    labels: detailFlag(answer.labels, true),
+    dash: detailOptionalNumber(answer.dash),
+    emphasis: detailOptionalNumber(answer.emphasis),
+    unit: detailText(answer.unit),
+    caption: detailText(answer.caption),
+    series: detailStrings(answer.series),
+    points: detailList<unknown>(answer.points)
+      .map(pointOf)
+      .filter((point): point is PlotPoint => point !== null),
+    plotted: detailNumber(answer.plotted),
+    omitted: detailNumber(answer.omitted),
+    measure: measureOf(answer.measure),
+    bad: detailList<unknown>(answer.bad).map(badOf),
+    error: detailText(answer.error),
   };
 }
 
 function pointOf(value: unknown): PlotPoint | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
-  if (!Array.isArray(record["values"])) return null;
+  const point = detailsAs<PlotPoint>(value);
+  if (point === null || !Array.isArray(point.values)) return null;
   return {
-    label: detailText(record["label"]),
-    values: record["values"].map((entry) => detailNumber(entry)),
+    label: detailText(point.label),
+    values: detailList<unknown>(point.values).map(detailNumber),
   };
 }
 
 function badOf(value: unknown): PlotBadValue {
-  if (typeof value !== "object" || value === null) {
-    return { at: 0, label: "", value: "" };
-  }
-  const record = value as Record<string, unknown>;
+  const bad = detailsAs<PlotBadValue>(value) ?? { at: 0, label: "", value: "" };
   return {
-    at: detailNumber(record["at"]),
-    label: detailText(record["label"]),
-    value: detailText(record["value"]),
+    at: detailNumber(bad.at),
+    label: detailText(bad.label),
+    value: detailText(bad.value),
   };
 }
 
@@ -263,76 +267,54 @@ const EMPTY_TREE: TreeFigure = {
 };
 
 function nodeOf(value: unknown): StructureNode | null {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
-  const name = detailText(record["name"]);
+  const node = detailsAs<StructureNode>(value);
+  if (node === null) return null;
+  const name = detailText(node.name);
   if (name === "") return null;
-  const children = Array.isArray(record["children"])
-    ? record["children"]
-        .map(nodeOf)
-        .filter((node): node is StructureNode => node !== null)
-    : [];
+  const children = detailList<unknown>(node.children)
+    .map(nodeOf)
+    .filter((child): child is StructureNode => child !== null);
   return {
     name,
-    folder: detailFlag(record["folder"], children.length > 0),
+    folder: detailFlag(node.folder, children.length > 0),
     children,
-    added: detailNumber(record["added"]),
-    removed: detailNumber(record["removed"]),
+    added: detailNumber(node.added),
+    removed: detailNumber(node.removed),
   };
 }
 
 function treeBadOf(value: unknown): TreeBadNode {
-  const record =
-    typeof value === "object" && value !== null
-      ? (value as Record<string, unknown>)
-      : {};
+  const bad = detailsAs<TreeBadNode>(value) ?? { under: "", value: "" };
   return {
-    under: detailText(record["under"]),
-    value: detailText(record["value"]),
+    under: detailText(bad.under),
+    value: detailText(bad.value),
   };
-}
-
-/** The guard a structure reader opens with: a record, and a status word. */
-function detailsOf(details: unknown): {
-  record: Record<string, unknown>;
-  status: StructureStatus;
-} | null {
-  if (typeof details !== "object" || details === null) return null;
-  const record = details as Record<string, unknown>;
-  const status = detailText(record["status"]);
-  if (status !== "ok" && status !== "empty" && status !== "invalid")
-    return null;
-  return { record, status: status as StructureStatus };
 }
 
 /** The tree a call left in its details, read as the JSON a resumed session keeps. */
 function treeFigureOf(details: unknown): TreeFigure | null {
-  const read = detailsOf(details);
-  if (read === null) return null;
-  const { record, status } = read;
-  if (!Array.isArray(record["nodes"])) return null;
+  const answer = detailsAs<TreeFigure>(details);
+  if (answer === null) return null;
+  const status = detailWord(answer.status, STRUCTURE_STATUSES);
+  if (status === null || !Array.isArray(answer.nodes)) return null;
 
   return {
     status,
-    nodes: record["nodes"]
+    nodes: answer.nodes
       .map(nodeOf)
       .filter((node): node is StructureNode => node !== null),
-    expanded: Array.isArray(record["expanded"])
-      ? record["expanded"].filter(
-          (path): path is string => typeof path === "string",
-        )
-      : [],
-    caption: detailText(record["caption"]),
-    counted: detailNumber(record["counted"]),
-    drawn: detailNumber(record["drawn"]),
-    omitted: detailNumber(record["omitted"]),
-    folders: detailNumber(record["folders"]),
-    leaves: detailNumber(record["leaves"]),
-    depth: detailNumber(record["depth"]),
-    added: detailNumber(record["added"]),
-    removed: detailNumber(record["removed"]),
-    bad: Array.isArray(record["bad"]) ? record["bad"].map(treeBadOf) : [],
-    error: detailText(record["error"]),
+    expanded: detailStrings(answer.expanded),
+    caption: detailText(answer.caption),
+    counted: detailNumber(answer.counted),
+    drawn: detailNumber(answer.drawn),
+    omitted: detailNumber(answer.omitted),
+    folders: detailNumber(answer.folders),
+    leaves: detailNumber(answer.leaves),
+    depth: detailNumber(answer.depth),
+    added: detailNumber(answer.added),
+    removed: detailNumber(answer.removed),
+    bad: detailList<unknown>(answer.bad).map(treeBadOf),
+    error: detailText(answer.error),
   };
 }
 

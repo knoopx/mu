@@ -37,11 +37,23 @@ export interface ComplexityRow {
   meter: QualityMeter;
 }
 
-export interface CodeComplexityDetails {
+/**
+ * What every analyser answer carries, whatever it read: which analyser ran, how
+ * it went, how much it left out, and why it failed. The figures each tool adds
+ * are its own interface's, and the log's fold reads the shared four through
+ * this name — so a field the fold needs cannot be missing from one tool's answer
+ * while the fold still asks for it.
+ */
+export interface QualityAnswer {
   analyzer: string;
+  status: QualityToolStatus;
+  omitted: number;
+  error: string;
+}
+
+export interface CodeComplexityDetails extends QualityAnswer {
   version: string;
   path: string;
-  status: QualityToolStatus;
   files_analyzed: number;
   functions_analyzed: number;
   above_threshold: number;
@@ -72,11 +84,9 @@ export interface CodeDeadCodeParams {
   scope?: "all" | "files" | "exports" | "types" | "members" | "deps";
 }
 
-export interface CodeDeadCodeDetails {
-  analyzer: string;
+export interface CodeDeadCodeDetails extends QualityAnswer {
   version: string;
   path: string;
-  status: QualityToolStatus;
   total_issues: number;
   entry_points: number;
   counts: QualityCount[];
@@ -106,11 +116,9 @@ export interface CodeDuplicatesParams {
   limit?: number;
 }
 
-export interface CodeDuplicatesDetails {
-  analyzer: string;
+export interface CodeDuplicatesDetails extends QualityAnswer {
   version: string;
   path: string;
-  status: QualityToolStatus;
   total_files: number;
   files_with_clones: number;
   total_lines: number;
@@ -145,11 +153,9 @@ export interface CodeReviewParams {
   limit?: number;
 }
 
-export interface CodeReviewDetails {
-  analyzer: string;
+export interface CodeReviewDetails extends QualityAnswer {
   target: string;
   repo: string;
-  status: QualityToolStatus;
   entities_changed: number;
   risk_counts: QualityCount[];
   change_counts: QualityCount[];
@@ -176,12 +182,10 @@ export interface CodeSymbolInspectParams {
   limit?: number;
 }
 
-export interface CodeSymbolInspectDetails {
-  analyzer: string;
+export interface CodeSymbolInspectDetails extends QualityAnswer {
   version: string;
   path: string;
   symbol: string;
-  status: QualityToolStatus;
   reachable: boolean;
   entry_point: boolean;
   used: boolean;
@@ -213,12 +217,10 @@ export interface CodeSymbolReferencesParams {
   limit?: number;
 }
 
-export interface CodeSymbolReferencesDetails {
-  analyzer: string;
+export interface CodeSymbolReferencesDetails extends QualityAnswer {
   version: string;
   file: string;
   symbol: string;
-  status: QualityToolStatus;
   found: boolean;
   best_effort: boolean;
   depth: number;

@@ -16,7 +16,7 @@ function detailsOutputOf(details: unknown): string | undefined {
  * `{"content":[]}` as the first line of every bash row. Only a value that is
  * not a tool result at all — no content, no details — is shown as JSON.
  */
-export function extractToolOutput(result: unknown): string {
+function extractToolOutput(result: unknown): string {
   if (result === undefined || result === null) return "";
   if (typeof result === "string") return result;
   if (typeof result !== "object") return String(result);
@@ -36,7 +36,7 @@ export function extractToolOutput(result: unknown): string {
   }
 }
 
-export function extractToolImage(result: unknown): ToolImage | undefined {
+function extractToolImage(result: unknown): ToolImage | undefined {
   if (result === undefined || result === null || typeof result !== "object")
     return undefined;
   const r = result as { content?: unknown; structuredContent?: unknown };
@@ -53,13 +53,19 @@ export function extractToolImage(result: unknown): ToolImage | undefined {
   return undefined;
 }
 
-export function extractToolDetails(result: unknown): unknown {
+function extractToolDetails(result: unknown): unknown {
   if (result === undefined || result === null || typeof result !== "object")
     return undefined;
   const details = (result as { details?: unknown }).details;
   return details === undefined ? undefined : details;
 }
 
+/**
+ * The one read of a tool result: what it said, what it answered with, and the
+ * image in it when there is one. The three readers below are private on purpose
+ * — a caller takes all three at once, and a caller that picks one is a caller
+ * that has decided what a tool result means for itself.
+ */
 export function resultParts(result: unknown): {
   output: string;
   details: unknown;

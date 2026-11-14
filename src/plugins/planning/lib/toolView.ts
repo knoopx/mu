@@ -14,15 +14,18 @@
 import type { BadgeVariant } from "adwaita-gpuix";
 
 import {
+  detailsAs,
+  detailList,
   detailNumber,
-  detailRecord,
   detailText,
+  detailWord,
 } from "../../core/lib/agent/toolDetails";
 import type { ToolPaintRow, ToolRowTone } from "../../core/lib/ui/toolRowPaint";
 import { MAX_PLAN_ROWS, PLAN_STATUS_WORDS, PLAN_TOOL } from "../constants";
 import type {
   PlanBadStep,
   PlanCallStatus,
+  PlanCounts,
   PlanFigure,
   PlanStatus,
   PlanStep,
@@ -62,6 +65,13 @@ const EMPTY_PLAN: PlanFigure = {
   error: "",
 };
 
+/** The statuses a plan answer can carry; anything else is not a plan call. */
+const CALL_STATUSES = [
+  "ok",
+  "empty",
+  "failed",
+] as const satisfies readonly PlanCallStatus[];
+
 /** A standing read back from `details` — the words the tool wrote, forgiving of case. */
 function statusWordOf(value: unknown): PlanStatus {
   const word = detailText(value)
@@ -75,61 +85,72 @@ function statusWordOf(value: unknown): PlanStatus {
 }
 
 function stepOf(value: unknown): PlanStep | null {
-  const record = detailRecord(value);
-  if (record === null) return null;
-  const content = detailText(record["content"]).trim();
+  const step = detailsAs<PlanStep>(value);
+  if (step === null) return null;
+  const content = detailText(step.content).trim();
   if (content === "") return null;
   return {
-    at: detailNumber(record["at"]),
+    at: detailNumber(step.at),
     content,
-    status: statusWordOf(record["status"]),
+    status: statusWordOf(step.status),
   };
 }
 
 function badOf(value: unknown): PlanBadStep {
-  const record = detailRecord(value) ?? {};
+  const bad = detailsAs<PlanBadStep>(value) ?? {
+    at: 0,
+    content: "",
+    status: "",
+    reason: "no content" as const,
+  };
   return {
-    at: detailNumber(record["at"]),
-    content: detailText(record["content"]),
-    status: detailText(record["status"]),
+    at: detailNumber(bad.at),
+    content: detailText(bad.content),
+    status: detailText(bad.status),
     reason:
-      detailText(record["reason"]) === "no such status"
+      detailText(bad.reason) === "no such status"
         ? "no such status"
         : "no content",
   };
 }
 
 /** The plan a call left in its details, read as the JSON a resumed session keeps. */
+/**
+ * The plan a call left in its details.
+ *
+ * It is read through `PlanFigure` — the interface the tool wrote — so the field
+ * names here are checked against it, while every value is still coerced: the
+ * details of a session resumed this week are JSON, not the object the call
+ * returned, and a step the caller wrote loosely is folded, not dropped.
+ */
 function planFigureOf(details: unknown): PlanFigure | null {
-  const record = detailRecord(details);
-  if (record === null) return null;
+  const answer = detailsAs<PlanFigure>(details);
+  if (answer === null) return null;
+  const status = detailWord(answer.status, CALL_STATUSES);
+  if (status === null || !Array.isArray(answer.steps)) return null;
 
-  const status = detailText(record["status"]);
-  if (status !== "ok" && status !== "empty" && status !== "failed") return null;
-  if (!Array.isArray(record["steps"])) return null;
-
-  const steps = record["steps"]
+  const steps = detailList<unknown>(answer.steps)
     .map(stepOf)
     .filter((step): step is PlanStep => step !== null);
 
-  const counts = detailRecord(record["counts"]);
+  const counts = detailsAs<PlanCounts>(answer.counts);
 
   return {
-    status: status as PlanCallStatus,
+    status,
     steps,
     counts:
       counts === null
         ? countsOf(steps)
         : {
-            total: detailNumber(counts["total"]),
-            pending: detailNumber(counts["pending"]),
-            inProgress: detailNumber(counts["inProgress"]),
-            completed: detailNumber(counts["completed"]),
+            total: detailNumber(counts.total),
+            pending: detailNumber(counts.pending),
+            inProgress: detailNumber(counts.inProgress),
+            completed: detailNumber(counts.completed),
           },
-    shown: detailNumber(record["shown"]),
-    notShown: detailNumber(record["notShown"]),
-    bad: Array.isArray(record["bad"]) ? record["bad"].map(badOf) : [],
-    error: detailText(record["error"]),
+    shown: detailNumber(answer.shown),
+    notShown: detailNumber(answer.notShown),
+    bad: detailList<unknown>(answer.bad).map(badOf),
+    error: detailText(answer.error),
   };
 }
 

@@ -4,6 +4,12 @@
  * model, and structured `details` for the log. This file folds the details
  * into one `VcsToolView` so the components never parse a tool's shape, and
  * it names no tool string — every tool is matched by its constant.
+ *
+ * A details shape is declared once, in `../types.ts`, and it is read here
+ * through that same interface: the keys the call promises are `keyof` that
+ * interface and each fold takes it as its argument. A field renamed in
+ * `types.ts` is therefore a compile error in this file — which used to be a
+ * row that silently lost its chips and fell back to the tool's own text.
  */
 
 import {
@@ -21,6 +27,14 @@ import {
   VCS_OPLOG_TOOL,
 } from "../constants";
 import { firstLine } from "../../../utils/truncate";
+import {
+  detailList,
+  detailNumber,
+  detailRecord,
+  detailStrings,
+  detailText,
+  detailWord,
+} from "../../core/lib/agent/toolDetails";
 import type {
   ConflictRow,
   HistoryRow,
@@ -28,15 +42,35 @@ import type {
   LogRow,
   OplogRow,
   VcsCell,
+  VcsConflictsDetails,
+  VcsConflictsParams,
+  VcsDescribeDetails,
+  VcsDescribeParams,
+  VcsFileDiffDetails,
+  VcsFileDiffParams,
+  VcsFileHistoryDetails,
+  VcsFileHistoryParams,
+  VcsFileShowDetails,
+  VcsFileShowParams,
+  VcsFileSplitDetails,
+  VcsFileSplitParams,
+  VcsHunkListDetails,
+  VcsHunkListParams,
+  VcsHunkSplitParams,
+  VcsLogDetails,
+  VcsLogParams,
+  VcsOplogDetails,
+  VcsOplogParams,
   VcsRowView,
+  VcsSplitDetails,
   VcsToolStatus,
   VcsToolView,
 } from "../types";
 
+/** The arguments as they arrive on the call: JSON, whatever the tool asked for. */
 type Args = Record<string, unknown>;
-type Details = Record<string, unknown>;
 
-const STATUSES: readonly string[] = [
+const STATUSES = [
   "ok",
   "failed",
   "unsupported",
@@ -44,16 +78,36 @@ const STATUSES: readonly string[] = [
   "empty",
   "none",
   "binary",
-];
+] as const satisfies readonly VcsToolStatus[];
 
-/** What one tool's details must carry, and who folds them into the view. */
-interface ToolViewShape {
+/** One entry of the table below: the keys checked, and the fold that reads them. */
+interface ErasedViewShape {
   /** details keys that have to read as text or numbers */
   scalars: readonly string[];
   /** details keys that have to read as tables */
   lists: readonly string[];
-  fold(args: Args, details: Details, itemStatus: string): VcsToolView;
+  fold(args: Args, details: Args, itemStatus: string): VcsToolView;
 }
+
+/**
+ * One tool's row: which of its details keys have to read as a scalar and which
+ * as a table, and the fold that reads them. Both key lists are `keyof D`, and
+ * the fold takes `D` and the tool's own params — so the table cannot name a key
+ * the details interface does not have, and the fold cannot read a field that was
+ * never answered. The shape check stays at runtime: a session resumed this week
+ * holds JSON, not the object this tool returned.
+ */
+const viewShape = <P, D>(
+  scalars: readonly (keyof D & string)[],
+  lists: readonly (keyof D & string)[],
+  fold: (args: P, details: D, itemStatus: string) => VcsToolView,
+): ErasedViewShape => ({
+  scalars,
+  lists,
+  // The one erased read: the fold is only ever handed the details this entry
+  // names its keys by, after `shaped` has checked those keys are there.
+  fold: fold as (args: Args, details: Args, itemStatus: string) => VcsToolView,
+});
 
 /**
  * The ten tools by the name they answer under: the keys their details promise
@@ -61,88 +115,100 @@ interface ToolViewShape {
  * whose details miss a promised key has no view either — both mean the log
  * falls back to the tool's own `content` text.
  */
-const VIEW_OF_TOOL: ReadonlyMap<string, ToolViewShape> = new Map([
+const VIEW_OF_TOOL: ReadonlyMap<string, ErasedViewShape> = new Map([
   [
     VCS_LOG_TOOL,
-    {
-      scalars: ["rev", "commit_count"],
-      lists: ["rows"],
-      fold: (args, details, status) => logView(args, details, status),
-    },
+    viewShape<VcsLogParams, VcsLogDetails>(
+      ["rev", "commit_count"],
+      ["rows"],
+      logView,
+    ),
   ],
   [
     VCS_FILE_DIFF_TOOL,
-    {
-      scalars: ["path", "diff_line_count"],
-      lists: [],
-      fold: (_args, details, status) => diffView(details, status),
-    },
+    viewShape<VcsFileDiffParams, VcsFileDiffDetails>(
+      ["path", "diff_line_count"],
+      [],
+      (_args, details, status) => diffView(details, status),
+    ),
   ],
   [
     VCS_FILE_HISTORY_TOOL,
-    {
-      scalars: ["path", "revision_count"],
-      lists: ["rows"],
-      fold: (_args, details, status) => historyView(details, status),
-    },
+    viewShape<VcsFileHistoryParams, VcsFileHistoryDetails>(
+      ["path", "revision_count"],
+      ["rows"],
+      (_args, details, status) => historyView(details, status),
+    ),
   ],
   [
     VCS_FILE_HISTORY_SHOW_TOOL,
-    {
-      scalars: ["path", "lines"],
-      lists: [],
-      fold: (_args, details, status) => showView(details, status),
-    },
+    viewShape<VcsFileShowParams, VcsFileShowDetails>(
+      ["path", "lines"],
+      [],
+      (_args, details, status) => showView(details, status),
+    ),
   ],
   [
     VCS_CONFLICTS_TOOL,
-    {
-      scalars: ["rev", "conflict_count", "file_count"],
-      lists: ["rows"],
-      fold: (_args, details, status) => conflictsView(details, status),
-    },
+    viewShape<VcsConflictsParams, VcsConflictsDetails>(
+      ["rev", "conflict_count", "file_count"],
+      ["rows"],
+      (_args, details, status) => conflictsView(details, status),
+    ),
   ],
   [
     VCS_OPLOG_TOOL,
-    {
-      scalars: ["op_count"],
-      lists: ["rows"],
-      fold: (_args, details, status) => oplogView(details, status),
-    },
+    viewShape<VcsOplogParams, VcsOplogDetails>(
+      ["op_count"],
+      ["rows"],
+      (_args, details, status) => oplogView(details, status),
+    ),
   ],
   [
     VCS_DESCRIBE_TOOL,
-    {
-      scalars: ["commit", "change", "message"],
-      lists: [],
-      fold: (args, details, status) => describeView(args, details, status),
-    },
+    viewShape<VcsDescribeParams, VcsDescribeDetails>(
+      ["commit", "change", "message"],
+      [],
+      describeView,
+    ),
   ],
   [
     VCS_FILE_SPLIT_TOOL,
-    {
-      scalars: ["rev", "selected_change", "remaining_change"],
-      lists: [],
-      fold: (args, details, status) =>
-        splitView(VCS_FILE_SPLIT_TOOL, args, details, status),
-    },
+    viewShape<VcsFileSplitParams, VcsFileSplitDetails>(
+      ["rev", "selected_change", "remaining_change"],
+      [],
+      (args, details, status) =>
+        splitView(
+          VCS_FILE_SPLIT_TOOL,
+          args,
+          details,
+          status,
+          detailText(details.files),
+        ),
+    ),
   ],
   [
     VCS_HUNK_SPLIT_TOOL,
-    {
-      scalars: ["rev", "selected_change", "remaining_change"],
-      lists: [],
-      fold: (args, details, status) =>
-        splitView(VCS_HUNK_SPLIT_TOOL, args, details, status),
-    },
+    viewShape<VcsHunkSplitParams, VcsSplitDetails>(
+      ["rev", "selected_change", "remaining_change"],
+      [],
+      (args, details, status) =>
+        splitView(
+          VCS_HUNK_SPLIT_TOOL,
+          args,
+          details,
+          status,
+          detailStrings(args.hunks).join(", "),
+        ),
+    ),
   ],
   [
     VCS_HUNK_LIST_TOOL,
-    {
-      scalars: ["rev", "hunk_count"],
-      lists: ["rows"],
-      fold: (args, details, status) => hunkListView(args, details, status),
-    },
+    viewShape<VcsHunkListParams, VcsHunkListDetails>(
+      ["rev", "hunk_count"],
+      ["rows"],
+      (_args, details, status) => hunkListView(details, status),
+    ),
   ],
 ]);
 
@@ -162,22 +228,16 @@ export function vcsToolViewOf(
   const shape = VIEW_OF_TOOL.get(name.toLowerCase());
   if (shape === undefined) return null;
 
-  const found = recordOf(details);
+  const found = detailRecord(details);
   if (found === null) return null;
   if (!shaped(found, shape.scalars, shape.lists)) return null;
 
-  return shape.fold(recordOf(args) ?? {}, found, itemStatus);
-}
-
-function recordOf(value: unknown): Details | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-    ? (value as Details)
-    : null;
+  return shape.fold(detailRecord(args) ?? {}, found, itemStatus);
 }
 
 /** Details carry their scalars as text/numbers and their tables as arrays. */
 function shaped(
-  details: Details,
+  details: Args,
   scalars: readonly string[],
   lists: readonly string[],
 ): boolean {
@@ -202,50 +262,30 @@ function view(tool: string, status: VcsToolStatus): VcsToolView {
   };
 }
 
-function textOf(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function numberOf(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function rowsOf<T>(value: unknown): T[] {
-  return Array.isArray(value) ? (value as T[]) : [];
-}
+/** The word lists are trimmed as they are read: the change tracker pads them. */
+const textOf = (value: unknown): string => detailText(value).trim();
 
 /** A cell of a tool's `details` is not always a string; its first line, whatever it is. */
 const firstLineOf = (value: unknown): string =>
   firstLine(typeof value === "string" ? value : "");
 
-/** A list read from args (`files`, `hunks`), joined for display. */
-function listArg(args: Args, key: string): string {
-  const value = args[key];
-  if (Array.isArray(value))
-    return value
-      .map((entry) => textOf(entry))
-      .filter((entry) => entry !== "")
-      .join(", ");
-  return textOf(value);
-}
-
 /** The tool's own status, overridden when the call itself failed. */
-function statusOf(details: Details, itemStatus: string): VcsToolStatus {
+function statusOf(
+  details: { status: VcsToolStatus },
+  itemStatus: string,
+): VcsToolStatus {
   if (itemStatus === "error") return "failed";
-  const raw = details.status;
-  return typeof raw === "string" && STATUSES.includes(raw)
-    ? (raw as VcsToolStatus)
-    : "ok";
+  return detailWord(details.status, STATUSES) ?? "ok";
 }
 
-function errorOf(details: Details): string {
+function errorOf(details: { error: string }): string {
   return firstLineOf(details.error);
 }
 
 /** A note only for a state the log has to explain — never for a clean read. */
 function noteFor(
   status: VcsToolStatus,
-  details: Details,
+  details: { error: string },
   empty: string,
 ): string {
   if (
@@ -300,15 +340,15 @@ function pathLabel(path: string): string {
 
 /** The log: scope chips, one row per commit, the scope in the headline. */
 function logView(
-  args: Args,
-  details: Details,
+  args: VcsLogParams,
+  details: VcsLogDetails,
   itemStatus: string,
 ): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_LOG_TOOL, status);
   const scope = textOf(details.rev);
   const bookmark = textOf(args.bookmark);
-  const commits = rowsOf<LogRow>(details.rows);
+  const commits = detailList<LogRow>(details.rows);
 
   v.cells = cellsOf(
     ["vcs", textOf(details.vcs)],
@@ -339,7 +379,7 @@ function logView(
 }
 
 /** The patch: both ends resolved into chips, the diff body for ToolDiff. */
-function diffView(details: Details, itemStatus: string): VcsToolView {
+function diffView(details: VcsFileDiffDetails, itemStatus: string): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_DIFF_TOOL, status);
   const path = textOf(details.path);
@@ -347,7 +387,7 @@ function diffView(details: Details, itemStatus: string): VcsToolView {
   const from = textOf(details.from);
   const to = textOf(details.to);
   const toLabel = to === "" ? "working copy" : to;
-  const lines = numberOf(details.diff_line_count);
+  const lines = detailNumber(details.diff_line_count);
 
   v.cells = cellsOf(
     ["from", textOf(details.from_change)],
@@ -358,7 +398,7 @@ function diffView(details: Details, itemStatus: string): VcsToolView {
   );
   v.headline =
     status === "ok" && lines > 0 ? `${counted(lines, "line")} of patch` : "";
-  v.patch = typeof details.diff === "string" ? details.diff : "";
+  v.patch = detailText(details.diff);
   v.note = noteFor(
     status,
     details,
@@ -368,11 +408,11 @@ function diffView(details: Details, itemStatus: string): VcsToolView {
 }
 
 /** File history: one row per revision that touched the path. */
-function historyView(details: Details, itemStatus: string): VcsToolView {
+function historyView(details: VcsFileHistoryDetails, itemStatus: string): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_HISTORY_TOOL, status);
   const path = textOf(details.path);
-  const revisions = rowsOf<HistoryRow>(details.rows);
+  const revisions = detailList<HistoryRow>(details.rows);
 
   v.cells = cellsOf(["path", path], ["vcs", textOf(details.vcs)]);
   // The count only: the path is a chip and the header already says it, and a
@@ -397,11 +437,11 @@ function historyView(details: Details, itemStatus: string): VcsToolView {
 }
 
 /** A file at a revision: the body to paint, a binary read says so. */
-function showView(details: Details, itemStatus: string): VcsToolView {
+function showView(details: VcsFileShowDetails, itemStatus: string): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_HISTORY_SHOW_TOOL, status);
   const path = textOf(details.path);
-  const lines = numberOf(details.lines);
+  const lines = detailNumber(details.lines);
 
   v.cells = cellsOf(
     ["hash", textOf(details.hash)],
@@ -410,12 +450,7 @@ function showView(details: Details, itemStatus: string): VcsToolView {
     ["lines", lines === 0 ? "" : String(lines)],
   );
   v.headline = status === "ok" ? counted(lines, "line") : "";
-  v.content =
-    status === "binary"
-      ? ""
-      : typeof details.content === "string"
-        ? details.content
-        : "";
+  v.content = status === "binary" ? "" : detailText(details.content);
   v.note = noteFor(
     status,
     details,
@@ -427,10 +462,10 @@ function showView(details: Details, itemStatus: string): VcsToolView {
 }
 
 /** Conflicts: a clean repo is a `none` state, not an empty table. */
-function conflictsView(details: Details, itemStatus: string): VcsToolView {
+function conflictsView(details: VcsConflictsDetails, itemStatus: string): VcsToolView {
   const status = statusOf(details, itemStatus);
-  const files = rowsOf<ConflictRow>(details.rows);
-  const revisions = numberOf(details.conflict_count);
+  const files = detailList<ConflictRow>(details.rows);
+  const revisions = detailNumber(details.conflict_count);
   const clean = status === "none" || (status === "ok" && files.length === 0);
   const v = view(VCS_CONFLICTS_TOOL, clean ? "none" : status);
 
@@ -458,10 +493,10 @@ function conflictsView(details: Details, itemStatus: string): VcsToolView {
 }
 
 /** The operation log: one row per operation, the op id as the key. */
-function oplogView(details: Details, itemStatus: string): VcsToolView {
+function oplogView(details: VcsOplogDetails, itemStatus: string): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_OPLOG_TOOL, status);
-  const ops = rowsOf<OplogRow>(details.rows);
+  const ops = detailList<OplogRow>(details.rows);
 
   v.cells = cellsOf(["vcs", textOf(details.vcs)]);
   v.headline = ops.length === 0 ? "" : counted(ops.length, "operation");
@@ -477,8 +512,8 @@ function oplogView(details: Details, itemStatus: string): VcsToolView {
  * commit it ends on, so only a change id that actually moved is worth a row.
  */
 function describeView(
-  args: Args,
-  details: Details,
+  args: VcsDescribeParams,
+  details: VcsDescribeDetails,
   itemStatus: string,
 ): VcsToolView {
   const status = statusOf(details, itemStatus);
@@ -516,16 +551,14 @@ function describeView(
  */
 function splitView(
   tool: string,
-  args: Args,
-  details: Details,
+  args: VcsFileSplitParams | VcsHunkSplitParams,
+  details: VcsSplitDetails,
   itemStatus: string,
+  scope: string,
 ): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(tool, status);
-  const files =
-    tool === VCS_FILE_SPLIT_TOOL
-      ? textOf(details.files)
-      : listArg(args, "hunks");
+  const files = scope;
   const selectedChange = textOf(details.selected_change);
   const remainingChange = textOf(details.remaining_change);
 
@@ -554,14 +587,13 @@ function splitView(
 
 /** Hunks: the file is the row, the hunk id the key, the ranges the pair. */
 function hunkListView(
-  args: Args,
-  details: Details,
+  details: VcsHunkListDetails,
   itemStatus: string,
 ): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_HUNK_LIST_TOOL, status);
   const rev = textOf(details.rev);
-  const hunks = rowsOf<HunkRow>(details.rows);
+  const hunks = detailList<HunkRow>(details.rows);
   const files = new Set(
     hunks.map((row) => row.file).filter((file) => file !== ""),
   );

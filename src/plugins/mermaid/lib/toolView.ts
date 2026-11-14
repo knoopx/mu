@@ -10,10 +10,21 @@
 
 import { formatSize } from "@earendil-works/pi-coding-agent";
 
+import {
+  detailsAs,
+  detailNumber,
+  detailStrings,
+  detailText,
+  detailWord,
+} from "../../core/lib/agent/toolDetails";
 import { partsLine } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
 import { MERMAID_RENDER_TOOL } from "../constants";
-import type { MermaidPicture, MermaidStatus } from "../types";
+import type {
+  MermaidParseFailure,
+  MermaidPicture,
+  MermaidStatus,
+} from "../types";
 
 export interface MermaidToolView {
   status: MermaidStatus;
@@ -43,50 +54,53 @@ const EMPTY: MermaidPicture = {
   failure: null,
 };
 
-function stringOf(value: unknown, fallback = ""): string {
-  return typeof value === "string" ? value : fallback;
-}
+/** The statuses a diagram answer can carry; anything else is not a diagram. */
+const STATUSES = [
+  "ok",
+  "failed",
+  "empty",
+] as const satisfies readonly MermaidStatus[];
 
-function numberOf(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function failureOf(value: unknown) {
-  if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
+/** Why the parser stopped, read from the JSON a resumed session keeps. */
+function failureOf(value: unknown): MermaidParseFailure | null {
+  const failure = detailsAs<MermaidParseFailure>(value);
+  if (failure === null) return null;
   return {
-    code: stringOf(record["code"]),
-    line: numberOf(record["line"]),
-    column: numberOf(record["column"]),
-    snippet: stringOf(record["snippet"]),
+    code: detailText(failure.code),
+    line: detailNumber(failure.line),
+    column: detailNumber(failure.column),
+    snippet: detailText(failure.snippet),
   };
 }
 
-/** The details of a diagram answer, or null when the answer is not one. */
+/**
+ * The details of a diagram answer, or null when the answer is not one.
+ *
+ * The answer is read through `MermaidPicture` — the interface the tool wrote —
+ * so every field this reader names has to be one that interface has, while each
+ * value is still coerced, because the details of a session resumed this week are
+ * JSON rather than the object the call returned.
+ */
 function pictureOf(details: unknown): MermaidPicture | null {
-  if (typeof details !== "object" || details === null) return null;
-  const record = details as Record<string, unknown>;
-  const status = stringOf(record["status"]);
-  if (status !== "ok" && status !== "failed" && status !== "empty") return null;
+  const answer = detailsAs<MermaidPicture>(details);
+  if (answer === null) return null;
+  const status = detailWord(answer.status, STATUSES);
+  if (status === null) return null;
 
   return {
-    status: status as MermaidStatus,
-    kind: stringOf(record["kind"]),
-    direction: stringOf(record["direction"]),
-    width: numberOf(record["width"]),
-    height: numberOf(record["height"]),
-    ms: numberOf(record["ms"]),
-    svg: stringOf(record["svg"]),
-    svgBytes: numberOf(record["svgBytes"]),
-    labels: Array.isArray(record["labels"])
-      ? record["labels"].filter(
-          (label): label is string => typeof label === "string",
-        )
-      : [],
-    labelsOmitted: numberOf(record["labelsOmitted"]),
-    written: stringOf(record["written"]),
-    error: stringOf(record["error"]),
-    failure: failureOf(record["failure"]),
+    status,
+    kind: detailText(answer.kind),
+    direction: detailText(answer.direction),
+    width: detailNumber(answer.width),
+    height: detailNumber(answer.height),
+    ms: detailNumber(answer.ms),
+    svg: detailText(answer.svg),
+    svgBytes: detailNumber(answer.svgBytes),
+    labels: detailStrings(answer.labels),
+    labelsOmitted: detailNumber(answer.labelsOmitted),
+    written: detailText(answer.written),
+    error: detailText(answer.error),
+    failure: failureOf(answer.failure),
   };
 }
 
