@@ -111,7 +111,7 @@ const normalize = (
   event: { ...fixture.event, type: fixture.event.type ?? "tool_call" },
 });
 
-export function updateGuardrailFixtures(
+function updateGuardrailFixtures(
   dir: string | null,
   domain: string,
   fixtures: readonly GuardrailFixture[] = [],

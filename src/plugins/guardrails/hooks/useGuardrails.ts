@@ -11,7 +11,7 @@ import {
 import { guardrailsStore } from "../lib/store";
 import type { GuardrailsPanelApi, GuardrailsSnapshot } from "../types";
 
-export function useGuardrailsSnapshot(): GuardrailsSnapshot {
+function useGuardrailsSnapshot(): GuardrailsSnapshot {
   return useSyncExternalStore(
     guardrailsStore.subscribe,
     guardrailsStore.getSnapshot,

@@ -84,13 +84,6 @@ export function registerGuardrailRules(next: readonly GuardrailRule[]): number {
 export function guardrailRules(): readonly GuardrailRule[] {
   return rules;
 }
-
-export function rulesForLanguage(
-  language: GuardrailLanguage,
-): readonly GuardrailRule[] {
-  return rules.filter((rule) => rule.language === language);
-}
-
 const fieldsOf = (rule: GuardrailRule): readonly string[] =>
   rule.fields ?? COMMAND_INPUT_KEYS;
 

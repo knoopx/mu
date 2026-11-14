@@ -1,10 +1,6 @@
 import { extname } from "node:path";
 
-import {
-  GUARDED_COMMAND_TOOLS,
-  GUARDED_FILE_TOOLS,
-  MAX_GUARDED_BYTES,
-} from "../../constants";
+import { GUARDED_FILE_TOOLS, MAX_GUARDED_BYTES } from "../../constants";
 import {
   COMMAND_INPUT_KEYS,
   FILE_TEXT_INPUT_KEYS,
@@ -145,24 +141,3 @@ export function guardedSourcesOf(
   if (GUARDED_FILE_TOOLS.includes(tool)) return fileSources(tool, input);
   return [];
 }
-
-export function guardedSourceOf(
-  toolName: string,
-  input: Record<string, unknown> | undefined,
-): GuardedSource | null {
-  return guardedSourcesOf(toolName, input)[0] ?? null;
-}
-
-export function isGuardedTool(toolName: string): boolean {
-  const tool = normalizedTool(toolName);
-  return (
-    GUARDED_COMMAND_TOOLS.includes(tool) || GUARDED_FILE_TOOLS.includes(tool)
-  );
-}
-
-export const guardedFieldsOf = (toolName: string): readonly string[] => {
-  const tool = normalizedTool(toolName);
-  if (GUARDED_COMMAND_TOOLS.includes(tool)) return COMMAND_INPUT_KEYS;
-  if (GUARDED_FILE_TOOLS.includes(tool)) return FILE_TEXT_INPUT_KEYS;
-  return [];
-};

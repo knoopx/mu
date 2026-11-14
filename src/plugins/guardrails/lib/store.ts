@@ -14,7 +14,7 @@ const EMPTY_ENGINE: GuardrailEngineState = {
   grammars: [],
 };
 
-export class GuardrailsStore {
+class GuardrailsStore {
   private armedAll: boolean;
   private disarmed: Set<string>;
   private hits: GuardrailHit[] = [];

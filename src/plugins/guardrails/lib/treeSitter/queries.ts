@@ -1,6 +1,6 @@
 import { Language, Node, Query, Tree } from "web-tree-sitter";
 
-import type { GuardrailFilter, GuardrailRule } from "../../types";
+import type { GuardrailRule } from "../../types";
 import { grammarEpoch } from "./runtime";
 
 /**
@@ -75,18 +75,6 @@ export function compiledQuery(
     return compiled;
   }
 }
-
-/** Rules whose query did not compile, for the panel to name. */
-export function queryErrors(): { ruleId: string; error: string }[] {
-  const epoch = grammarEpoch();
-  return [...cache.entries()]
-    .filter(([key, value]) => value.query === null && key.endsWith(`@${epoch}`))
-    .map(([key, value]) => ({
-      ruleId: key.slice(0, key.lastIndexOf("@")),
-      error: value.error ?? "query did not compile",
-    }));
-}
-
 /** Frees every compiled query. The registry calls this when rules change. */
 export function invalidateQueries(): void {
   for (const compiled of cache.values()) compiled.query?.delete();
@@ -100,7 +88,7 @@ export interface RuleMatch {
 }
 
 /** A filter's `capture` may name the whole guarded text instead of a node. */
-export const WHOLE_SOURCE_CAPTURE = "$";
+const WHOLE_SOURCE_CAPTURE = "$";
 
 function filterText(
   filter: CompiledFilter,

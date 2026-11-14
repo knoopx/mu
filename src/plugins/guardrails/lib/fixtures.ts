@@ -19,7 +19,6 @@ import type {
   GuardrailHit,
 } from "../types";
 import { blockReasonOf, evaluateToolCall } from "./engine";
-import { guardrailRules } from "./rules";
 import {
   fixturesDir,
   fixturesDirDisplay,
@@ -28,7 +27,7 @@ import {
   writeJsonArray,
 } from "./rulesFile";
 
-export const fixtureToolOf = (fixture: GuardrailFixture): string =>
+const fixtureToolOf = (fixture: GuardrailFixture): string =>
   fixture.event.toolName ?? "bash";
 
 const fixtureKeyOf = (fixture: GuardrailFixture): string => {
@@ -44,15 +43,15 @@ const fixtureKeyOf = (fixture: GuardrailFixture): string => {
   return keys[0] ?? "command";
 };
 
-export const fixtureSubjectOf = (fixture: GuardrailFixture): string => {
+const fixtureSubjectOf = (fixture: GuardrailFixture): string => {
   const value = (fixture.event.input ?? {})[fixtureKeyOf(fixture)];
   return typeof value === "string" ? (value.split("\n")[0] ?? "") : "";
 };
 
-export const fixtureFieldOf = (fixture: GuardrailFixture): string =>
+const fixtureFieldOf = (fixture: GuardrailFixture): string =>
   fixtureKeyOf(fixture);
 
-export function fixtureShapeError(fixture: GuardrailFixture): string {
+function fixtureShapeError(fixture: GuardrailFixture): string {
   if (fixture.id.trim() === "") return "fixture id is empty";
   if (fixture.expected === undefined)
     return `fixture ${fixture.id} has no expected`;
@@ -368,7 +367,3 @@ export async function runFixture(
 
   return verdict(fixture, read, answer.got, "PASS", disarmedNote(answer), ms);
 }
-
-export const ruledDomains = (): string[] => [
-  ...new Set(guardrailRules().map((rule) => rule.domain)),
-];

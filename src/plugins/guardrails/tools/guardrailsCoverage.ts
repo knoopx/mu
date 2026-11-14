@@ -29,7 +29,7 @@ const CoverageParametersSchema = Type.Object({
   ),
 });
 
-export function readGuardrailCoverage(
+function readGuardrailCoverage(
   days?: number,
   sessions?: string,
 ): AgentToolResult<GuardrailsCoverageDetails> {

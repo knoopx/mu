@@ -34,7 +34,7 @@ export interface GuardrailCoverage {
   error: string | null;
 }
 
-export const expandHome = (path: string): string =>
+const expandHome = (path: string): string =>
   path === "~"
     ? homedir()
     : path.startsWith("~/")

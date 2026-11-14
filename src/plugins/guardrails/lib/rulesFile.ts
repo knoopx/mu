@@ -47,7 +47,7 @@ const domainOf = (file: string): string => file.replace(/\.json$/i, "");
 export const suiteDomainOf = (file: string): string =>
   file.slice(0, file.length - FIXTURES_FILE_SUFFIX.length);
 
-export function rulesDir(env: NodeJS.ProcessEnv = process.env): string {
+function rulesDir(env: NodeJS.ProcessEnv = process.env): string {
   const fromEnv = env[RULES_DIR_ENV];
   if (fromEnv !== undefined && fromEnv.trim() !== "") return fromEnv.trim();
   return join(muConfigDir(env), GUARDRAILS_DIR_NAME);
@@ -59,7 +59,7 @@ export function fixturesDir(env: NodeJS.ProcessEnv = process.env): string {
   return rulesDir(env);
 }
 
-export const ensureRulesDir = (env: NodeJS.ProcessEnv = process.env): string =>
+const ensureRulesDir = (env: NodeJS.ProcessEnv = process.env): string =>
   muDir(rulesDir(env));
 
 export const ensureFixturesDir = (
@@ -154,7 +154,7 @@ export interface LoadedGuardrailRules {
   errors: string[];
 }
 
-export function readRuleFiles(
+function readRuleFiles(
   env: NodeJS.ProcessEnv = process.env,
 ): LoadedGuardrailRules {
   const dir = rulesDir(env);
@@ -219,88 +219,15 @@ export interface GuardrailRuleWrite {
   detail: string;
   rules: number;
 }
-
-export function saveGuardrailRule(
-  rule: GuardrailRule,
-  env: NodeJS.ProcessEnv = process.env,
-): GuardrailRuleWrite {
-  const dir = ensureRulesDir(env);
-  const path = join(dir, `${rule.domain}.json`);
-  const loaded = parseRuleFile(path, rule.domain);
-  const kept = loaded.rules.filter((existing) => existing.id !== rule.id);
-  try {
-    assertUsableRule(rule, new Set(kept.map((existing) => existing.id)));
-  } catch (cause) {
-    return {
-      dir,
-      path,
-      domain: rule.domain,
-      ok: false,
-      detail: cause instanceof Error ? cause.message : String(cause),
-      rules: loaded.rules.length,
-    };
-  }
-  const next = [...kept, rule];
-  writeRuleFile(path, rule.domain, next);
-  return {
-    dir,
-    path,
-    domain: rule.domain,
-    ok: true,
-    detail: loaded.rules.some((existing) => existing.id === rule.id)
-      ? "replaced"
-      : "added",
-    rules: next.length,
-  };
-}
-
-export function deleteGuardrailRule(
-  domain: string,
-  id: string,
-  env: NodeJS.ProcessEnv = process.env,
-): GuardrailRuleWrite {
-  const dir = rulesDir(env);
-  const path = join(dir, `${domain}.json`);
-  const loaded = parseRuleFile(path, domain);
-  if (loaded.rules.length === 0)
-    return {
-      dir,
-      path,
-      domain,
-      ok: false,
-      detail: loaded.error ?? `no rule ${id} in ${displayPath(path)}`,
-      rules: 0,
-    };
-  const next = loaded.rules.filter((rule) => rule.id !== id);
-  if (next.length === loaded.rules.length)
-    return {
-      dir,
-      path,
-      domain,
-      ok: false,
-      detail: `no rule ${id} in ${displayPath(path)}`,
-      rules: next.length,
-    };
-  writeRuleFile(path, domain, next);
-  return {
-    dir,
-    path,
-    domain,
-    ok: true,
-    detail: next.length === 0 ? "domain file now empty" : "removed",
-    rules: next.length,
-  };
-}
-
 export interface PersistedGuardrailsState {
   armed: boolean;
   disarmed: string[];
 }
 
-export const stateFilePath = (env: NodeJS.ProcessEnv = process.env): string =>
+const stateFilePath = (env: NodeJS.ProcessEnv = process.env): string =>
   join(muStateDir(env), STATE_FILE_NAME);
 
-export const ensureStateDir = (env: NodeJS.ProcessEnv = process.env): string =>
+const ensureStateDir = (env: NodeJS.ProcessEnv = process.env): string =>
   muDir(muStateDir(env));
 
 export function readGuardrailsState(

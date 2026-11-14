@@ -1,7 +1,3 @@
-export const GUARDRAILS_COMMAND = "guardrails";
-export const GUARDRAILS_PANEL_KEY = "guardrails";
-export const GUARDRAILS_OPEN_BINDING = "composer.guardrails";
-
 export const GUARDED_COMMAND_TOOLS: readonly string[] = [
   "bash",
   "shell",

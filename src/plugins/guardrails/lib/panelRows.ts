@@ -38,7 +38,7 @@ export function engineLabel(engine: GuardrailEngineState): string {
  * of figures ran past the panel's width and was cut mid-word. A cut that is not
  * marked is worse than a figure left out.
  */
-export function enginePanelLabel(engine: GuardrailEngineState): string {
+function enginePanelLabel(engine: GuardrailEngineState): string {
   switch (engine.phase) {
     case "ready":
       return engine.grammars.length === 0
@@ -49,10 +49,8 @@ export function enginePanelLabel(engine: GuardrailEngineState): string {
   }
 }
 
-export const domainArmed = (
-  snapshot: GuardrailsSnapshot,
-  domain: string,
-): boolean => snapshot.armed && !snapshot.disarmed.includes(domain);
+const domainArmed = (snapshot: GuardrailsSnapshot, domain: string): boolean =>
+  snapshot.armed && !snapshot.disarmed.includes(domain);
 
 function armedDomainCount(snapshot: GuardrailsSnapshot): number {
   return guardrailDomains().filter((domain) => domainArmed(snapshot, domain))

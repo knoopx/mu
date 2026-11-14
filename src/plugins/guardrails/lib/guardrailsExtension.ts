@@ -25,7 +25,7 @@ export function reloadGuardrails(): {
   return rules;
 }
 
-export function startGuardrails(): void {
+function startGuardrails(): void {
   if (started) return;
   started = true;
   subscribeEngine((state) => guardrailsStore.setEngine(state));

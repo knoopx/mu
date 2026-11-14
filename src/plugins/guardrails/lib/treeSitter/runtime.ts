@@ -13,7 +13,7 @@ let failure: string | undefined;
 const grammars = new Map<GuardrailLanguage, Language>();
 const listeners = new Set<(state: GuardrailEngineState) => void>();
 
-export function engineState(): GuardrailEngineState {
+function engineState(): GuardrailEngineState {
   return {
     phase,
     ...(failure === undefined ? {} : { error: failure }),

@@ -33,6 +33,3 @@ export const reportSummary = (
 ): string => parts.map(([key, value]) => `${key}=${String(value)}`).join(" ");
 
 export const yesNo = (value: boolean): string => (value ? "yes" : "no");
-
-export const withNote = (note: string, body: string): string =>
-  note === "" ? body : `${note}\n\n${body}`;

@@ -39,30 +39,6 @@ export const GRAMMAR_ASSETS: Record<GuardrailLanguage, string> = {
   tsx: tsxWasmPath,
   typescript: typescriptWasmPath,
 };
-
-export const GRAMMAR_LABELS: Record<GuardrailLanguage, string> = {
-  bash: "bash",
-  cpp: "c++",
-  csharp: "c#",
-  css: "css",
-  go: "go",
-  ini: "ini",
-  java: "java",
-  javascript: "javascript",
-  php: "php",
-  powershell: "powershell",
-  python: "python",
-  regex: "regex",
-  ruby: "ruby",
-  rust: "rust",
-  tsx: "tsx",
-  typescript: "typescript",
-};
-
-export const GRAMMAR_LANGUAGES = Object.keys(
-  GRAMMAR_ASSETS,
-) as GuardrailLanguage[];
-
 export function grammarAssetOf(
   language: GuardrailLanguage,
 ): string | undefined {

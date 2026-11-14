@@ -283,7 +283,7 @@ function runReport(
     .join("\n\n");
 }
 
-export async function runGuardrailTests(
+async function runGuardrailTests(
   dir: string | null,
   domain?: string,
   fixture?: string,
