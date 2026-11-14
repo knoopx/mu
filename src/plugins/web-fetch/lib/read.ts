@@ -8,10 +8,7 @@
  * be allowed to try again.
  */
 
-import {
-  readCache,
-  writeCache,
-} from "../../core/lib/utils/datedCache";
+import { readCache, writeCache } from "../../core/lib/utils/datedCache";
 import { capPage, pageTextOf } from "./clean";
 import { fetchPageText } from "./browser";
 import { targetOf } from "./target";
@@ -80,7 +77,9 @@ export async function fetchWebPage({
   // Awaited, not fired and forgotten: the next read of the same URL may arrive
   // before a write does, and then the page is paid for twice.
   if (page !== "")
-    await writeCache(CACHE_NAMESPACE, target.url, { page } satisfies CachedPage);
+    await writeCache(CACHE_NAMESPACE, target.url, {
+      page,
+    } satisfies CachedPage);
 
   return settled(target, page, false, Date.now() - started);
 }

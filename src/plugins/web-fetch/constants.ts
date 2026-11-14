@@ -10,17 +10,11 @@ export const FETCH_TOOL_NAME = "web-fetch";
 
 export const FETCH_TOOL_LABEL = "Web Fetch";
 
-/** The headless browser mu renders a page with — the same one search reads with. */
-export const OBSURA_BIN = "obscura";
-
 /** Seconds the browser budgets for one page load. */
 export const PAGE_LOAD_TIMEOUT_S = 30;
 
 /** Wall-clock budget for the call: the load, the settle and the conversion. */
 export const PAGE_READ_TIMEOUT_MS = 60_000;
-
-/** The browser's own output is bounded before any of it reaches the log. */
-export const MAX_STDOUT_BYTES = 4_000_000;
 
 /** mu's cache of page reads, under `$XDG_CACHE_HOME/mu/`. */
 export const CACHE_NAMESPACE = "webfetch";

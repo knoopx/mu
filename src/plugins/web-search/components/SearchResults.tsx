@@ -8,9 +8,10 @@ import {
 import { useState, type JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
-import { StateSpinner } from "../../core/components/StateSpinner";
-import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
-import { ToolStateLine } from "../../core/components/ToolStateLine";
+import {
+  ToolFailedBody,
+  ToolRunningBody,
+} from "../../core/components/ToolStateBody";
 import { mutedText } from "../../core/lib/ui/theme";
 import { emphasisWeight } from "../../core/lib/ui/tokens";
 import {
@@ -19,8 +20,6 @@ import {
   toolColumn,
   toolGrow,
   toolLine,
-  toolMark,
-  toolText,
 } from "../../core/lib/ui/toolRows";
 import { openExternal } from "../../../window/openLink";
 import { SEARCH_TOOL_NAME } from "../constants";
@@ -216,58 +215,54 @@ export interface SearchResultsProps {
   item: ToolTranscriptItem;
 }
 
-export function SearchResults({ item }: SearchResultsProps): JSX.Element {
+/**
+ * Whether the call has anything under its header at all.
+ *
+ * A body is drawn on the log's plate, and a plate around nothing is a box around
+ * nothing — so a search that came back with no hits is a header line saying so, and
+ * the row ends there. The check is made here, before the element is built, because
+ * once the log is handed an element it cannot see that the element will draw nothing.
+ */
+export function searchHasBody(item: ToolTranscriptItem): boolean {
+  if (item.status === "error") return true;
+  if (item.status === "running") return true;
+  return (searchDetailsOf(item)?.results.length ?? 0) > 0;
+}
+
+export function SearchResults({
+  item,
+}: SearchResultsProps): JSX.Element | null {
   const t = useAdwaita();
   const details = searchDetailsOf(item);
   const query = queryOf(item);
 
   if (item.status === "error") {
     const message = item.output.trim();
-    return (
-      <div style={toolColumn(t)}>
-        <ToolStateLine
-          icon="cancel"
-          color={t.color.functional.destructive}
-          text={message === "" ? "Search failed" : message}
-        />
-      </div>
-    );
+    return <ToolFailedBody text={message === "" ? "Search failed" : message} />;
   }
 
   if (item.status === "running" && details === undefined) {
     return (
-      <div style={toolColumn(t)}>
-        <div style={toolLine(t)}>
-          <StateSpinner style={toolMark} />
-          <T size="caption" color={mutedText(t)} style={toolText(t)}>
-            {query === ""
-              ? "Searching the web"
-              : `Searching the web for “${query}”`}
-          </T>
-        </div>
+      <ToolRunningBody
+        text={
+          query === ""
+            ? "Searching the web"
+            : `Searching the web for “${query}”`
+        }
+      >
         <SearchSkeleton />
-      </div>
+      </ToolRunningBody>
     );
   }
 
   const results = details?.results ?? [];
-  if (results.length === 0) {
-    return (
-      <div style={toolColumn(t)}>
-        <ToolCaptionLine
-          color={mutedText(t)}
-          text={query === "" ? "No results" : `No results for “${query}”`}
-        />
-      </div>
-    );
-  }
+  // The header already says what was searched and how many came back, so a caption
+  // above the hits would be a second header on the same row — and an answer that
+  // found nothing is a header with nothing under it, which is the honest shape.
+  if (results.length === 0) return null;
 
   return (
     <div style={toolColumn(t)}>
-      <ToolCaptionLine
-        color={mutedText(t)}
-        text={`${results.length} ${results.length === 1 ? "result" : "results"} for “${query}”`}
-      />
       {results.map((row, i) => (
         <ResultRow key={`${row.rank}-${row.url}`} row={row} first={i === 0} />
       ))}

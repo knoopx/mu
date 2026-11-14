@@ -40,7 +40,11 @@ describe("pageAnswer", () => {
 
   test("a capped page says it is capped", () => {
     const answer = pageAnswer(
-      read({ page: "x".repeat(MAX_PAGE_CHARS), truncated: true, chars: 90_000 }),
+      read({
+        page: "x".repeat(MAX_PAGE_CHARS),
+        truncated: true,
+        chars: 90_000,
+      }),
     );
     expect(answer).toContain(`first ${String(MAX_PAGE_CHARS)} characters`);
     expect(answer).toContain("90000 characters");
@@ -52,7 +56,9 @@ describe("pageAnswer", () => {
   });
 
   test("a page that gave no text is answered in words, not with a blank", () => {
-    const answer = pageAnswer(read({ status: "empty", page: "", chars: 0, lines: 0 }));
+    const answer = pageAnswer(
+      read({ status: "empty", page: "", chars: 0, lines: 0 }),
+    );
     expect(answer).toContain("No text came back");
     expect(answer).toContain("https://docs.nushell.sh/book/loading_data.html");
     expect(answer).not.toContain("\n\n");

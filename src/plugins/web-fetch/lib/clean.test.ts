@@ -19,9 +19,9 @@ describe("pageTextOf", () => {
   });
 
   test("keeps a reference-style image's alt text", () => {
-    expect(pageTextOf("![a chart][fig-1]\n\n[fig-1]: https://x/chart.png")).toBe(
-      "a chart\n\n[fig-1]: https://x/chart.png",
-    );
+    expect(
+      pageTextOf("![a chart][fig-1]\n\n[fig-1]: https://x/chart.png"),
+    ).toBe("a chart\n\n[fig-1]: https://x/chart.png");
   });
 
   test("collapses runs of blank lines to one", () => {

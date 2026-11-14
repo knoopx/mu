@@ -39,8 +39,14 @@ describe("fetchWebPage", () => {
   test("a page is fetched once and kept for the rest of the day", async () => {
     const page = counting("# Nushell\n\nopen ./cities.csv | first 5");
 
-    const first = await fetchWebPage({ url: "example.com/one", load: page.load });
-    const second = await fetchWebPage({ url: "example.com/one", load: page.load });
+    const first = await fetchWebPage({
+      url: "example.com/one",
+      load: page.load,
+    });
+    const second = await fetchWebPage({
+      url: "example.com/one",
+      load: page.load,
+    });
 
     expect(page.calls()).toBe(1);
     expect(first.cached).toBe(false);
@@ -52,7 +58,10 @@ describe("fetchWebPage", () => {
   test("a fragment on the end is the same page, not a second fetch", async () => {
     const page = counting("# Pricing\n\nannual is cheaper");
 
-    await fetchWebPage({ url: "https://example.com/two#annual", load: page.load });
+    await fetchWebPage({
+      url: "https://example.com/two#annual",
+      load: page.load,
+    });
     const top = await fetchWebPage({
       url: "https://example.com/two",
       load: page.load,
@@ -66,7 +75,10 @@ describe("fetchWebPage", () => {
   test("a page that gave no text is answered as empty and not kept", async () => {
     const page = counting("   \n\n \n");
 
-    const first = await fetchWebPage({ url: "example.com/three", load: page.load });
+    const first = await fetchWebPage({
+      url: "example.com/three",
+      load: page.load,
+    });
     const second = await fetchWebPage({
       url: "example.com/three",
       load: page.load,

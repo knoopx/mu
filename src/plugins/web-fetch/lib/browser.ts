@@ -4,60 +4,38 @@
  * The browser is the same program mu's search runs, and for the same reason: the
  * page is rendered, so a documentation site that draws its body with JavaScript
  * still answers with its body, and `--dump markdown` converts it on the way out.
- * The spawn itself — the clock, the cancellation, the output bound — is the app's
- * own `runProgram`, not a second copy of it.
+ * The spawn, the clock and the failure handling are the app's own `readPage`;
+ * what lives here is only what a page read asks of it and how this plugin says
+ * that a page did not come.
  */
 
 import {
-  ProgramCancelledError,
-  ProgramMissingError,
-  runProgram,
-} from "../../../utils/runProgram";
-import { firstLine } from "../../../utils/truncate";
-import {
-  MAX_STDOUT_BYTES,
-  OBSURA_BIN,
-  PAGE_LOAD_TIMEOUT_S,
-  PAGE_READ_TIMEOUT_MS,
-} from "../constants";
+  pageExitWords,
+  readPage,
+  type PageWords,
+} from "../../../utils/pageRead";
+import { PAGE_LOAD_TIMEOUT_S, PAGE_READ_TIMEOUT_MS } from "../constants";
+
+const words: PageWords = {
+  missing: (bin) =>
+    new Error(
+      `Reading a page needs the \`${bin}\` headless browser on PATH — install it to enable web-fetch.`,
+    ),
+  cancelled: () => new Error("The page read was cancelled."),
+  failed: (code, detail) =>
+    new Error(pageExitWords("The page could not be read", code, detail)),
+};
 
 export async function fetchPageText(
   url: string,
   signal?: AbortSignal,
 ): Promise<string> {
-  const run = await runProgram({
-    command: OBSURA_BIN,
-    args: [
-      "fetch",
-      url,
-      "--dump",
-      "markdown",
-      "--quiet",
-      "--timeout",
-      String(PAGE_LOAD_TIMEOUT_S),
-    ],
+  return readPage({
+    url,
+    command: ["--dump", "markdown", "--timeout", String(PAGE_LOAD_TIMEOUT_S)],
     subject: "page read",
+    words,
     signal,
     timeoutMs: PAGE_READ_TIMEOUT_MS,
-    maxOutputBytes: MAX_STDOUT_BYTES,
-  }).catch((error: unknown) => {
-    if (error instanceof ProgramMissingError)
-      throw new Error(
-        `Reading a page needs the \`${OBSURA_BIN}\` headless browser on PATH — install it to enable web-fetch.`,
-      );
-    if (error instanceof ProgramCancelledError)
-      throw new Error("The page read was cancelled.");
-    throw error;
   });
-
-  if (run.code !== 0) {
-    const detail = firstLine(run.stderr);
-    throw new Error(
-      detail === ""
-        ? `The page could not be read (exit ${run.code ?? "signal"}).`
-        : `The page could not be read: ${detail}`,
-    );
-  }
-
-  return run.stdout;
 }

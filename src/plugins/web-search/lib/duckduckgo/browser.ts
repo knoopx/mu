@@ -1,18 +1,17 @@
 /**
  * The browser page read is a search's page read.
  *
- * One browser, one spawn, one clock: `runProgram` owns the process, and this file
- * only says what the DuckDuckGo engine asks of it — a URL, a DOM script, and the
- * words this plugin uses when the page did not come.
+ * One browser, one spawn, one clock: the app's own `readPage` owns the process and
+ * the failure handling, and this file only says what the DuckDuckGo engine asks of
+ * it — a URL, a DOM script — and the error names the engine's callers catch.
  */
 
 import {
-  ProgramCancelledError,
-  ProgramMissingError,
-  runProgram,
-} from "../../../../utils/runProgram";
-import { firstLine } from "../../../../utils/truncate";
-import { MAX_STDOUT_BYTES, OBSURA_BIN, SEARCH_TIMEOUT_MS } from "./constants";
+  pageExitWords,
+  readPage,
+  type PageWords,
+} from "../../../../utils/pageRead";
+import { SEARCH_TIMEOUT_MS } from "./constants";
 
 export class BrowserMissingError extends Error {
   constructor(bin: string) {
@@ -30,6 +29,13 @@ export class SearchCancelledError extends Error {
   }
 }
 
+const words: PageWords = {
+  missing: (bin) => new BrowserMissingError(bin),
+  cancelled: () => new SearchCancelledError(),
+  failed: (code, detail) =>
+    new Error(pageExitWords("Search failed", code, detail)),
+};
+
 export interface EvalPageRequest {
   url: string;
   script: string;
@@ -43,31 +49,16 @@ export async function evalPage({
   url,
   script,
   signal,
-  bin = OBSURA_BIN,
+  bin,
   timeoutMs = SEARCH_TIMEOUT_MS,
 }: EvalPageRequest): Promise<string> {
-  const run = await runProgram({
-    command: bin,
-    args: ["fetch", url, "--quiet", "--eval", script],
+  return readPage({
+    url,
+    command: ["--eval", script],
     subject: "search",
+    words,
+    bin,
     signal,
     timeoutMs,
-    maxOutputBytes: MAX_STDOUT_BYTES,
-  }).catch((error: unknown) => {
-    if (error instanceof ProgramMissingError) throw new BrowserMissingError(bin);
-    if (error instanceof ProgramCancelledError)
-      throw new SearchCancelledError();
-    throw error;
   });
-
-  if (run.code !== 0) {
-    const detail = firstLine(run.stderr);
-    throw new Error(
-      detail === ""
-        ? `Search failed (exit ${run.code ?? "signal"}).`
-        : `Search failed: ${detail}`,
-    );
-  }
-
-  return run.stdout;
 }

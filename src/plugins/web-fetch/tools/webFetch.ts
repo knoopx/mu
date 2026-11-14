@@ -34,10 +34,7 @@ export async function executeWebFetch(
   return toolResult(pageAnswer(details), details);
 }
 
-export const webFetchTool: PluginTool<
-  typeof Parameters,
-  WebFetchDetails
-> = {
+export const webFetchTool: PluginTool<typeof Parameters, WebFetchDetails> = {
   name: FETCH_TOOL_NAME,
   icon: "public",
   label: FETCH_TOOL_LABEL,
