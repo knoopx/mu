@@ -1,7 +1,6 @@
 import type { JSX } from "react";
 import { Icon, T, useAdwaita } from "adwaita-gpuix";
 
-import { mutedText } from "../../core/lib/ui/theme";
 import { STATE_GLYPH } from "../../core/lib/ui/tokens";
 import {
   toolGapColumn,
@@ -68,10 +67,6 @@ export function GuardrailBlockRows({
         </T>
       </div>
       <Detail text={hit.message} color={t.color.text.primary} />
-      <Detail
-        text={`read ${String(hit.engineMs)}ms · disarmed in /guardrails`}
-        color={mutedText(t)}
-      />
     </div>
   );
 }
