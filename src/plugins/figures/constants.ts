@@ -16,6 +16,12 @@ export const TREE_TOOL_LABEL = "Tree";
  * A bar is a flex child of the row it stands in, so past a few dozen bars the
  * picture stops being a picture and becomes a texture. The cap is what makes the
  * tool answer say "group these yourself" instead of drawing a comb.
+ *
+ * It is also the only bound on how wide a bar is: a bar fills the slot the row's
+ * layout gives it, and there is no pixel cap on it. Two categories are two wide
+ * bars, sixty is a comb, and both are the plot the caller asked for — a fixed
+ * bar width is what turned nine monthly figures into nine sticks in a field of
+ * air, which is why the width left the constants file rather than moving here.
  */
 export const MAX_POINTS = 64;
 
@@ -37,18 +43,6 @@ export const MAX_LABEL_CHARS = 24;
  * unsaid; a longer one marks only the point it points at.
  */
 export const MAX_MARKED_POINTS = 12;
-
-/**
- * How wide one bar of a single-series bar plot is allowed to get.
- *
- * adwaita lets a bar fill its slot, so three categories across a wide panel
- * print three slabs. Past this width a bar stops reading as one of a handful of
- * comparisons and starts reading as a block with a figure on it.
- */
-export const MAX_BAR_WIDTH = 24;
-
-/** The gap adwaita stands a single-series bar plot's slots in. */
-export const BAR_SLOT_GAP = 4;
 
 /** The plot box the height parameter is bounded to, in px. */
 export const MIN_PLOT_HEIGHT = 72;

@@ -31,7 +31,6 @@ import {
   MAX_POINTS,
 } from "../../../figures/constants";
 import {
-  barWidthFor,
   capPlot,
   coercePlot,
   markersFor,
@@ -179,6 +178,12 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
    * divided from what it names, and no box drawn around a block that already
    * sits inside a pane — `frame="bare"`, because a framed table inside a framed
    * pane is one box drawn twice.
+   *
+   * The two bands carry their own key. A `Table` measures its columns across
+   * every row and then hands back a rebuilt tree, and a rebuilt tree is a
+   * dynamic list to React even where it was written as static JSX children — so
+   * a band that arrives with no key is a list item with no identity, and React
+   * says so from inside `Table`. A key written here is the one the rebuild keeps.
    */
   return (
     <AdwaitaTable
@@ -187,13 +192,13 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
       style={{ width: "100%", minWidth: 0 }}
     >
       {columns.length === 0 ? null : (
-        <TableHeader>
+        <TableHeader key="header">
           {columns.map((column, index) => (
             <TableHead key={`h-${column}-${String(index)}`}>{column}</TableHead>
           ))}
         </TableHeader>
       )}
-      <TableBody>
+      <TableBody key="body">
         {rows.map((row, rowIndex) => (
           <TableRow key={`r-${String(rowIndex)}`}>
             {cellsOf(row)
@@ -282,7 +287,6 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         type={kind}
         color={plotColor(ctx.t, plotToneOf(node.props.tone))}
         colors={seriesColors(ctx.t)}
-        barWidth={line ? undefined : barWidthFor(capped.points.length, width)}
         height={prop<number>(node.props, "height", CHART_HEIGHT)}
         width={width}
         grid={prop(node.props, "grid", false)}

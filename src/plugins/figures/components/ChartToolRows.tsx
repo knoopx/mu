@@ -42,7 +42,6 @@ import {
 import { mutedText } from "../../core/lib/ui/theme";
 import { CHART_RENDER_TOOL, MAX_READOUT_POINTS } from "../constants";
 import {
-  barWidthFor,
   legendOf,
   plotColor,
   plotDataOf,
@@ -159,11 +158,6 @@ export function ChartToolRows({ item }: ChartToolRowsProps): JSX.Element {
           type={figure.kind}
           color={plotColor(t, figure.tone)}
           colors={seriesColors(t)}
-          barWidth={
-            figure.kind === "line"
-              ? undefined
-              : barWidthFor(figure.plotted, figure.width)
-          }
           height={figure.height}
           width={figure.width}
           grid={figure.grid}

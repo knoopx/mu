@@ -13,11 +13,27 @@
  */
 export type FigureStatus = "ok" | "empty" | "invalid";
 
-export type PlotKind = "bar" | "line";
+/** The two shapes a plot takes, in one list the schema, the reader and the view share. */
+export const PLOT_KINDS = ["bar", "line"] as const;
 
-/** The colour words a plot takes, the same words a program's `tone` takes. */
-export type PlotTone =
-  "ink" | "muted" | "accent" | "info" | "success" | "warning" | "danger";
+export type PlotKind = (typeof PLOT_KINDS)[number];
+
+/**
+ * The colour words a plot takes, the same words a program's `tone` takes. The
+ * list is the type: the tool's schema, the reader that validates a word the
+ * caller wrote, and the view that paints it all answer from these seven.
+ */
+export const PLOT_TONES = [
+  "accent",
+  "ink",
+  "muted",
+  "info",
+  "success",
+  "warning",
+  "danger",
+] as const;
+
+export type PlotTone = (typeof PLOT_TONES)[number];
 
 /** One tick of the axis: its label, and one value per series. */
 export interface PlotPoint {

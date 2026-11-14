@@ -20,7 +20,12 @@ import {
   chartInvalidAnswer,
 } from "../lib/answer";
 import { chartPlotOf } from "../lib/plot";
+// The shape and colour words the tool accepts are spelled once, in `../types.ts`:
+// a word the schema takes is a word the plot reader resolves and the row paints.
+import { PLOT_KINDS, PLOT_TONES } from "../types";
 import type { ChartFigure, ChartPlotParams } from "../types";
+
+
 
 /** One cell of a point: an axis label, or a value. */
 const CellSchema = Type.Union([
@@ -51,7 +56,7 @@ const RenderParametersSchema = Type.Object({
     }),
   ),
   kind: Type.Optional(
-    Type.Union([Type.Literal("bar"), Type.Literal("line")], {
+    Type.Union(PLOT_KINDS.map((kind) => Type.Literal(kind)), {
       description:
         "`bar` across a category axis (the default); `line` for a series that runs across an interval.",
     }),
@@ -65,15 +70,7 @@ const RenderParametersSchema = Type.Object({
   ),
   tone: Type.Optional(
     Type.Union(
-      [
-        Type.Literal("accent"),
-        Type.Literal("ink"),
-        Type.Literal("muted"),
-        Type.Literal("info"),
-        Type.Literal("success"),
-        Type.Literal("warning"),
-        Type.Literal("danger"),
-      ],
+      PLOT_TONES.map((tone) => Type.Literal(tone)),
       {
         description:
           "The plot's colour word, resolved against the theme the window is wearing (default `accent`).",

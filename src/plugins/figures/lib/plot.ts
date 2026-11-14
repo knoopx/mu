@@ -27,10 +27,8 @@ import type {
 import { seriesRamp } from "../../core/lib/ui/theme";
 import { truncateToWidth } from "../../../utils/truncate";
 import {
-  BAR_SLOT_GAP,
   CHART_CANVAS_WIDTH,
   CHART_HEIGHT,
-  MAX_BAR_WIDTH,
   MAX_LABEL_CHARS,
   MAX_MARKED_POINTS,
   MAX_POINTS,
@@ -38,6 +36,7 @@ import {
   MAX_PLOT_HEIGHT,
   MIN_PLOT_HEIGHT,
 } from "../constants";
+import { PLOT_KINDS, PLOT_TONES } from "../types";
 import type {
   ChartFigure,
   ChartPlotParams,
@@ -50,20 +49,9 @@ import type {
 
 /* ------------------------------------------------------------------ shape */
 
-export const PLOT_KINDS: readonly string[] = ["bar", "line"];
-
-const PLOT_TONES: readonly string[] = [
-  "ink",
-  "muted",
-  "accent",
-  "info",
-  "success",
-  "warning",
-  "danger",
-];
-
 export const plotKindOf = (value: unknown): PlotKind =>
-  typeof value === "string" && PLOT_KINDS.includes(value.trim().toLowerCase())
+  typeof value === "string" &&
+  (PLOT_KINDS as readonly string[]).includes(value.trim().toLowerCase())
     ? (value.trim().toLowerCase() as PlotKind)
     : "bar";
 
@@ -71,7 +59,9 @@ export const plotKindOf = (value: unknown): PlotKind =>
 export function plotToneOf(value: unknown): PlotTone | null {
   if (typeof value !== "string") return null;
   const word = value.trim().toLowerCase();
-  return PLOT_TONES.includes(word) ? (word as PlotTone) : null;
+  return (PLOT_TONES as readonly string[]).includes(word)
+    ? (word as PlotTone)
+    : null;
 }
 
 /** A plot's own colour: the accent for a plot that named no tone. */
@@ -117,19 +107,6 @@ export const markersFor = (
   points: number,
   emphasis: number | null,
 ): boolean => markers ?? (emphasis !== null || points <= MAX_MARKED_POINTS);
-
-/**
- * How wide a bar is drawn, or nothing when the slot is the width.
- *
- * The slot is what is left of the canvas once the gaps between categories are
- * paid for; a slot wider than a bar should read as air around the bar, not as a
- * slab the length of the panel.
- */
-export function barWidthFor(points: number, width: number): number | undefined {
-  if (points <= 0) return undefined;
-  const slot = (width - BAR_SLOT_GAP * (points - 1)) / points;
-  return slot > MAX_BAR_WIDTH ? MAX_BAR_WIDTH : undefined;
-}
 
 /**
  * What the series of a plot are called.
