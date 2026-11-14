@@ -1,5 +1,6 @@
 import { useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
+import { PAGE_INSET } from "../ui/transcriptLayout";
 import { composerFill, type ComposerTone } from "../ui/theme";
 import { codeLineBox, HAIRLINE, ROW_HEIGHT } from "../ui/tokens";
 

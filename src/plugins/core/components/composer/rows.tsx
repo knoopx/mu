@@ -31,64 +31,6 @@ import type {
   ComposerSwatchSpec,
 } from "./Composer";
 
-/**
- * The columns a panel's rows share, measured off the rows it holds. No column in
- * a panel is a fixed number of characters: a name column is as wide as the
- * longest name that panel ever draws and no wider, an age column as wide as the
- * longest age it words. The panel measures once over its whole list — not over
- * the visible slice, or a column would slide as you scroll.
- */
-export interface ComposerPanelColumns {
-  name: number;
-  args: number;
-  age: number;
-}
-
-export function panelColumnsOf(
-  rows: readonly ComposerPanelRow[],
-  t: AdwaitaTheme,
-): ComposerPanelColumns {
-  let nameChars = 0;
-  let argsChars = 0;
-  let ageChars = 0;
-  for (const row of rows) {
-    if (row.kind === "command") {
-      nameChars = Math.max(nameChars, row.name.trim().length);
-      argsChars = Math.max(argsChars, (row.args ?? "").trim().length);
-    } else if (row.kind === "option" && row.tabular === true) {
-      ageChars = Math.max(ageChars, (row.description ?? "").trim().length);
-    }
-  }
-  // A command name and its args stand in the proportional family, so their
-  // columns are measured in what that family prints, not in mono character-widths.
-  return {
-    name: textWidth(t, nameChars, t.type.caption),
-    args: textWidth(t, argsChars, t.type.caption),
-    age: ageChars === 0 ? 0 : monoTextWidth(t, ageChars, t.type.caption),
-  };
-}
-
-/** A figure's glyph stands beside caption text and takes its measure. */
-const figureGlyph = (t: AdwaitaTheme): number => glyphForText(t.type.caption);
-
-/** The air between one figure's glyph and the digits it labels. */
-const figureGlyphGap = (t: AdwaitaTheme): number => t.space.xs;
-
-/** A figure's text is monospace, so its column is measured, not budgeted. */
-export const composerFigureTextWidth = (
-  t: AdwaitaTheme,
-  chars: number,
-): number => monoTextWidth(t, chars);
-
-export const composerFigureGlyphWidth = (t: AdwaitaTheme): number =>
-  figureGlyph(t);
-
-export const composerFigureColumnWidth = (
-  t: AdwaitaTheme,
-  chars: number,
-): number =>
-  figureGlyph(t) + figureGlyphGap(t) + composerFigureTextWidth(t, chars);
-
 function panelRowStyle(
   t: AdwaitaTheme,
   active: boolean,
@@ -215,6 +157,8 @@ const textColumn = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
+  // The row carries no width of its own: it takes what the row leaves it, and is
+  // the first to give room back when the row runs out.
   flexGrow: 1,
   flexShrink: 1,
   minWidth: 0,
@@ -236,20 +180,26 @@ const figureGroup = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
+  justifyContent: "flex-end",
   gap: figureGap(t),
   flexShrink: 0,
   pointerEvents: "none",
 });
 
-const figureCell = (t: AdwaitaTheme, width: number | undefined): StyleDesc => ({
+const figureCell = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "flex-end",
   gap: figureGlyphGap(t),
   flexShrink: 0,
-  ...(width === undefined ? {} : { width }),
 });
+
+/** A figure's glyph stands beside caption text and takes its measure. */
+const figureGlyph = (t: AdwaitaTheme): number => glyphForText(t.type.caption);
+
+/** The air between one figure's glyph and the digits it labels. */
+const figureGlyphGap = (t: AdwaitaTheme): number => t.space.xs;
 
 const figureText = (t: AdwaitaTheme): StyleDesc => ({
   fontSize: t.type.caption,
@@ -272,7 +222,7 @@ function RowFigures({
   return (
     <div style={figureGroup(t)}>
       {figures.map((figure, off) => (
-        <div key={`figure-${off}`} style={figureCell(t, figure.width)}>
+        <div key={`figure-${off}`} style={figureCell(t)}>
           {figure.icon === undefined ? null : (
             <Icon
               name={figure.icon}
@@ -290,68 +240,14 @@ function RowFigures({
   );
 }
 
-/** A row's trailing age: two characters of a mono column, right-aligned. */
-const ageColumn = (t: AdwaitaTheme, width: number): StyleDesc => ({
+/** A row's trailing age: a mono figure, right-aligned in the row's own room. */
+const ageColumn = (t: AdwaitaTheme): StyleDesc => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
-  width,
   flexShrink: 0,
   pointerEvents: "none",
 });
-
-export interface ComposerCommandRowProps {
-  name: string;
-  args?: string;
-  description?: string;
-  icon?: IconName;
-
-  /** The columns the panel measured for its rows. */
-  columns: ComposerPanelColumns;
-
-  active: boolean;
-  onClick: () => void;
-  onHover: () => void;
-}
-
-export function ComposerCommandRow(
-  props: ComposerCommandRowProps,
-): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <ComposerRow
-      t={t}
-      style={rowStyle(t, props.active)}
-      icon={props.icon}
-      active={props.active}
-      onClick={props.onClick}
-      onHover={props.onHover}
-    >
-      <text
-        style={{
-          ...label(t),
-          width: props.columns.name,
-          flexShrink: 0,
-        }}
-      >
-        {props.name}
-      </text>
-
-      <text
-        style={{
-          ...meta(t),
-          width: props.columns.args,
-          ...truncate(t),
-        }}
-      >
-        {props.args ?? ""}
-      </text>
-      {props.description !== undefined && (
-        <text style={{ ...meta(t), ...truncate(t) }}>{props.description}</text>
-      )}
-    </ComposerRow>
-  );
-}
 
 export interface ComposerOptionRowProps {
   label: string;
@@ -365,9 +261,6 @@ export interface ComposerOptionRowProps {
   icon?: IconName;
 
   tabular?: boolean;
-
-  /** The column a tabular row's trailing figure stands in. */
-  ageWidth?: number;
 
   picked: boolean;
 
@@ -433,7 +326,7 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
         ? props.trailing
         : showMeta &&
           (props.tabular === true ? (
-            <div style={ageColumn(t, props.ageWidth ?? 0)}>
+            <div style={ageColumn(t)}>
               <text
                 style={{
                   ...meta(t),
@@ -475,90 +368,6 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
           }}
         />
       ) : null}
-    </ComposerRow>
-  );
-}
-
-function swatchStyle(t: AdwaitaTheme, swatch: ComposerSwatchSpec): StyleDesc {
-  return {
-    display: "flex",
-    flexDirection: "column",
-    gap: t.space.xs,
-    width: SWATCH_WIDTH,
-    height: SWATCH_HEIGHT,
-    flexShrink: 0,
-    justifyContent: "center",
-    paddingLeft: t.space.xs,
-    paddingRight: t.space.xs,
-    borderRadius: t.radius.xs,
-    borderWidth: HAIRLINE,
-    borderColor: hexToRgba(swatch.text, 0.34),
-    backgroundColor: swatch.window,
-    pointerEvents: "none",
-  };
-}
-
-function swatchStrip(
-  t: AdwaitaTheme,
-  swatch: ComposerSwatchSpec,
-  width: number | string,
-  ink = false,
-): StyleDesc {
-  return {
-    width,
-    height: t.radius.xs,
-    flexShrink: 0,
-    borderRadius: t.radius.xs / 2,
-    backgroundColor: ink ? hexToRgba(swatch.text, 0.75) : swatch.surface,
-    pointerEvents: "none",
-  };
-}
-
-function ThemePreview({
-  t,
-  swatch,
-}: {
-  t: AdwaitaTheme;
-  swatch: ComposerSwatchSpec;
-}): JSX.Element {
-  return (
-    <div style={swatchStyle(t, swatch)}>
-      <div style={swatchStrip(t, swatch, "100%")} />
-      <div style={swatchStrip(t, swatch, "62%", true)} />
-    </div>
-  );
-}
-
-export interface ComposerThemeRowProps {
-  label: string;
-
-  swatch: ComposerSwatchSpec;
-
-  active: boolean;
-  onClick: () => void;
-  onHover: () => void;
-}
-
-export function ComposerThemeRow(props: ComposerThemeRowProps): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <ComposerRow
-      t={t}
-      style={optionRowStyle(t, props.active, false)}
-      active={props.active}
-      onClick={props.onClick}
-      onHover={props.onHover}
-    >
-      <text
-        style={{
-          ...label(t),
-          ...rowLine(t, t.type.caption, 1),
-          flexGrow: 1,
-        }}
-      >
-        {props.label}
-      </text>
-      <ThemePreview t={t} swatch={props.swatch} />
     </ComposerRow>
   );
 }

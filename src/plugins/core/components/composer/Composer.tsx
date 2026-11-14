@@ -63,14 +63,11 @@ import {
   contextFraction,
   contextRingGradient,
 } from "./pills";
+import { ComposerStatus } from "./rows";
 import {
-  ComposerCommandRow,
-  ComposerOptionRow,
-  ComposerStatus,
-  ComposerThemeRow,
-  panelColumnsOf,
-  type ComposerPanelColumns,
-} from "./rows";
+  ComposerPanelTable,
+  composerPanelShapeOf,
+} from "./panelTable";
 import { type Shortcut } from "../../lib/composer/shortcuts";
 import { useComposerKeys } from "../../hooks/useComposerKeys";
 import { resolve } from "node:path";
@@ -107,8 +104,6 @@ export interface ComposerRowFigure {
 
   color?: string;
   text: string;
-
-  width?: number;
 }
 
 export interface ComposerSwatchSpec {
@@ -344,63 +339,6 @@ function PanelStatus({
   return null;
 }
 
-function PanelRow({
-  row,
-  active,
-  checkColumn,
-  columns,
-  onPick,
-  onHover,
-}: {
-  row: ComposerPanelRow;
-  active: boolean;
-  checkColumn: boolean;
-  /** The columns every row of this panel stands in, measured over its whole list. */
-  columns: ComposerPanelColumns;
-  onPick: () => void;
-  onHover: () => void;
-}): JSX.Element {
-  if (row.kind === "theme")
-    return (
-      <ComposerThemeRow
-        label={row.label}
-        swatch={row.swatch}
-        active={active}
-        onClick={onPick}
-        onHover={onHover}
-      />
-    );
-  if (row.kind === "command")
-    return (
-      <ComposerCommandRow
-        name={row.name}
-        args={row.args}
-        description={row.description}
-        icon={row.icon}
-        columns={columns}
-        active={active}
-        onClick={onPick}
-        onHover={onHover}
-      />
-    );
-  return (
-    <ComposerOptionRow
-      label={row.label}
-      caption={row.caption}
-      description={row.description}
-      figures={row.figures}
-      icon={row.icon}
-      tabular={row.tabular === true}
-      ageWidth={columns.age}
-      picked={row.picked === true}
-      checkColumn={checkColumn}
-      active={active}
-      onClick={onPick}
-      onHover={onHover}
-    />
-  );
-}
-
 const IMAGE_EXTENSIONS = new Set([
   "png",
   "jpg",
@@ -500,12 +438,9 @@ function ComposerPanel({
   panelRef,
 }: ComposerPanelProps): JSX.Element {
   const t = useAdwaita();
-  const checkColumn = panel.rows.some(
-    (row) => row.kind === "option" && row.picked === true,
-  );
-  // Measured over every row the panel holds, so the columns do not slide as the
-  // list scrolls or as a filter narrows it.
-  const columns = panelColumnsOf(panel.rows, t);
+  // Which columns the list has is read off every row it holds, not off the
+  // window of them on screen, so they do not slide as the list scrolls.
+  const shape = composerPanelShapeOf(panel.rows);
   const split = panel.preview !== undefined;
   const wide = panel.wide;
   if (wide !== undefined)
@@ -538,23 +473,18 @@ function ComposerPanel({
       <div style={split ? styles.panel.listPane() : styles.panel.column}>
         <PanelStatus panel={panel} />
         {panel.error === undefined &&
-          panel.busy !== true &&
-          win.visible.map((row, i) => {
-            const index = win.start + i;
-            return (
-              <PanelRow
-                key={row.key}
-                row={row}
-                active={index === active}
-                checkColumn={checkColumn}
-                columns={columns}
-                // A click completes the way Tab does, so a folder stays open
-                // for the next segment; Enter is the key that commits.
-                onPick={() => panel.onPick(row, "complete")}
-                onHover={() => panel.onHover(index)}
-              />
-            );
-          })}
+          panel.busy !== true && (
+            <ComposerPanelTable
+              rows={win.visible}
+              shape={shape}
+              start={win.start}
+              active={active}
+              // A click completes the way Tab does, so a folder stays open for
+              // the next segment; Enter is the key that commits.
+              onPick={(row) => panel.onPick(row, "complete")}
+              onHover={(index) => panel.onHover(index)}
+            />
+          )}
       </div>
       {split && <div style={styles.panel.paneRule} />}
       {split && panel.preview !== undefined && (

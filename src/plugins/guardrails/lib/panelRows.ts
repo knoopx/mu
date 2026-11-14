@@ -1,17 +1,12 @@
 import {
   getFileIcon,
   getFileIconColor,
-  type AdwaitaTheme,
   type IconName,
 } from "adwaita-gpuix";
 import type {
   ComposerPanelRow,
   ComposerRowFigure,
 } from "../../core/components/composer/Composer";
-import {
-  composerFigureGlyphWidth,
-  composerFigureTextWidth,
-} from "../../core/components/composer/rows";
 import type {
   GuardrailEngineState,
   GuardrailLanguage,
@@ -93,17 +88,14 @@ const GRAMMAR_ICON: Partial<Record<GuardrailLanguage, IconName>> = {
   regex: "token",
 };
 
-function grammarFigure(
-  language: GuardrailLanguage,
-  width: number,
-): ComposerRowFigure {
+function grammarFigure(language: GuardrailLanguage): ComposerRowFigure {
   const file = GRAMMAR_FILE[language];
   const icon =
     file === undefined
       ? (GRAMMAR_ICON[language] ?? "description")
       : getFileIcon(file);
   const color = file === undefined ? null : getFileIconColor(file);
-  return { icon, ...(color === null ? {} : { color }), text: "", width };
+  return { icon, ...(color === null ? {} : { color }), text: "" };
 }
 
 interface DomainRow {
@@ -129,28 +121,18 @@ const searchable = (row: DomainRow): string =>
 
 export function guardrailPanelRows(
   snapshot: GuardrailsSnapshot,
-  theme: AdwaitaTheme,
   query = "",
 ): ComposerPanelRow[] {
-  const t = theme;
   const rows = domainRows();
   const needle = query.trim().toLowerCase();
   const visible =
     needle === ""
       ? rows
       : rows.filter((row) => searchable(row).toLowerCase().includes(needle));
-  const rulesColumn = composerFigureTextWidth(
-    t,
-    Math.max(...visible.map((row) => ruleCountText(row.count).length), 0),
-  );
-  const glyphColumn = composerFigureGlyphWidth(t);
-
   return visible.map((entry) => {
     const figures: ComposerRowFigure[] = [
-      { text: ruleCountText(entry.count), width: rulesColumn },
-      ...entry.languages.map((language) =>
-        grammarFigure(language, glyphColumn),
-      ),
+      { text: ruleCountText(entry.count) },
+      ...entry.languages.map((language) => grammarFigure(language)),
     ];
     return {
       kind: "option",

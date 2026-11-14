@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import { useAdwaita } from "adwaita-gpuix";
 
 import { warmGuardrails } from "../lib/engine";
 import { rulesVersion } from "../lib/rules";
@@ -26,8 +25,6 @@ export function useGuardrailsPanel(
 ): GuardrailsPanelApi {
   const snapshot = useGuardrailsSnapshot();
 
-  const theme = useAdwaita();
-
   const version = rulesVersion();
 
   useEffect(() => {
@@ -36,8 +33,8 @@ export function useGuardrailsPanel(
   }, [enabled]);
 
   const rows = useMemo(
-    () => guardrailPanelRows(snapshot, theme, query),
-    [snapshot, theme, query, version],
+    () => guardrailPanelRows(snapshot, query),
+    [snapshot, query, version],
   );
   const statusText = useMemo(
     () => guardrailStatusText(snapshot, query, rows.length),
