@@ -29,6 +29,8 @@ import { emphasisWeight, figureGap } from "../../core/lib/ui/tokens";
 import { paneGap, panelGap } from "../../core/lib/composer/chrome";
 import type { StyleDesc } from "@gpuix/react";
 import { useDiffTokens } from "../../core/hooks/useDiffTokens";
+import { ZoomImage } from "../../core/components/ZoomImage";
+import type { ViewerPicture } from "../../core/lib/ui/imageViewer";
 import { filePreviewOf } from "../lib/preview";
 import { PaneCaption } from "./PaneCaption";
 import type { ChangeImage } from "../hooks/useChangeFiles";
@@ -64,17 +66,43 @@ function tileStyle(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-/** One picture with the side of the change it is, and how big it is. */
-function ImageTile({
-  label,
-  src,
-  bytes,
-  alt,
-}: {
+/** The corner mark a change's picture wears when the cursor is over it. */
+const PICTURE_BADGE = 24;
+
+/**
+ * One side of an image change: the word the pane prints above it, the pixels it
+ * holds, and the picture the viewer is handed when it is clicked over.
+ */
+interface ChangeSide {
   label: string;
   src: string;
   bytes: number;
-  alt: string;
+  picture: ViewerPicture;
+}
+
+function sideOf(
+  path: string,
+  label: string,
+  src: string,
+  bytes: number,
+): ChangeSide {
+  return {
+    label,
+    src,
+    bytes,
+    picture: { src, title: path, detail: `${label} · ${formatSize(bytes)}` },
+  };
+}
+
+/** One picture with the side of the change it is, and how big it is. */
+function ImageTile({
+  side,
+  group,
+  at,
+}: {
+  side: ChangeSide;
+  group: readonly ViewerPicture[];
+  at: number;
 }): JSX.Element {
   const t = useAdwaita();
   return (
@@ -88,27 +116,25 @@ function ImageTile({
         }}
       >
         <T size="caption" weight={emphasisWeight(t)} color={mutedText(t)}>
-          {label}
+          {side.label}
         </T>
-        {bytes > 0 ? (
+        {side.bytes > 0 ? (
           <T size="caption" color={mutedText(t)}>
-            {formatSize(bytes)}
+            {formatSize(side.bytes)}
           </T>
         ) : null}
       </div>
-      {src === "" ? (
+      {side.src === "" ? (
         <PreviewNote text="no picture on this side" />
       ) : (
-        <img
-          src={src}
-          alt={alt}
-          objectFit="contain"
-          style={{
-            width: "100%",
-            flexGrow: 1,
-            minHeight: 0,
-            borderWidth: 0,
-          }}
+        <ZoomImage
+          src={side.src}
+          title={side.picture.title}
+          detail={side.picture.detail}
+          group={group}
+          at={at}
+          box={{ width: "100%", flexGrow: 1, minHeight: 0 }}
+          badge={PICTURE_BADGE}
         />
       )}
     </div>
@@ -124,8 +150,19 @@ function ImageSides({
   status: FileStatus | "";
 }): JSX.Element {
   const t = useAdwaita();
-  const showsBefore = status !== "A";
-  const showsAfter = status !== "D";
+
+  // The two sides are one group: the arrows walk from what the picture was to
+  // what it became, which is the pair the change is about. A change that only
+  // added or only removed the file has one side, and its arrows are inert.
+  const sides: ChangeSide[] = [
+    ...(status !== "A"
+      ? [sideOf(image.path, "before", image.before, image.beforeBytes)]
+      : []),
+    ...(status !== "D"
+      ? [sideOf(image.path, "after", image.after, image.afterBytes)]
+      : []),
+  ];
+  const group = sides.map((side) => side.picture);
 
   return (
     <div
@@ -138,22 +175,9 @@ function ImageSides({
         minWidth: 0,
       }}
     >
-      {showsBefore ? (
-        <ImageTile
-          label="before"
-          src={image.before}
-          bytes={image.beforeBytes}
-          alt={`${image.path} before`}
-        />
-      ) : null}
-      {showsAfter ? (
-        <ImageTile
-          label="after"
-          src={image.after}
-          bytes={image.afterBytes}
-          alt={`${image.path} after`}
-        />
-      ) : null}
+      {sides.map((side, i) => (
+        <ImageTile key={side.label} side={side} group={group} at={i} />
+      ))}
     </div>
   );
 }

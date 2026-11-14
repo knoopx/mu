@@ -5,9 +5,11 @@
  * The chips, the notes and the running block are core's. This file owns two
  * things: the words a diagram answer has that no other answer has, and the box
  * a picture is scaled into. That box is a *size* only: a picture gets no fill of
- * its own, so its ink sits on the log like every other row's text does. The
- * markup is painted in the colours the app is wearing right now, which is why
- * the picture is drawn here and not in the tool.
+ * its own, so its ink sits on the log like every other row's text does. It is
+ * clicked over like every other picture in the log — the diagram is laid out for
+ * a canvas far wider than the row, so filling the window is how it is read.
+ * The markup is painted in the colours the app is wearing right now, which is
+ * why the picture is drawn here and not in the tool.
  */
 
 import type { JSX } from "react";
@@ -16,6 +18,7 @@ import { useAdwaita, type IconName } from "adwaita-gpuix";
 import { partsLine } from "../../core/lib/agent/toolText";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
+import { ZoomImage } from "../../core/components/ZoomImage";
 import {
   ToolChips,
   ToolRunning,
@@ -143,6 +146,9 @@ function FailureSnippet({ snippet }: { snippet: string }): JSX.Element | null {
   );
 }
 
+/** The corner mark a diagram's picture wears when the cursor is over it. */
+const DIAGRAM_BADGE = 24;
+
 export interface MermaidToolRowsProps {
   item: ToolTranscriptItem;
 }
@@ -179,16 +185,21 @@ export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
       <ToolChips cells={view.cells} />
 
       {markup === "" ? null : (
-        <img
+        <ZoomImage
           src={`data:image/svg+xml;utf8,${encodeURIComponent(markup)}`}
-          alt={`${diagramName(picture) || "diagram"} diagram`}
-          objectFit="contain"
-          style={{
+          title={
+            view.written === ""
+              ? `${diagramName(picture) || "diagram"} diagram`
+              : view.written
+          }
+          detail={`${String(picture.width)}×${String(picture.height)} canvas — SVG, so it stays sharp at any size`}
+          box={{
             width: box.w,
             height: box.h,
             maxWidth: "100%",
             flexShrink: 0,
           }}
+          badge={DIAGRAM_BADGE}
         />
       )}
 

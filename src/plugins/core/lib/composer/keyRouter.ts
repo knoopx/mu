@@ -14,6 +14,7 @@ import {
 import { isDeleteRowKey, isEditRowKey, isOpenRowKey } from "./shortcuts";
 import { HOST } from "../../../registry";
 import { panelHotkeys, wideHotkeyOf } from "../plugin/surfaces";
+import { viewerHoldsKeys } from "../ui/imageViewer";
 
 const PASTE_KEY_ID = "composer.paste";
 const CLEAR_KEY_ID = "composer.clear";
@@ -378,10 +379,19 @@ function elementTakesKeys(mode: ComposerMode): boolean {
   return isTerminalMode(mode) === false;
 }
 
+/**
+ * A full-screen picture is the window's one modal, so it is asked about a
+ * keystroke before the composer is: while a picture is up its own keys are
+ * answered by the viewer (`lib/ui/imageViewer.ts`, through the window listener in
+ * `hooks/useImageViewer.ts`) and every other keystroke is inert here. A panel
+ * moving, a draft growing or a session being sent from under a picture that is
+ * all the window is showing is a change nobody can see.
+ */
 export function composerFieldKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (viewerHoldsKeys()) return;
   if (elementTakesKeys(ctx.mode) === false) return;
   if (completionKey(event, ctx, false)) return;
   if (pasteKey(event, ctx)) return;
@@ -395,6 +405,7 @@ export function composerListKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): void {
+  if (viewerHoldsKeys()) return;
   if (elementTakesKeys(ctx.mode) === false) return;
   if (completionKey(event, ctx, false)) return;
   if (composerKey(event, ctx, false)) return;
@@ -405,6 +416,7 @@ export function composerGlobalKey(
   event: EventPayload,
   ctx: ComposerKeyContext,
 ): boolean {
+  if (viewerHoldsKeys()) return false;
   if (ctx.wideKey?.(event) === true) return true;
   if (pasteKey(event, ctx)) return true;
   if (completionKey(event, ctx, true)) return true;

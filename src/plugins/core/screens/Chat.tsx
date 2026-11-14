@@ -34,6 +34,7 @@ import type { AgentSnapshot } from "../lib/agent/agentService";
 import type { ToolImage } from "../lib/agent/content";
 import { type TurnStats } from "../lib/agent/turnStats";
 import { ChatTranscript } from "../components/ChatTranscript";
+import { ImageViewer } from "../components/ImageViewer";
 import { ChatComposerSlot } from "../components/ChatComposerSlot";
 import { AssistantMessage } from "../components/AssistantMessage";
 import { ToolExecution } from "../components/ToolExecution";
@@ -501,6 +502,9 @@ export function ChatApp(props: ChatAppProps): JSX.Element {
   return (
     <div style={chatLayer}>
       <ChatAppBody {...props} toast={toast} />
+      {/* A picture the log was clicked over covers the whole window; the toast
+          layer stays above it so a message is still read while one is up. */}
+      <ImageViewer />
       <ToastLayer toasts={toasts} onDismiss={dismiss} />
     </div>
   );

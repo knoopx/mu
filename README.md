@@ -14,6 +14,10 @@ A GPU-rendered desktop app for the pi coding agent. You say what you want; it re
 
 ![The agent at work](stories/AgentActions/work.png)
 
+## Pictures
+
+![A picture, at the size it was drawn for](stories/Pictures/viewing.png)
+
 ## Web search
 
 ![It went and looked](stories/WebSearch/results.png)

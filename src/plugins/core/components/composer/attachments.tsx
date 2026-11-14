@@ -16,7 +16,9 @@ import type { ToolImage } from "../../lib/agent/content";
 import { row } from "../../lib/ui/layout";
 import { mediaKind } from "../../lib/ui/media";
 import { HAIRLINE } from "../../lib/ui/tokens";
+import type { ViewerPicture } from "../../lib/ui/imageViewer";
 import { StateSpinner } from "../StateSpinner";
+import { ZoomImage } from "../ZoomImage";
 
 export interface ComposerAttachment {
   id: string;
@@ -153,6 +155,20 @@ export interface AttachmentThumbsProps {
   size?: number;
 }
 
+/**
+ * A sent message's pictures, in the order the message carried them. The row names
+ * them by place because a message's images have no filenames: what was pasted in
+ * arrives as pixels, and the only thing that tells them apart is which one the
+ * message had first.
+ */
+function messagePictures(images: readonly ToolImage[]): ViewerPicture[] {
+  return images.map((image, i) => ({
+    src: image.src,
+    title: `image ${String(i + 1)} of ${String(images.length)}`,
+    detail: `${mediaKind(image.mimeType)} · ${formatSize(image.bytes)} — sent with the message`,
+  }));
+}
+
 export function AttachmentThumbs(
   props: AttachmentThumbsProps,
 ): JSX.Element | null {
@@ -162,17 +178,21 @@ export function AttachmentThumbs(
     isRenderableImage(image.src, image.mimeType),
   );
   if (images.length === 0) return null;
+  const pictures = messagePictures(images);
   return (
     <div style={thumbStrip(t, { paddingTop: t.space.sm })}>
-      {images.map((image, i) => (
-        <div key={`${image.src.slice(0, 40)}-${i}`} style={thumbBox(t, size)}>
-          <img
-            src={image.src}
-            alt={image.mimeType}
-            objectFit="cover"
-            style={thumbImage(size)}
-          />
-        </div>
+      {pictures.map((picture, i) => (
+        <ZoomImage
+          key={`${picture.src.slice(0, 40)}-${i}`}
+          src={picture.src}
+          title={picture.title}
+          detail={picture.detail}
+          group={pictures}
+          at={i}
+          box={thumbBox(t, size)}
+          objectFit="cover"
+          badge={Math.round(size * REMOVE_RATIO)}
+        />
       ))}
     </div>
   );

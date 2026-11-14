@@ -6,7 +6,9 @@ import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
 import { buildNativeTheme } from "../lib/ui/theme";
+import { mediaKind } from "../lib/ui/media";
 import { PREVIEW_IMAGE_HEIGHT, PREVIEW_IMAGE_WIDTH } from "../lib/ui/tokens";
+import { ZoomImage } from "./ZoomImage";
 import {
   previewLineHeight,
   toolBand,
@@ -17,6 +19,9 @@ import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
 /** How many lines of a file the log quotes before it says "more lines". */
 const MAX_PREVIEW_LINES = 8;
+
+/** The corner mark a read's picture wears when the cursor is over it. */
+const PICTURE_BADGE = 26;
 
 const CONTINUATION_NOTICE = /^\[(\d+ more lines|Showing lines|Line \d+ is)/;
 
@@ -191,11 +196,14 @@ export function ReadPreview({
   return (
     <div style={wrap}>
       {showImage && preview.image !== undefined ? (
-        <img
+        <ZoomImage
           src={preview.image.src}
-          alt={preview.path}
-          objectFit="contain"
-          style={tile}
+          title={preview.path}
+          detail={`${mediaKind(preview.image.mimeType)} · ${formatSize(
+            preview.image.bytes,
+          )}`}
+          box={tile}
+          badge={PICTURE_BADGE}
         />
       ) : null}
       {preview.kind === "text" && preview.lines.length > 0 ? (

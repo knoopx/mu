@@ -49,6 +49,7 @@ import {
 } from "../../core/lib/composer/panelHeight";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { addInputListener } from "../../../window/window";
+import { viewerHoldsKeys } from "../../core/lib/ui/imageViewer";
 import { Markdown } from "../../core/components/Markdown";
 import { emphasisWeight, lineBox } from "../../core/lib/ui/tokens";
 import { digitOf, keyOf, modsOf } from "../../core/lib/ui/keyEvents";
@@ -456,6 +457,10 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     event: EventPayload,
     source: ShortcutSource,
   ): boolean => {
+    // A full-screen picture is the window's one modal: while one is up its keys
+    // belong to the picture, and Escape here would answer the question the reader
+    // has not finished looking at.
+    if (viewerHoldsKeys()) return false;
     if (event.isHeld === true) return false;
     const mods = modsOf(event);
     const match = matchShortcut(

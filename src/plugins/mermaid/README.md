@@ -35,5 +35,6 @@ than a hiding of it.
 
 There is deliberately no rasteriser: the raster backends are NAPI binaries whose loader
 would read the one environment variable the Nix wrapper sets for the GPU binding, and
-the picture is a vector the log scales to fit anyway. The tool name is what a user's
+the picture is a vector the log scales to fit, and fills the window when it is
+clicked over. The tool name is what a user's
 guardrail rule points at, so `mermaid-render` is never renamed.

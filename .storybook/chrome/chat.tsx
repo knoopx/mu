@@ -7,6 +7,7 @@ import {
   type ChatAppProps,
 } from "../../src/plugins/core/screens/Chat";
 import { askStore } from "../../src/plugins/interaction/lib/store";
+import { imageViewer } from "../../src/plugins/core/lib/ui/imageViewer";
 import type { AskQuestion } from "../../src/plugins/interaction/types";
 import type { TranscriptItem } from "../../src/plugins/core/lib/agent/transcriptState";
 import type { ChatSessionMeta } from "../../src/plugins/core/lib/session/chatSession";
@@ -89,8 +90,16 @@ export function clearQuestion(): void {
   askStore.cancel();
 }
 
+/** The full-screen picture is app state rather than a scene's, for the same
+ * reason: one process paints every story, so a picture the Pictures scene opened
+ * would still be covering the log of every scene painted after it. */
+export function clearPicture(): void {
+  imageViewer.close();
+}
+
 export function chat(props: ChatStoryProps = {}): JSX.Element {
   clearQuestion();
+  clearPicture();
   const {
     items,
     streaming,

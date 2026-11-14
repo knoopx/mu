@@ -1,4 +1,8 @@
-import { isDarkScheme, type AdwaitaTheme } from "adwaita-gpuix";
+import {
+  isDarkScheme,
+  type AdwaitaTheme,
+  type KbdColors,
+} from "adwaita-gpuix";
 import type { GpuixTheme, StyleDesc } from "@gpuix/react";
 
 import { ELEVATION, codeLineBox, headingLineBox, lineBox } from "./tokens";
@@ -392,6 +396,36 @@ export function buildNativeTheme(
     },
   };
 }
+
+/* The full-screen picture ------------------------------------------------
+ *
+ * A picture is shown on a ground of its own rather than the page's: a
+ * photograph reads true against near-black whatever theme the window is
+ * wearing, and words light enough to be read on that ground would vanish on a
+ * light page. These are the only colours in the app that ignore the scheme, and
+ * they ignore it on purpose — the ground and the ink are fixed together.
+ */
+
+/** The ground a picture is shown on, and everything that sits on it. Opaque: a
+ *  ground you can read the log through is a log asking to be read again. */
+export const PICTURE_GROUND = "rgba(10,10,13,1)";
+
+/** The words that name the picture on screen. */
+export const PICTURE_INK = "rgba(255,255,255,0.92)";
+
+/** Its figures: the kind, the size, which side of a change it is. */
+export const PICTURE_INK_MUTED = "rgba(255,255,255,0.6)";
+
+/** The key caps of the picture's hint line, lifted off the ground, not inked on it. */
+export const PICTURE_KEYS: KbdColors = {
+  fill: "rgba(255,255,255,0.1)",
+  border: "rgba(255,255,255,0.22)",
+  color: PICTURE_INK,
+};
+
+/** The rule the picture's caption wears, and the box a close mark sits in. */
+export const PICTURE_RULE = "rgba(255,255,255,0.16)";
+export const PICTURE_HOVER = "rgba(255,255,255,0.12)";
 
 /** The ink of a floating surface's drop, over whatever is under it. */
 const ELEVATION_INK = "rgba(0,0,0,0.55)";

@@ -22,6 +22,7 @@ import {
 } from "../../lib/ui/theme";
 import { addInputListener } from "../../../../window/window";
 import { truncateToWidth } from "../../../../utils/truncate";
+import { ZoomImage } from "../ZoomImage";
 import { PILL_HEIGHT, ROW_HEIGHT, codeLineBox } from "../../lib/ui/tokens";
 import {
   composerFieldRows,
@@ -339,6 +340,9 @@ function PanelStatus({
   return null;
 }
 
+/** The corner mark a panel's picture preview wears when the cursor is over it. */
+const PICTURE_BADGE = 24;
+
 const IMAGE_EXTENSIONS = new Set([
   "png",
   "jpg",
@@ -379,15 +383,16 @@ function PanelImagePreview({
         justifyContent: "center",
       }}
     >
-      <img
+      <ZoomImage
         src={src}
-        alt={path}
-        objectFit="contain"
-        style={{
+        title={path}
+        detail="the file on disk"
+        box={{
           width: "100%",
           height: "100%",
           borderRadius: t.radius.md,
         }}
+        badge={PICTURE_BADGE}
       />
     </div>
   );
