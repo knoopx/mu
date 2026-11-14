@@ -1,7 +1,6 @@
 import type { EventModifiers, EventPayload } from "@gpuix/native";
 
 export type KeyId = string;
-type KeyEventType = "down" | "up" | "repeat";
 export interface ParsedKey {
   key: string;
   shift: boolean;
@@ -134,41 +133,3 @@ export function keyHint(id: KeyId): string {
     (parsed.key.length === 1 ? parsed.key.toUpperCase() : parsed.key);
   return [...mods, key].join("+");
 }
-
-const Key: {
-  enter: KeyId;
-  escape: KeyId;
-  tab: KeyId;
-  space: KeyId;
-  backspace: KeyId;
-  delete: KeyId;
-  home: KeyId;
-  end: KeyId;
-  up: KeyId;
-  down: KeyId;
-  left: KeyId;
-  right: KeyId;
-  ctrl: (k: string) => KeyId;
-  shift: (k: string) => KeyId;
-  alt: (k: string) => KeyId;
-  ctrlShift: (k: string) => KeyId;
-  mod: (k: string) => KeyId;
-} = {
-  enter: "enter",
-  escape: "escape",
-  tab: "tab",
-  space: "space",
-  backspace: "backspace",
-  delete: "delete",
-  home: "home",
-  end: "end",
-  up: "up",
-  down: "down",
-  left: "left",
-  right: "right",
-  ctrl: (k) => `ctrl+${k.toLowerCase()}`,
-  shift: (k) => `shift+${k}`,
-  alt: (k) => `alt+${k}`,
-  ctrlShift: (k) => `ctrl+shift+${k}`,
-  mod: (k) => `cmd+${k}`,
-};

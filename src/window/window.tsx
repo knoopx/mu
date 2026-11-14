@@ -1,7 +1,6 @@
-import { useEffect, type JSX, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import type { EventPayload } from "@gpuix/native";
-import type { StyleDesc } from "@gpuix/react";
-import { MuProvider, type MuTheme } from "../theme";
+import { type MuTheme } from "../theme";
 import { parseKey } from "../keys";
 import { getKeybindings } from "../keybindings/manager";
 
@@ -46,7 +45,7 @@ export function addInputListener(listener: WindowKeyListener): () => void {
   };
 }
 
-export function setDebugHandler(fn?: () => void): void {
+function setDebugHandler(fn?: () => void): void {
   debugHandler = fn;
 }
 
@@ -77,31 +76,4 @@ export function createWindowKeyHandler(): (event: EventPayload) => void {
     };
   }
   return keyHandler;
-}
-
-function AppWindow(props: AppWindowProps): JSX.Element {
-  const theme = props.theme;
-
-  useEffect(() => {
-    setDebugHandler(props.onDebug);
-    return () => setDebugHandler(undefined);
-  }, [props.onDebug]);
-
-  const rootStyle: StyleDesc = {
-    display: "flex",
-    flexDirection: "column",
-    width: "100%",
-    height: "100%",
-    backgroundColor: theme.bg,
-    color: theme.fg,
-    fontFamily: theme.fontSans,
-    fontSize: theme.fontSize,
-    lineHeight: theme.lineHeight,
-  };
-
-  return (
-    <MuProvider theme={theme}>
-      <div style={rootStyle}>{props.children}</div>
-    </MuProvider>
-  );
 }

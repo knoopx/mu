@@ -28,7 +28,7 @@ export interface AutocompleteProvider {
   suggest(context: string): AutocompleteItem[];
 }
 
-export class SlashCommandProvider implements AutocompleteProvider {
+class SlashCommandProvider implements AutocompleteProvider {
   private readonly commands: SlashCommand[];
 
   constructor(commands: SlashCommand[]) {
@@ -120,21 +120,5 @@ export class FileCompletionProvider implements AutocompleteProvider {
         label: entry,
       }),
     );
-  }
-}
-
-class CombinedAutocompleteProvider implements AutocompleteProvider {
-  private readonly slash: SlashCommandProvider;
-  private readonly files: FileCompletionProvider;
-
-  constructor(commands: SlashCommand[], basePath: string) {
-    this.slash = new SlashCommandProvider(commands);
-    this.files = new FileCompletionProvider(basePath);
-  }
-
-  suggest(context: string): AutocompleteItem[] {
-    return context.startsWith("/")
-      ? this.slash.suggest(context)
-      : this.files.suggest(context);
   }
 }

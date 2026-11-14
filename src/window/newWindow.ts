@@ -12,7 +12,7 @@ export interface AppLaunch {
   env: NodeJS.ProcessEnv;
 }
 
-export function appLaunch(): AppLaunch {
+function appLaunch(): AppLaunch {
   const argv = process.argv.slice(1);
   const idx = argv.findIndex(
     (arg) => !arg.startsWith("-") && ENTRY_PATTERN.test(arg),

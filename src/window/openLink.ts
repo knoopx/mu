@@ -3,11 +3,6 @@ import { launchDefaultApp } from "../utils/launcher";
 export type LinkOpener = (url: string) => void;
 
 let linkOpener: LinkOpener | undefined;
-
-function setLinkOpener(opener: LinkOpener | undefined): void {
-  linkOpener = opener;
-}
-
 function httpUrl(url: string): string {
   const trimmed = url.trim();
   let parsed: URL;

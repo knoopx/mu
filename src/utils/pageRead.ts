@@ -20,10 +20,10 @@ import {
 import { firstLine } from "./truncate";
 
 /** The headless browser mu renders a page with. */
-export const BROWSER_BIN = "obscura";
+const BROWSER_BIN = "obscura";
 
 /** The browser's own output is bounded before any of it reaches the log. */
-export const PAGE_OUTPUT_BYTES = 4_000_000;
+const PAGE_OUTPUT_BYTES = 4_000_000;
 
 /** What the browser does with the page once it has it, as its own arguments. */
 export type PageCommand = readonly string[];

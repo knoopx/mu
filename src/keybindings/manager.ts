@@ -12,7 +12,7 @@ export interface Keybindings {
   matches: (event: KeyEvent, id: string) => boolean;
 }
 
-export class KeybindingsManager implements Keybindings {
+class KeybindingsManager implements Keybindings {
   private readonly keys: Map<string, string>;
 
   constructor(definitions: KeybindingDefinitions, config?: KeybindingsConfig) {
@@ -64,20 +64,8 @@ export class KeybindingsManager implements Keybindings {
 }
 
 let globalManager: KeybindingsManager | undefined;
-
-function setKeybindings(
-  definitions: KeybindingDefinitions,
-  config?: KeybindingsConfig,
-): void {
-  globalManager = new KeybindingsManager(definitions, config);
-}
-
 export function getKeybindings(): KeybindingsManager {
   if (globalManager === undefined)
     globalManager = new KeybindingsManager(APP_KEYBINDINGS);
   return globalManager;
-}
-
-export function keybindingHint(id: string): string {
-  return getKeybindings().hint(id);
 }
