@@ -15,6 +15,7 @@ import {
   buildTreeModel,
   DEFAULT_TREE_FILTER,
   EMPTY_MODEL,
+  indexRows,
   TREE_FILTER_LABEL,
   TREE_FILTERS,
   type TreeFilter,
@@ -141,44 +142,89 @@ export function useSessionTree(options: SessionTreeOptions): SessionTreeApi {
     );
   }, []);
 
-  const branch = useCallback(
-    (direction: "up" | "down"): boolean => {
-      if (rows.length === 0) return false;
-      const indexById = new Map<string, number>();
-      const childrenOf = new Map<string, string[]>();
-      rows.forEach((row, index) => {
-        indexById.set(row.id, index);
-        if (row.parentId === null) return;
-        const list = childrenOf.get(row.parentId) ?? [];
-        list.push(row.id);
-        childrenOf.set(row.parentId, list);
-      });
-      const current = rows[sel];
-      if (current === undefined) return false;
+  // The branch keys walk the model's parent links; the model is built once, so
+  // the walk reads an index built once with it rather than rebuilding a map of
+  // every row on each keypress.
+  const index = useMemo(() => indexRows(rows), [rows]);
 
-      if (direction === "down") {
-        let id = current.id;
-        for (;;) {
-          const children = childrenOf.get(id) ?? [];
-          if (children.length === 0) return jump(indexById.get(id));
-          if (children.length > 1) return jump(indexById.get(children[0]));
-          id = children[0] as string;
-        }
-      }
+  /** Down the branch the cursor stands on: to its first child, straight through
+   *  any parent that has only the one, until the cursor reaches a fork or a leaf. */
+  const descend = useCallback((): boolean => {
+    const current = rows[sel];
+    if (current === undefined) return false;
+    let id = current.id;
+    for (;;) {
+      const children = index.childrenOf.get(id) ?? [];
+      if (children.length !== 1) return jump(index.at.get(children[0] ?? id));
+      id = children[0] as string;
+    }
+  }, [index, jump, rows, sel]);
 
-      let id = current.id;
-      for (;;) {
-        const row = rows[indexById.get(id) ?? 0];
-        const parent = row?.parentId ?? null;
-        if (parent === null) return jump(indexById.get(id));
-        const siblings = childrenOf.get(parent) ?? [];
-        const index = indexById.get(id);
-        if (siblings.length > 1 && index !== undefined && index < sel)
-          return jump(index);
-        id = parent;
-      }
+  /** Up the branch: to the nearest parent with a sibling still to read below the
+   *  cursor, so a run of one-child rows is a single jump rather than ten. */
+  const ascend = useCallback((): boolean => {
+    const current = rows[sel];
+    if (current === undefined) return false;
+    let id = current.id;
+    for (;;) {
+      const parent = rows[index.at.get(id) ?? 0]?.parentId ?? null;
+      if (parent === null) return jump(index.at.get(id));
+      const siblings = index.childrenOf.get(parent) ?? [];
+      const at = index.at.get(id);
+      if (siblings.length > 1 && at !== undefined && at < sel) return jump(at);
+      id = parent;
+    }
+  }, [index, jump, rows, sel]);
+
+  /** Enter hands the row under the cursor to whoever opened the tree. */
+  const jumpHere = useCallback((): boolean => {
+    const row = rows[sel];
+    if (row === undefined) return false;
+    onNavigate(row);
+    return true;
+  }, [onNavigate, rows, sel]);
+
+  /** A key that is not the cursor's is one of the view's five filters; pressing
+   *  the one already showing turns it off again. */
+  const pickFilter = useCallback(
+    (id: string): boolean => {
+      const next = TREE_FILTER_ACTION[id] as TreeFilter | undefined;
+      if (next === undefined) return false;
+      setFilterState(next === filter ? DEFAULT_TREE_FILTER : next);
+      return true;
     },
-    [rows, sel, jump],
+    [filter],
+  );
+
+  /** What each of the tree's keys does to the cursor. */
+  const keyActions = useMemo<Record<string, () => boolean>>(
+    () => ({
+      up: () => move(-1),
+      down: () => move(1),
+      "page-up": () => page(-1),
+      "page-down": () => page(1),
+      home: () => jump(0),
+      end: () => jump(rows.length - 1),
+      "branch-up": () => ascend(),
+      "branch-down": () => descend(),
+      "filter-cycle": () => {
+        cycleFilter();
+        return true;
+      },
+      jump: jumpHere,
+      // Escape is the window's to answer, not the tree's.
+      close: () => false,
+    }),
+    [
+      ascend,
+      cycleFilter,
+      descend,
+      jump,
+      jumpHere,
+      move,
+      page,
+      rows.length,
+    ],
   );
 
   const onKey = useCallback(
@@ -186,55 +232,10 @@ export function useSessionTree(options: SessionTreeOptions): SessionTreeApi {
       if (!enabled || rows.length === 0) return false;
       const match = matchShortcut(TREE_SHORTCUTS, keyOf(event), modsOf(event));
       if (match === null) return false;
-      switch (match.id) {
-        case "up":
-          return move(-1);
-        case "down":
-          return move(1);
-        case "page-up":
-          return page(-1);
-        case "page-down":
-          return page(1);
-        case "home":
-          return jump(0);
-        case "end":
-          return jump(rows.length - 1);
-        case "branch-up":
-          return branch("up");
-        case "branch-down":
-          return branch("down");
-        case "filter-cycle":
-          cycleFilter();
-          return true;
-        case "jump": {
-          const row = rows[sel];
-          if (row === undefined) return false;
-          onNavigate(row);
-          return true;
-        }
-
-        case "close":
-          return false;
-        default: {
-          const next = TREE_FILTER_ACTION[match.id] as TreeFilter | undefined;
-          if (next === undefined) return false;
-          setFilterState(next === filter ? DEFAULT_TREE_FILTER : next);
-          return true;
-        }
-      }
+      const act = keyActions[match.id];
+      return act === undefined ? pickFilter(match.id) : act();
     },
-    [
-      branch,
-      cycleFilter,
-      enabled,
-      filter,
-      jump,
-      move,
-      onNavigate,
-      page,
-      rows,
-      sel,
-    ],
+    [enabled, keyActions, pickFilter, rows.length],
   );
 
   return {

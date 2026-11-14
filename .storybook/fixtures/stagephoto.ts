@@ -21,6 +21,9 @@ export interface StageImage {
 
 type Rgb = [number, number, number];
 
+/** Where a scattered mark stands: x, y, how far it reaches, and its ink. */
+type Placement = (at: number, random: () => number) => [number, number, number, Rgb];
+
 const mix = (a: Rgb, b: Rgb, at: number): Rgb => [
   a[0] + (b[0] - a[0]) * at,
   a[1] + (b[1] - a[1]) * at,
@@ -92,33 +95,40 @@ class Canvas {
     }
   }
 
-  /** Scattered marks: bubbles, star trails, a fence line, windows. */
-  specks(
+  /** One seeded pass over `count` places, each handed to `mark`. Every scattered
+   *  thing in a photo — bubbles, stars, windows, blades of grass — is drawn by
+   *  this same pass, and only the mark left at each place differs. The grain is
+   *  drawn in the same order whatever the mark is, so a photo is the same photo
+   *  however its marks are spelled. */
+  private marks(
     count: number,
     seed: number,
-    place: (at: number, random: () => number) => [number, number, number, Rgb],
+    place: Placement,
+    mark: (x: number, y: number, reach: number, color: Rgb) => void,
   ): void {
     const random = grain(seed);
     for (let n = 0; n < count; n++) {
-      const [x, y, size, color] = place(n, random);
-      for (let dy = -size; dy <= size; dy++)
-        for (let dx = -size; dx <= size; dx++)
-          if (dx * dx + dy * dy <= size * size)
-            this.put(Math.trunc(x + dx), Math.trunc(y + dy), color);
+      const [x, y, reach, color] = place(n, random);
+      mark(x, y, reach, color);
     }
   }
 
+  /** Scattered marks: bubbles, star trails, a fence line, windows. */
+  specks(count: number, seed: number, place: Placement): void {
+    this.marks(count, seed, place, (x, y, reach, color) => {
+      for (let dy = -reach; dy <= reach; dy++)
+        for (let dx = -reach; dx <= reach; dx++)
+          if (dx * dx + dy * dy <= reach * reach)
+            this.put(Math.trunc(x + dx), Math.trunc(y + dy), color);
+    });
+  }
+
   /** Thin strokes at an angle: grass, rain, a bridge's cables. */
-  strokes(
-    count: number,
-    seed: number,
-    place: (at: number, random: () => number) => [number, number, number, Rgb],
-  ): void {
-    const random = grain(seed);
-    for (let n = 0; n < count; n++) {
-      const [x, y, long, color] = place(n, random);
-      for (let i = 0; i < long; i++) this.put(Math.trunc(x + i * 0.4), Math.trunc(y - i), color);
-    }
+  strokes(count: number, seed: number, place: Placement): void {
+    this.marks(count, seed, place, (x, y, reach, color) => {
+      for (let i = 0; i < reach; i++)
+        this.put(Math.trunc(x + i * 0.4), Math.trunc(y - i), color);
+    });
   }
 
   private at(x: number, y: number): Rgb {

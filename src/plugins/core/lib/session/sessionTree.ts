@@ -236,16 +236,24 @@ function passesFilter(
     return node.label !== undefined && node.label.length > 0;
   if (filter === "all") return true;
   const isLeaf = leafId !== null && entry.id === leafId;
-  if (entry.type === "message") {
-    const role = messageOf(entry).role;
-    if (role === "assistant" && !isLeaf && hasToolCallOnlyText(entry))
-      return false;
-    if (role === "toolResult" && filter === "no-tools") return false;
-    if (filter === "user-only") return role === "user";
-    return true;
-  }
+  if (entry.type === "message") return messagePasses(entry, filter, isLeaf);
   if (filter === "user-only") return false;
   return !isBookkeeping(entry);
+}
+
+/** Which messages a view keeps: an assistant row that is only the wrapper of a
+ *  tool call is noise away from the leaf, a tool result is noise unless the view
+ *  asked for tools, and a view of the person's own turns drops everything else. */
+function messagePasses(
+  entry: SessionEntry,
+  filter: TreeFilter,
+  isLeaf: boolean,
+): boolean {
+  const role = messageOf(entry).role;
+  if (role === "assistant" && !isLeaf && hasToolCallOnlyText(entry)) return false;
+  if (role === "toolResult" && filter === "no-tools") return false;
+  if (filter === "user-only") return role === "user";
+  return true;
 }
 
 function timestampOf(node: SessionTreeNode): number {
@@ -420,6 +428,31 @@ function leafIndexOf(
     current = parentOf.get(current) ?? null;
   }
   return -1;
+}
+
+/**
+ * Where each row of a model stands, and which rows hang from each parent —
+ * the shape the branch keys walk, once per model rather than once per keypress.
+ */
+export interface TreeIndex {
+  /** Row number of a row by its id. */
+  at: Map<string, number>;
+
+  /** A parent's children, in the order the rows stand. */
+  childrenOf: Map<string, string[]>;
+}
+
+export function indexRows(rows: readonly TreeRow[]): TreeIndex {
+  const at = new Map<string, number>();
+  const childrenOf = new Map<string, string[]>();
+  rows.forEach((row, index) => {
+    at.set(row.id, index);
+    if (row.parentId === null) return;
+    const children = childrenOf.get(row.parentId) ?? [];
+    children.push(row.id);
+    childrenOf.set(row.parentId, children);
+  });
+  return { at, childrenOf };
 }
 
 export function buildTreeModel(

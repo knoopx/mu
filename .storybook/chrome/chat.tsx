@@ -81,7 +81,16 @@ export interface ChatStoryProps extends Omit<
   attachments?: ComposerAttachment[];
 }
 
+/** The question panel is the app's own state, not a scene's. One process paints
+ *  every story, so a question staged by the Questions scene would sit over the
+ *  composer of every scene painted after it. Every scene therefore starts with
+ *  no question pending, and `askInChat` stages its own afterwards. */
+export function clearQuestion(): void {
+  askStore.cancel();
+}
+
 export function chat(props: ChatStoryProps = {}): JSX.Element {
+  clearQuestion();
   const {
     items,
     streaming,
@@ -133,8 +142,12 @@ export function askInChat(
   items: TranscriptItem[],
   props: ChatStoryProps = {},
 ): JSX.Element {
+  // The scene is built first, because building it clears the question; this
+  // scene's question is staged on top of it, and the store's own publish is what
+  // puts the panel in the frame the story writes.
+  const scene = chat({ ...props, items });
   askStore.run(questions, undefined);
-  return chat({ ...props, items });
+  return scene;
 }
 
 export function overChat(props: ChatStoryProps, layer: ReactNode): JSX.Element {

@@ -102,11 +102,17 @@ const ownLines = (text: string, from: number, to: number): boolean =>
   (to === text.length || text[to] === "\n");
 
 /** One alignment of a text change: `before[from, end)` became `after[from, from + inserted.length)`. */
+interface Diff {
+  from: number;
+  end: number;
+  inserted: string;
+}
+
 function diff(
   before: string,
   after: string,
   greedy: "prefix" | "suffix",
-): { from: number; end: number; inserted: string } {
+): Diff {
   const most = Math.min(before.length, after.length);
   const prefix = (limit: number): number => {
     let length = 0;
@@ -135,6 +141,49 @@ function diff(
   };
 }
 
+/** A change standing wholly beside the block: the block moves by what the change
+ *  netted, and stays the sheet's only while it is still whole lines reading as
+ *  the same answers. */
+function movedAside(
+  after: string,
+  block: WrittenBlock,
+  change: Diff,
+  shift: number,
+): Tracked {
+  const before = change.end <= block.from;
+  const from = before ? block.from + shift : block.from;
+  const to = before ? block.to + shift : block.to;
+  return ownLines(after, from, to) && sameBlock(after.slice(from, to), block.text)
+    ? { kind: "present", from, to }
+    : { kind: "edited" };
+}
+
+/** A change that took the whole block out: it is gone, unless the person typed
+ *  those same lines themselves — then the words are theirs, not a deletion. */
+function swallowed(block: WrittenBlock, change: Diff): Tracked {
+  if (change.from > block.from || change.end < block.to) return { kind: "edited" };
+  const kept = block.text
+    .split("\n")
+    .some((line) => line.trim() !== "" && change.inserted.includes(line.trim()));
+  return kept ? { kind: "edited" } : { kind: "deleted" };
+}
+
+/** A change through the block: still the sheet's when only its line breaks changed. */
+function movedThrough(
+  after: string,
+  block: WrittenBlock,
+  change: Diff,
+  shift: number,
+): Tracked {
+  let start = Math.min(block.from, change.from);
+  let end = Math.max(block.to, change.end) + shift;
+  while (start < end && after[start] === "\n") start += 1;
+  while (end > start && after[end - 1] === "\n") end -= 1;
+  if (sameBlock(after.slice(start, end), block.text) && ownLines(after, start, end))
+    return { kind: "present", from: start, to: end };
+  return swallowed(block, change);
+}
+
 function rebase(
   before: string,
   after: string,
@@ -143,40 +192,10 @@ function rebase(
 ): Tracked {
   const change = diff(before, after, greedy);
   const shift = change.inserted.length - (change.end - change.from);
-  const { from, to } = block;
-
   // Wholly before or after the block: it moves, and must still be lines of its own.
-  if (change.end <= from || change.from >= to) {
-    const moved =
-      change.end <= from
-        ? { from: from + shift, to: to + shift }
-        : { from, to };
-    return ownLines(after, moved.from, moved.to) &&
-      sameBlock(after.slice(moved.from, moved.to), block.text)
-      ? { kind: "present", ...moved }
-      : { kind: "edited" };
-  }
-
-  // Through the block: still the sheet's when only its line breaks changed.
-  let start = Math.min(from, change.from);
-  let end = Math.max(to, change.end) + shift;
-  while (start < end && after[start] === "\n") start += 1;
-  while (end > start && after[end - 1] === "\n") end -= 1;
-  if (
-    sameBlock(after.slice(start, end), block.text) &&
-    ownLines(after, start, end)
-  )
-    return { kind: "present", from: start, to: end };
-
-  if (change.from <= from && change.end >= to) {
-    const kept = block.text
-      .split("\n")
-      .some(
-        (line) => line.trim() !== "" && change.inserted.includes(line.trim()),
-      );
-    return kept ? { kind: "edited" } : { kind: "deleted" };
-  }
-  return { kind: "edited" };
+  if (change.end <= block.from || change.from >= block.to)
+    return movedAside(after, block, change, shift);
+  return movedThrough(after, block, change, shift);
 }
 
 /**
@@ -223,45 +242,52 @@ export interface Written {
  * paragraph. Nothing else in the draft is touched. Null when there is nothing
  * to write.
  */
+/** A region of the draft. */
+interface Region {
+  readonly from: number;
+  readonly to: number;
+}
+
+/** A draft's first answers block: appended as its own paragraph — and a draft
+ *  of only whitespace holds nothing of the person's, so it starts the draft. */
+function appendBlock(draft: string, next: string): Written {
+  if (draft.trim() === "") return { text: next, at: { from: 0, to: next.length } };
+  const gap = draft.endsWith("\n\n")
+    ? ""
+    : draft.endsWith("\n")
+      ? "\n"
+      : "\n\n";
+  const from = draft.length + gap.length;
+  return { text: `${draft}${gap}${next}`, at: { from, to: from + next.length } };
+}
+
+/** The region a deletion takes out: the block plus the paragraph break that set
+ *  it apart — before it, or after it when the block opens the draft. */
+function retiredRegion(draft: string, at: Region): Region {
+  let { from, to } = at;
+  if (from > 0) {
+    while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n") from -= 1;
+  } else {
+    while (to < draft.length && to - at.to < 2 && draft[to] === "\n") to += 1;
+  }
+  return { from, to };
+}
+
 export function writeBlock(
   draft: string,
-  at: { from: number; to: number } | null,
+  at: Region | null,
   next: string | null,
 ): Written | null {
-  if (at === null) {
-    if (next === null) return null;
-    // A draft of only whitespace holds nothing of the person's.
-    if (draft.trim() === "")
-      return { text: next, at: { from: 0, to: next.length } };
-    const gap = draft.endsWith("\n\n")
-      ? ""
-      : draft.endsWith("\n")
-        ? "\n"
-        : "\n\n";
-    const from = draft.length + gap.length;
-    return {
-      text: `${draft}${gap}${next}`,
-      at: { from, to: from + next.length },
-    };
-  }
-
+  if (at === null) return next === null ? null : appendBlock(draft, next);
   if (next === draft.slice(at.from, at.to)) return null;
 
-  let { from, to } = at;
-  if (next === null) {
-    // Take the paragraph break that set the block apart with it: before it, or
-    // after it when the block opens the draft.
-    if (from > 0) {
-      while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n")
-        from -= 1;
-    } else {
-      while (to < draft.length && to - at.to < 2 && draft[to] === "\n") to += 1;
-    }
-  }
-
+  const region = next === null ? retiredRegion(draft, at) : at;
   const inserted = next ?? "";
   return {
-    text: `${draft.slice(0, from)}${inserted}${draft.slice(to)}`,
-    at: next === null ? null : { from, to: from + inserted.length },
+    text: `${draft.slice(0, region.from)}${inserted}${draft.slice(region.to)}`,
+    at:
+      next === null
+        ? null
+        : { from: region.from, to: region.from + inserted.length },
   };
 }

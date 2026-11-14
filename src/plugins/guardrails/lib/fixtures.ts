@@ -250,25 +250,46 @@ export interface GuardrailFixtureResult {
   field: string;
 }
 
+/** What a fixture was pointed at — the subject, the field, and the domain its
+ *  suite sits in. Every row of a run carries these three, whatever it verdicts. */
+interface FixtureReading {
+  domain: string;
+  command: string;
+  field: string;
+}
+
+/** One row of a suite run: what the fixture wanted, what the engine answered,
+ *  and the words that say why. The figures are the same for every verdict, so
+ *  the verdict is the only thing a caller has to write. */
+const verdict = (
+  fixture: GuardrailFixture,
+  read: FixtureReading,
+  got: boolean,
+  status: "PASS" | "FAIL",
+  detail: string,
+  engineMs: number,
+): GuardrailFixtureResult => ({
+  domain: read.domain,
+  id: fixture.id,
+  want: fixture.expected.block,
+  got,
+  status,
+  detail,
+  engineMs,
+  command: read.command,
+  field: read.field,
+});
+
 export async function runFixture(
   fixture: GuardrailFixture,
 ): Promise<GuardrailFixtureResult> {
-  const domain = fixture.domain ?? "bash";
-  const field = fixtureFieldOf(fixture);
-  const command = fixtureSubjectOf(fixture);
+  const read: FixtureReading = {
+    domain: fixture.domain ?? "bash",
+    field: fixtureFieldOf(fixture),
+    command: fixtureSubjectOf(fixture),
+  };
   const shape = fixtureShapeError(fixture);
-  if (shape !== "")
-    return {
-      domain,
-      id: fixture.id,
-      want: fixture.expected.block,
-      got: false,
-      status: "FAIL",
-      detail: shape,
-      engineMs: 0,
-      command,
-      field,
-    };
+  if (shape !== "") return verdict(fixture, read, false, "FAIL", shape, 0);
   const outcome = await evaluateToolCall({
     toolName: fixtureToolOf(fixture),
     toolCallId: fixture.event.toolCallId ?? fixture.id,
@@ -281,52 +302,41 @@ export async function runFixture(
   // row says the switch is off.
   const match = outcome.primary ?? outcome.hits[0] ?? null;
   const armed = outcome.primary !== null;
-  const disarmedNote =
-    match !== null && !armed
-      ? `${match.domain} is disarmed — the rule matched, the app would release it`
-      : "";
   const got = match !== null;
-  if (got !== fixture.expected.block)
-    return {
-      domain,
-      id: fixture.id,
-      want: fixture.expected.block,
+  const agrees = got === fixture.expected.block;
+
+  if (!agrees)
+    return verdict(
+      fixture,
+      read,
       got,
-      status: "FAIL",
-      detail: got
+      "FAIL",
+      got
         ? `matched by ${match?.ruleId ?? "?"}${armed ? "" : " (disarmed)"} — the suite wants it released`
         : `released by ${outcome.skip ?? "no rule"} — the suite wants it blocked`,
-      engineMs: outcome.engineMs,
-      command,
-      field,
-    };
+      outcome.engineMs,
+    );
+
+  // The verdict is right; a block case that pins its wording still has to say
+  // the reason the app would hand back, or the rule fires with the wrong note.
   const wants = fixture.expected.reason_contains;
   if (wants !== undefined && got && match !== null) {
     const reason = blockReasonOf(match);
     if (!reason.includes(wants))
-      return {
-        domain,
-        id: fixture.id,
-        want: fixture.expected.block,
+      return verdict(
+        fixture,
+        read,
         got,
-        status: "FAIL",
-        detail: `reason lacks "${wants}"`,
-        engineMs: outcome.engineMs,
-        command,
-        field,
-      };
+        "FAIL",
+        `reason lacks "${wants}"`,
+        outcome.engineMs,
+      );
   }
-  return {
-    domain,
-    id: fixture.id,
-    want: fixture.expected.block,
-    got,
-    status: "PASS",
-    detail: disarmedNote,
-    engineMs: outcome.engineMs,
-    command,
-    field,
-  };
+  const disarmedNote =
+    got && !armed
+      ? `${match?.domain ?? "?"} is disarmed — the rule matched, the app would release it`
+      : "";
+  return verdict(fixture, read, got, "PASS", disarmedNote, outcome.engineMs);
 }
 
 export const ruledDomains = (): string[] => [

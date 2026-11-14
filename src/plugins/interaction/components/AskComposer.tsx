@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type JSX } from "react";
+import { useEffect, useRef, type JSX } from "react";
 import {
   Badge,
   Row,
@@ -47,17 +47,12 @@ import {
   composerPanelHeight,
   composerPanelRowsForHeight,
 } from "../../core/lib/composer/panelHeight";
-import { windowRows } from "../../core/lib/composer/mode";
 import { ComposerOptionRow } from "../../core/components/composer/rows";
 import { addInputListener } from "../../../window/window";
-import { fuzzyFilter } from "../../../fuzzy";
 import { Markdown } from "../../core/components/Markdown";
 import { emphasisWeight, lineBox } from "../../core/lib/ui/tokens";
 import { digitOf, keyOf, modsOf } from "../../core/lib/ui/keyEvents";
-import {
-  createFreeformResponse,
-  createSelectionResponse,
-} from "../lib/normalize";
+import { useAskAnswer } from "../hooks/useAskAnswer";
 import { askHintGroups, askShortcutSet } from "../lib/shortcuts";
 import {
   claimShortcut,
@@ -392,10 +387,8 @@ function AskHintBar({
 
 export function AskComposer(props: AskComposerProps): JSX.Element {
   const t = useAdwaita();
-  const { request, onAnswer, onCancel, initialMode } = props;
+  const { request, onCancel } = props;
   const { question } = request;
-  const allowMultiple = question.allowMultiple;
-  const freeformOnly = question.options.length === 0;
   const tone: ComposerTone = "awaiting";
   const muted = tintedMuted(t, tone);
   const chips: KbdColors = {
@@ -404,15 +397,6 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     color: tintedChipText(t, tone),
   };
 
-  const [cursor, setCursor] = useState(0);
-  const [query, setQuery] = useState("");
-  const [checked, setChecked] = useState<Set<number>>(() => new Set());
-  const [mode, setMode] = useState<AskMode>(
-    () => initialMode ?? (freeformOnly ? "freeform" : "select"),
-  );
-  const [freeformDraft, setFreeformDraft] = useState("");
-  const [commentDraft, setCommentDraft] = useState("");
-  const [selections, setSelections] = useState<string[]>([]);
   const renderer = useGpuixRequired();
   const fieldNode = useRef<number | null>(null);
 
@@ -422,31 +406,6 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
 
   const fieldOwnsFocus = (): boolean => ownsFocus(fieldNode.current, renderer);
 
-  useEffect(() => {
-    setCursor(0);
-    setQuery("");
-    setChecked(new Set());
-    setFreeformDraft("");
-    setCommentDraft("");
-    setSelections([]);
-    setMode(initialMode ?? (freeformOnly ? "freeform" : "select"));
-  }, [question.id, initialMode, freeformOnly]);
-
-  const filtered =
-    query.trim().length === 0
-      ? question.options
-      : fuzzyFilter(
-          question.options,
-          query.trim(),
-          (option) => `${option.label} ${option.description ?? ""}`,
-        );
-
-  const rows: AskRow[] = filtered.map((option): AskRow => ({
-    kind: "option",
-    option,
-    optionIndex: question.options.indexOf(option),
-  }));
-
   const windowSize = useWindowSize();
   const panelBand = composerPanelHeight(windowSize?.height);
   /** The question charges the field it stands the list under and the hint bar that closes it. */
@@ -454,111 +413,44 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
     statusBar: true,
   });
 
-  const checkedCount = checked.size;
-  const activeIndex = rows.length === 0 ? 0 : Math.min(cursor, rows.length - 1);
-  const win = windowRows(rows, activeIndex, maxVisibleRows);
-  const activeRow = rows[activeIndex];
-  const activeOptionIndex =
-    activeRow !== undefined && activeRow.kind === "option"
-      ? activeRow.optionIndex
-      : -1;
-  const activeOptionTitles =
-    activeOptionIndex >= 0 ? [question.options[activeOptionIndex]!.label] : [];
-  const showList = mode === "select" && !freeformOnly;
-
-  const move = (delta: number): void => {
-    if (rows.length === 0) return;
-    const count = rows.length;
-    setCursor((prev) => {
-      const at = Math.min(prev, count - 1);
-      const next = at + delta;
-      return next < 0 ? count - 1 : next >= count ? 0 : next;
-    });
-  };
-
-  const jumpTo = (target: number): void => {
-    if (rows.length === 0) return;
-    setCursor(Math.max(0, Math.min(target, rows.length - 1)));
-  };
-
-  const titlesOf = (indices: Iterable<number>): string[] =>
-    Array.from(indices)
-      .sort((a, b) => a - b)
-      .map((i) => question.options[i]?.label)
-      .filter((title): title is string => title !== undefined);
-
-  const submitTitles = (titles: string[]): void => {
-    if (titles.length === 0) return;
-    const response = createSelectionResponse(titles);
-    if (response !== null) onAnswer(response);
-  };
-
-  const toggleOption = (optionIndex: number): void => {
-    setChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(optionIndex)) next.delete(optionIndex);
-      else next.add(optionIndex);
-      return next;
-    });
-  };
-
-  const toggleActive = (): boolean => {
-    const row = rows[activeIndex];
-    if (row === undefined || row.kind !== "option") return false;
-    toggleOption(row.optionIndex);
-    return true;
-  };
-
-  const acceptAt = (at: number): void => {
-    const row = rows[at];
-    if (row === undefined || row.kind !== "option") return;
-    if (allowMultiple) {
-      toggleOption(row.optionIndex);
-      return;
-    }
-    submitTitles([row.option.label]);
-  };
-
-  const checkedTitles = checkedCount > 0 ? titlesOf(checked) : [];
-  const activate = (): void => {
-    if (allowMultiple) {
-      submitTitles(
-        checkedTitles.length > 0 ? checkedTitles : activeOptionTitles,
-      );
-      return;
-    }
-    acceptAt(activeIndex);
-  };
-
-  const submitChecked = (): void => submitTitles(checkedTitles);
-
-  const submitText = (): void => {
-    const response =
-      mode === "freeform"
-        ? createFreeformResponse(freeformDraft)
-        : createSelectionResponse(selections, commentDraft);
-    if (response !== null) onAnswer(response);
-  };
-
-  const toggleComment = (): void => {
-    if (mode === "comment") {
-      setMode("select");
-      return;
-    }
-    const titles =
-      checkedTitles.length > 0 ? checkedTitles : activeOptionTitles;
-    if (titles.length === 0) return;
-    setSelections(titles);
-    setMode("comment");
-  };
-
-  const escape = (): void => {
-    if (query.length > 0) {
-      setQuery("");
-      return;
-    }
-    onCancel();
-  };
+  // The cursor, the ticks, the filter and the drafts are an answer being built,
+  // not a drawing: they live in the hook, and this component paints what they
+  // add up to and routes the keys that move them.
+  const {
+    mode,
+    allowMultiple,
+    freeformOnly,
+    query,
+    rows,
+    window: win,
+    activeIndex,
+    activeRow,
+    activeOptionIndex,
+    checked,
+    checkedCount,
+    selections,
+    showList,
+    draft,
+    setQuery,
+    setDraft,
+    setCursor,
+    setMode,
+    move,
+    jumpTo,
+    activate,
+    acceptAt,
+    toggleActive,
+    submitChecked,
+    submitText,
+    toggleComment,
+    escape,
+  } = useAskAnswer({
+    request,
+    initialMode: props.initialMode,
+    onAnswer: props.onAnswer,
+    onCancel,
+    maxVisibleRows,
+  });
 
   const runShortcut = (
     event: EventPayload,
@@ -689,10 +581,8 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
           freeformOnly={freeformOnly}
           selections={selections}
           muted={muted}
-          value={mode === "freeform" ? freeformDraft : commentDraft}
-          onDraft={(text) =>
-            mode === "freeform" ? setFreeformDraft(text) : setCommentDraft(text)
-          }
+          value={draft}
+          onDraft={setDraft}
           onSubmit={submitText}
           onFieldKey={onFieldKey}
           captureField={captureField}

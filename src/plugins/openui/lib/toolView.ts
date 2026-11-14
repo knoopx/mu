@@ -123,6 +123,24 @@ const foldOf =
 const countOf = (value: number, one: string): string =>
   `${String(value)} ${value === 1 ? one : `${one}s`}`;
 
+/* What a parse of a program says it did. `openui-validate`, `openui-render`,
+ * `openui-stream` and `openui-state` all answer with the same three figures, so
+ * the wording of each lives here once rather than in four headlines. --------- */
+
+/** How many statements the source parsed into. */
+const statementPart = (statements: unknown): string =>
+  countOf(detailNumber(statements), "statement");
+
+/** How many components the source drew — nothing said when it drew none. */
+const drawnPart = (components: unknown): string => {
+  const drawn = detailNumber(components);
+  return drawn === 0 ? "" : `${String(drawn)} drawn`;
+};
+
+/** What the parse refused — nothing said when it refused nothing. */
+const errorPart = (diagnostics: readonly unknown[]): string =>
+  diagnostics.length === 0 ? "" : countOf(diagnostics.length, "error");
+
 /** The tool's own status, overridden when the call itself failed. */
 const statusOf = (
   details: { status: OpenUIToolStatus },
@@ -198,22 +216,49 @@ const libraryFold = (
   };
 };
 
+/** The fields a parse of a program answers with, whichever tool parsed it. */
+type ParsedAnswer = Pick<
+  OpenUIValidateDetails,
+  "status" | "name" | "ok" | "diagnostics"
+>;
+
+/**
+ * The start of a fold for a tool whose answer is a parse of a program: which
+ * program was parsed, whether the parse accepted it, and what it refused. The
+ * three folds that parse — validate, render, stream — then only write the
+ * figures that tell them apart.
+ */
+const parsedHead = (
+  item: ToolTranscriptItem,
+  details: ParsedAnswer,
+): {
+  base: OpenUIToolView;
+  name: string;
+  diagnostics: OpenUIDiagnostic[];
+} => {
+  const name = detailText(details.name);
+  const diagnostics = detailList<OpenUIDiagnostic>(details.diagnostics);
+  return {
+    base: { ...head(item, details, name), ok: detailFlag(details.ok, true) },
+    name,
+    diagnostics,
+  };
+};
+
 const validateFold = (
   details: OpenUIValidateDetails,
   item: ToolTranscriptItem,
 ): OpenUIToolView => {
-  const name = detailText(details.name);
-  const diagnostics = detailList<OpenUIDiagnostic>(details.diagnostics);
+  const parsed = parsedHead(item, details);
   return {
-    ...head(item, details, name),
-    ok: detailFlag(details.ok, true),
+    ...parsed.base,
     headline: partsLine(
-      countOf(detailNumber(details.statements), "statement"),
+      statementPart(details.statements),
       countOf(detailList(details.components).length, "component"),
-      diagnostics.length === 0 ? "" : `${String(diagnostics.length)} errors`,
+      errorPart(parsed.diagnostics),
     ),
-    cells: programCells(item.name.toLowerCase(), name),
-    diagnostics,
+    cells: programCells(item.name.toLowerCase(), parsed.name),
+    diagnostics: parsed.diagnostics,
   };
 };
 
@@ -285,28 +330,24 @@ const writeFold = (
   details: OpenUIProgramDetails,
   item: ToolTranscriptItem,
 ): OpenUIToolView => {
-  const name = detailText(details.name);
-  const diagnostics = detailList<OpenUIDiagnostic>(details.diagnostics);
+  const parsed = parsedHead(item, details);
   return {
-    ...head(item, details, name),
-    ok: detailFlag(details.ok, true),
+    ...parsed.base,
     headline: clipText(
       partsLine(
         `${String(detailNumber(details.chars))} chars`,
-        countOf(detailNumber(details.statements), "statement"),
-        detailNumber(details.components) === 0
-          ? ""
-          : `${String(detailNumber(details.components))} drawn`,
-        diagnostics.length === 0 ? "" : `${String(diagnostics.length)} errors`,
+        statementPart(details.statements),
+        drawnPart(details.components),
+        errorPart(parsed.diagnostics),
       ),
       96,
     ),
-    cells: programCells(item.name.toLowerCase(), name),
-    diagnostics,
+    cells: programCells(item.name.toLowerCase(), parsed.name),
+    diagnostics: parsed.diagnostics,
     streaming: detailFlag(details.streaming, false),
     live: detailFlag(details.live, false),
     waiting: detailNumber(details.waiting),
-    drawnProgram: drawnFrom(item, name),
+    drawnProgram: drawnFrom(item, parsed.name),
   };
 };
 
@@ -320,9 +361,9 @@ const stateFold = (
   return {
     ...head(item, details, name),
     headline: partsLine(
-      countOf(detailNumber(details.statements), "statement"),
+      statementPart(details.statements),
       countOf(drawn.length, "component"),
-      errors.length === 0 ? "" : `${String(errors.length)} errors`,
+      errorPart(errors),
       detailNumber(details.waiting) === 0
         ? ""
         : `${String(detailNumber(details.waiting))} waiting`,

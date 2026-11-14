@@ -61,30 +61,56 @@ export interface ComposerPanelShape {
   check: boolean;
 }
 
+/** The columns one row asks the list for: `true` here means the list holds the
+ *  column, whatever this row puts in it. A row's trailing words are a figure or
+ *  a sentence, never both, and words that only repeat the name are no column. */
+interface RowColumns {
+  figures: number;
+  age: boolean;
+  prose: boolean;
+  args: boolean;
+  check: boolean;
+}
+
+/** A row that asks for nothing — a theme row names itself and paints its ink. */
+const NO_COLUMNS: RowColumns = {
+  figures: 0,
+  age: false,
+  prose: false,
+  args: false,
+  check: false,
+};
+
+function columnsOf(row: ComposerPanelRow): RowColumns {
+  if (row.kind === "command")
+    return {
+      ...NO_COLUMNS,
+      args: row.args !== undefined && row.args !== "",
+      prose: row.description !== undefined,
+    };
+  if (row.kind === "theme") return NO_COLUMNS;
+  const trails = row.description !== undefined && row.description !== row.label;
+  return {
+    figures: (row.figures ?? []).length,
+    age: trails && row.tabular === true,
+    prose: trails && row.tabular !== true,
+    args: false,
+    check: row.picked === true,
+  };
+}
+
 /** Which columns this list has, read off the rows themselves. */
 export function composerPanelShapeOf(
   rows: readonly ComposerPanelRow[],
 ): ComposerPanelShape {
-  const shape: ComposerPanelShape = {
-    figures: 0,
-    age: false,
-    prose: false,
-    args: false,
-    check: false,
-  };
+  const shape: ComposerPanelShape = { ...NO_COLUMNS };
   for (const row of rows) {
-    if (row.kind === "command") {
-      if (row.args !== undefined && row.args !== "") shape.args = true;
-      if (row.description !== undefined) shape.prose = true;
-      continue;
-    }
-    if (row.kind === "theme") continue;
-    shape.figures = Math.max(shape.figures, (row.figures ?? []).length);
-    if (row.description !== undefined && row.description !== row.label) {
-      if (row.tabular === true) shape.age = true;
-      else shape.prose = true;
-    }
-    if (row.picked === true) shape.check = true;
+    const columns = columnsOf(row);
+    shape.figures = Math.max(shape.figures, columns.figures);
+    shape.age ||= columns.age;
+    shape.prose ||= columns.prose;
+    shape.args ||= columns.args;
+    shape.check ||= columns.check;
   }
   return shape;
 }
@@ -332,77 +358,74 @@ function Swatch({
 
 /* The rows ------------------------------------------------------------------ */
 
-function rowCellsOf(
+type ThemeRow = Extract<ComposerPanelRow, { kind: "theme" }>;
+type CommandRow = Extract<ComposerPanelRow, { kind: "command" }>;
+type OptionRow = Extract<ComposerPanelRow, { kind: "option" }>;
+
+/** One column of the list, drawn only when the list has it. A column the list
+ *  has no row for is absent from every row, so the columns that stay keep the
+ *  same order — and a column missing from one row would shove the ones after
+ *  it out from under the rows beside it. */
+const column = (list: boolean, cell: ReactNode): ReactNode[] =>
+  list ? [cell] : [];
+
+/** A theme row is its name and the two bands of ink it paints the window with. */
+function themeCells(t: AdwaitaTheme, row: ThemeRow): ReactNode[] {
+  return [
+    <LeadCell key="lead" t={t} label={row.label} fluid swatch={row.swatch} />,
+  ];
+}
+
+/** A command row is its name, the arguments it takes, and what it does. */
+function commandCells(
   t: AdwaitaTheme,
-  row: ComposerPanelRow,
+  row: CommandRow,
+  shape: ComposerPanelShape,
+): ReactNode[] {
+  return [
+    <LeadCell
+      key="lead"
+      t={t}
+      label={row.name}
+      icon={row.icon}
+      fluid={!shape.prose && !shape.args}
+    />,
+    ...column(
+      shape.args,
+      <TrailCell
+        key="args"
+        t={t}
+        text={row.args ?? ""}
+        mono={false}
+        fluid={!shape.prose}
+      />,
+    ),
+    ...column(
+      shape.prose,
+      <TrailCell key="prose" t={t} text={row.description ?? ""} mono={false} fluid />,
+    ),
+  ];
+}
+
+/** An option row is its name, its figures, one trailing fact, and the mark. */
+function optionCells(
+  t: AdwaitaTheme,
+  row: OptionRow,
   shape: ComposerPanelShape,
 ): ReactNode[] {
   // The fluid column is the one worth the leftover room: a sentence the list
   // trails, and where there is none, the name itself.
-  const fluidTrail = shape.prose;
-  const fluidLead = !fluidTrail && !shape.age;
-
-  if (row.kind === "theme")
-    return [
-      <LeadCell
-        key="lead"
-        t={t}
-        label={row.label}
-        fluid
-        swatch={row.swatch}
-      />,
-    ];
-
-  if (row.kind === "command")
-    return [
-      <LeadCell
-        key="lead"
-        t={t}
-        label={row.name}
-        icon={row.icon}
-        fluid={!shape.prose && !shape.args}
-      />,
-      ...(shape.args
-        ? [
-            <TrailCell
-              key="args"
-              t={t}
-              text={row.args ?? ""}
-              mono={false}
-              fluid={!shape.prose}
-            />,
-          ]
-        : []),
-      ...(shape.prose
-        ? [
-            <TrailCell
-              key="prose"
-              t={t}
-              text={row.description ?? ""}
-              mono={false}
-              fluid
-            />,
-          ]
-        : []),
-    ];
-
-  const caption =
-    row.caption !== undefined && row.caption !== row.label
-      ? row.caption
-      : undefined;
-  const trail =
-    row.description !== undefined && row.description !== row.label
-      ? row.description
-      : "";
+  const described = row.description ?? "";
+  const trails = row.description !== undefined && described !== row.label;
   const figures = row.figures ?? [];
   return [
     <LeadCell
       key="lead"
       t={t}
       label={row.label}
-      caption={caption}
+      caption={row.caption !== undefined && row.caption !== row.label ? row.caption : undefined}
       icon={row.icon}
-      fluid={fluidLead}
+      fluid={!shape.prose && !shape.age}
     />,
     // Every row holds as many figure columns as the widest row of the list: a
     // row with fewer leaves the rest of them empty rather than sliding the
@@ -410,32 +433,41 @@ function rowCellsOf(
     ...Array.from({ length: shape.figures }, (_, at) => (
       <FigureCell key={`figure-${String(at)}`} t={t} figure={figures[at]} />
     )),
-    ...(shape.age
-      ? [
-          <TrailCell
-            key="age"
-            t={t}
-            text={row.tabular === true && row.description !== undefined ? row.description : ""}
-            mono
-            fluid={fluidTrail ? false : !shape.prose}
-          />,
-        ]
-      : []),
-    ...(shape.prose
-      ? [
-          <TrailCell
-            key="prose"
-            t={t}
-            text={row.tabular === true ? "" : trail}
-            mono={false}
-            fluid={fluidTrail}
-          />,
-        ]
-      : []),
-    ...(shape.check
-      ? [<CheckCell key="check" t={t} picked={row.picked === true} />]
-      : []),
+    ...column(
+      shape.age,
+      <TrailCell
+        key="age"
+        t={t}
+        text={row.tabular === true ? described : ""}
+        mono
+        fluid={!shape.prose}
+      />,
+    ),
+    ...column(
+      shape.prose,
+      <TrailCell
+        key="prose"
+        t={t}
+        text={row.tabular === true || !trails ? "" : described}
+        mono={false}
+        fluid={shape.prose}
+      />,
+    ),
+    ...column(
+      shape.check,
+      <CheckCell key="check" t={t} picked={row.picked === true} />,
+    ),
   ];
+}
+
+function rowCellsOf(
+  t: AdwaitaTheme,
+  row: ComposerPanelRow,
+  shape: ComposerPanelShape,
+): ReactNode[] {
+  if (row.kind === "theme") return themeCells(t, row);
+  if (row.kind === "command") return commandCells(t, row, shape);
+  return optionCells(t, row, shape);
 }
 
 export interface ComposerPanelTableProps {
