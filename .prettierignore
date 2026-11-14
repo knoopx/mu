@@ -1,0 +1,11 @@
+# Formatting is prettier's own, over the app's TypeScript only — the tree is
+# `bun run format`, and `bun run format:check` is the same question without the
+# write. Markdown and JSON keep their hand-set shape (the README's gallery and
+# these notes' tables are laid out by hand), and a build leaves its own output
+# behind.
+node_modules/
+docs/
+assets/
+.fallow/
+.codemapper/
+tmp-codemod-icons.ts
