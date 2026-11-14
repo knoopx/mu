@@ -10,13 +10,23 @@ import { askUserTool } from "./tools/askUser";
 import { AskResultRows, isAskTool } from "./components/AskResultRows";
 import { askToolPreviewOf } from "./lib/preview";
 
-export const interactionPlugin = definePlugin("interaction", (app) => {
-  app.tools.register(askUserTool);
+export const interactionPlugin = definePlugin(
+  "interaction",
+  {
+    title: "Questions",
+    summary:
+      "The agent asks a multiple-choice question and you send the answer yourself.",
+    icon: "forum",
+    category: "agent",
+  },
+  (app) => {
+    app.tools.register(askUserTool);
 
-  app.log.rows({
-    key: "ask",
-    owns: isAskTool,
-    body: (item) => <AskResultRows item={item} />,
-    preview: askToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "ask",
+      owns: isAskTool,
+      body: (item) => <AskResultRows item={item} />,
+      preview: askToolPreviewOf,
+    });
+  },
+);

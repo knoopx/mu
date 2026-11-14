@@ -255,10 +255,73 @@ export interface CommandSurface extends SlashCommand {
   target?: ComposerTarget;
 }
 
-/** What a plugin is called, and what it registers. */
+/**
+ * Which part of the app a plugin belongs to.
+ *
+ * The plugins panel groups its rows by this and nothing else reads it; it exists
+ * so a reader can find a plugin by what it changes rather than by the accident of
+ * its folder name. A vocabulary, not a free string: a category only groups when
+ * every name in it means the same thing.
+ */
+export type PluginCategory =
+  /** the app itself: the window's own surfaces */
+  | "core"
+  /** what the model can call */
+  | "agent"
+  /** reads of the repository, the project and the web */
+  | "project"
+  /** what an answer is painted as */
+  | "surface"
+  /** what may stop a tool call */
+  | "safety"
+  /** the session's own life: its context, its shell */
+  | "session";
+
+/** The word the plugins panel prints above each group. */
+export const PLUGIN_CATEGORY_LABEL: Record<PluginCategory, string> = {
+  core: "the app",
+  agent: "agent tools",
+  project: "project reads",
+  surface: "answer surfaces",
+  safety: "safety",
+  session: "session",
+};
+
+export const PLUGIN_CATEGORIES = Object.keys(PLUGIN_CATEGORY_LABEL) as [
+  PluginCategory,
+  ...PluginCategory[],
+];
+
+/**
+ * What a plugin is, in its own words.
+ *
+ * A plugin used to be only a folder name and a setup function, which meant the
+ * app had nothing to say about it: no panel could list what the app is made of, a
+ * refusal could only name a folder, and a plugin the user turned off left a hole
+ * with no explanation. These four fields are the plugin's own answer to "what are
+ * you", written where the plugin is defined rather than in a table core keeps.
+ */
+export interface PluginIdentity {
+  /** what the plugins panel calls it — prose, not the folder name */
+  title: string;
+
+  /** one line: what the app has because this plugin is loaded */
+  summary: string;
+
+  /** the mark the panel draws for it */
+  icon: IconName;
+
+  /** which group of the app it belongs to */
+  category: PluginCategory;
+}
+
+/** What a plugin is called, what it is, and what it registers. */
 export interface PluginRegistration {
   /** the plugin's name, which is the folder's name and the owner named in every refusal */
   name: string;
+
+  /** what the plugin says it is, checked when it is declared */
+  identity: PluginIdentity;
 
   /** what the plugin registers, handed the host's API */
   setup(api: PluginApi): void;
@@ -267,18 +330,34 @@ export interface PluginRegistration {
 export type PluginSetup = (api: PluginApi) => void;
 
 /**
- * Declare a plugin: its name, and the setup the host runs.
+ * Declare a plugin: its name, what it is, and the setup the host runs.
  *
  * The host does the checking as the setup registers, so a plugin with nothing to
  * register is legal — a plugin that only contributes a composer panel, or only an
  * extension, says so by what it registers rather than by a field set to an empty
- * list.
+ * list. What is checked here is the identity, because a plugin that cannot say
+ * what it is in one line is a plugin the plugins panel will have to invent a line
+ * for — and an invented line is exactly the table this file exists to prevent.
  */
 export function definePlugin(
   name: string,
+  identity: PluginIdentity,
   setup: (api: PluginApi) => void,
 ): PluginRegistration {
   if (name.trim() === "")
     throw new Error("a plugin must name itself — the name is the owner in every refusal");
-  return { name, setup };
+  const at = `plugin ${JSON.stringify(name)}`;
+  if (typeof identity?.title !== "string" || identity.title.trim() === "")
+    throw new Error(`${at} declares no title — the panel has to say what it is listing`);
+  if (typeof identity.summary !== "string" || identity.summary.trim() === "")
+    throw new Error(`${at} declares no summary — one line saying what the app gains from it`);
+  if (identity.summary.includes("\n"))
+    throw new Error(`${at}'s summary is more than one line — the panel draws it beside one row`);
+  if (typeof identity.icon !== "string" || identity.icon.trim() === "")
+    throw new Error(`${at} declares no mark for itself`);
+  if (!PLUGIN_CATEGORIES.includes(identity.category))
+    throw new Error(
+      `${at} claims the category ${JSON.stringify(String(identity.category))} — it is one of ${PLUGIN_CATEGORIES.join(", ")}`,
+    );
+  return { name, identity, setup };
 }

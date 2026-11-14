@@ -72,6 +72,10 @@ export const PANEL_PLACEHOLDER: Record<
   userMessageHistory:
     "Type to search the user messages of every session in this folder",
   guardrails: "Type to filter the guardrail domains",
+  // The figures on a plugin row are a glyph and a count, so the placeholder says
+  // what the six columns are, in order — the one place in the panel with room for
+  // the words.
+  plugins: "Filter plugins — figures: tools · panels · commands · surfaces · extensions · blocks",
   // A terminal draws a screen, not a list to narrow, so it has nothing to ask the
   // draft for.
   terminal: undefined,

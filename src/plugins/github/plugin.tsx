@@ -24,23 +24,33 @@ import {
 } from "./components/GithubToolRows";
 import { githubToolPreviewOf } from "./lib/toolView";
 
-export const githubPlugin = definePlugin("github", (app) => {
-  app.tools.register(
-    githubRepoTool,
-    githubFileTool,
-    githubTreeTool,
-    githubPrTool,
-    githubIssueTool,
-    githubReleaseTool,
-    githubCommitTool,
-    githubSearchTool,
-    githubUserTool,
-  );
+export const githubPlugin = definePlugin(
+  "github",
+  {
+    title: "GitHub",
+    summary:
+      "Nine reads of repositories, files, pull requests, issues, releases, commits, search and profiles.",
+    icon: "hub",
+    category: "project",
+  },
+  (app) => {
+    app.tools.register(
+      githubRepoTool,
+      githubFileTool,
+      githubTreeTool,
+      githubPrTool,
+      githubIssueTool,
+      githubReleaseTool,
+      githubCommitTool,
+      githubSearchTool,
+      githubUserTool,
+    );
 
-  app.log.rows({
-    key: "github",
-    owns: isGithubTool,
-    body: (item) => <GithubToolRows item={item} />,
-    preview: githubToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "github",
+      owns: isGithubTool,
+      body: (item) => <GithubToolRows item={item} />,
+      preview: githubToolPreviewOf,
+    });
+  },
+);

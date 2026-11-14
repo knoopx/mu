@@ -18,20 +18,30 @@ import {
   qualityToolPreviewOf,
 } from "./components/QualityToolRows";
 
-export const codeQualityPlugin = definePlugin("code-quality", (app) => {
-  app.tools.register(
-    codeComplexityTool,
-    codeDeadCodeTool,
-    codeDuplicatesTool,
-    codeReviewTool,
-    codeSymbolInspectTool,
-    codeSymbolReferencesTool,
-  );
+export const codeQualityPlugin = definePlugin(
+  "code-quality",
+  {
+    title: "Code quality",
+    summary:
+      "Six reads of the project itself: complexity, dead code, clones, a file's surface, a symbol's callers.",
+    icon: "analytics",
+    category: "project",
+  },
+  (app) => {
+    app.tools.register(
+      codeComplexityTool,
+      codeDeadCodeTool,
+      codeDuplicatesTool,
+      codeReviewTool,
+      codeSymbolInspectTool,
+      codeSymbolReferencesTool,
+    );
 
-  app.log.rows({
-    key: "code-quality",
-    owns: isCodeQualityTool,
-    body: (item) => <QualityToolRows item={item} />,
-    preview: qualityToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "code-quality",
+      owns: isCodeQualityTool,
+      body: (item) => <QualityToolRows item={item} />,
+      preview: qualityToolPreviewOf,
+    });
+  },
+);

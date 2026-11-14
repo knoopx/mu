@@ -14,13 +14,23 @@ import {
   planToolPreviewOf,
 } from "./components/PlanToolRows";
 
-export const planningPlugin = definePlugin("planning", (app) => {
-  app.tools.register(planTool);
+export const planningPlugin = definePlugin(
+  "planning",
+  {
+    title: "Plans",
+    summary:
+      "One ordered list of steps, replaced whole by every call, drawn with each step's standing.",
+    icon: "checklist",
+    category: "agent",
+  },
+  (app) => {
+    app.tools.register(planTool);
 
-  app.log.rows({
-    key: "plan",
-    owns: isPlanTool,
-    body: (item) => <PlanToolRows item={item} />,
-    preview: planToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "plan",
+      owns: isPlanTool,
+      body: (item) => <PlanToolRows item={item} />,
+      preview: planToolPreviewOf,
+    });
+  },
+);

@@ -14,6 +14,7 @@ export type ComposerTarget =
   | "accent"
   | "userMessageHistory"
   | "guardrails"
+  | "plugins"
   | "terminal";
 
 const CYCLE_TARGETS: ComposerTarget[] = ["userMessageHistory"];

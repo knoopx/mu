@@ -9,6 +9,16 @@
 import { definePlugin } from "../core/lib/plugin/manifest";
 import { snapcompactExtension } from "./lib/extension";
 
-export const snapcompactPlugin = definePlugin("snapcompact", (app) => {
-  app.extensions.register(snapcompactExtension);
-});
+export const snapcompactPlugin = definePlugin(
+  "snapcompact",
+  {
+    title: "Snapcompact",
+    summary:
+      "Compaction that photocopies the discarded span into dense pages a vision model reads back.",
+    icon: "token",
+    category: "session",
+  },
+  (app) => {
+    app.extensions.register(snapcompactExtension);
+  },
+);

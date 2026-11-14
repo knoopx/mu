@@ -46,6 +46,7 @@ export interface ComposerPanelData {
    */
   panelState: ReadonlyMap<ComposerTarget, unknown>;
   previewFor(path: string): ComposerPreviewSpec;
+
   windowHeight: number | undefined;
   onPick: (row: ComposerPanelRow, intent: PickIntent) => void;
   onDelete: (row: ComposerPanelRow) => void;

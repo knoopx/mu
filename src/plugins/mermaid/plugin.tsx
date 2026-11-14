@@ -14,13 +14,23 @@ import {
   mermaidToolPreviewOf,
 } from "./components/MermaidToolRows";
 
-export const mermaidPlugin = definePlugin("mermaid", (app) => {
-  app.tools.register(mermaidRenderTool);
+export const mermaidPlugin = definePlugin(
+  "mermaid",
+  {
+    title: "Diagrams",
+    summary:
+      "Mermaid source painted as an SVG in the log, its labels read back to the agent.",
+    icon: "schema",
+    category: "surface",
+  },
+  (app) => {
+    app.tools.register(mermaidRenderTool);
 
-  app.log.rows({
-    key: "mermaid",
-    owns: isMermaidTool,
-    body: (item) => <MermaidToolRows item={item} />,
-    preview: mermaidToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "mermaid",
+      owns: isMermaidTool,
+      body: (item) => <MermaidToolRows item={item} />,
+      preview: mermaidToolPreviewOf,
+    });
+  },
+);

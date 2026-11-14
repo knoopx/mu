@@ -13,13 +13,23 @@ import {
   SearchResults,
 } from "./components/SearchResults";
 
-export const webSearchPlugin = definePlugin("web-search", (app) => {
-  app.tools.register(webSearchTool);
+export const webSearchPlugin = definePlugin(
+  "web-search",
+  {
+    title: "Web search",
+    summary:
+      "Ranked organic results, every URL a direct link to the page.",
+    icon: "search",
+    category: "agent",
+  },
+  (app) => {
+    app.tools.register(webSearchTool);
 
-  app.log.rows({
-    key: "search",
-    owns: isSearchTool,
-    body: (item) => <SearchResults item={item} />,
-    preview: searchPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "search",
+      owns: isSearchTool,
+      body: (item) => <SearchResults item={item} />,
+      preview: searchPreviewOf,
+    });
+  },
+);

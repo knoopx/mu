@@ -21,19 +21,29 @@ import {
   treeToolPreviewOf,
 } from "./components/TreeToolRows";
 
-export const figuresPlugin = definePlugin("figures", (app) => {
-  app.tools.register(chartRenderTool, treeRenderTool);
+export const figuresPlugin = definePlugin(
+  "figures",
+  {
+    title: "Figures",
+    summary:
+      "Charts and trees plotted in the log, and the plot read back as figures rather than as a picture.",
+    icon: "insights",
+    category: "surface",
+  },
+  (app) => {
+    app.tools.register(chartRenderTool, treeRenderTool);
 
-  app.log.rows({
-    key: "chart",
-    owns: isChartTool,
-    body: (item) => <ChartToolRows item={item} />,
-    preview: chartToolPreviewOf,
-  });
-  app.log.rows({
-    key: "tree",
-    owns: isTreeTool,
-    body: (item) => <TreeToolRows item={item} />,
-    preview: treeToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "chart",
+      owns: isChartTool,
+      body: (item) => <ChartToolRows item={item} />,
+      preview: chartToolPreviewOf,
+    });
+    app.log.rows({
+      key: "tree",
+      owns: isTreeTool,
+      body: (item) => <TreeToolRows item={item} />,
+      preview: treeToolPreviewOf,
+    });
+  },
+);

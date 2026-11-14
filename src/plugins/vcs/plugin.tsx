@@ -37,81 +37,91 @@ import {
   VcsToolRows,
 } from "./components/VcsToolRows";
 
-export const vcsPlugin = definePlugin("vcs", (app) => {
-  app.tools.register(
-    vcsLogTool,
-    vcsFileDiffTool,
-    vcsFileHistoryTool,
-    vcsFileHistoryShowTool,
-    vcsConflictsTool,
-    vcsOplogTool,
-    vcsDescribeTool,
-    vcsFileSplitTool,
-    vcsHunkListTool,
-    vcsHunkSplitTool,
-  );
+export const vcsPlugin = definePlugin(
+  "vcs",
+  {
+    title: "Change stack",
+    summary:
+      "jj as ten tools and two panels: the change stack, the operation log, splits, hunks and patches.",
+    icon: "commit",
+    category: "project",
+  },
+  (app) => {
+    app.tools.register(
+      vcsLogTool,
+      vcsFileDiffTool,
+      vcsFileHistoryTool,
+      vcsFileHistoryShowTool,
+      vcsConflictsTool,
+      vcsOplogTool,
+      vcsDescribeTool,
+      vcsFileSplitTool,
+      vcsHunkListTool,
+      vcsHunkSplitTool,
+    );
 
-  app.log.rows({
-    key: "vcs",
-    owns: isVcsTool,
-    body: (item) => <VcsToolRows item={item} />,
-    preview: vcsToolPreviewOf,
-  });
+    app.log.rows({
+      key: "vcs",
+      owns: isVcsTool,
+      body: (item) => <VcsToolRows item={item} />,
+      preview: vcsToolPreviewOf,
+    });
 
-  // Both repo panels fill the band: the list on the left, the preview on the
-  // right, and the keys of whichever half has the cursor. Core never asks which
-  // component a repo panel is, and never holds the panel's state — this file says
-  // what the panel is, and its own hook reads the repo for it.
-  const changes: PanelSurface<ChangesPanelState> = {
-    target: "changes",
-    keybinding: "composer.changes",
-    open: { type: "openChanges" },
-    wide: true,
-    choose: "open",
-    use: (ctx) =>
-      useChangesPanel({
-        cwd: ctx.cwd,
-        toast: ctx.toast,
-        enabled: ctx.open,
-        onPickText: ctx.actions.pickText,
-        onInstruction: ctx.actions.sendInstruction,
+    // Both repo panels fill the band: the list on the left, the preview on the
+    // right, and the keys of whichever half has the cursor. Core never asks which
+    // component a repo panel is, and never holds the panel's state — this file says
+    // what the panel is, and its own hook reads the repo for it.
+    const changes: PanelSurface<ChangesPanelState> = {
+      target: "changes",
+      keybinding: "composer.changes",
+      open: { type: "openChanges" },
+      wide: true,
+      choose: "open",
+      use: (ctx) =>
+        useChangesPanel({
+          cwd: ctx.cwd,
+          toast: ctx.toast,
+          enabled: ctx.open,
+          onPickText: ctx.actions.pickText,
+          onInstruction: ctx.actions.sendInstruction,
+        }),
+      panel: (state) => ({
+        node: <ChangesPanel panel={state} />,
+        status: changesStatus(state),
+        onKey: (event) => state.onKey(event),
       }),
-    panel: (state) => ({
-      node: <ChangesPanel panel={state} />,
-      status: changesStatus(state),
-      onKey: (event) => state.onKey(event),
-    }),
-    // A write asked for from the stack is confirmed over the window, not inside
-    // the band that asked for it.
-    overlay: (state) => <ChangesOverlayHost panel={state} />,
-  };
-  app.composer.panel(changes);
+      // A write asked for from the stack is confirmed over the window, not inside
+      // the band that asked for it.
+      overlay: (state) => <ChangesOverlayHost panel={state} />,
+    };
+    app.composer.panel(changes);
 
-  const oplog: PanelSurface<OplogPanelState> = {
-    target: "oplog",
-    keybinding: "composer.oplog",
-    open: { type: "openPick", target: "oplog" },
-    wide: true,
-    use: (ctx) =>
-      useOplogPanel({ cwd: ctx.cwd, toast: ctx.toast, enabled: ctx.open }),
-    panel: (state) => ({
-      node: <OplogPanel panel={state} />,
-      status: oplogStatus(state),
-      onKey: (event) => state.onKey(event),
-    }),
-  };
-  app.composer.panel(oplog);
+    const oplog: PanelSurface<OplogPanelState> = {
+      target: "oplog",
+      keybinding: "composer.oplog",
+      open: { type: "openPick", target: "oplog" },
+      wide: true,
+      use: (ctx) =>
+        useOplogPanel({ cwd: ctx.cwd, toast: ctx.toast, enabled: ctx.open }),
+      panel: (state) => ({
+        node: <OplogPanel panel={state} />,
+        status: oplogStatus(state),
+        onKey: (event) => state.onKey(event),
+      }),
+    };
+    app.composer.panel(oplog);
 
-  app.composer.command({
-    name: "changes",
-    description: "Browse the change stack, files and diffs",
-    icon: "list",
-    target: "changes",
-  });
-  app.composer.command({
-    name: "oplog",
-    description: "Browse jj's operation log and rewind the repo to one",
-    icon: "history",
-    target: "oplog",
-  });
-});
+    app.composer.command({
+      name: "changes",
+      description: "Browse the change stack, files and diffs",
+      icon: "list",
+      target: "changes",
+    });
+    app.composer.command({
+      name: "oplog",
+      description: "Browse jj's operation log and rewind the repo to one",
+      icon: "history",
+      target: "oplog",
+    });
+  },
+);

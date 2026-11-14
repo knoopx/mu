@@ -25,26 +25,36 @@ import {
   OpenUIToolRows,
 } from "./components/OpenUIToolRows";
 
-export const openUIPlugin = definePlugin("openui", (app) => {
-  app.tools.register(
-    openUIPromptTool,
-    openUILibraryTool,
-    openUIValidateTool,
-    openUIRenderTool,
-    openUIStreamTool,
-    openUIStateTool,
-    openUIEventsTool,
-    openUIToolsTool,
-    openUIListTool,
-    openUISwitchTool,
-    openUIClearTool,
-  );
+export const openUIPlugin = definePlugin(
+  "openui",
+  {
+    title: "Generative UI",
+    summary:
+      "Screens the agent writes and you operate, with a form's answers landing in your own message.",
+    icon: "widgets",
+    category: "surface",
+  },
+  (app) => {
+    app.tools.register(
+      openUIPromptTool,
+      openUILibraryTool,
+      openUIValidateTool,
+      openUIRenderTool,
+      openUIStreamTool,
+      openUIStateTool,
+      openUIEventsTool,
+      openUIToolsTool,
+      openUIListTool,
+      openUISwitchTool,
+      openUIClearTool,
+    );
 
-  app.log.rows({
-    key: "openui",
-    owns: isOpenUITool,
-    frame: "page",
-    body: (item) => <OpenUIToolRows item={item} />,
-    preview: openUIToolPreviewOf,
-  });
-});
+    app.log.rows({
+      key: "openui",
+      owns: isOpenUITool,
+      frame: "page",
+      body: (item) => <OpenUIToolRows item={item} />,
+      preview: openUIToolPreviewOf,
+    });
+  },
+);

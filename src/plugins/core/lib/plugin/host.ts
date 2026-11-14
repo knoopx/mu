@@ -20,6 +20,7 @@
 import type {
   ExtensionFactory,
 } from "@earendil-works/pi-coding-agent";
+import type { ComposerTarget } from "../composer/mode";
 import type {
   CommandSurface,
   PanelSurface,
@@ -86,11 +87,43 @@ export interface PluginApi {
   };
 }
 
+/**
+ * What one plugin gave the app.
+ *
+ * The plugins panel draws these counts, because "what does the github plugin
+ * actually do to this window" is a question the app can answer exactly and should
+ * not have to guess at: the host watched every registration happen.
+ */
+export interface PluginContributions {
+  tools: string[];
+  panels: ComposerTarget[];
+  commands: string[];
+  rows: string[];
+  extensions: number;
+  blocks: number;
+}
+
+export interface PluginHostOptions {
+  /**
+   * plugins the user has switched off, by name.
+   *
+   * A disarmed plugin's setup never runs, so it takes no tool, no panel, no key
+   * binding and no command. The host keeps it in `disarmed` rather than dropping
+   * it, because a surface the user stops having has to be listable by name and
+   * explained — the alternative is a window that quietly lost a keybinding.
+   */
+  disarmed?: readonly string[];
+}
+
 export interface PluginHost {
   /** every plugin the host loaded, in registration order */
   readonly plugins: readonly PluginRegistration[];
+  /** the plugins the host was told not to load, still named and still described */
+  readonly disarmed: readonly PluginRegistration[];
   /** what they registered */
   readonly slots: PluginSlots;
+  /** what one plugin registered, by name; empty for one the host did not load */
+  contributionsFor(name: string): PluginContributions;
 }
 
 /**
@@ -102,7 +135,9 @@ export interface PluginHost {
  */
 export function createPluginHost(
   plugins: readonly PluginRegistration[],
+  options: PluginHostOptions = {},
 ): PluginHost {
+  const off = new Set(options.disarmed ?? []);
   const slots: PluginSlots = {
     tools: [],
     toolIcons: new Map<string, IconName>(),
@@ -117,6 +152,22 @@ export function createPluginHost(
   const panelKeys = new Map<string, string>();
   const commandNames = new Map<string, string>();
   const rowKeys = new Set<string>();
+  const contributions = new Map<string, PluginContributions>();
+
+  const contributionOf = (plugin: string): PluginContributions => {
+    const found = contributions.get(plugin);
+    if (found !== undefined) return found;
+    const fresh: PluginContributions = {
+      tools: [],
+      panels: [],
+      commands: [],
+      rows: [],
+      extensions: 0,
+      blocks: 0,
+    };
+    contributions.set(plugin, fresh);
+    return fresh;
+  };
 
   const claim = (
     taken: Map<string, string>,
@@ -147,6 +198,7 @@ export function createPluginHost(
           claim(owners, name, "tool", plugin);
           slots.toolIcons.set(name.toLowerCase(), tool.icon);
           slots.tools.push(tool);
+          contributionOf(plugin).tools.push(name);
         }
       },
     },
@@ -156,6 +208,7 @@ export function createPluginHost(
           if (typeof factory !== "function")
             throw new Error(`plugin ${plugin} registered an extension that is not a factory`);
           slots.extensions.push(factory);
+          contributionOf(plugin).extensions += 1;
         }
       },
     },
@@ -177,11 +230,13 @@ export function createPluginHost(
           );
         rowKeys.add(surface.key);
         slots.rows.push(surface);
+        contributionOf(plugin).rows.push(surface.key);
       },
       block(draw: (item: ToolTranscriptItem) => JSX.Element): void {
         if (typeof draw !== "function")
           throw new Error(`plugin ${plugin} registered a block panel that cannot draw`);
         slots.blocks.push({ plugin, draw });
+        contributionOf(plugin).blocks += 1;
       },
     },
     composer: {
@@ -201,22 +256,42 @@ export function createPluginHost(
         if (surface.keybinding !== undefined && surface.keybinding.trim() !== "")
           claim(panelKeys, surface.keybinding, "keybinding", plugin);
         slots.panels.push(surface);
+        contributionOf(plugin).panels.push(surface.target);
       },
       command(surface: CommandSurface): void {
         if (surface === null || surface.name.trim() === "")
           throw new Error(`plugin ${plugin} contributed a command with no name`);
         claim(commandNames, surface.name, "command", plugin);
         slots.commands.push(surface);
+        contributionOf(plugin).commands.push(surface.name);
       },
     },
   });
+
+  const loaded: PluginRegistration[] = [];
+  const skipped: PluginRegistration[] = [];
 
   for (const plugin of plugins) {
     const setup: PluginSetup = plugin.setup;
     if (typeof setup !== "function")
       throw new Error(`plugin ${plugin.name} has no setup to run`);
+    if (off.has(plugin.name)) {
+      // The identity is still checked and the name is still claimed as a holder of
+      // nothing: a plugin the user switched off keeps its row in the panel, so the
+      // missing tool is a choice they can read and undo rather than a mystery.
+      contributionOf(plugin.name);
+      skipped.push(plugin);
+      continue;
+    }
+    contributionOf(plugin.name);
     setup(apiFor(plugin.name));
+    loaded.push(plugin);
   }
 
-  return { plugins, slots };
+  return {
+    plugins: loaded,
+    disarmed: skipped,
+    slots,
+    contributionsFor: (name: string) => contributionOf(name),
+  };
 }
