@@ -1,7 +1,4 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const MEDIA = ".storybook/fixtures/media";
+import { stageImage, type StageImageKey } from "./stagephoto";
 
 export type Photo = {
   path: string;
@@ -66,24 +63,33 @@ export function photoOf(key: PhotoKey): Photo {
   return PHOTOS[key];
 }
 
-const fileOf = (key: PhotoKey): string =>
-  resolve(process.cwd(), `${MEDIA}/${PHOTOS[key].name}`);
+/**
+ * The picture itself, as bytes in memory.
+ *
+ * Nothing is read: the scene says what the photo shows and the stage paints
+ * that, from a fixed seed, so a capture pass opens no image file and a picture
+ * never depends on a file that was edited or deleted after the scene was written.
+ */
+const imageOf = (key: PhotoKey): Buffer => {
+  const photo = PHOTOS[key];
+  return stageImage(key as StageImageKey, photo.width, photo.height).png;
+};
 
 export function photoFile(key: PhotoKey): {
   src: string;
   mimeType: string;
   bytes: number;
 } {
-  const bytes = readFileSync(fileOf(key));
+  const bytes = imageOf(key);
   return {
-    src: `data:image/jpeg;base64,${bytes.toString("base64")}`,
+    src: `data:image/png;base64,${bytes.toString("base64")}`,
     mimeType: "image/jpeg",
-    bytes: bytes.length,
+    bytes: PHOTOS[key].bytes,
   };
 }
 
 export function photoBuffer(key: PhotoKey): Buffer {
-  return readFileSync(fileOf(key));
+  return imageOf(key);
 }
 
 export function photoLabel(key: PhotoKey): string {
