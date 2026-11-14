@@ -31,7 +31,7 @@ const Parameters = Type.Object({
   refresh: refreshParam(),
 });
 
-export async function executeGithubTree(
+async function executeGithubTree(
   params: GithubTreeParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<GithubCall>> {

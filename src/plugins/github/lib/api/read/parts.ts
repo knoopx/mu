@@ -23,7 +23,6 @@ import type { GithubReply } from "../client";
 import {
   countsOf,
   dateOf,
-  listOf,
   loginOf,
   numberOf,
   recordOf,

@@ -21,7 +21,6 @@ import {
   recordOf,
   sizeOf,
   stringOf,
-  textOf,
   urlOf,
 } from "../record";
 

@@ -11,22 +11,16 @@
 import type { JSX } from "react";
 import {
   Column,
-  DiffHistogram,
-  DiffStats,
   FileChangeRow,
-  Row,
   fileRowStats,
-  useAdwaita,
   type FileRowData,
 } from "adwaita-gpuix";
-
-import { figureGap } from "../../core/lib/ui/tokens";
 import { Band, Prose } from "./chrome";
 import type { GithubToolView } from "../lib/toolView";
 import type { GithubRow } from "../types";
 
 /** A `+22 −6`, back into the two numbers the widget draws with. */
-export function changeCountsOf(figure: string): {
+function changeCountsOf(figure: string): {
   insertions: number;
   deletions: number;
 } {
@@ -36,30 +30,8 @@ export function changeCountsOf(figure: string): {
     deletions: Number(digits[1] ?? 0),
   };
 }
-
-/** The whole change at one glance: the counts and their ratio, one bar. */
-export function ChangeScale({
-  insertions,
-  deletions,
-}: {
-  insertions: number;
-  deletions: number;
-}): JSX.Element | null {
-  const t = useAdwaita();
-  if (insertions + deletions === 0) return null;
-
-  const stats = fileRowStats([{ status: "", path: "", insertions, deletions }]);
-
-  return (
-    <Row gap={figureGap(t)} align="center">
-      <DiffStats insertions={insertions} deletions={deletions} stats={stats} />
-      <DiffHistogram insertions={insertions} deletions={deletions} />
-    </Row>
-  );
-}
-
 /** Every file the change touched, in the kit's own change rows. */
-export function Changeset({ rows }: { rows: GithubRow[] }): JSX.Element | null {
+function Changeset({ rows }: { rows: GithubRow[] }): JSX.Element | null {
   const files: FileRowData[] = rows.map((row) => ({
     status: row.state,
     path: row.name,

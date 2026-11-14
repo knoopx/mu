@@ -104,7 +104,7 @@ const rowOf = (value: unknown): GithubRow => {
 };
 
 /** The details of a GitHub call, or null when the answer is not one. */
-export function githubCallOf(details: unknown): GithubCall | null {
+function githubCallOf(details: unknown): GithubCall | null {
   if (typeof details !== "object" || details === null) return null;
   const record = recordOf(details);
   const kind = stringOf(record["kind"]);

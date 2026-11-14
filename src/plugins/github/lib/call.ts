@@ -22,7 +22,7 @@ import type {
 const NO_RATE: GithubRate = { limit: 0, remaining: 0 };
 
 /** `cli/cli` from the owner and repo a call named; a bare owner when there is no repo. */
-export const repoName = (owner = "", repo = ""): string => {
+const repoName = (owner = "", repo = ""): string => {
   const who = owner.trim();
   const what = repo.trim();
   if (what === "") return who;

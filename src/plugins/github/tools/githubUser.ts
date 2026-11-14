@@ -18,7 +18,7 @@ const Parameters = Type.Object({
   refresh: refreshParam(),
 });
 
-export async function executeGithubUser(
+async function executeGithubUser(
   params: GithubUserParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<GithubCall>> {

@@ -23,7 +23,7 @@ const Parameters = Type.Object({
   refresh: refreshParam(),
 });
 
-export async function executeGithubCommit(
+async function executeGithubCommit(
   params: GithubCommitParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<GithubCall>> {

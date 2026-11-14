@@ -1,13 +1,3 @@
-/**
- * What the plugin is called, what it reads, and what one call may hold.
- *
- * The nine tool names are what a user's guardrail rule points an agent at, so
- * they are never renamed or aliased. The caps belong here too: a GitHub read
- * can answer with a thousand entries or a megabyte of source, and a tool that
- * answers with all of it has answered with nothing the model can use.
- */
-
-import type { BadgeVariant } from "adwaita-gpuix";
 import type { GithubKind } from "./types";
 
 export const GITHUB_REPO_TOOL = "github-repo";
@@ -129,23 +119,3 @@ export const SEARCH_KINDS = [
  * asks, rather than taking a 401 and calling it a failure of the call.
  */
 export const AUTH_ONLY_SEARCH_KINDS: readonly string[] = ["code", "commits"];
-
-/** The badge a GitHub state word wears. */
-export const GITHUB_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
-  open: "success",
-  merged: "default",
-  closed: "secondary",
-  draft: "outline",
-  prerelease: "warning",
-  archived: "warning",
-  dir: "secondary",
-  file: "outline",
-  symlink: "outline",
-  submodule: "outline",
-  added: "success",
-  modified: "warning",
-  removed: "destructive",
-  renamed: "secondary",
-  copied: "secondary",
-  changed: "secondary",
-};

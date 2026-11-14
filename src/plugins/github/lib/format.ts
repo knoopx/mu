@@ -61,7 +61,7 @@ export const humanDate = (value: string, now: Date = new Date()): string => {
  * How long ago, for the handful of places where age is the fact: a commit that
  * landed the other day, an issue that has been open for a fortnight.
  */
-export const humanAge = (value: string, now: Date = new Date()): string => {
+const humanAge = (value: string, now: Date = new Date()): string => {
   const date = parse(value);
   if (date === null) return value;
   const days = Math.round((now.getTime() - date.getTime()) / DAY);
@@ -96,36 +96,6 @@ export const humanCount = (value: string): string => {
     return `${(count / 1000).toFixed(count < 100_000 ? 1 : 0)}k`;
   return `${(count / 1_000_000).toFixed(1)}m`;
 };
-
-/** A count with the thing it counts, so `7` becomes `7 replies` and reads as a fact. */
-export const humanTally = (
-  value: string,
-  one: string,
-  many: string,
-): string => {
-  const shown = humanCount(value);
-  if (shown === "") return "";
-  return `${shown} ${/^\d+$/u.test(value.trim()) && Number(value) === 1 ? one : many}`;
-};
-
-/** A change: `+96 −41` typed the way a diff is read, with a real minus. */
-export const humanChange = (insertions: number, deletions: number): string =>
-  insertions + deletions === 0
-    ? "no lines moved"
-    : `+${String(insertions)} −${String(deletions)}`;
-
-/** The two halves of a change, for a widget that paints them apart. */
-export const changeOf = (
-  value: string,
-): { insertions: number; deletions: number } => {
-  const plus = /\+\s*(\d+)/u.exec(value);
-  const minus = /[−-]\s*(\d+)/u.exec(value);
-  return {
-    insertions: plus === null ? 0 : Number(plus[1]),
-    deletions: minus === null ? 0 : Number(minus[1]),
-  };
-};
-
 /** A person: `Niamh Ní Dhomhnaill (niamh@gpuix.dev)` is a name, not an email. */
 export const humanPerson = (value: string): string => {
   const name = /^(.*)\s*\([^)]*\)$/u.exec(value.trim());

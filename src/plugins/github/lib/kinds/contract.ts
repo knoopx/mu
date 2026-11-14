@@ -1,16 +1,3 @@
-/**
- * What one kind of GitHub call says about itself.
- *
- * Nine kinds read nine endpoints, and none of them is a table. A folder is a
- * tree, a pull request is a diffstat, a thread is a thread, a profile is a
- * profile — so each kind keeps one file that says what its record *is*: how it is
- * named on the line that opens its card, which counts it is worth (each one
- * formatted the way a reader says it — `6 Nov`, `47k`, `7 replies` — never the
- * wire's text), where it stands, and how its body reads. `lib/kinds/vocabulary.ts`
- * is the only table that knows all nine.
- */
-
-import type { IconName } from "adwaita-gpuix";
 import type { GithubCall, GithubRow } from "../../types";
 
 /** How a call's body reads in the log: a file's text as code, prose as markdown, or nothing at all. */
@@ -101,7 +88,7 @@ export const stateOf = (
   return word === "" ? null : { word, tone: stateTone(word) };
 };
 
-export const stateTone = (state: string): "good" | "bad" | "warn" | "plain" => {
+const stateTone = (state: string): "good" | "bad" | "warn" | "plain" => {
   const word = state.trim().toLowerCase();
   if (
     word.startsWith("merged") ||
@@ -171,19 +158,3 @@ export const changesetColumns = (
     ["changes", row.figure],
     ["was", row.detail],
   ]);
-
-/**
- * The mark a kind's card opens with. One mark per kind, never one per fact: the
- * counts underneath name themselves.
- */
-export const kindIcon = (kind: string): IconName => {
-  if (kind === "file") return "description";
-  if (kind === "tree") return "folder-open";
-  if (kind === "pr") return "merge";
-  if (kind === "commit") return "commit";
-  if (kind === "issue") return "forum";
-  if (kind === "release" || kind === "releases") return "sell";
-  if (kind === "search") return "search";
-  if (kind === "user") return "person";
-  return "code";
-};

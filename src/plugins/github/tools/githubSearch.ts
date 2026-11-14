@@ -34,7 +34,7 @@ const Parameters = Type.Object({
   refresh: refreshParam(),
 });
 
-export async function executeGithubSearch(
+async function executeGithubSearch(
   params: GithubSearchParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<GithubCall>> {

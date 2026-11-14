@@ -31,7 +31,7 @@ const Parameters = Type.Object({
   refresh: refreshParam(),
 });
 
-export async function executeGithubFile(
+async function executeGithubFile(
   params: GithubFileParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<GithubCall>> {
