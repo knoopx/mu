@@ -10,6 +10,7 @@
  */
 
 import type { JSX } from "react";
+import type { StyleDesc } from "@gpuix/react";
 import type { AdwaitaTheme } from "adwaita-gpuix";
 import { T } from "adwaita-gpuix";
 import { markReactive, type ElementNode } from "@openuidev/lang-core";
@@ -123,6 +124,47 @@ export function ProgramText(props: {
 }
 
 /**
+ * The column a block of the language stands in: the pane's whole width, its
+ * children at the library's inner gap.
+ *
+ * An input under its label, a meter under its head, a sparkline beside its
+ * caption: each used to spell this style out again in its own drawer, which is
+ * how one gap drifts into five different numbers.
+ */
+export function programColumnStyle(t: AdwaitaTheme): StyleDesc {
+  return {
+    display: "flex",
+    flexDirection: "column",
+    width: "100%",
+    minWidth: 0,
+    gap: innerGap(t),
+  };
+}
+
+/**
+ * The row a single line of the language stands in: its children on one line,
+ * centred, at the library's inner gap — a `Stepper`'s two buttons and its
+ * figure, a `Toggle`'s label and its switch.
+ */
+export function programRowStyle(t: AdwaitaTheme): StyleDesc {
+  return {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 0,
+    gap: innerGap(t),
+  };
+}
+
+/** A `programColumnStyle` band with its children already in it. */
+export function ProgramColumn(props: {
+  ctx: ProgramContext;
+  children: (JSX.Element | null)[] | JSX.Element | null;
+}): JSX.Element {
+  return <div style={programColumnStyle(props.ctx.t)}>{props.children}</div>;
+}
+
+/**
  * A label and the figure that counts it, on one line — the head of a `Bar`, the
  * head of a `Slider`, and anywhere else a screen names a thing and then says how
  * much. One row, so the label's size, the figure's weight and the gap between
@@ -146,16 +188,7 @@ export function ProgramFigureRow(props: {
 }): JSX.Element {
   const { ctx } = props;
   const head = (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={{ ...programRowStyle(ctx.t), width: "100%" }}>
       <T
         size={props.labelSize ?? "body"}
         color={props.labelColor ?? ctx.t.color.text.primary}
@@ -183,15 +216,7 @@ export function ProgramFigureRow(props: {
 
   if (!props.body) return head;
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={programColumnStyle(ctx.t)}>
       {head}
       {props.body}
     </div>

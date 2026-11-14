@@ -19,20 +19,13 @@ import {
 } from "../../core/lib/ui/toolOutputMode";
 import { mutedText } from "../../core/lib/ui/theme";
 import { HAIRLINE, MARKER_GLYPH, titleWeight } from "../../core/lib/ui/tokens";
-import type { GithubState } from "../lib/kinds/contract";
+import type {
+  GithubFact,
+  GithubState,
+} from "../lib/kinds/contract";
 
 
 const MARK_BOX = 24;
-
-
-export interface GithubFact {
-  label: string;
-  value: string;
-  
-  figure?: boolean;
-  
-  tone?: "good" | "bad" | "warn";
-}
 
 
 export function Band({

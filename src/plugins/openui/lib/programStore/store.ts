@@ -70,6 +70,22 @@ export interface ProgramWrite {
 
 export type ProgramStoreListener = () => void;
 
+/**
+ * What a write keeps from the program it replaces: the `$variable` values as the
+ * human left them, what they touched, and what the screen collected.
+ *
+ * The language's own rule is that an edit keeps the names — a re-render of a
+ * screen the person has been answering must not empty it — and a brand new
+ * program starts each of them empty.
+ */
+const carried = (
+  existing: ProgramRecord | undefined,
+): Pick<ProgramRecord, "values" | "touched" | "events"> => ({
+  values: existing?.values ?? {},
+  touched: existing?.touched ?? new Set<string>(),
+  events: existing?.events ?? [],
+});
+
 /** Two publications that say the same thing, so a repaint stays silent. */
 function samePublication(
   a: ProgramPublication,
@@ -175,28 +191,17 @@ export class ProgramStore {
     opts: { streaming?: boolean; activate?: boolean; fence?: boolean } = {},
   ): ProgramWrite {
     const existing = this.programs.get(name);
-    const evicted: string[] = [];
-    let overflow = "";
     const fence = opts.fence === true;
 
     // A reply block and a program the agent asked for are bounded apart: a long
     // conversation full of blocks must not push the screen the agent is editing
     // out of the log, and a block whose message is still on screen is held again
-    // the moment there is room for it.
-    if (
-      existing === undefined &&
-      this.countOf(fence) >= (fence ? MAX_FENCE_PROGRAMS : MAX_PROGRAMS)
-    ) {
-      const oldest = this.oldestUnlocked(fence);
-      if (oldest !== "") {
-        this.programs.delete(oldest);
-        evicted.push(oldest);
-      } else {
-        overflow = fence
-          ? `${String(MAX_FENCE_PROGRAMS)} blocks are already in the log`
-          : `${String(MAX_PROGRAMS)} programs are already in the log; clear one first`;
-      }
-    }
+    // the moment there is room for it. Editing a program that is already held
+    // needs no room.
+    const room =
+      existing === undefined
+        ? this.roomFor(fence)
+        : { evicted: [] as string[], overflow: "" };
 
     const activate = opts.activate !== false;
     const record: ProgramRecord = {
@@ -212,18 +217,41 @@ export class ProgramStore {
       live: activate ? true : (existing?.live ?? false),
       parse,
       result,
-      // A re-render keeps what the human did to the old program's state: the
-      // language's own rule is that an edit keeps the $variable names.
-      values: existing?.values ?? {},
-      touched: existing?.touched ?? new Set<string>(),
-      events: existing?.events ?? [],
+      ...carried(existing),
       publication: { drawn: [], failures: [], renderErrors: [], queries: [] },
     };
 
     if (record.live) this.setLiveFlags(name);
     this.programs.set(name, record);
     this.notify();
-    return { record, replaced: existing !== undefined, evicted, overflow };
+    return {
+      record,
+      replaced: existing !== undefined,
+      evicted: room.evicted,
+      overflow: room.overflow,
+    };
+  }
+
+  /** Room for one more program of this kind: the oldest one that can go, or the
+   *  words that say the log is full and nothing may. */
+  private roomFor(fence: boolean): {
+    evicted: string[];
+    overflow: string;
+  } {
+    if (this.countOf(fence) < (fence ? MAX_FENCE_PROGRAMS : MAX_PROGRAMS))
+      return { evicted: [], overflow: "" };
+
+    const oldest = this.oldestUnlocked(fence);
+    if (oldest !== "") {
+      this.programs.delete(oldest);
+      return { evicted: [oldest], overflow: "" };
+    }
+    return {
+      evicted: [],
+      overflow: fence
+        ? `${String(MAX_FENCE_PROGRAMS)} blocks are already in the log`
+        : `${String(MAX_PROGRAMS)} programs are already in the log; clear one first`,
+    };
   }
 
   /** Append a streamed chunk. An unknown name is an answer, not a new program. */

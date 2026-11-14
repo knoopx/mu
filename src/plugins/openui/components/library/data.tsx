@@ -56,7 +56,15 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { ProgramFigureRow, listProp, prop, textOf, textProp } from "./context";
+import {
+  ProgramFigureRow,
+  listProp,
+  programColumnStyle,
+  programRowStyle,
+  prop,
+  textOf,
+  textProp,
+} from "./context";
 import { cellText, isFigure } from "./rows";
 
 export const Table = defineComponent({
@@ -83,15 +91,20 @@ export const Stat = defineComponent({
   component: drawStat,
 });
 
+/** What a meter is asked for: the figure, the whole it is a part of, and the word for it. */
+const meterProps = {
+  label: z.union([z.string(), z.number()]),
+  value: z.number(),
+  max: z.number().nullable().optional(),
+  tone: z.string().nullable().optional(),
+};
+
 export const Bar = defineComponent({
   name: "Bar",
   description:
     "a figure against its maximum, drawn as a fill: optionally weighted, with one line of its own under it",
   props: z.object({
-    label: z.union([z.string(), z.number()]),
-    value: z.number(),
-    max: z.number().nullable().optional(),
-    tone: z.string().nullable().optional(),
+    ...meterProps,
 
     /** How much this one counts: printed as `×3` beside the figure. */
     weight: z.union([z.string(), z.number()]).nullable().optional(),
@@ -263,15 +276,7 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={programColumnStyle(ctx.t)}>
       <AdwaitaChart
         data={plotData(capped.points, series)}
         type={kind}
@@ -300,6 +305,39 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
         <ChartLegend items={seriesLegend(series, ctx.t)} />
       )}
     </div>
+  );
+}
+
+/**
+ * The meter under a figure: how far the run has got, and the line that says why.
+ *
+ * A `Bar` and a `Progress` are the same two things standing under their own head
+ * — only the figure's format and the cap differ — so the fill and its caption are
+ * drawn once, and a measure taken out of one is taken out of both.
+ */
+function MeterBody(props: {
+  ctx: ProgramContext;
+  percent: number;
+  tone: ProgramTone | null;
+  caption: string | null;
+}): JSX.Element {
+  return (
+    <>
+      <ProgressBar
+        value={Math.max(0, Math.min(100, props.percent))}
+        color={programProgressTone(props.tone)}
+      />
+      {props.caption === null ? null : (
+        <T
+          size="body"
+          color={mutedText(props.ctx.t)}
+          clamp={3}
+          style={{ minWidth: 0 }}
+        >
+          {props.caption}
+        </T>
+      )}
+    </>
   );
 }
 
@@ -337,22 +375,7 @@ export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
         )
       }
       body={
-        <>
-          <ProgressBar
-            value={Math.max(0, Math.min(100, percent))}
-            color={programProgressTone(tone)}
-          />
-          {caption === null ? null : (
-            <T
-              size="body"
-              color={mutedText(ctx.t)}
-              clamp={3}
-              style={{ minWidth: 0 }}
-            >
-              {caption}
-            </T>
-          )}
-        </>
+        <MeterBody ctx={ctx} percent={percent} tone={tone} caption={caption} />
       }
     />
   );
@@ -365,13 +388,7 @@ export const Progress = defineComponent({
   name: "Progress",
   description:
     "how far something has got: its label, how much is done, and the whole it is a part of",
-  props: z.object({
-    label: z.union([z.string(), z.number()]),
-    value: z.number(),
-    max: z.number().nullable().optional(),
-    tone: z.string().nullable().optional(),
-    caption: z.string().nullable().optional(),
-  }),
+  props: z.object({ ...meterProps, caption: z.string().nullable().optional() }),
   component: drawProgress,
 });
 
@@ -405,22 +422,7 @@ export function drawProgress(
       figure={`${String(Math.round(value))} / ${String(Math.round(max))}`}
       figureMono
       body={
-        <>
-          <ProgressBar
-            value={Math.max(0, Math.min(100, percent))}
-            color={programProgressTone(tone)}
-          />
-          {caption === null ? null : (
-            <T
-              size="body"
-              color={mutedText(ctx.t)}
-              clamp={3}
-              style={{ minWidth: 0 }}
-            >
-              {caption}
-            </T>
-          )}
-        </>
+        <MeterBody ctx={ctx} percent={percent} tone={tone} caption={caption} />
       }
     />
   );
@@ -437,16 +439,7 @@ export function drawSparkline(
   const label = textProp(node.props, "label");
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={{ ...programRowStyle(ctx.t), width: "100%" }}>
       <AdwaitaSparkline
         values={values}
         color={programTextColor(ctx.t, tone === null ? "ink" : tone)}

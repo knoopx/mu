@@ -47,10 +47,13 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import { choiceRunPosition, formPosition } from "../../lib/answer/positions";
-import type { ProgramContext } from "./context";
+import type { ProgramBinding, ProgramContext } from "./context";
 import {
+  ProgramColumn,
   ProgramFigureRow,
   listProp,
+  programColumnStyle,
+  programRowStyle,
   prop,
   reactive,
   textProp,
@@ -93,14 +96,17 @@ export const Toggle = defineComponent({
   component: drawToggle,
 });
 
+/** What a pick-one-of-these input is asked for: the `$variable` it holds, the options to pick between, and the word over them. */
+const choiceProps = {
+  value: reactive(z.string()),
+  options: z.array(z.union([z.string(), z.number()])),
+  label: z.string().nullable().optional(),
+};
+
 export const Choice = defineComponent({
   name: "Choice",
   description: "one option picked from a short list of them",
-  props: z.object({
-    value: reactive(z.string()),
-    options: z.array(z.union([z.string(), z.number()])),
-    label: z.string().nullable().optional(),
-  }),
+  props: z.object(choiceProps),
   component: drawChoice,
 });
 
@@ -108,22 +114,14 @@ export const Radio = defineComponent({
   name: "Radio",
   description:
     "one option picked from a vertical list of them, each with its own line",
-  props: z.object({
-    value: reactive(z.string()),
-    options: z.array(z.union([z.string(), z.number()])),
-    label: z.string().nullable().optional(),
-  }),
+  props: z.object(choiceProps),
   component: drawRadio,
 });
 
 export const Select = defineComponent({
   name: "Select",
   description: "one option picked from a long list of them, opened as a menu",
-  props: z.object({
-    value: reactive(z.string()),
-    options: z.array(z.union([z.string(), z.number()])),
-    label: z.string().nullable().optional(),
-  }),
+  props: z.object(choiceProps),
   component: drawSelect,
 });
 
@@ -233,15 +231,7 @@ export function drawButton(
   if (closed) return <StagedNote ctx={ctx} text={`${label} — sent`} />;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={programRowStyle(ctx.t)}>
       <AdwaitaButton
         variant={picked ? "suggested" : programButtonVariant(tone)}
         size="sm"
@@ -278,11 +268,7 @@ export function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <div
       style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
+        ...programColumnStyle(ctx.t),
         padding: innerGap(ctx.t),
         borderWidth: HAIRLINE,
         borderColor: ctx.t.color.border.default,
@@ -334,16 +320,7 @@ export function drawToggle(
   const binding = ctx.binding(node.props.value, false);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={{ ...programRowStyle(ctx.t), width: "100%" }}>
       <T
         size="list"
         color={ctx.t.color.text.primary}
@@ -360,41 +337,60 @@ export function drawToggle(
   );
 }
 
-/** The label a list of options stands under, when the program gave it one. */
-function OptionsLabel(props: {
+/**
+ * One input and the label it stands under.
+ *
+ * A `Choice`, a `Select`, a `Field`: the label is a dim caption when the program
+ * gave one and nothing when it did not, and the control sits under it in the
+ * column every input of the language shares. The label is part of the input,
+ * not a caption above a widget, so a drawer that took the label and drew its own
+ * column could put a different gap between the two than its neighbour has.
+ */
+function InputColumn(props: {
   ctx: ProgramContext;
   label: string;
-}): JSX.Element | null {
-  if (props.label === "") return null;
+  children: (JSX.Element | null)[] | JSX.Element | null;
+}): JSX.Element {
   return (
-    <Label size="caption" variant="dim">
-      {props.label}
-    </Label>
+    <div style={programColumnStyle(props.ctx.t)}>
+      {props.label === "" ? null : (
+        <Label size="caption" variant="dim">
+          {props.label}
+        </Label>
+      )}
+      {props.children}
+    </div>
   );
 }
 
 const optionsOf = (node: ElementNode): string[] =>
   listProp(node.props, "options").map((option) => String(option ?? ""));
 
+/** One choice read the way every single-choice input reads it: the options, the one the human left picked, and the label over them. */
+function choiceOf(
+  node: ElementNode,
+  ctx: ProgramContext,
+): {
+  options: string[];
+  label: string;
+  binding: ProgramBinding<string>;
+} {
+  const options = optionsOf(node);
+  return {
+    options,
+    label: textProp(node.props, "label"),
+    binding: ctx.binding(node.props.value, options[0] ?? ""),
+  };
+}
+
 export function drawChoice(
   node: ElementNode,
   ctx: ProgramContext,
 ): JSX.Element {
-  const options = optionsOf(node);
-  const label = textProp(node.props, "label");
-  const binding = ctx.binding(node.props.value, options[0] ?? "");
+  const { options, label, binding } = choiceOf(node, ctx);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={label}>
       <div
         style={{
           display: "flex",
@@ -414,26 +410,15 @@ export function drawChoice(
           />
         ))}
       </div>
-    </div>
+    </InputColumn>
   );
 }
 
 export function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const options = optionsOf(node);
-  const label = textProp(node.props, "label");
-  const binding = ctx.binding(node.props.value, options[0] ?? "");
+  const { options, label, binding } = choiceOf(node, ctx);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={label}>
       <RadioGroup
         value={binding.value}
         onValueChange={(next: string) => binding.set(next)}
@@ -446,7 +431,7 @@ export function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
           />
         ))}
       </RadioGroup>
-    </div>
+    </InputColumn>
   );
 }
 
@@ -454,27 +439,16 @@ export function drawSelect(
   node: ElementNode,
   ctx: ProgramContext,
 ): JSX.Element {
-  const options = optionsOf(node);
-  const label = textProp(node.props, "label");
-  const binding = ctx.binding(node.props.value, options[0] ?? "");
+  const { options, label, binding } = choiceOf(node, ctx);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={label}>
       <NativeSelect
         value={binding.value}
         options={options.map((option) => ({ value: option, label: option }))}
         onChange={(next: string) => binding.set(next)}
       />
-    </div>
+    </InputColumn>
   );
 }
 
@@ -483,21 +457,11 @@ export function drawChecklist(
   ctx: ProgramContext,
 ): JSX.Element {
   const options = optionsOf(node);
-  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.values, [] as string[]);
   const held = coerce<string[]>(binding.value, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={textProp(node.props, "label")}>
       {options.map((option, index) => (
         <Checkbox
           key={`c-${String(index)}`}
@@ -510,7 +474,7 @@ export function drawChecklist(
           }
         />
       ))}
-    </div>
+    </InputColumn>
   );
 }
 
@@ -526,15 +490,7 @@ export function drawRating(
     : 0;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={programRowStyle(ctx.t)}>
       {Array.from({ length: max }, (_, index) => index + 1).map((mark) => (
         <AdwaitaButton
           key={`m-${String(mark)}`}
@@ -569,15 +525,7 @@ export function drawSliderInput(
   const current = Number.isFinite(binding.value) ? binding.value : min;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <ProgramColumn ctx={ctx}>
       <ProgramFigureRow
         ctx={ctx}
         label={label}
@@ -595,32 +543,22 @@ export function drawSliderInput(
           binding.set(number);
         }}
       />
-    </div>
+    </ProgramColumn>
   );
 }
 
 export function drawField(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, "");
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={textProp(node.props, "label")}>
       <Entry
         value={binding.value}
         placeholder={textProp(node.props, "placeholder")}
         surface="control"
         onChange={(next: string) => binding.set(next)}
       />
-    </div>
+    </InputColumn>
   );
 }
 
@@ -628,27 +566,17 @@ export function drawTextArea(
   node: ElementNode,
   ctx: ProgramContext,
 ): JSX.Element {
-  const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, "");
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <OptionsLabel ctx={ctx} label={label} />
+    <InputColumn ctx={ctx} label={textProp(node.props, "label")}>
       <Textarea
         value={binding.value}
         placeholder={textProp(node.props, "placeholder")}
         rows={Math.max(2, Math.round(prop<number>(node.props, "rows", 3)))}
         onChange={(next: string) => binding.set(next)}
       />
-    </div>
+    </InputColumn>
   );
 }
 
@@ -667,15 +595,7 @@ export function drawStepper(
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
+    <div style={programRowStyle(ctx.t)}>
       <AdwaitaButton
         variant="default"
         size="sm"

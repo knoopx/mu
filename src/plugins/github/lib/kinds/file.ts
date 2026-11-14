@@ -8,7 +8,7 @@
  * table.
  */
 
-import { cells, fact, fieldNamed, identityOf } from "./contract";
+import { fact, fieldNamed, identityOf, recordColumns } from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const fileWords: GithubKindWords = {
@@ -17,13 +17,7 @@ export const fileWords: GithubKindWords = {
   running: "reading the file",
   emptyShort: "empty file",
   emptyNote: (call) => `${call.path} is an empty file`,
-  columns: (_call, row) =>
-    cells(row, [
-      ["name", row.name],
-      ["detail", row.detail],
-      ["state", row.state],
-      ["figure", row.figure],
-    ]),
+  columns: recordColumns,
   title: () => "",
   // A file is named by its path, and the repository it came from is the line under
   // it — there is no header above the card any more, so the card has to say where

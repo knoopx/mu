@@ -31,6 +31,34 @@ const FOCUS_OPS: Shortcut = {
   desc: "operations",
 };
 
+/**
+ * The two keys that move a file pane's own scroll, and the two that open the
+ * file under the cursor.
+ *
+ * `shift+PageUp/Down` because plain Page Up belongs to whatever pager is reading,
+ * and `o`/`e` because one letter means one program wherever a file row is under
+ * the cursor — the changes panel's files and the op log's are the same rows.
+ */
+const SCROLL_KEYS: Shortcut[] = [
+  {
+    id: "scroll-up",
+    kbds: [["shift", "pageup"]],
+    desc: "scroll",
+    hidden: true,
+  },
+  {
+    id: "scroll-down",
+    kbds: [["shift", "pagedown"]],
+    desc: "scroll",
+    hidden: true,
+  },
+];
+
+const OPEN_KEYS: Shortcut[] = [
+  { id: "open", kbds: ["o"], desc: "open" },
+  { id: "edit", kbds: ["e"], desc: "edit" },
+];
+
 export const STACK_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_RIGHT,
@@ -52,20 +80,8 @@ export const FILES_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_LEFT,
   { id: "pick", kbds: ["enter"], desc: "insert" },
-  { id: "open", kbds: ["o"], desc: "open" },
-  { id: "edit", kbds: ["e"], desc: "edit" },
-  {
-    id: "scroll-up",
-    kbds: [["shift", "pageup"]],
-    desc: "scroll",
-    hidden: true,
-  },
-  {
-    id: "scroll-down",
-    kbds: [["shift", "pagedown"]],
-    desc: "scroll",
-    hidden: true,
-  },
+  ...OPEN_KEYS,
+  ...SCROLL_KEYS,
   { id: "split", kbds: ["s"], desc: "split" },
   { id: "split-hunk", kbds: ["h"], desc: "split hunks" },
   { id: "discard", kbds: ["d"], desc: "discard" },
@@ -96,20 +112,8 @@ export const OPLOG_SHORTCUTS: Shortcut[] = [
 export const OPLOG_FILE_SHORTCUTS: Shortcut[] = [
   ...PAGED_NAV,
   FOCUS_OPS,
-  { id: "open", kbds: ["o"], desc: "open" },
-  { id: "edit", kbds: ["e"], desc: "edit" },
-  {
-    id: "scroll-up",
-    kbds: [["shift", "pageup"]],
-    desc: "scroll",
-    hidden: true,
-  },
-  {
-    id: "scroll-down",
-    kbds: [["shift", "pagedown"]],
-    desc: "scroll",
-    hidden: true,
-  },
+  ...OPEN_KEYS,
+  ...SCROLL_KEYS,
 ];
 
 export const STACK_HINTS = hints(STACK_SHORTCUTS);

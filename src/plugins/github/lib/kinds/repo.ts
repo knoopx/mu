@@ -11,11 +11,11 @@
 
 import { humanCount, humanDated } from "../format";
 import {
-  cells,
   fact,
   factsShown,
   fieldNamed,
   identityOf,
+  recordColumns,
   stateOf,
 } from "./contract";
 import type { GithubKindWords } from "./contract";
@@ -26,13 +26,7 @@ export const repoWords: GithubKindWords = {
   running: "reading the repository",
   emptyShort: "no repository",
   emptyNote: () => "no repository",
-  columns: (_call, row) =>
-    cells(row, [
-      ["name", row.name],
-      ["detail", row.detail],
-      ["state", row.state],
-      ["figure", row.figure],
-    ]),
+  columns: recordColumns,
   title: () => "",
   // A repository is named by the one name it has, and has no second line: the
   // account and the project are the name.

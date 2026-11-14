@@ -8,7 +8,7 @@
  */
 
 import { humanCount, humanDate } from "../format";
-import { cells, fact, factsShown, fieldNamed } from "./contract";
+import { fact, factsShown, fieldNamed, recordColumns } from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const userWords: GithubKindWords = {
@@ -17,13 +17,7 @@ export const userWords: GithubKindWords = {
   running: "reading the profile",
   emptyShort: "no profile",
   emptyNote: () => "no profile",
-  columns: (_call, row) =>
-    cells(row, [
-      ["name", row.name],
-      ["detail", row.detail],
-      ["state", row.state],
-      ["figure", row.figure],
-    ]),
+  columns: recordColumns,
   title: (call) => fieldNamed(call, "name") || fieldNamed(call, "login"),
   // A profile is named by the name the person chose; the handle is the line under it.
   identity: (call) => {

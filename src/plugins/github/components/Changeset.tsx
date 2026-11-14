@@ -21,6 +21,8 @@ import {
 } from "adwaita-gpuix";
 
 import { figureGap } from "../../core/lib/ui/tokens";
+import { Band, Facts, Identity, Prose } from "./chrome";
+import type { GithubToolView } from "../lib/toolView";
 import type { GithubRow } from "../types";
 
 /** A `+22 −6`, back into the two numbers the widget draws with. */
@@ -79,5 +81,35 @@ export function Changeset({ rows }: { rows: GithubRow[] }): JSX.Element | null {
         />
       ))}
     </Column>
+  );
+}
+
+/**
+ * A record and the files it moved, in the order its reader asks for them: the
+ * card's head and its counts, the change itself, then the record's own prose.
+ *
+ * A commit and a pull request are one shape — a thing, a changeset under it, a
+ * message under that — so the order is settled once. What the card is called and
+ * which counts it is worth are still each kind's own, so `github-commit` and
+ * `github-pr` say different things above the same change.
+ */
+export function ChangesetCard({
+  view,
+}: {
+  view: GithubToolView;
+}): JSX.Element {
+  return (
+    <>
+      <Band first>
+        <Identity {...view.identity} state={view.state} />
+        <Facts facts={view.facts} />
+      </Band>
+      <Band>
+        <Changeset rows={view.rows} />
+      </Band>
+      <Band>
+        <Prose source={view.body} />
+      </Band>
+    </>
   );
 }

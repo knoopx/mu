@@ -11,24 +11,9 @@
 
 import type { JSX } from "react";
 
-import { Band, Facts, Identity } from "./chrome";
-import { Changeset } from "./Changeset";
-import { Prose } from "./chrome";
+import { ChangesetCard } from "./Changeset";
 import type { GithubToolView } from "../lib/toolView";
 
 export function PullRow({ view }: { view: GithubToolView }): JSX.Element {
-  return (
-    <>
-      <Band first>
-        <Identity {...view.identity} state={view.state} />
-        <Facts facts={view.facts} />
-      </Band>
-      <Band>
-        <Changeset rows={view.rows} />
-      </Band>
-      <Band>
-        <Prose source={view.body} />
-      </Band>
-    </>
-  );
+  return <ChangesetCard view={view} />;
 }

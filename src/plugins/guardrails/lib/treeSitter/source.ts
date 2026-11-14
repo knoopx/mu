@@ -87,42 +87,63 @@ const stringKey = (
 
 const usable = (text: string): boolean => text.length <= MAX_GUARDED_BYTES;
 
+/** The text one call carries under each of the keys that carries text at all. */
+function textFieldsOf(
+  input: Record<string, unknown>,
+  keys: readonly string[],
+): { field: string; text: string }[] {
+  const fields: { field: string; text: string }[] = [];
+  for (const key of keys) {
+    const value = input[key];
+    if (typeof value === "string" && value.trim() !== "" && usable(value))
+      fields.push({ field: key, text: value });
+  }
+  return fields;
+}
+
+/** A command tool's sources: the command it was given, in bash. */
+function commandSources(
+  tool: string,
+  language: GuardrailLanguage,
+  input: Record<string, unknown>,
+): GuardedSource[] {
+  return textFieldsOf(input, COMMAND_INPUT_KEYS).map((entry) => ({
+    tool,
+    language,
+    field: entry.field,
+    text: entry.text,
+  }));
+}
+
+/** A file tool's sources: the text it writes, in the grammar its path names. */
+function fileSources(
+  tool: string,
+  input: Record<string, unknown>,
+): GuardedSource[] {
+  const path = stringKey(input, PATH_INPUT_KEYS);
+  if (path === null) return [];
+  const language = languageOfPath(path.value);
+  if (language === null) return [];
+  return textFieldsOf(input, FILE_TEXT_INPUT_KEYS).map((entry) => ({
+    tool,
+    language,
+    field: entry.field,
+    text: entry.text,
+    path: path.value,
+  }));
+}
+
 export function guardedSourcesOf(
   toolName: string,
   input: Record<string, unknown> | undefined,
 ): GuardedSource[] {
   if (input === undefined) return [];
   const tool = normalizedTool(toolName);
-  const sources: GuardedSource[] = [];
 
   const language = COMMAND_LANGUAGES[tool];
-  if (language !== undefined) {
-    for (const key of COMMAND_INPUT_KEYS) {
-      const value = input[key];
-      if (typeof value === "string" && value.trim() !== "" && usable(value))
-        sources.push({ tool, language, field: key, text: value });
-    }
-    return sources;
-  }
-
-  if (GUARDED_FILE_TOOLS.includes(tool)) {
-    const path = stringKey(input, PATH_INPUT_KEYS);
-    if (path === null) return sources;
-    const fileLanguage = languageOfPath(path.value);
-    if (fileLanguage === null) return sources;
-    for (const key of FILE_TEXT_INPUT_KEYS) {
-      const value = input[key];
-      if (typeof value === "string" && value.trim() !== "" && usable(value))
-        sources.push({
-          tool,
-          language: fileLanguage,
-          field: key,
-          text: value,
-          path: path.value,
-        });
-    }
-  }
-  return sources;
+  if (language !== undefined) return commandSources(tool, language, input);
+  if (GUARDED_FILE_TOOLS.includes(tool)) return fileSources(tool, input);
+  return [];
 }
 
 export function guardedSourceOf(

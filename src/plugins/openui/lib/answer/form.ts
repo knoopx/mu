@@ -98,6 +98,40 @@ export interface FormField {
   readonly line: string;
 }
 
+/** The line one field answers with: its label, or the name it binds, then what it holds. */
+function answerLine(name: string, label: string, text: string): string {
+  const head = label === "" ? name : label;
+  // A label that already reads as a prompt — a question, or a word with a
+  // colon — is not given a second colon.
+  const colon = /[?:]$/.test(head) ? "" : ":";
+  return `${head}${colon} ${text === "" ? "—" : text}`;
+}
+
+/** One element of a Form that is a field: the `$variable` it binds and its answer. */
+function fieldOf(
+  node: ElementNode,
+  props: Record<string, unknown>,
+  read: (variable: string) => unknown,
+): FormField | null {
+  const name = boundName(props.value);
+  if (FIELDS[node.typeName] !== true || name === "") return null;
+
+  const given = read(name);
+  const label = typeof props.label === "string" ? props.label.trim() : "";
+  // An unrated Rating holds 0: no answer, not a zero.
+  const value = node.typeName === "Rating" && given === 0 ? null : given;
+  const text =
+    node.typeName === "Checklist" && Array.isArray(value)
+      ? picks(value, optionValues(props.options))
+      : answer(value);
+
+  return {
+    name,
+    typed: TYPED[node.typeName] === true,
+    line: answerLine(name, label, text),
+  };
+}
+
 /** Every field at any depth, in document order. */
 function collect(
   node: unknown,
@@ -109,30 +143,17 @@ function collect(
     return;
   }
   if (typeof node !== "object" || node === null) return;
-  if (!isElement(node)) {
-    for (const value of Object.values(node as Record<string, unknown>))
-      collect(value, read, fields);
-    return;
-  }
 
-  const props = (node.props ?? {}) as Record<string, unknown>;
-  const name = boundName(props.value);
-  if (FIELDS[node.typeName] && name !== "") {
-    const given = read(name);
-    const label = typeof props.label === "string" ? props.label.trim() : "";
-    // An unrated Rating holds 0: no answer, not a zero.
-    const value = node.typeName === "Rating" && given === 0 ? null : given;
-    const text =
-      node.typeName === "Checklist" && Array.isArray(value)
-        ? picks(value, optionValues(props.options))
-        : answer(value);
-    // A label that already reads as a prompt — a question, or a word with a
-    // colon — is not given a second colon.
-    fields.push({
-      name,
-      typed: TYPED[node.typeName] === true,
-      line: `${label || name}${/[?:]$/.test(label || name) ? "" : ":"} ${text || "—"}`,
-    });
+  // An element keeps its children in `props`; a value the parse put in a prop
+  // holds what is inside it directly.
+  const element = isElement(node);
+  const props = element
+    ? ((node.props ?? {}) as Record<string, unknown>)
+    : (node as Record<string, unknown>);
+
+  const field = element ? fieldOf(node, props, read) : null;
+  if (field !== null) {
+    fields.push(field);
     return;
   }
 

@@ -562,6 +562,38 @@ function assistantItem(m: SessionMessage): TranscriptItem | undefined {
   };
 }
 
+/** One call of an assistant message, joined to the result the session recorded for it. */
+function toolItemOf(
+  part: SessionMessagePart,
+  toolCallId: string,
+  result: ToolResult | undefined,
+): ToolTranscriptItem {
+  return {
+    kind: "tool",
+    id: toolCallId,
+    toolCallId,
+    name: part.name ?? "",
+    args: part.arguments ?? {},
+    status: result?.ok === false ? "error" : "ok",
+    output: result?.output ?? "",
+    details: result?.details,
+    ...(result?.endTs === undefined ? {} : { endTs: result.endTs }),
+    ...(result?.image === undefined ? {} : { image: result.image }),
+  };
+}
+
+/** Usage belongs to the message, and a message's tokens stand beside its last call. */
+function withUsage(
+  items: ToolTranscriptItem[],
+  usage: AssistantUsage | undefined,
+): ToolTranscriptItem[] {
+  const last = items[items.length - 1];
+  if (usage === undefined || last === undefined) return items;
+  const joined = [...items];
+  joined[joined.length - 1] = { ...last, usage };
+  return joined;
+}
+
 function toolItems(
   m: SessionMessage,
   results: Map<string, ToolResult>,
@@ -574,25 +606,10 @@ function toolItems(
   for (const part of parts) {
     if (!part || part.type !== "toolCall" || !part.name) continue;
     const toolCallId = part.id ?? nextItemId("tool");
-    const result = results.get(toolCallId);
-    items.push({
-      kind: "tool",
-      id: toolCallId,
-      toolCallId,
-      name: part.name,
-      args: part.arguments ?? {},
-      status: result?.ok === false ? "error" : "ok",
-      output: result?.output ?? "",
-      details: result?.details,
-      ...(result?.endTs === undefined ? {} : { endTs: result.endTs }),
-      ...(result?.image === undefined ? {} : { image: result.image }),
-    });
+    items.push(toolItemOf(part, toolCallId, results.get(toolCallId)));
   }
 
-  const last = items[items.length - 1];
-  if (usage !== undefined && last !== undefined)
-    items[items.length - 1] = { ...last, usage };
-  return items;
+  return withUsage(items, usage);
 }
 
 export function transcriptItemsFromMessages(

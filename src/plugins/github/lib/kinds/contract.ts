@@ -159,6 +159,42 @@ export function cells(
 }
 
 /**
+ * The columns of a list whose rows the kind has no word of its own for: what a
+ * row is called, what stands under it, where it stands, and its figure.
+ *
+ * A record read on its own — a repository, a file, a profile — lists only what
+ * the log already draws as its figures, so its table takes the plain shape.
+ */
+export const recordColumns = (
+  _call: GithubCall,
+  row: GithubRow,
+): Record<string, string> =>
+  cells(row, [
+    ["name", row.name],
+    ["detail", row.detail],
+    ["state", row.state],
+    ["figure", row.figure],
+  ]);
+
+/**
+ * The columns of a changeset: the file, what happened to it, how much moved, and
+ * what it was called before.
+ *
+ * A commit and a pull request move the same rows, and the one number that tells
+ * a reader which of the two they are looking at is the file's own count.
+ */
+export const changesetColumns = (
+  _call: GithubCall,
+  row: GithubRow,
+): Record<string, string> =>
+  cells(row, [
+    ["file", row.name],
+    ["status", row.state],
+    ["changes", row.figure],
+    ["was", row.detail],
+  ]);
+
+/**
  * The mark a kind's card opens with. One mark per kind, never one per fact: the
  * counts underneath name themselves.
  */

@@ -16,23 +16,35 @@ import { FilePane } from "./FilePane";
 import { PaneEmpty } from "./PaneEmpty";
 import { PANEL_LIST_CAP } from "../constants";
 import type { ChangeImage } from "../hooks/useChangeFiles";
+import type { FilePanelFocus } from "../types";
 
-export interface FilePreviewPaneProps {
+/**
+ * What a panel's right half reads out of its own state.
+ *
+ * The change stack and the operation log keep this part of their state in the
+ * same shape — the files of the picked row, where the cursor stands, that file's
+ * patch — so a panel hands its state over whole instead of unpacking nine props
+ * at the call, which is the half of the panel that used to be written twice.
+ */
+export interface PanelFileState {
   files: readonly FileChange[];
-
   fileSel: number;
 
   /** whether this half of the panel holds the cursor */
-  focused: boolean;
+  focus: FilePanelFocus;
 
   fileListRef: { current: PublicInstance | null };
 
   diffRef: { current: PublicInstance | null };
 
-  onSelect(index: number): void;
-
   /** the patch of the file the cursor is on */
   patch: string;
+
+  selectFile(index: number): void;
+}
+
+export interface FilePreviewPaneProps {
+  state: PanelFileState;
 
   /** the two pictures of an image change, where there is a pair to paint */
   image: ChangeImage | null;
@@ -41,19 +53,13 @@ export interface FilePreviewPaneProps {
 }
 
 export function FilePreviewPane({
-  files,
-  fileSel,
-  focused,
-  fileListRef,
-  diffRef,
-  onSelect,
-  patch,
+  state,
   image,
   emptyText,
 }: FilePreviewPaneProps): JSX.Element {
   const s = usePanelChrome();
-  const capped = files.slice(0, PANEL_LIST_CAP);
-  const file = files[fileSel];
+  const capped = state.files.slice(0, PANEL_LIST_CAP);
+  const file = state.files[state.fileSel];
 
   return (
     <div style={s.widePane}>
@@ -63,19 +69,19 @@ export function FilePreviewPane({
         <>
           <FilePane
             files={capped}
-            fileSel={fileSel}
-            focused={focused}
-            listRef={fileListRef}
-            onSelect={onSelect}
+            fileSel={state.fileSel}
+            focused={state.focus === "files"}
+            listRef={state.fileListRef}
+            onSelect={state.selectFile}
           />
           <div style={s.paneRuleH} />
           <div style={s.previewPane}>
             <ChangesPreview
               path={file?.path ?? ""}
               status={file?.status ?? ""}
-              patch={patch}
+              patch={state.patch}
               image={image}
-              diffRef={diffRef}
+              diffRef={state.diffRef}
             />
           </div>
         </>

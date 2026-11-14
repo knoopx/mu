@@ -8,7 +8,12 @@
  */
 
 import { humanDated, humanPerson } from "../format";
-import { cells, fact, factsShown, fieldNamed } from "./contract";
+import {
+  changesetColumns,
+  fact,
+  factsShown,
+  fieldNamed,
+} from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const commitWords: GithubKindWords = {
@@ -17,13 +22,7 @@ export const commitWords: GithubKindWords = {
   running: "reading the commit",
   emptyShort: "no files changed",
   emptyNote: () => "no files changed",
-  columns: (_call, row) =>
-    cells(row, [
-      ["file", row.name],
-      ["status", row.state],
-      ["changes", row.figure],
-      ["was", row.detail],
-    ]),
+  columns: changesetColumns,
   title: (call) => fieldNamed(call, "description"),
   identity: (call) => ({
     title: fieldNamed(call, "description"),

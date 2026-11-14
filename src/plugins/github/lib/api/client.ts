@@ -112,6 +112,13 @@ const messageOf = (json: unknown): string => {
   return typeof message === "string" ? message : "";
 };
 
+/** A spent rate limit, told apart by whose limit it was. */
+function rateNote(rate: GithubRate): string {
+  return hasToken()
+    ? `GitHub's rate limit for this account is spent (0 of ${String(rate.limit)} reads left, mu's cache is the only fast read for a day)`
+    : `GitHub's rate limit for unauthenticated reads is spent — ${TOKEN_HINT}`;
+}
+
 /** What a refusal means, in the words a reader can act on. */
 function failureNote(
   code: number,
@@ -126,16 +133,15 @@ function failureNote(
     return `not found: ${scope} — no such repository, ref, path, number or tag`;
   if (code === 401)
     return `GitHub refused the token in the environment: ${message === "" ? "it is not accepted" : message}`;
-  if (code === 403 && rate.remaining <= 0)
-    return hasToken()
-      ? `GitHub's rate limit for this account is spent (0 of ${String(rate.limit)} reads left, mu's cache is the only fast read for a day)`
-      : `GitHub's rate limit for unauthenticated reads is spent — ${TOKEN_HINT}`;
-  if (code === 403) return `GitHub refused the call: ${message}`;
+  // A 403 is either the rate limit spent or a call GitHub will not run at all,
+  // and only the counters say which.
+  if (code === 403)
+    return rate.remaining <= 0
+      ? rateNote(rate)
+      : `GitHub refused the call: ${message}`;
   if (code === 422) return `GitHub could not use the request: ${message}`;
   if (code === 451)
     return `the repository is unavailable for legal reasons where this request was made: ${scope}`;
-  if (code === 401 || code === 403)
-    return `GitHub refused the call: ${message}`;
   if (code >= 500)
     return `GitHub answered ${String(code)} for ${scope} — try again shortly`;
   return message === ""

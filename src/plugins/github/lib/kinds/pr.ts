@@ -9,7 +9,13 @@
  */
 
 import { humanBranch, humanDated, humanPerson, humanTally } from "../format";
-import { cells, fact, factsShown, fieldNamed, stateOf } from "./contract";
+import {
+  changesetColumns,
+  fact,
+  factsShown,
+  fieldNamed,
+  stateOf,
+} from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const prWords: GithubKindWords = {
@@ -18,13 +24,7 @@ export const prWords: GithubKindWords = {
   running: "reading the pull request",
   emptyShort: "no pull request",
   emptyNote: () => "no pull request",
-  columns: (_call, row) =>
-    cells(row, [
-      ["file", row.name],
-      ["status", row.state],
-      ["changes", row.figure],
-      ["was", row.detail],
-    ]),
+  columns: changesetColumns,
   title: (call) => fieldNamed(call, "title"),
   identity: (call) => ({
     title: fieldNamed(call, "title"),

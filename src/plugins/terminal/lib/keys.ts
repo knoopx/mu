@@ -117,10 +117,77 @@ const CONTROL_CODES: Record<string, string> = {
 
 const CONTROL_CHAR = /[\u0000-\u001f\u007f]/;
 
+/** The three modifiers a terminal folds into what it is sent. */
+interface Mods {
+  shift: boolean;
+  alt: boolean;
+  ctrl: boolean;
+}
+
 /** xterm folds the modifiers into a cursor key as `CSI 1 ; n C`: shift is 2, and
  *  each of alt, ctrl and super adds its own weight to that number. */
-function modifierCode(shift: boolean, alt: boolean, ctrl: boolean): number {
-  return 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
+function modifierCode(mods: Mods): number {
+  return (
+    1 + (mods.shift ? 1 : 0) + (mods.alt ? 2 : 0) + (mods.ctrl ? 4 : 0)
+  );
+}
+
+/**
+ * A cursor key — an arrow, Home or End — in the order the program on the other
+ * end asked for.
+ *
+ * Unmodified it is the one letter, in the SS3 spelling while the program wants
+ * application mode. Modified, both spellings fold to the same letter, and the
+ * modifiers ride in the CSI's parameters instead.
+ */
+function cursorSequence(
+  pair: { normal: string; app: string },
+  mods: Mods,
+  modes: ScreenModes,
+): string {
+  if (mods.shift || mods.alt || mods.ctrl)
+    return `\x1b[1;${String(modifierCode(mods))}${pair.normal.slice(-1)}`;
+  return `\x1b${modes.appCursor ? pair.app : pair.normal}`;
+}
+
+/** The three keys a modifier changes the _meaning_ of rather than encoding. */
+function chordOf(raw: string, mods: Mods): string | undefined {
+  if (raw === "enter") return mods.ctrl ? "\x04" : "\r";
+  if (raw === "tab") return mods.shift ? "\x1b[Z" : "\t";
+  if (raw === "backspace")
+    return mods.ctrl ? "\x08" : mods.alt ? "\x1b\x7f" : "\x7f";
+  return undefined;
+}
+
+/** The cursor key a keystroke names: an arrow in any of its spellings, or Home/End. "" when it names no cursor key. */
+const cursorOf = (raw: string): string => {
+  const arrow = ARROW_SPELLINGS[raw];
+  if (arrow !== undefined) return arrow;
+  return CURSOR_KEYS[raw] === undefined ? "" : raw;
+};
+
+/** A key with a plain spelling of its own: `Ctrl` plus it is a control code where one has always meant that, and Alt is a prefix. */
+function namedSequence(
+  raw: string,
+  named: string,
+  keys: Mods,
+): string {
+  const control = keys.ctrl ? controlOf(raw) : undefined;
+  if (control !== undefined) return control;
+  return keys.alt ? `\x1b${named}` : named;
+}
+
+/** What the keyboard produced, with Alt folded in as the escape the shell reads. */
+function textSequence(
+  produced: string,
+  raw: string,
+  mods: Mods,
+): string | undefined {
+  const prefix = mods.alt ? "\x1b" : "";
+  if (produced.length > 0 && !CONTROL_CHAR.test(produced))
+    return `${prefix}${produced}`;
+  if (raw.length === 1) return `${prefix}${raw}`;
+  return undefined;
 }
 
 function controlOf(key: string): string | undefined {
@@ -149,57 +216,36 @@ export function encodeKey(
   if (raw === "" || MODIFIER_KEYS.has(raw)) return undefined;
 
   const mods = event.modifiers;
-  const shift = mods?.shift === true;
-  const ctrl = mods?.ctrl === true;
-  const alt = mods?.alt === true;
-  const cmd = mods?.cmd === true;
   // A Super chord means the window manager asked for something; a terminal does
   // not take those, and sending the bare key would fire a chord nobody pressed.
-  if (cmd === true) return undefined;
+  if (mods?.cmd === true) return undefined;
 
-  const arrow = ARROW_SPELLINGS[raw];
-  if (arrow !== undefined) {
-    const pair = CURSOR_KEYS[arrow] as { normal: string; app: string };
-    const base = modes.appCursor ? pair.app : pair.normal;
-    if (shift || alt || ctrl)
-      return `\x1b[1;${modifierCode(shift, alt, ctrl)}${base.slice(-1)}`;
-    return `\x1b${base}`;
-  }
+  const keys: Mods = {
+    shift: mods?.shift === true,
+    alt: mods?.alt === true,
+    ctrl: mods?.ctrl === true,
+  };
 
-  if (raw === "enter") return ctrl ? "\x04" : "\r";
-  if (raw === "tab") return shift ? "\x1b[Z" : ctrl ? "\t" : "\t";
-  if (raw === "backspace") return ctrl ? "\x08" : alt ? "\x1b\x7f" : "\x7f";
+  // Home and End are cursor keys that also have a plain spelling of their own,
+  // so they take the cursor half's answer rather than the NAMES table's.
+  const cursor = cursorOf(raw);
+  if (cursor !== "") return cursorSequence(CURSOR_KEYS[cursor], keys, modes);
+
+  const chord = chordOf(raw, keys);
+  if (chord !== undefined) return chord;
 
   const functionKey = FUNCTION_KEYS[raw];
   if (functionKey !== undefined) return functionKey;
 
   const named = NAMES[raw];
-  if (named !== undefined) {
-    if (raw === "home" || raw === "end") {
-      const pair = CURSOR_KEYS[raw] as { normal: string; app: string };
-      if (shift || alt || ctrl)
-        return `\x1b[1;${modifierCode(shift, alt, ctrl)}${pair.normal.slice(-1)}`;
-      return `\x1b${modes.appCursor ? pair.app : pair.normal}`;
-    }
-    if (ctrl) {
-      const control = controlOf(raw);
-      if (control !== undefined) return control;
-    }
-    return alt ? `\x1b${named}` : named;
-  }
+  if (named !== undefined) return namedSequence(raw, named, keys);
 
-  if (ctrl) {
-    const control = controlOf(raw);
-    if (control !== undefined) return control;
-    const fromChar = (event.keyChar ?? "").charAt(0);
-    return fromChar === "" ? undefined : controlOf(fromChar);
-  }
+  // A chord on a key mu has no name for: the control code of its name, and
+  // failing that the control code of the character the keyboard produced.
+  if (keys.ctrl)
+    return controlOf(raw) ?? controlOf((event.keyChar ?? "").charAt(0));
 
-  const produced = event.keyChar ?? "";
-  if (produced.length > 0 && !CONTROL_CHAR.test(produced))
-    return alt ? `\x1b${produced}` : produced;
-  if (raw.length === 1) return alt ? `\x1b${raw}` : raw;
-  return undefined;
+  return textSequence(event.keyChar ?? "", raw, keys);
 }
 
 /**

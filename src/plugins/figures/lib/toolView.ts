@@ -24,7 +24,9 @@ import type {
   ChartFigure,
   FigureStatus,
   PlotBadValue,
+  PlotMeasure,
   PlotPoint,
+  PlotTone,
   StructureNode,
   StructureStatus,
   TreeBadNode,
@@ -67,39 +69,60 @@ const EMPTY: ChartFigure = {
   error: "",
 };
 
+/** The statuses a plot answer can carry; anything else is not a plot. */
+const FIGURE_STATUSES: readonly string[] = ["ok", "empty", "invalid"];
+
+/** A number the call may have left out — where the figure holds null, not 0. */
+const optionalNumber = (value: unknown): number | null =>
+  typeof value === "number" ? value : null;
+
+/** The colour word the call may have left out. */
+const optionalTone = (value: unknown): PlotTone | null =>
+  typeof value === "string" ? (value as PlotTone) : null;
+
+/** The series names, dropping what a JSON answer turned into something else. */
+const namesOf = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((name): name is string => typeof name === "string")
+    : [];
+
+/** The axis a plot was measured across — the figures the answer reads back. */
+function measureOf(value: unknown): PlotMeasure | null {
+  if (typeof value !== "object" || value === null) return null;
+  const record = value as Record<string, unknown>;
+  return {
+    min: detailNumber(record["min"]),
+    max: detailNumber(record["max"]),
+    total: detailNumber(record["total"]),
+    mean: detailNumber(record["mean"]),
+    peak: detailText(record["peak"]),
+    peakValue: detailNumber(record["peakValue"]),
+    first: detailText(record["first"]),
+    last: detailText(record["last"]),
+  };
+}
+
 function figureOf(value: unknown): ChartFigure | null {
   if (typeof value !== "object" || value === null) return null;
   const record = value as Record<string, unknown>;
   const status = detailText(record["status"]);
-  if (status !== "ok" && status !== "empty" && status !== "invalid")
-    return null;
-
-  const kind = detailText(record["kind"]);
-  const measure = record["measure"];
+  if (!FIGURE_STATUSES.includes(status)) return null;
 
   return {
     status: status as FigureStatus,
-    kind: kind === "line" ? "line" : "bar",
-    tone:
-      typeof record["tone"] === "string"
-        ? (record["tone"] as ChartFigure["tone"])
-        : null,
+    kind: detailText(record["kind"]) === "line" ? "line" : "bar",
+    tone: optionalTone(record["tone"]),
     height: detailNumber(record["height"]),
     width: detailNumber(record["width"]),
     grid: detailFlag(record["grid"], false),
     markers: detailFlag(record["markers"], true),
     fill: detailFlag(record["fill"], false),
     labels: detailFlag(record["labels"], true),
-    dash: typeof record["dash"] === "number" ? record["dash"] : null,
-    emphasis:
-      typeof record["emphasis"] === "number" ? record["emphasis"] : null,
+    dash: optionalNumber(record["dash"]),
+    emphasis: optionalNumber(record["emphasis"]),
     unit: detailText(record["unit"]),
     caption: detailText(record["caption"]),
-    series: Array.isArray(record["series"])
-      ? record["series"].filter(
-          (name): name is string => typeof name === "string",
-        )
-      : [],
+    series: namesOf(record["series"]),
     points: Array.isArray(record["points"])
       ? record["points"]
           .map(pointOf)
@@ -107,21 +130,7 @@ function figureOf(value: unknown): ChartFigure | null {
       : [],
     plotted: detailNumber(record["plotted"]),
     omitted: detailNumber(record["omitted"]),
-    measure:
-      typeof measure === "object" && measure !== null
-        ? {
-            min: detailNumber((measure as Record<string, unknown>)["min"]),
-            max: detailNumber((measure as Record<string, unknown>)["max"]),
-            total: detailNumber((measure as Record<string, unknown>)["total"]),
-            mean: detailNumber((measure as Record<string, unknown>)["mean"]),
-            peak: detailText((measure as Record<string, unknown>)["peak"]),
-            peakValue: detailNumber(
-              (measure as Record<string, unknown>)["peakValue"],
-            ),
-            first: detailText((measure as Record<string, unknown>)["first"]),
-            last: detailText((measure as Record<string, unknown>)["last"]),
-          }
-        : null,
+    measure: measureOf(record["measure"]),
     bad: Array.isArray(record["bad"]) ? record["bad"].map(badOf) : [],
     error: detailText(record["error"]),
   };
