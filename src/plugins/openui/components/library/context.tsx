@@ -17,8 +17,10 @@ import { markReactive, type ElementNode } from "@openuidev/lang-core";
 import { z } from "zod/v4";
 
 import type { OpenUIEventRecord } from "../../types";
+import { HAIRLINE } from "../../../core/lib/ui/tokens";
 import { mutedText } from "../../../core/lib/ui/theme";
 import { innerGap, programEmphasisWeight } from "../../lib/tokens";
+import { programRule } from "../../lib/theme";
 
 /** Mark a prop reactive: the parser then lets a `$variable` bind to it. */
 export function reactive<T extends z.ZodType>(schema: T): T {
@@ -154,6 +156,98 @@ export function programRowStyle(t: AdwaitaTheme): StyleDesc {
     alignItems: "center",
     minWidth: 0,
     gap: innerGap(t),
+  };
+}
+
+/**
+ * The panel a program's code stands in: the sunken surface, its head line and
+ * its lines flush against each other.
+ *
+ * `Code` is this, a `Snippet`'s file is this, and a `Walkthrough` step's code is
+ * this. Each used to spell the box out again in its own drawer, which is how one
+ * panel grows three slightly different paddings.
+ */
+function programCodePanelStyle(t: AdwaitaTheme): StyleDesc {
+  return {
+    ...programColumnStyle(t),
+    gap: 0,
+    padding: innerGap(t),
+    borderRadius: t.radius.sm,
+    backgroundColor: t.color.surface.sunken,
+  };
+}
+
+/** One panel of code, with the quiet line that names it above. */
+export function ProgramCodePanel(props: {
+  ctx: ProgramContext;
+
+  /** A language, a path, a step. "" draws no head line. */
+  head?: string;
+
+  /** A path is mono, so it lines up with the code under it. */
+  headMono?: boolean;
+  children: JSX.Element | JSX.Element[];
+}): JSX.Element {
+  const { ctx } = props;
+  const head = props.head ?? "";
+  return (
+    <div style={programCodePanelStyle(ctx.t)}>
+      {head === "" ? null : (
+        <T
+          size="caption"
+          color={mutedText(ctx.t)}
+          clamp={1}
+          style={{
+            minWidth: 0,
+            fontFamily: props.headMono ? ctx.t.type.fontFamilyMono : undefined,
+          }}
+        >
+          {head}
+        </T>
+      )}
+      {props.children}
+    </div>
+  );
+}
+
+/** A block of a program's own code: the mono family at caption size. */
+export function ProgramCodeText(props: {
+  ctx: ProgramContext;
+  text: string;
+  clamp?: number;
+}): JSX.Element {
+  return (
+    <T
+      size="caption"
+      color={props.ctx.t.color.text.primary}
+      clamp={props.clamp ?? 20}
+      style={{
+        fontFamily: props.ctx.t.type.fontFamilyMono,
+        flexShrink: 1,
+        minWidth: 0,
+      }}
+    >
+      {props.text}
+    </T>
+  );
+}
+
+/**
+ * One row of a list that rules itself from the row above it.
+ *
+ * The first row of a run wears no rule and no air above it, so the list starts
+ * flush with whatever stands over it; every row after wears `programRule` on its
+ * top edge. A `List`'s items are this, and a `Status`'s rows are this.
+ */
+export function programRuledRowStyle(
+  t: AdwaitaTheme,
+  index: number,
+): StyleDesc {
+  return {
+    ...programColumnStyle(t),
+    paddingTop: index === 0 ? 0 : innerGap(t),
+    borderTopWidth: index === 0 ? 0 : HAIRLINE,
+    borderColor: programRule(t),
   };
 }
 

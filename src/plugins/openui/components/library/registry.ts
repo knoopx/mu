@@ -24,7 +24,16 @@
 import type { OpenUIGroupInfo } from "../../types";
 import { legacyDefinitions as retiredDefinitions } from "./aliases";
 import type { ProgramDrawer } from "./context";
-import { Bar, Chart, Diff, Gauge, Progress, Snippet, Sparkline, Table } from "./data";
+import {
+  Bar,
+  Chart,
+  Diff,
+  Gauge,
+  Progress,
+  Snippet,
+  Sparkline,
+  Table,
+} from "./data";
 import {
   Carousel,
   Card,
@@ -77,6 +86,7 @@ import {
   Image,
   KeyValue,
   List,
+  Metric,
   Sources,
   Text,
   Title,
@@ -111,6 +121,7 @@ export const programDefinitions = [
   Sources,
   List,
   Entity,
+  Metric,
   Table,
   Chart,
   Sparkline,
@@ -165,7 +176,7 @@ export const programDefinitions = [
  * offer them. `openui-library` prints them only when a program's own diagnostic
  * names one.
  */
-export const legacyDefinitions = retiredDefinitions;
+const legacyDefinitions = retiredDefinitions;
 
 /** Everything the parser accepts: what is taught, and what is only still drawn. */
 export const allProgramDefinitions = [
@@ -236,6 +247,7 @@ export const programGroups: OpenUIGroupInfo[] = [
       "Sources",
       "List",
       "Entity",
+      "Metric",
     ],
     notes: [],
   },

@@ -95,7 +95,7 @@ function treeNodeOf(row: unknown): FileTreeNode {
   };
 }
 
-export function drawTree(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTree(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
   const expanded = listProp(node.props, "expanded").map((path) => String(path));
 
@@ -141,10 +141,7 @@ function timelineStatus(value: unknown): TimelineStatus {
   return programStatusToTimeline(status);
 }
 
-export function drawTimeline(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawTimeline(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
   const rows: TimelineItem[] = items.map((row, index) => ({
     at: textCell(row, TIMELINE_NAMES, 0) ?? String(index + 1),
@@ -188,7 +185,7 @@ export const Trace = defineComponent({
   component: drawTrace,
 });
 
-export function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const rows = listProp(node.props, "spans");
   const spans: TraceSpan[] = rows.map((row) => ({
     label: textCell(row, SPAN_NAMES, 0) ?? "",
@@ -221,6 +218,24 @@ export function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
 
 const DAY_LABELS = ["", "Tue", "", "Thu", "", "Sat", ""];
 
+/**
+ * The two naming slots a heat map takes, shared with mu's retired `Heatmap`,
+ * which named its values `values` where the reference names them `days`.
+ */
+export const heatLabelProps = {
+  /** Which of the seven day rows is named. Leave it out for Tue, Thu, Sat. */
+  dayLabels: z
+    .array(z.union([z.string(), z.number()]))
+    .nullable()
+    .optional(),
+
+  /** Month names spread across the columns, oldest first. */
+  months: z
+    .array(z.union([z.string(), z.number()]))
+    .nullable()
+    .optional(),
+};
+
 export const CalendarHeatmap = defineComponent({
   name: "CalendarHeatmap",
   description:
@@ -229,18 +244,7 @@ export const CalendarHeatmap = defineComponent({
     days: z.any(),
     label: z.union([z.string(), z.number()]).nullable().optional(),
     tone: z.string().nullable().optional(),
-
-    /** Which of the seven day rows is named. Leave it out for Tue, Thu, Sat. */
-    dayLabels: z
-      .array(z.union([z.string(), z.number()]))
-      .nullable()
-      .optional(),
-
-    /** Month names spread across the columns, oldest first. */
-    months: z
-      .array(z.union([z.string(), z.number()]))
-      .nullable()
-      .optional(),
+    ...heatLabelProps,
   }),
   component: drawHeatmap,
 });
@@ -303,22 +307,6 @@ function heatDaysOf(value: unknown): unknown[] {
     );
   return [];
 }
-
-/**
- * The heat of a run of days.
- *
- * `CalendarHeatmap` is the reference's name for this figure and `Heatmap` mu's
- * own older one; the reference names its days (`{yyyy-mm-dd: count}`) where mu's
- * programs wrote a bare run. One drawing, both spellings of the days.
- */
-export function drawCalendarHeatmap(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
-  const days = heatDaysOf(node.props.days ?? node.props.values);
-  return drawHeatmap({ ...node, props: { ...node.props, values: days } }, ctx);
-}
-
 export function drawHeatmap(
   node: ElementNode,
   ctx: ProgramContext,
@@ -360,10 +348,7 @@ export const SegmentedBar = defineComponent({
 
 /** The same bar under the reference's names: `parts` are its segments, and a
  *  bare bar with no total is what a program usually means. */
-export function drawSegmentedBar(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSegmentedBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const parts = listProp(node.props, "parts", listProp(node.props, "segments"));
   // A bar of parts names each one, so the parts are also its legend: a program
   // writes `SegmentedBar([{label, value}], "findings")` and the names appear

@@ -11,33 +11,30 @@
  * `openui-library` read. A program written a month ago therefore still paints,
  * and a program written today is taught the reference's name.
  *
- * Each of these is one line of definition over an existing drawer: there is no
- * second implementation to keep in step.
+ * Each of these is one definition over an existing drawer, and where the retired
+ * name took the same slots it reuses that definition's own props: there is no
+ * second implementation to keep in step. Where the slots differ — `Stat`'s
+ * `delta` under the figure, `Heatmap`'s `values` — the retired order is spelled
+ * out again, because that is the whole point of keeping the name.
  */
 
 import { defineComponent } from "@openuidev/lang-core";
 import { z } from "zod/v4";
 
-import { drawCard } from "./layout";
-import { drawStat } from "./data";
-import { drawCallout } from "./content";
+import { cardProps, drawCard } from "./layout";
+import { drawCallout, drawMetric } from "./content";
 import { drawInput } from "./inputs";
-import { drawBreakdown, drawHeatmap } from "./figures";
+import { drawBreakdown, drawHeatmap, heatLabelProps } from "./figures";
 import { reactive } from "./context";
 
-const RETIRED = "retired name: still drawn for programs that wrote it, never taught";
+const RETIRED =
+  "retired name: still drawn for programs that wrote it, never taught";
 
 export const legacyDefinitions = [
   defineComponent({
     name: "Pane",
     description: `${RETIRED} — write Card`,
-    props: z.object({
-      title: z.string(),
-      children: z.array(z.any()),
-      surface: z.enum(["card", "sunken", "plain"]).nullable().optional(),
-      tone: z.string().nullable().optional(),
-      trailing: z.array(z.any()).nullable().optional(),
-    }),
+    props: cardProps,
     component: drawCard,
   }),
 
@@ -51,7 +48,7 @@ export const legacyDefinitions = [
       tone: z.string().nullable().optional(),
       size: z.enum(["sm", "md", "lg", "xl"]).nullable().optional(),
     }),
-    component: drawStat,
+    component: drawMetric,
   }),
 
   defineComponent({
@@ -78,17 +75,7 @@ export const legacyDefinitions = [
   defineComponent({
     name: "Heatmap",
     description: `${RETIRED} — write CalendarHeatmap`,
-    props: z.object({
-      values: z.array(z.any()),
-      dayLabels: z
-        .array(z.union([z.string(), z.number()]))
-        .nullable()
-        .optional(),
-      months: z
-        .array(z.union([z.string(), z.number()]))
-        .nullable()
-        .optional(),
-    }),
+    props: z.object({ values: z.array(z.any()), ...heatLabelProps }),
     component: drawHeatmap,
   }),
 

@@ -9,14 +9,14 @@
  * is also why an https image says so instead of drawing a broken tile.
  */
 
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 
 import { imageFormatOfExtension, isRasterFormatName } from "adwaita-gpuix";
 
-import { projectFile } from "../../../core/lib/files/projectPath";
+import { gateProjectFile, unreadError } from "./gate";
 
 /** The largest picture a program may draw. */
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 /** What one image name answered. */
 export type ProgramImage =
@@ -39,7 +39,7 @@ const cache = new Map<string, { mtimeMs: number; src: string }>();
 const MAX_CACHED = 12;
 
 /** Is this name a picture at all, rather than a file that happens to exist? */
-export const isProgramImage = (name: string): boolean => isRasterFormatName(name);
+const isProgramImage = (name: string): boolean => isRasterFormatName(name);
 
 /** Read one image name into the string an `img` paints. */
 export function programImage(cwd: string, name: string): ProgramImage {
@@ -48,41 +48,36 @@ export function programImage(cwd: string, name: string): ProgramImage {
   if (/^https?:\/\//i.test(wanted))
     return {
       ok: false,
-      error: "a web image is not fetched here: save it in this folder and name the file",
+      error:
+        "a web image is not fetched here: save it in this folder and name the file",
     };
   if (!isProgramImage(wanted))
     return { ok: false, error: `${wanted} is not a picture` };
 
-  const target = projectFile(cwd, wanted);
-  if (!target.ok) return { ok: false, error: target.error };
-
-  let stats: ReturnType<typeof statSync>;
-  try {
-    stats = statSync(target.target);
-  } catch {
-    return { ok: false, error: `${target.name} is already gone` };
-  }
-  if (stats.size > MAX_IMAGE_BYTES)
+  const gate = gateProjectFile(cwd, wanted, MAX_IMAGE_BYTES);
+  if (!gate.ok)
     return {
       ok: false,
-      error: `${target.name} is ${String(Math.round(stats.size / 1024 / 1024))} MB — over what a program draws`,
+      error:
+        gate.reason === "too-big"
+          ? `${wanted} is ${String(Math.round(gate.size / 1024 / 1024))} MB — over what a program draws`
+          : gate.error,
     };
 
-  const held = cache.get(target.target);
-  if (held !== undefined && held.mtimeMs === stats.mtimeMs)
-    return { ok: true, src: held.src, path: target.name };
+  const held = cache.get(gate.target);
+  if (held !== undefined && held.mtimeMs === gate.mtimeMs)
+    return { ok: true, src: held.src, path: gate.name };
 
   try {
-    const mime = MIME_OF[imageFormatOfExtension(target.name)] ?? "image/png";
-    const src = `data:${mime};base64,${readFileSync(target.target).toString("base64")}`;
+    const mime = MIME_OF[imageFormatOfExtension(gate.name)] ?? "image/png";
+    const src = `data:${mime};base64,${readFileSync(gate.target).toString("base64")}`;
     if (cache.size >= MAX_CACHED) {
       const oldest = cache.keys().next();
       if (!oldest.done) cache.delete(oldest.value);
     }
-    cache.set(target.target, { mtimeMs: stats.mtimeMs, src });
-    return { ok: true, src, path: target.name };
+    cache.set(gate.target, { mtimeMs: gate.mtimeMs, src });
+    return { ok: true, src, path: gate.name };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `${target.name} could not be read: ${reason}` };
+    return { ok: false, error: unreadError(gate.name, error) };
   }
 }

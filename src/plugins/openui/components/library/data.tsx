@@ -44,12 +44,7 @@ import {
   seriesLegend,
   seriesNamesOf,
 } from "../../../figures/lib/plot";
-import {
-  innerGap,
-  programTextRole,
-  programTitleWeight,
-  type ProgramTextSize,
-} from "../../lib/tokens";
+import { innerGap } from "../../lib/tokens";
 import {
   programProgressTone,
   programTextColor,
@@ -59,6 +54,7 @@ import {
 import { readFileLines } from "../../lib/data/load";
 import type { ProgramContext } from "./context";
 import {
+  ProgramCodePanel,
   ProgramFigureRow,
   ProgramSourceNote,
   listProp,
@@ -157,7 +153,7 @@ export const Chart = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const columns = listProp(node.props, "columns").map(cellText);
   const rows = listProp(node.props, "rows");
   const width = Math.max(columns.length, 1);
@@ -239,7 +235,7 @@ export function drawTable(node: ElementNode, ctx: ProgramContext): JSX.Element {
  * of an object row would miss. So a row is read by its column name when it is an
  * object, and by its place when it is a list.
  */
-export function rowCellsOf(row: unknown, columns: readonly string[]): unknown[] {
+function rowCellsOf(row: unknown, columns: readonly string[]): unknown[] {
   if (Array.isArray(row)) return row;
   if (typeof row === "object" && row !== null) {
     const record = row as Record<string, unknown>;
@@ -253,50 +249,6 @@ export function rowCellsOf(row: unknown, columns: readonly string[]): unknown[] 
     });
   }
   return [row];
-}
-
-export function drawStat(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const tone = prop<ProgramTone | null>(node.props, "tone", null);
-  const delta = textOf(node.props.delta);
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        minWidth: 0,
-        gap: innerGap(ctx.t),
-      }}
-    >
-      <T
-        size="caption"
-        color={mutedText(ctx.t)}
-        clamp={2}
-        style={{ minWidth: 0 }}
-      >
-        {textProp(node.props, "label")}
-      </T>
-      <T
-        size={programTextRole(prop<ProgramTextSize>(node.props, "size", "lg"))}
-        weight={programTitleWeight(ctx.t)}
-        color={programTextColor(ctx.t, tone)}
-        clamp={1}
-        style={{ minWidth: 0 }}
-      >
-        {textProp(node.props, "value")}
-      </T>
-      {delta === null ? null : (
-        <T
-          size="caption"
-          color={programTextColor(ctx.t, tone === null ? "muted" : tone)}
-          clamp={2}
-          style={{ minWidth: 0 }}
-        >
-          {delta}
-        </T>
-      )}
-    </div>
-  );
 }
 
 /**
@@ -321,10 +273,12 @@ function chartPointsOf(node: ElementNode): unknown[] {
   const lines: { name: string; values: number[] }[] = Array.isArray(spec)
     ? [{ name: "", values: linesOf(spec) }]
     : spec !== null && typeof spec === "object"
-      ? Object.entries(spec as Record<string, unknown>).map(([name, values]) => ({
-          name,
-          values: linesOf(values),
-        }))
+      ? Object.entries(spec as Record<string, unknown>).map(
+          ([name, values]) => ({
+            name,
+            values: linesOf(values),
+          }),
+        )
       : [];
 
   const height = Math.max(
@@ -350,8 +304,11 @@ function chartSeriesNamesOf(node: ElementNode): string[] {
   return [];
 }
 
-export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const word = textProp(node.props, "type") === "" ? textProp(node.props, "kind") : textProp(node.props, "type");
+function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
+  const word =
+    textProp(node.props, "type") === ""
+      ? textProp(node.props, "kind")
+      : textProp(node.props, "type");
   const kind = plotKindOf(word);
   const read = coercePlot(chartPointsOf(node));
   const capped = capPlot(read.points, MAX_POINTS);
@@ -361,12 +318,13 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const area = word.trim().toLowerCase() === "area";
   const unit = textProp(node.props, "unit");
   const source = sourceProp(node.props);
-  const note = source === "" ? unit : unit === "" ? source : `${unit} · ${source}`;
+  const note =
+    source === "" ? unit : unit === "" ? source : `${unit} · ${source}`;
 
-  const series = seriesNamesOf(
-    chartSeriesNamesOf(node),
-    { ...read, points: capped.points },
-  );
+  const series = seriesNamesOf(chartSeriesNamesOf(node), {
+    ...read,
+    points: capped.points,
+  });
 
   return (
     <div style={programColumnStyle(ctx.t)}>
@@ -387,7 +345,7 @@ export function drawChart(node: ElementNode, ctx: ProgramContext): JSX.Element {
               )
             : false
         }
-        fill={line ? (area || prop(node.props, "fill", false)) : false}
+        fill={line ? area || prop(node.props, "fill", false) : false}
         labels={
           typeof node.props.labels === "boolean"
             ? node.props.labels
@@ -438,7 +396,7 @@ function MeterBody(props: {
   );
 }
 
-export function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawBar(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const value = prop(node.props, "value", 0);
   const max = prop<number | null>(node.props, "max", null);
   const tone = toneOfValue(node.props.tone);
@@ -541,7 +499,8 @@ export const Snippet = defineComponent({
 /** One file's change, as the patch says it. */
 export const Diff = defineComponent({
   name: "Diff",
-  description: "a unified diff of one file, drawn the way the app's own change previews draw it",
+  description:
+    "a unified diff of one file, drawn the way the app's own change previews draw it",
   props: z.object({
     patch: z.string(),
   }),
@@ -561,20 +520,17 @@ export const Sparkline = defineComponent({
   component: drawSparkline,
 });
 
-export function drawProgress(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawProgress(node: ElementNode, ctx: ProgramContext): JSX.Element {
   // A mu program wrote `Progress("Tests", 3, 10)` — the label first. The
   // reference puts the figure first; a string in that slot is the older order.
   const legacy = typeof node.props.value === "string";
-  const value = legacy
-    ? numberOf(node.props.max)
-    : numberOf(node.props.value);
+  const value = legacy ? numberOf(node.props.max) : numberOf(node.props.value);
   const max = legacy
     ? numberOf(node.props.label, 100)
     : numberOf(node.props.max, 100);
-  const label = legacy ? textProp(node.props, "value") : textProp(node.props, "label");
+  const label = legacy
+    ? textProp(node.props, "value")
+    : textProp(node.props, "label");
   const tone = toneOfValue(node.props.tone);
   const caption = textOf(node.props.caption);
   const percent = max <= 0 ? 0 : Math.round((value / max) * 100);
@@ -592,7 +548,7 @@ export function drawProgress(
   );
 }
 
-export function drawGauge(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawGauge(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const min = numberOf(node.props.min, 0);
   const max = numberOf(node.props.max, 100);
   const value = numberOf(node.props.value);
@@ -626,10 +582,7 @@ export function drawGauge(node: ElementNode, ctx: ProgramContext): JSX.Element {
 /** How many lines of a file a `Snippet` will print, however wide the program asked for. */
 const SNIPPET_MAX_LINES = 80;
 
-export function drawSnippet(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSnippet(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const path = textProp(node.props, "path");
   const from = Math.max(1, numberOf(node.props.from, 1));
   const asked = numberOf(node.props.to, from + SNIPPET_MAX_LINES - 1);
@@ -651,27 +604,19 @@ export function drawSnippet(
   const gutter = String(read.last).length;
 
   return (
-    <div
-      style={{
-        ...programColumnStyle(ctx.t),
-        gap: 0,
-        padding: innerGap(ctx.t),
-        borderRadius: ctx.t.radius.sm,
-        backgroundColor: ctx.t.color.surface.sunken,
-      }}
+    <ProgramCodePanel
+      ctx={ctx}
+      head={`${path}${read.total > read.last ? ` · ${String(read.total)} lines` : ""}`}
+      headMono
     >
-      <T
-        size="caption"
-        color={mutedText(ctx.t)}
-        clamp={1}
-        style={{ minWidth: 0, fontFamily: ctx.t.type.fontFamilyMono }}
-      >
-        {`${path}${read.total > read.last ? ` · ${String(read.total)} lines` : ""}`}
-      </T>
       {read.lines.map((line, index) => (
         <div
           key={`s-${String(read.first + index)}`}
-          style={{ ...programRowStyle(ctx.t), gap: innerGap(ctx.t), alignItems: "start" }}
+          style={{
+            ...programRowStyle(ctx.t),
+            gap: innerGap(ctx.t),
+            alignItems: "start",
+          }}
         >
           <T
             size="caption"
@@ -702,11 +647,11 @@ export function drawSnippet(
           </T>
         </div>
       ))}
-    </div>
+    </ProgramCodePanel>
   );
 }
 
-export function drawDiff(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawDiff(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <DiffText
       patch={textProp(node.props, "patch")}
@@ -716,10 +661,7 @@ export function drawDiff(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawSparkline(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSparkline(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const values = listProp(node.props, "values")
     .map((entry) => Number(entry))
     .filter((entry) => Number.isFinite(entry));

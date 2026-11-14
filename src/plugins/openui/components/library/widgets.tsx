@@ -23,23 +23,23 @@ import { z } from "zod/v4";
 
 import { HAIRLINE, INLINE_GLYPH } from "../../../core/lib/ui/tokens";
 import { mutedText } from "../../../core/lib/ui/theme";
-import { innerGap, programEmphasisWeight, programTitleWeight } from "../../lib/tokens";
+import {
+  innerGap,
+  programEmphasisWeight,
+  programTitleWeight,
+} from "../../lib/tokens";
 import { programProgressTone, programTextColor } from "../../lib/theme";
 import type { ProgramContext } from "./context";
 import {
+  ProgramCodePanel,
+  ProgramCodeText,
   listProp,
   programColumnStyle,
   programRowStyle,
   prop,
   textProp,
 } from "./context";
-import {
-  cellOf,
-  cellText,
-  listCell,
-  numberOf,
-  textCell,
-} from "./rows";
+import { cellOf, cellText, listCell, numberOf, textCell } from "./rows";
 
 /* ------------------------------------------------------------------ timer */
 
@@ -153,7 +153,7 @@ function TimerBlock(props: {
   );
 }
 
-export function drawTimer(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTimer(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const seconds = prop<number | null>(node.props, "seconds", null);
   return (
     <TimerBlock
@@ -288,7 +288,7 @@ function QuizBlock(props: {
   );
 }
 
-export function drawQuiz(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawQuiz(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <QuizBlock
       ctx={ctx}
@@ -322,7 +322,12 @@ function FlashcardsBlock(props: {
 
   if (card === undefined)
     return (
-      <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+      <T
+        size="caption"
+        color={mutedText(ctx.t)}
+        clamp={2}
+        style={{ minWidth: 0 }}
+      >
         {"no cards"}
       </T>
     );
@@ -386,10 +391,7 @@ function FlashcardsBlock(props: {
   );
 }
 
-export function drawFlashcards(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawFlashcards(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const cards = listProp(node.props, "cards").map((row) => ({
     front: textCell(row, CARD_NAMES, 0) ?? cellText(row),
     back: textCell(row, CARD_NAMES, 1) ?? "",
@@ -421,7 +423,12 @@ function WalkthroughBlock(props: {
 
   if (step === undefined)
     return (
-      <T size="caption" color={mutedText(ctx.t)} clamp={2} style={{ minWidth: 0 }}>
+      <T
+        size="caption"
+        color={mutedText(ctx.t)}
+        clamp={2}
+        style={{ minWidth: 0 }}
+      >
         {"no steps"}
       </T>
     );
@@ -450,35 +457,9 @@ function WalkthroughBlock(props: {
         )}
       </div>
       {step.code === "" ? null : (
-        <div
-          style={{
-            ...programColumnStyle(ctx.t),
-            gap: 0,
-            padding: innerGap(ctx.t),
-            borderRadius: ctx.t.radius.sm,
-            backgroundColor: ctx.t.color.surface.sunken,
-          }}
-        >
-          <T
-            size="caption"
-            color={mutedText(ctx.t)}
-            clamp={1}
-            style={{ minWidth: 0 }}
-          >
-            {step.language}
-          </T>
-          <T
-            size="caption"
-            color={ctx.t.color.text.primary}
-            clamp={20}
-            style={{
-              fontFamily: ctx.t.type.fontFamilyMono,
-              minWidth: 0,
-            }}
-          >
-            {step.code}
-          </T>
-        </div>
+        <ProgramCodePanel ctx={ctx} head={step.language}>
+          <ProgramCodeText ctx={ctx} text={step.code} />
+        </ProgramCodePanel>
       )}
       <div style={{ ...programRowStyle(ctx.t), gap: innerGap(ctx.t) }}>
         <AdwaitaButton
@@ -505,10 +486,7 @@ function WalkthroughBlock(props: {
   );
 }
 
-export function drawWalkthrough(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawWalkthrough(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const steps = listProp(node.props, "steps").map((row) => ({
     title: textCell(row, WALK_NAMES, 0) ?? cellText(row),
     body: textCell(row, WALK_NAMES, 1) ?? "",

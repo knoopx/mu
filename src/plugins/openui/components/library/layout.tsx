@@ -39,7 +39,6 @@ import {
   programTextColor,
   programToneGlyph,
   toneOfValue,
-  type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
 import {
@@ -98,19 +97,26 @@ export const Grid = defineComponent({
   component: drawGrid,
 });
 
+/**
+ * What a block of the screen takes — and what mu's retired `Pane` took, slot
+ * for slot, which is why `aliases.ts` reuses this rather than holding a second
+ * copy of the same six lines.
+ */
+export const cardProps = z.object({
+  title: z.string().nullable(),
+  children: z.array(z.any()),
+  surface: z.enum(["card", "sunken", "plain"]).nullable().optional(),
+  tone: z.string().nullable().optional(),
+
+  /** The count, the elapsed time, the state — the figure a block is read by. */
+  trailing: z.array(z.any()).nullable().optional(),
+});
+
 export const Card = defineComponent({
   name: "Card",
   description:
     "one block of the screen, framed by the app: its title, the blocks inside it, and the one fact that counts it on the title's right. Every block of a reply is wrapped in one",
-  props: z.object({
-    title: z.string().nullable(),
-    children: z.array(z.any()),
-    surface: z.enum(["card", "sunken", "plain"]).nullable().optional(),
-    tone: z.string().nullable().optional(),
-
-    /** The count, the elapsed time, the state — the figure a block is read by. */
-    trailing: z.array(z.any()).nullable().optional(),
-  }),
+  props: cardProps,
   component: drawCard,
 });
 
@@ -139,7 +145,8 @@ export const Details = defineComponent({
 /** A row of blocks the reader walks one at a time. */
 export const Carousel = defineComponent({
   name: "Carousel",
-  description: "a row of blocks the reader walks sideways, one or two at a time",
+  description:
+    "a row of blocks the reader walks sideways, one or two at a time",
   props: z.object({
     children: z.array(z.any()),
     visible: z.number().nullable().optional(),
@@ -163,10 +170,7 @@ export const Spacer = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawScreen(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawScreen(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <div
       style={{
@@ -182,7 +186,7 @@ export function drawScreen(
   );
 }
 
-export function drawStack(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawStack(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const gap = node.props.gap;
   return (
     <div
@@ -199,7 +203,7 @@ export function drawStack(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawRow(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawRow(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const gap = node.props.gap;
   return (
     <div
@@ -229,7 +233,7 @@ function inRows(items: readonly unknown[], columns: number): unknown[][] {
   return rows;
 }
 
-export function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "children");
   const rows = inRows(items, prop(node.props, "columns", 2));
   const gap = node.props.gap;
@@ -354,10 +358,7 @@ export function drawCard(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawDetails(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawDetails(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const bound = ctx.binding(node.props.open, false);
   const controlled = bound.name !== "";
 
@@ -389,10 +390,7 @@ export function drawDetails(
   );
 }
 
-export function drawCarousel(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawCarousel(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "children");
   const visible = Math.max(1, Math.floor(prop(node.props, "visible", 1)));
 
@@ -407,10 +405,7 @@ export function drawCarousel(
   );
 }
 
-export function drawDivider(
-  _node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawDivider(_node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <div
       style={{
@@ -423,10 +418,7 @@ export function drawDivider(
   );
 }
 
-export function drawSpacer(
-  _node: ElementNode,
-  _ctx: ProgramContext,
-): JSX.Element {
+function drawSpacer(_node: ElementNode, _ctx: ProgramContext): JSX.Element {
   return <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />;
 }
 
@@ -455,13 +447,19 @@ export const Tabs = defineComponent({
 /** The id of a tab by its place, which is what pairs a title with a block. */
 const tabId = (index: number): string => `t${String(index)}`;
 
-export function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
   // The reference names these `labels` and `children`; mu's programs wrote
   // `titles` and `blocks`, and both spellings still arrive.
-  const titles = listProp(node.props, "labels", listProp(node.props, "titles")).map(
-    (title) => String(title ?? ""),
+  const titles = listProp(
+    node.props,
+    "labels",
+    listProp(node.props, "titles"),
+  ).map((title) => String(title ?? ""));
+  const blocks = listProp(
+    node.props,
+    "children",
+    listProp(node.props, "blocks"),
   );
-  const blocks = listProp(node.props, "children", listProp(node.props, "blocks"));
   const items = titles.map((label, index) => ({ id: tabId(index), label }));
   const binding = ctx.binding(node.props.value, items[0]?.id ?? "");
   const current = binding.value === "" ? (items[0]?.id ?? "") : binding.value;

@@ -52,8 +52,8 @@ import type { ProgramContext } from "./context";
 import {
   listProp,
   programColumnStyle,
+  programRuledRowStyle,
   programRowStyle,
-  prop,
   textProp,
 } from "./context";
 import {
@@ -85,7 +85,9 @@ export const Board = defineComponent({
 
 /** The columns of a board: the ones the program named, or the ones its items name. */
 function boardColumnsOf(node: ElementNode, rows: readonly unknown[]): string[] {
-  const named = listProp(node.props, "columns").map(cellText).filter((name) => name !== "");
+  const named = listProp(node.props, "columns")
+    .map(cellText)
+    .filter((name) => name !== "");
   if (named.length > 0) return named;
   const found: string[] = [];
   for (const row of rows) {
@@ -95,7 +97,7 @@ function boardColumnsOf(node: ElementNode, rows: readonly unknown[]): string[] {
   return found;
 }
 
-export function drawBoard(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawBoard(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const rows = listProp(node.props, "items");
   const columns = boardColumnsOf(node, rows);
 
@@ -154,7 +156,9 @@ export function drawBoard(node: ElementNode, ctx: ProgramContext): JSX.Element {
                 {String(cards.length)}
               </T>
             </div>
-            <div style={{ ...programColumnStyle(ctx.t), padding: innerGap(ctx.t) }}>
+            <div
+              style={{ ...programColumnStyle(ctx.t), padding: innerGap(ctx.t) }}
+            >
               {cards.map((row, at) => (
                 <div key={`c-${String(at)}`} style={programColumnStyle(ctx.t)}>
                   <T
@@ -209,7 +213,14 @@ export function drawBoard(node: ElementNode, ctx: ProgramContext): JSX.Element {
 
 /* ---------------------------------------------------------------- roadmap */
 
-const ROADMAP_NAMES = ["title", "start", "end", "lane", "status", "milestone"] as const;
+const ROADMAP_NAMES = [
+  "title",
+  "start",
+  "end",
+  "lane",
+  "status",
+  "milestone",
+] as const;
 
 export const Roadmap = defineComponent({
   name: "Roadmap",
@@ -236,7 +247,7 @@ const dayWord = (days: number): string => {
   return `${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
 };
 
-export function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const rows = listProp(node.props, "items").map((row) => ({
     title: textCell(row, ROADMAP_NAMES, 0) ?? cellText(row),
     from: dayOf(cellOf(row, ROADMAP_NAMES, 1)),
@@ -251,7 +262,10 @@ export function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element
   const dated = rows.filter((row) => row.from !== null && row.to !== null);
   const first = Math.min(...dated.map((row) => row.from ?? Infinity), Infinity);
   const last = Math.max(...dated.map((row) => row.to ?? -Infinity), -Infinity);
-  const span = Number.isFinite(first) && Number.isFinite(last) ? Math.max(1, last - first + 1) : 0;
+  const span =
+    Number.isFinite(first) && Number.isFinite(last)
+      ? Math.max(1, last - first + 1)
+      : 0;
 
   return (
     <div style={programColumnStyle(ctx.t)}>
@@ -267,11 +281,14 @@ export function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element
         const left =
           span === 0 || row.from === null
             ? 0
-            : Math.round((((row.from - first) / span) * 1000)) / 10;
+            : Math.round(((row.from - first) / span) * 1000) / 10;
         const width =
           span === 0 || row.from === null || row.to === null
             ? 100
-            : Math.max(2, Math.round((((row.to - row.from + 1) / span) * 1000)) / 10);
+            : Math.max(
+                2,
+                Math.round(((row.to - row.from + 1) / span) * 1000) / 10,
+              );
 
         return (
           <div
@@ -329,9 +346,15 @@ export function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element
               size="caption"
               color={mutedText(ctx.t)}
               clamp={1}
-              style={{ flexShrink: 0, minWidth: 0, fontFamily: ctx.t.type.fontFamilyMono }}
+              style={{
+                flexShrink: 0,
+                minWidth: 0,
+                fontFamily: ctx.t.type.fontFamilyMono,
+              }}
             >
-              {row.milestone ? `◆ ${row.endWord}` : `${row.startWord} → ${row.endWord}`}
+              {row.milestone
+                ? `◆ ${row.endWord}`
+                : `${row.startWord} → ${row.endWord}`}
             </T>
           </div>
         );
@@ -352,11 +375,21 @@ export function drawRoadmap(node: ElementNode, ctx: ProgramContext): JSX.Element
 
 /* ----------------------------------------------------------------- status */
 
-const STATUS_NAMES = ["name", "status", "progress", "owner", "due", "note"] as const;
+const STATUS_NAMES = [
+  "name",
+  "status",
+  "progress",
+  "owner",
+  "due",
+  "note",
+] as const;
 
 /** What a workstream's own word for itself means, as a tone and a mark. */
 function standingOf(word: unknown): { tone: ProgramTone; icon: string } {
-  const held = cellText(word).trim().toLowerCase().replace(/[\s_-]/g, "");
+  const held = cellText(word)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, "");
   if (held === "ontrack" || held === "done" || held === "green")
     return { tone: "success", icon: "checkCircleOutline" };
   if (held === "atrisk" || held === "yellow" || held === "warn")
@@ -376,7 +409,7 @@ export const Status = defineComponent({
   component: drawStatus,
 });
 
-export function drawStatus(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawStatus(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
 
   return (
@@ -394,12 +427,7 @@ export function drawStatus(node: ElementNode, ctx: ProgramContext): JSX.Element 
         return (
           <div
             key={`s-${String(index)}`}
-            style={{
-              ...programColumnStyle(ctx.t),
-              paddingTop: index === 0 ? 0 : innerGap(ctx.t),
-              borderTopWidth: index === 0 ? 0 : HAIRLINE,
-              borderColor: programRule(ctx.t),
-            }}
+            style={programRuledRowStyle(ctx.t, index)}
           >
             <div style={{ ...programRowStyle(ctx.t), alignItems: "center" }}>
               <AdwaitaIcon
@@ -432,7 +460,10 @@ export function drawStatus(node: ElementNode, ctx: ProgramContext): JSX.Element 
                 </AdwaitaBadge>
               )}
             </div>
-            <ProgressBar value={percent} color={programProgressTone(standing.tone)} />
+            <ProgressBar
+              value={percent}
+              color={programProgressTone(standing.tone)}
+            />
             {note === "" ? null : (
               <T
                 size="caption"
@@ -464,7 +495,7 @@ export const Plan = defineComponent({
   component: drawPlan,
 });
 
-export function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const steps = listProp(node.props, "steps");
   const position = choiceRunPosition(ctx.path);
   const sent = ctx.sentAnswer(position);
@@ -474,7 +505,9 @@ export function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <div style={programColumnStyle(ctx.t)}>
       {steps.map((row, index) => {
-        const risk = cellText(cellOf(row, PLAN_NAMES, 3)).trim().toLowerCase();
+        const risk = cellText(cellOf(row, PLAN_NAMES, 3))
+          .trim()
+          .toLowerCase();
         const files = listCell(row, PLAN_NAMES, 2);
         const detail = textCell(row, PLAN_NAMES, 1) ?? "";
         const estimate = textCell(row, PLAN_NAMES, 4) ?? "";
@@ -494,11 +527,22 @@ export function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
               weight={programEmphasisWeight(ctx.t)}
               color={mutedText(ctx.t)}
               clamp={1}
-              style={{ flexShrink: 0, minWidth: 0, fontFamily: ctx.t.type.fontFamilyMono }}
+              style={{
+                flexShrink: 0,
+                minWidth: 0,
+                fontFamily: ctx.t.type.fontFamilyMono,
+              }}
             >
               {`${String(index + 1)}.`}
             </T>
-            <div style={{ ...programColumnStyle(ctx.t), flexGrow: 1, flexBasis: 0, minWidth: 0 }}>
+            <div
+              style={{
+                ...programColumnStyle(ctx.t),
+                flexGrow: 1,
+                flexBasis: 0,
+                minWidth: 0,
+              }}
+            >
               <T
                 size="body"
                 color={ctx.t.color.text.primary}
@@ -534,7 +578,16 @@ export function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
               </AdwaitaBadge>
             )}
             {risk === "" ? null : (
-              <AdwaitaBadge variant={risk === "low" ? "outline" : risk === "medium" ? "warning" : "destructive"} size="sm">
+              <AdwaitaBadge
+                variant={
+                  risk === "low"
+                    ? "outline"
+                    : risk === "medium"
+                      ? "warning"
+                      : "destructive"
+                }
+                size="sm"
+              >
                 {risk}
               </AdwaitaBadge>
             )}
@@ -557,17 +610,24 @@ export function drawPlan(node: ElementNode, ctx: ProgramContext): JSX.Element {
             size="sm"
             label="Approved — go ahead"
             onClick={() =>
-              ctx.stage(position, staged === "Approved — go ahead" ? "" : "Approved — go ahead")
+              ctx.stage(
+                position,
+                staged === "Approved — go ahead" ? "" : "Approved — go ahead",
+              )
             }
           />
           <AdwaitaButton
-            variant={staged === "Not yet — let me change it" ? "suggested" : "default"}
+            variant={
+              staged === "Not yet — let me change it" ? "suggested" : "default"
+            }
             size="sm"
             label="Not yet — let me change it"
             onClick={() =>
               ctx.stage(
                 position,
-                staged === "Not yet — let me change it" ? "" : "Not yet — let me change it",
+                staged === "Not yet — let me change it"
+                  ? ""
+                  : "Not yet — let me change it",
               )
             }
           />
@@ -624,7 +684,11 @@ function DecisionBlock(props: {
 
   return (
     <div style={programColumnStyle(ctx.t)}>
-      <AdwaitaTable density="compact" frame="bare" style={{ width: "100%", minWidth: 0 }}>
+      <AdwaitaTable
+        density="compact"
+        frame="bare"
+        style={{ width: "100%", minWidth: 0 }}
+      >
         <TableHeader key="header">
           <TableHead key="h-name">{""}</TableHead>
           {criteria.map((criterion, index) => (
@@ -641,7 +705,9 @@ function DecisionBlock(props: {
                 {`weight · ${criteria[index] ?? ""}`}
               </TableCell>
               <TableCell key={`w-${String(index)}`}>
-                <div style={{ ...programRowStyle(ctx.t), gap: innerGap(ctx.t) }}>
+                <div
+                  style={{ ...programRowStyle(ctx.t), gap: innerGap(ctx.t) }}
+                >
                   <AdwaitaButton
                     variant="text"
                     size="sm"
@@ -659,7 +725,10 @@ function DecisionBlock(props: {
                     weight={programEmphasisWeight(ctx.t)}
                     color={ctx.t.color.text.primary}
                     clamp={1}
-                    style={{ minWidth: 0, fontFamily: ctx.t.type.fontFamilyMono }}
+                    style={{
+                      minWidth: 0,
+                      fontFamily: ctx.t.type.fontFamilyMono,
+                    }}
                   >
                     {String(weights[index] ?? 1)}
                   </T>
@@ -686,7 +755,10 @@ function DecisionBlock(props: {
               <TableRow key={`o-${String(index)}`}>
                 <TableCell key="o-name">{option.name}</TableCell>
                 {option.scores.map((score, at) => (
-                  <TableCell key={`o-${String(index)}-${String(at)}`} align="right">
+                  <TableCell
+                    key={`o-${String(index)}-${String(at)}`}
+                    align="right"
+                  >
                     {String(score)}
                   </TableCell>
                 ))}
@@ -732,16 +804,20 @@ function DecisionBlock(props: {
   );
 }
 
-export function drawDecision(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawDecision(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const criteria = listProp(node.props, "criteria").map((criterion) =>
-    typeof criterion === "object" && criterion !== null && !Array.isArray(criterion)
+    typeof criterion === "object" &&
+    criterion !== null &&
+    !Array.isArray(criterion)
       ? (textCell(criterion, CRITERION_NAMES, 0) ?? "")
       : cellText(criterion),
   );
 
   const options = listProp(node.props, "options").map((row) => ({
     name: textCell(row, DECISION_OPTION_NAMES, 0) ?? cellText(row),
-    scores: listCell(row, DECISION_OPTION_NAMES, 1).map((score) => numberOf(score)),
+    scores: listCell(row, DECISION_OPTION_NAMES, 1).map((score) =>
+      numberOf(score),
+    ),
     pros: listCell(row, DECISION_OPTION_NAMES, 2).map(cellText),
     cons: listCell(row, DECISION_OPTION_NAMES, 3).map(cellText),
   }));
@@ -767,7 +843,7 @@ export const Estimate = defineComponent({
 const figureWord = (value: number): string =>
   String(Math.round(value * 10) / 10);
 
-export function drawEstimate(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawEstimate(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const tasks = listProp(node.props, "tasks").map((row) => {
     const low = numberOf(cellOf(row, ESTIMATE_NAMES, 1));
     const high = numberOf(cellOf(row, ESTIMATE_NAMES, 3), low);
@@ -803,7 +879,12 @@ export function drawEstimate(node: ElementNode, ctx: ProgramContext): JSX.Elemen
         >
           {said(p50)}
         </T>
-        <T size="body" color={mutedText(ctx.t)} clamp={1} style={{ minWidth: 0 }}>
+        <T
+          size="body"
+          color={mutedText(ctx.t)}
+          clamp={1}
+          style={{ minWidth: 0 }}
+        >
           {"likely (P50)"}
         </T>
         <div style={{ flexGrow: 1, minWidth: 0, minHeight: 1 }} />
@@ -811,17 +892,29 @@ export function drawEstimate(node: ElementNode, ctx: ProgramContext): JSX.Elemen
           {`${said(p90)} P90`}
         </AdwaitaBadge>
       </div>
-      <AdwaitaTable density="compact" frame="bare" style={{ width: "100%", minWidth: 0 }}>
+      <AdwaitaTable
+        density="compact"
+        frame="bare"
+        style={{ width: "100%", minWidth: 0 }}
+      >
         <TableHeader key="header">
           <TableHead key="h-title">{"Task"}</TableHead>
-          <TableHead key="h-low" align="right">{"Low"}</TableHead>
-          <TableHead key="h-likely" align="right">{"Likely"}</TableHead>
-          <TableHead key="h-high" align="right">{"High"}</TableHead>
+          <TableHead key="h-low" align="right">
+            {"Low"}
+          </TableHead>
+          <TableHead key="h-likely" align="right">
+            {"Likely"}
+          </TableHead>
+          <TableHead key="h-high" align="right">
+            {"High"}
+          </TableHead>
         </TableHeader>
         <TableBody key="body">
           {tasks.map((task, index) => (
             <TableRow key={`t-${String(index)}`}>
-              <TableCell key={`t-${String(index)}-title`}>{task.title}</TableCell>
+              <TableCell key={`t-${String(index)}-title`}>
+                {task.title}
+              </TableCell>
               <TableCell key={`t-${String(index)}-low`} align="right">
                 {figureWord(task.low)}
               </TableCell>
@@ -836,7 +929,12 @@ export function drawEstimate(node: ElementNode, ctx: ProgramContext): JSX.Elemen
         </TableBody>
       </AdwaitaTable>
       {tasks.length === 0 ? null : (
-        <T size="caption" color={mutedText(ctx.t)} clamp={3} style={{ minWidth: 0 }}>
+        <T
+          size="caption"
+          color={mutedText(ctx.t)}
+          clamp={3}
+          style={{ minWidth: 0 }}
+        >
           {`${String(tasks.length)} tasks · low ${said(tasks.reduce((sum, task) => sum + task.low, 0))}, high ${said(tasks.reduce((sum, task) => sum + task.high, 0))}`}
         </T>
       )}

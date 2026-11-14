@@ -29,7 +29,12 @@ import { HAIRLINE, INLINE_GLYPH, figureGap } from "../../../core/lib/ui/tokens";
 import { iconForFile } from "../../../core/lib/files/fileIcons";
 import { mutedText } from "../../../core/lib/ui/theme";
 import { ZoomImage } from "../../../core/components/ZoomImage";
-import { innerGap, programTextRole, programTitleWeight, type ProgramTextSize } from "../../lib/tokens";
+import {
+  innerGap,
+  programTextRole,
+  programTitleWeight,
+  type ProgramTextSize,
+} from "../../lib/tokens";
 import {
   programBadgeVariant,
   programRule,
@@ -41,10 +46,13 @@ import {
 import { programImage } from "../../lib/data/image";
 import type { ProgramContext } from "./context";
 import {
+  ProgramCodePanel,
+  ProgramCodeText,
   ProgramSourceNote,
   ProgramText,
   listProp,
   programColumnStyle,
+  programRuledRowStyle,
   programRowStyle,
   prop,
   sourceProp,
@@ -131,6 +139,12 @@ export const Code = defineComponent({
 
 /* -------------------------------------------------------- the figures said */
 
+/**
+ * The one figure a screen is read by.
+ *
+ * `Stat` was mu's word for this and drew it in `data.tsx`; one drawer draws both,
+ * and the retired name keeps its own slot for the line under the figure.
+ */
 export const Metric = defineComponent({
   name: "Metric",
   description:
@@ -210,7 +224,10 @@ const ICON_SPELLING: Record<string, string> = {
 };
 
 const iconWordOf = (name: string): string =>
-  name.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
 
 /** One icon name, as the icon set actually spells it, or "" when it has no mark. */
 export function resolveIcon(name: string): string {
@@ -294,7 +311,7 @@ export const Entity = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawTitle(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTitle(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <T
       size={programTextRole(prop<ProgramTextSize>(node.props, "size", "md"))}
@@ -308,7 +325,7 @@ export function drawTitle(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const tone = toneOfValue(node.props.tone);
   return (
     <T
@@ -323,10 +340,7 @@ export function drawText(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawCaption(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawCaption(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <T
       size="caption"
@@ -339,7 +353,7 @@ export function drawCaption(
   );
 }
 
-export function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <AdwaitaBadge
       variant={programBadgeVariant(toneOfValue(node.props.tone))}
@@ -350,7 +364,10 @@ export function drawBadge(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawCallout(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawCallout(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const tone = toneOfValue(node.props.tone);
   const title = textProp(node.props, "title");
   const glyph = tone === null ? "info" : (programToneGlyph(tone) ?? "info");
@@ -402,51 +419,28 @@ export function drawCallout(node: ElementNode, ctx: ProgramContext): JSX.Element
 
 /** The block's own text: the reference calls it `code`, mu's programs called it `text`. */
 const codeOf = (props: Record<string, unknown>): string =>
-  textProp(props, "code") === "" ? textProp(props, "text") : textProp(props, "code");
+  textProp(props, "code") === ""
+    ? textProp(props, "text")
+    : textProp(props, "code");
 
-export function drawCode(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const language = textProp(node.props, "language");
-
+function drawCode(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        minWidth: 0,
-        gap: noteGapOf(ctx),
-        padding: innerGap(ctx.t),
-        borderRadius: ctx.t.radius.sm,
-        backgroundColor: ctx.t.color.surface.sunken,
-      }}
-    >
-      {language === "" ? null : (
-        <T size="caption" color={mutedText(ctx.t)} clamp={1} style={{ minWidth: 0 }}>
-          {language}
-        </T>
-      )}
-      <T
-        size="caption"
-        color={ctx.t.color.text.primary}
-        clamp={20}
-        style={{
-          fontFamily: ctx.t.type.fontFamilyMono,
-          flexShrink: 1,
-          minWidth: 0,
-        }}
-      >
-        {codeOf(node.props)}
-      </T>
-    </div>
+    <ProgramCodePanel ctx={ctx} head={textProp(node.props, "language")}>
+      <ProgramCodeText ctx={ctx} text={codeOf(node.props)} />
+    </ProgramCodePanel>
   );
 }
 
-/** The air between a block's own head line and its body. */
-const noteGapOf = (ctx: ProgramContext): number => ctx.t.space.xs;
+/** The line under the figure: the reference calls it `note`, mu's retired `Stat` called it `delta`. */
+const metricNoteOf = (props: Record<string, unknown>): string | null =>
+  textOf(props.note) ?? textOf(props.delta);
 
-export function drawMetric(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawMetric(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
   const tone = toneOfValue(node.props.tone);
-  const note = textOf(node.props.note);
+  const note = metricNoteOf(node.props);
   const source = sourceProp(node.props);
 
   return (
@@ -500,10 +494,7 @@ function pairsOf(value: unknown): unknown[] {
   return value === undefined || value === null ? [] : [value];
 }
 
-export function drawKeyValue(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawKeyValue(node: ElementNode, ctx: ProgramContext): JSX.Element {
   // A mu program wrote one pair positionally: `KeyValue("Builds", "412")` — the
   // reference hands `pairs` a map or a list, and a scalar in that slot is the old
   // shape's label. A scalar `value` prop is what the old shape put beside it.
@@ -512,12 +503,14 @@ export function drawKeyValue(
     typeof given === "string" ||
     typeof given === "number" ||
     typeof given === "boolean";
-  const pairs = single
-    ? [[given, node.props.value ?? ""]]
-    : pairsOf(given);
+  const pairs = single ? [[given, node.props.value ?? ""]] : pairsOf(given);
 
   return (
-    <DetailRows ctx={ctx} rows={pairs} toneOfNode={toneOfValue(node.props.tone)} />
+    <DetailRows
+      ctx={ctx}
+      rows={pairs}
+      toneOfNode={toneOfValue(node.props.tone)}
+    />
   );
 }
 
@@ -621,14 +614,19 @@ function DetailRows(props: {
   );
 }
 
-export function drawIcon(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawIcon(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const name = textProp(node.props, "name");
   const resolved = resolveIcon(name);
   const tone = toneOfValue(node.props.tone);
 
   if (resolved === "")
     return (
-      <T size="caption" color={mutedText(ctx.t)} clamp={1} style={{ minWidth: 0 }}>
+      <T
+        size="caption"
+        color={mutedText(ctx.t)}
+        clamp={1}
+        style={{ minWidth: 0 }}
+      >
         {`no mark named "${name}"`}
       </T>
     );
@@ -695,7 +693,7 @@ function ImageTile(props: {
   );
 }
 
-export function drawImage(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawImage(node: ElementNode, ctx: ProgramContext): JSX.Element {
   return (
     <ImageTile
       ctx={ctx}
@@ -705,7 +703,7 @@ export function drawImage(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawFile(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawFile(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const path = textProp(node.props, "path");
   const line = prop<number | null>(node.props, "line", null);
 
@@ -744,12 +742,16 @@ export function drawFile(node: ElementNode, ctx: ProgramContext): JSX.Element {
 
 /** One link, however it was written: a bare URL, or {url, title?, note?}. */
 const linkUrl = (link: unknown): string =>
-  typeof link === "string" ? link : (textCell(link, ["url", "title", "note"], 0) ?? "");
+  typeof link === "string"
+    ? link
+    : (textCell(link, ["url", "title", "note"], 0) ?? "");
 
 const linkTitle = (link: unknown): string =>
-  typeof link === "string" ? "" : (textCell(link, ["url", "title", "note"], 1) ?? "");
+  typeof link === "string"
+    ? ""
+    : (textCell(link, ["url", "title", "note"], 1) ?? "");
 
-export function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const links = listProp(node.props, "links");
 
   return (
@@ -758,7 +760,9 @@ export function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element
         const url = linkUrl(link);
         const title = linkTitle(link);
         const note =
-          typeof link === "string" ? "" : (textCell(link, ["url", "title", "note"], 2) ?? "");
+          typeof link === "string"
+            ? ""
+            : (textCell(link, ["url", "title", "note"], 2) ?? "");
         return (
           <div key={`s-${String(index)}`} style={programColumnStyle(ctx.t)}>
             <div style={{ ...programRowStyle(ctx.t), alignItems: "start" }}>
@@ -782,7 +786,10 @@ export function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element
                     size="caption"
                     color={mutedText(ctx.t)}
                     clamp={1}
-                    style={{ minWidth: 0, fontFamily: ctx.t.type.fontFamilyMono }}
+                    style={{
+                      minWidth: 0,
+                      fontFamily: ctx.t.type.fontFamilyMono,
+                    }}
                   >
                     {url}
                   </T>
@@ -790,7 +797,12 @@ export function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element
               </div>
             </div>
             {note === "" ? null : (
-              <ProgramText value={note} ctx={ctx} size="caption" color={mutedText(ctx.t)} />
+              <ProgramText
+                value={note}
+                ctx={ctx}
+                size="caption"
+                color={mutedText(ctx.t)}
+              />
             )}
           </div>
         );
@@ -801,7 +813,7 @@ export function drawSources(node: ElementNode, ctx: ProgramContext): JSX.Element
 
 const LIST_NAMES = ["title", "detail", "icon", "value", "tone"] as const;
 
-export function drawList(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawList(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
 
   return (
@@ -816,12 +828,7 @@ export function drawList(node: ElementNode, ctx: ProgramContext): JSX.Element {
         return (
           <div
             key={`l-${String(index)}`}
-            style={{
-              ...programColumnStyle(ctx.t),
-              paddingTop: index === 0 ? 0 : innerGap(ctx.t),
-              borderTopWidth: index === 0 ? 0 : HAIRLINE,
-              borderColor: programRule(ctx.t),
-            }}
+            style={programRuledRowStyle(ctx.t, index)}
           >
             <div style={{ ...programRowStyle(ctx.t), alignItems: "start" }}>
               {icon === "" ? null : (
@@ -849,7 +856,9 @@ export function drawList(node: ElementNode, ctx: ProgramContext): JSX.Element {
                   style={{
                     flexShrink: 0,
                     minWidth: 0,
-                    fontFamily: isFigure(value) ? ctx.t.type.fontFamilyMono : undefined,
+                    fontFamily: isFigure(value)
+                      ? ctx.t.type.fontFamilyMono
+                      : undefined,
                   }}
                 >
                   {value}
@@ -882,7 +891,7 @@ const KIND_WORD: Record<string, string> = {
   other: "",
 };
 
-export function drawEntity(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawEntity(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const kind = prop<string | null>(node.props, "kind", null);
   const image = textProp(node.props, "image");
   const url = textProp(node.props, "url");
@@ -910,7 +919,12 @@ export function drawEntity(node: ElementNode, ctx: ProgramContext): JSX.Element 
       {image === "" ? null : <ImageTile ctx={ctx} src={image} alt="" />}
       {pairs.length === 0 ? null : <DetailRows ctx={ctx} rows={pairs} />}
       {note === "" ? null : (
-        <T size="body" color={ctx.t.color.text.primary} clamp={6} style={{ minWidth: 0 }}>
+        <T
+          size="body"
+          color={ctx.t.color.text.primary}
+          clamp={6}
+          style={{ minWidth: 0 }}
+        >
           {note}
         </T>
       )}

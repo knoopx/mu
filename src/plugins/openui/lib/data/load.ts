@@ -24,16 +24,16 @@
  * rewrote since is read again.
  */
 
-import { readFileSync, statSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { extname } from "node:path";
 
-import { projectFile } from "../../../core/lib/files/projectPath";
+import { gateProjectFile, unreadError, type FileGate } from "./gate";
 
 /** The largest file a program may read. Past this the file is not a screen. */
 export const MAX_LOAD_BYTES = 512 * 1024;
 
 /** How much of a plain-text file arrives as text; the rest is left off. */
-export const MAX_LOAD_TEXT_CHARS = 64_000;
+const MAX_LOAD_TEXT_CHARS = 64_000;
 
 /** One answer of a `Load` call: the value, or why there is none. */
 export type LoadResult =
@@ -54,13 +54,22 @@ export function invalidateLoads(): void {
   cache.clear();
 }
 
+/** One refusal of the gate, in the words a program's reader says. */
+const refusalOf = (
+  gate: Exclude<FileGate, { ok: true }>,
+  name: string,
+): string =>
+  gate.reason === "too-big"
+    ? `${name} is ${String(Math.round(gate.size / 1024))} KB — over what a program reads`
+    : gate.error;
+
 /** Lines of a file, numbered from 1, bounded however wide the reader asked for. */
 export function readFileLines(
   cwd: string,
   name: string,
   from: number,
   to: number,
-): 
+):
   | {
       ok: true;
       lines: string[];
@@ -69,23 +78,11 @@ export function readFileLines(
       total: number;
     }
   | { ok: false; error: string } {
-  const target = projectFile(cwd, name);
-  if (!target.ok) return { ok: false, error: target.error };
-
-  let stats: ReturnType<typeof statSync>;
-  try {
-    stats = statSync(target.target);
-  } catch {
-    return { ok: false, error: `${target.name} is already gone` };
-  }
-  if (stats.size > MAX_LOAD_BYTES)
-    return {
-      ok: false,
-      error: `${target.name} is ${String(Math.round(stats.size / 1024))} KB — over what a program reads`,
-    };
+  const gate = gateProjectFile(cwd, name, MAX_LOAD_BYTES);
+  if (!gate.ok) return { ok: false, error: refusalOf(gate, name) };
 
   try {
-    const all = readFileSync(target.target, "utf8").split(/\r?\n/);
+    const all = readFileSync(gate.target, "utf8").split(/\r?\n/);
     const first = Math.max(1, Math.floor(from));
     const last = Math.max(first, Math.floor(to));
     const lines = all.slice(first - 1, last);
@@ -97,13 +94,14 @@ export function readFileLines(
       total: all.length,
     };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `${target.name} could not be read: ${reason}` };
+    return { ok: false, error: unreadError(gate.name, error) };
   }
 }
 
 /** What kind of value a name is read as, from its own extension. */
-export const loadKindOf = (name: string): "json" | "jsonl" | "csv" | "tsv" | "text" => {
+export const loadKindOf = (
+  name: string,
+): "json" | "jsonl" | "csv" | "tsv" | "text" => {
   const extension = extname(name.trim()).toLowerCase();
   if (extension === ".json" || extension === ".jsonc") return "json";
   if (extension === ".jsonl" || extension === ".ndjson") return "jsonl";
@@ -145,7 +143,10 @@ function splitDelimited(line: string, separator: string): string[] {
 }
 
 /** A delimited file, read as a list of objects keyed by its header row. */
-export function parseDelimited(text: string, separator: string): Record<string, string>[] {
+export function parseDelimited(
+  text: string,
+  separator: string,
+): Record<string, string>[] {
   const rows = text
     .split(/\r?\n/)
     .filter((line) => line.trim() !== "")
@@ -175,40 +176,32 @@ const parseJson = (text: string): unknown => JSON.parse(text);
 
 /** Read one name, inside the window's folder, as the value it holds. */
 export function loadFile(cwd: string, name: string): LoadResult {
-  const target = projectFile(cwd, name);
-  if (!target.ok) return { ok: false, error: target.error };
+  const gate = gateProjectFile(cwd, name, MAX_LOAD_BYTES);
+  if (!gate.ok) return { ok: false, error: refusalOf(gate, name) };
 
-  let stats: ReturnType<typeof statSync>;
-  try {
-    stats = statSync(target.target);
-  } catch {
-    return { ok: false, error: `${target.name} is already gone` };
-  }
-  if (stats.size > MAX_LOAD_BYTES)
-    return {
-      ok: false,
-      error: `${target.name} is ${String(Math.round(stats.size / 1024))} KB — over what a program reads`,
-    };
-
-  const held = cache.get(target.target);
+  const held = cache.get(gate.target);
   if (
     held !== undefined &&
-    held.mtimeMs === stats.mtimeMs &&
-    held.size === stats.size
+    held.mtimeMs === gate.mtimeMs &&
+    held.size === gate.size
   )
     return held.result;
 
-  const kind = loadKindOf(target.name);
+  const kind = loadKindOf(gate.name);
   let result: LoadResult;
 
   try {
-    const text = readFileSync(target.target, "utf8");
+    const text = readFileSync(gate.target, "utf8");
     if (kind === "text") {
       const clipped = text.length > MAX_LOAD_TEXT_CHARS;
       result = {
         ok: true,
         value: clipped ? text.slice(0, MAX_LOAD_TEXT_CHARS) : text,
-        ...(clipped ? { note: `${target.name} read up to ${String(MAX_LOAD_TEXT_CHARS)} characters` } : {}),
+        ...(clipped
+          ? {
+              note: `${gate.name} read up to ${String(MAX_LOAD_TEXT_CHARS)} characters`,
+            }
+          : {}),
       };
     } else if (kind === "json") {
       result = { ok: true, value: parseJson(text) };
@@ -227,16 +220,15 @@ export function loadFile(cwd: string, name: string): LoadResult {
       };
     }
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
     result = {
       ok: false,
       error:
         kind === "json" || kind === "jsonl"
-          ? `${target.name} is not readable ${kind}: ${reason}`
-          : `${target.name} could not be read: ${reason}`,
+          ? `${gate.name} is not readable ${kind}: ${error instanceof Error ? error.message : String(error)}`
+          : unreadError(gate.name, error),
     };
   }
 
-  cache.set(target.target, { mtimeMs: stats.mtimeMs, size: stats.size, result });
+  cache.set(gate.target, { mtimeMs: gate.mtimeMs, size: gate.size, result });
   return result;
 }
