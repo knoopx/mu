@@ -13,13 +13,13 @@ import {
 
 export type { Shortcut } from "adwaita-gpuix/shortcuts";
 
-export const DELETE_ROW_KEY = "composer.deleteRow";
+const DELETE_ROW_KEY = "composer.deleteRow";
 
-export const OPEN_ROW_KEY = "composer.openRow";
+const OPEN_ROW_KEY = "composer.openRow";
 
-export const EDIT_ROW_KEY = "composer.editRow";
+const EDIT_ROW_KEY = "composer.editRow";
 
-export const AUTOCOMPLETE_KEY = "editor.autocomplete";
+const AUTOCOMPLETE_KEY = "editor.autocomplete";
 
 /**
  * What a panel's keys are called, in the panel's own words.
@@ -45,7 +45,7 @@ export const panelCanOpen = (panel: ComposerTarget | "commands"): boolean =>
 export const panelCanEdit = (panel: ComposerTarget | "commands"): boolean =>
   panelEditWord(HOST, panel) !== undefined;
 
-export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
+function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
   const rows: Shortcut[] = [];
   rows.push(...navShortcuts({ select: "move" }));
   // A panel that names no word for a key does not take it, and prints no chip for
@@ -79,7 +79,7 @@ export function panelHints(panel: ComposerTarget | "commands"): Shortcut[] {
   return hints(panelShortcuts(panel));
 }
 
-export function pathCompletionShortcuts(): Shortcut[] {
+function pathCompletionShortcuts(): Shortcut[] {
   return [
     {
       id: "complete",
@@ -126,9 +126,9 @@ export const isOpenRowKey = (event: EventPayload): boolean =>
 export const isEditRowKey = (event: EventPayload): boolean =>
   isBareRowKey(event, EDIT_ROW_KEY);
 
-export const USER_MESSAGE_HISTORY_KEY = "composer.userMessageHistory";
+const USER_MESSAGE_HISTORY_KEY = "composer.userMessageHistory";
 
-export function userMessageHistoryShortcuts(): Shortcut[] {
+function userMessageHistoryShortcuts(): Shortcut[] {
   return [
     ...navShortcuts({ select: "move" }),
     {

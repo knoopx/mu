@@ -2,7 +2,7 @@ import { useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { MuTheme } from "../../../../theme";
 import { leadingOf } from "../ui/tokens";
 
-export function buildMuThemeFromAdwaita(a: AdwaitaTheme): MuTheme {
+function buildMuThemeFromAdwaita(a: AdwaitaTheme): MuTheme {
   const { color, type, radius } = a;
   return {
     appearance: a.scheme,

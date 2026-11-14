@@ -56,8 +56,7 @@ export const isWriteTool = (name: string): boolean =>
   name.toLowerCase() === WRITE_TOOL;
 
 /** The tool that edits a file in place and answers with the patch it made. */
-export const isEditTool = (name: string): boolean =>
-  name.toLowerCase() === EDIT_TOOL;
+const isEditTool = (name: string): boolean => name.toLowerCase() === EDIT_TOOL;
 
 /**
  * The patch a call left behind.

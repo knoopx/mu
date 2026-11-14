@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useProjectSource } from "../components/ProjectSource";
 import {
-  readWorkspaceStatus,
   shortenPath,
   type WorkspaceStatus,
 } from "../lib/workspace/workspaceStatus";

@@ -12,7 +12,7 @@ export interface PromptPill {
   invocation: string;
 }
 
-export function pillInvocation(template: PromptTemplate): string {
+function pillInvocation(template: PromptTemplate): string {
   return `/${template.name} `;
 }
 

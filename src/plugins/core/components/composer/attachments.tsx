@@ -59,15 +59,6 @@ export function attachmentOf(
     label: shortLabel(type, data.length),
   };
 }
-
-function attachmentsOf(
-  images: Array<{ data: string; mimeType: string }>,
-): ComposerAttachment[] {
-  return images.map((image) =>
-    attachmentOf(Buffer.from(image.data, "base64"), image.mimeType),
-  );
-}
-
 export function attachmentImages(
   attachments: readonly ComposerAttachment[],
 ): PromptImages {
@@ -77,20 +68,8 @@ export function attachmentImages(
     mimeType: attachment.mimeType,
   }));
 }
-
-function attachmentImagesOf(
-  images: readonly ToolImage[] | undefined,
-): PromptImages {
-  if (images === undefined || images.length === 0) return undefined;
-  return images.map((image) => ({
-    type: "image" as const,
-    data: image.src.slice(image.src.indexOf(",") + 1),
-    mimeType: image.mimeType,
-  }));
-}
-
 /** An attachment's thumbnail: a square, bordered by a hairline, with a remove badge in its corner. */
-export const ATTACHMENT_THUMB = 48;
+const ATTACHMENT_THUMB = 48;
 
 /** The badge a thumb wears in its corner, and the glyph that fills the badge. */
 const REMOVE_RATIO = 0.375;

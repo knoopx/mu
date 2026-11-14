@@ -1,4 +1,4 @@
-import { useEffect, useRef, type JSX, type ReactNode } from "react";
+import { type JSX, type ReactNode } from "react";
 import {
   StatusBar,
   T,
@@ -8,19 +8,13 @@ import {
   type IconName,
 } from "adwaita-gpuix";
 import type { EventPayload } from "@gpuix/native";
-import {
-  useGpuixRequired,
-  type NativeRenderer,
-  type PublicInstance,
-  type StyleDesc,
-} from "@gpuix/react";
+import { type PublicInstance, type StyleDesc } from "@gpuix/react";
 
 import {
   buildNativeTheme,
   mutedText,
   type ComposerTone,
 } from "../../lib/ui/theme";
-import { addInputListener } from "../../../../window/window";
 import { truncateToWidth } from "../../../../utils/truncate";
 import { ZoomImage } from "../ZoomImage";
 import { PILL_HEIGHT, ROW_HEIGHT, codeLineBox } from "../../lib/ui/tokens";
@@ -44,17 +38,9 @@ import {
 } from "../../lib/composer/chrome";
 import { PANEL_DEFAULT_VISIBLE } from "../../lib/composer/panelHeight";
 import {
-  composerFieldKey,
-  composerGlobalKey,
-  composerListKey,
-  type ComposerKeyContext,
-} from "../../lib/composer/keyRouter";
-import {
   isPanelMode,
   panelIndex,
-  transition,
   windowRows,
-  type ComposerEvent,
   type ComposerMode,
   type PickIntent,
 } from "../../lib/composer/mode";
@@ -526,13 +512,6 @@ function ComposerMeta(props: ComposerMetaProps): JSX.Element | null {
     </div>
   );
 }
-
-const rowUnderCursor = (
-  panel: ComposerPanelSpec,
-  mode: ComposerMode,
-): ComposerPanelRow | undefined =>
-  panel.rows[panelIndex(mode, panel.rows.length)];
-
 function contextRingOf(
   panelOpen: boolean,
   context: ComposerContextSpec | null,

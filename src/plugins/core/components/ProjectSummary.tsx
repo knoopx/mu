@@ -1,4 +1,4 @@
-import { useMemo, type JSX, type ReactNode } from "react";
+import { type JSX, type ReactNode } from "react";
 import {
   BookmarkPill,
   Button,
@@ -228,12 +228,6 @@ function SectionTitle(props: {
     </Block>
   );
 }
-
-export function ProjectSummaryView(props: ProjectSummaryProps): JSX.Element {
-  const rows = projectSummaryRows(props);
-  return <>{rows}</>;
-}
-
 export function projectSummaryRows(
   props: ProjectSummaryProps,
   inset: number = PAGE_INSET,

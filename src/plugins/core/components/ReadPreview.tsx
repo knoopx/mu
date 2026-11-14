@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { formatSize } from "@earendil-works/pi-coding-agent";
-import { useProjectSource, type ProjectSource } from "./ProjectSource";
+import { type ProjectSource } from "./ProjectSource";
 import { isRenderableImage, useAdwaita } from "adwaita-gpuix";
 import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";

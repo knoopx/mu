@@ -85,7 +85,7 @@ const PROPORTIONAL_ADVANCE = 0.62;
 const BADGE_INLINE_PAD = 12;
 
 /** What `chars` of proportional text print at `size`. */
-export const textWidth = (
+const textWidth = (
   t: AdwaitaTheme,
   chars: number,
   size: number = t.type.micro,
@@ -208,10 +208,6 @@ export const STATE_GLYPH = 16;
 const GUTTER_GAP = 8;
 
 export const MARK_HANG = STATE_GLYPH + GUTTER_GAP;
-
-/** A mark a pointer takes: a row's action, a dialog's heading. */
-export const ACTION_GLYPH = CONTROL.rowActionIconSize;
-
 /** A mark sized to the line of text it stands beside, so the two share a baseline. */
 export const glyphForText = (textSize: number): number =>
   Math.round(textSize * 0.92);
@@ -269,11 +265,6 @@ export const CHIP_PAD = 4;
 /** A composer pill's height — and the line box of its label, which is how the
  *  label sits centred in the box without any padding arithmetic. */
 export const PILL_HEIGHT = 22;
-
-/** A colour swatch in the theme picker: wide enough to read a hue, short enough to sit in a row. */
-export const SWATCH_WIDTH = 30;
-export const SWATCH_HEIGHT = 18;
-
 /* Elevation ------------------------------------------------------------ */
 
 /**

@@ -13,13 +13,13 @@ import { clipText } from "./toolText";
 import { firstLine } from "../../../../utils/truncate";
 
 /** How wide a tool header's preview is before it is clipped. */
-export const TOOL_PREVIEW_MAX = 96;
+const TOOL_PREVIEW_MAX = 96;
 
 /**
  * How wide a header's own line is — narrower than a preview of an answer, since
  * a header sits beside the tool's name and the call's state mark.
  */
-export const HEADER_PREVIEW_MAX = 72;
+const HEADER_PREVIEW_MAX = 72;
 
 /** One line of a header: collapsed to a row of text, then cut to the budget. */
 export function headerSnippet(
@@ -68,10 +68,10 @@ export interface ToolPreviewVocabulary {
 }
 
 /** A header that has nothing better to say still has to say the call ended. */
-export const FAILED_TEXT = "failed";
+const FAILED_TEXT = "failed";
 
 /** Details of an unknown shape answer in their own first line of text. */
-export function toolPreviewFallback(
+function toolPreviewFallback(
   item: ToolTranscriptItem,
   max: number = TOOL_PREVIEW_MAX,
 ): string {

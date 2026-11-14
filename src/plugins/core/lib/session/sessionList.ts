@@ -32,9 +32,7 @@ export interface SessionList {
   remove(path: string): SessionDeleteResult;
 }
 
-export function sessionRows(
-  sessions: readonly SessionInfo[],
-): SessionListRow[] {
+function sessionRows(sessions: readonly SessionInfo[]): SessionListRow[] {
   return sessions.map((s) => {
     const spanMs = s.modified.getTime() - s.created.getTime();
     return {

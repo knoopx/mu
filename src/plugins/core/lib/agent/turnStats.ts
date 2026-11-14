@@ -1,7 +1,7 @@
 import type { AssistantUsage, TranscriptItem } from "./transcriptState";
 
-export const UP = "↑";
-export const DOWN = "↓";
+const UP = "↑";
+const DOWN = "↓";
 export const DOT = "·";
 
 const CHARS_PER_TOKEN = 4;
@@ -48,7 +48,7 @@ function f2(x: number): string {
   return `${Math.trunc(i / 100)}.${String(Math.abs(i % 100)).padStart(2, "0")}`;
 }
 
-export function formatTokens(tokens: number | null | undefined): string {
+function formatTokens(tokens: number | null | undefined): string {
   if (tokens == null) return "";
   if (tokens >= 1_000_000) return `${f1(tokens / 1_000_000)}M`;
   if (tokens >= 1_000) return `${f1(tokens / 1_000)}K`;

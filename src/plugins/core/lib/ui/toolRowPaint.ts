@@ -26,7 +26,6 @@ import {
   METER_TRACK_WIDTH,
   badgeWidth,
   figureGap,
-  lineBox,
   idColumn,
   monoTextWidth,
 } from "./tokens";
@@ -289,29 +288,6 @@ export const toolBodyStack = (t: AdwaitaTheme): StyleDesc => ({
   ...toolGapColumn(t),
   flexShrink: 0,
 });
-
-/**
- * A blank line between the blocks of one answer.
- *
- * A terminal divides a script from the calls it made, and those from what they
- * printed, by leaving a line empty — pi's renderer calls it a `Spacer` and puts one
- * between every block. A codemode row is the one row in the log made of three such
- * blocks of text, and nothing else in the log needs a blank line painted as a
- * thing: a rule divides a table, a blank line divides prose.
- */
-export const toolBlockSpacer = (t: AdwaitaTheme): StyleDesc => ({
-  height: lineBox(t, "caption"),
-  flexShrink: 0,
-  pointerEvents: "none",
-});
-
-/** Growing mono text — a path, a line range, a token count. */
-export const toolMonoGrow = (t: AdwaitaTheme): StyleDesc => ({
-  flexShrink: 1,
-  minWidth: 0,
-  fontFamily: t.type.fontFamilyMono,
-});
-
 /** How far a score fills its meter track — never a sliver too thin to see, and
  *  never the whole plate, so the plate stays the thing the bar is measured by. */
 export const meterFill = (meter: ToolRowMeter): number => {

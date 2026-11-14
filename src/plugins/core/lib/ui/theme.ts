@@ -44,11 +44,7 @@ function toneHue(t: AdwaitaTheme, tone: ComposerTone): string | null {
   return null;
 }
 
-export function tinted(
-  t: AdwaitaTheme,
-  base: string,
-  tone: ComposerTone,
-): string {
+function tinted(t: AdwaitaTheme, base: string, tone: ComposerTone): string {
   const hue = toneHue(t, tone);
   return hue === null ? base : mixHex(base, hue, TINT_WEIGHT);
 }
@@ -81,7 +77,7 @@ export function tintedDivider(t: AdwaitaTheme, tone: ComposerTone): string {
 }
 
 /** The wash behind a block the log quotes: a code preview, a diff hunk. */
-export function panelFill(t: AdwaitaTheme): string {
+function panelFill(t: AdwaitaTheme): string {
   return t.color.surface.headerbar;
 }
 

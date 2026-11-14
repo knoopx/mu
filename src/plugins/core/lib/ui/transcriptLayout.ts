@@ -8,7 +8,7 @@ export const PAGE_INSET = 56;
 
 /** The air between two blocks of the log — and above the composer, the same step.
  *  `composerGap` is the role's name for it; neither file may write `space.xl`. */
-export function conversationGap(t: AdwaitaTheme): number {
+function conversationGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
 

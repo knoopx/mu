@@ -13,7 +13,7 @@ import {
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
-export const MAX_WRITE_PREVIEW_LINES = 12;
+const MAX_WRITE_PREVIEW_LINES = 12;
 
 /** The file as it is displayed: tabs widened, trailing blank lines dropped. */
 function contentLines(content: string): string[] {

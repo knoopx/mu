@@ -1,4 +1,3 @@
-import type { SlashCommand } from "../../../../autocomplete";
 import { clamp } from "../../../../utils/clamp";
 
 export type ComposerTarget =
@@ -25,11 +24,6 @@ export function isCycleTarget(
 ): target is ComposerTarget {
   return target !== null && CYCLE_TARGETS.includes(target);
 }
-
-interface ComposerCommand extends SlashCommand {
-  target?: ComposerTarget;
-}
-
 export type ComposerMode =
   | { kind: "draft" }
   | { kind: "commands"; index: number; query: string }

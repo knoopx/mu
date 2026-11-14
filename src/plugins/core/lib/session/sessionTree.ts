@@ -196,7 +196,7 @@ function describeMessage(msg: MessageLike, age: string): EntryDescription {
   return { role: "system", text: text || msg.role, meta: age };
 }
 
-export function describeEntry(entry: SessionEntry): EntryDescription {
+function describeEntry(entry: SessionEntry): EntryDescription {
   const age = entryTime(entry);
   if (entry.type === "message")
     return describeMessage(entry.message as unknown as MessageLike, age);
@@ -273,7 +273,7 @@ function timestampOf(node: SessionTreeNode): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-export function flattenTree(
+function flattenTree(
   roots: readonly SessionTreeNode[],
   leafId: string | null,
 ): SessionTreeNode[] {
@@ -315,11 +315,6 @@ export function flattenTree(
 
   return pre.reverse();
 }
-
-function emptyTreeModel(): TreeModel {
-  return EMPTY_MODEL;
-}
-
 function pathNodes(
   tree: readonly SessionTreeNode[],
   id: string,

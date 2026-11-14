@@ -16,9 +16,9 @@ import { byRecentSession } from "../session/sessionList";
 import { cappedPanelStatusText, matchesQuery } from "./options";
 import type { ComposerPanelRow } from "../../components/composer/Composer";
 
-export const USER_MESSAGE_HISTORY_CAP = 400;
+const USER_MESSAGE_HISTORY_CAP = 400;
 
-export const USER_MESSAGE_SESSIONS_CAP = 60;
+const USER_MESSAGE_SESSIONS_CAP = 60;
 
 const SESSION_LABEL_MAX_CHARS = 32;
 
@@ -51,7 +51,7 @@ const bashMessageText = (msg: {
   return `${msg.excludeFromContext === true ? "!!" : "!"}${command}`;
 };
 
-export function userMessageTextOf(entry: SessionEntry): string {
+function userMessageTextOf(entry: SessionEntry): string {
   if (entry.type !== "message") return "";
   const msg = (
     entry as {
@@ -69,7 +69,7 @@ export function userMessageTextOf(entry: SessionEntry): string {
   return contentToText(msg.content).trim();
 }
 
-export function sessionLabelOf(info: SessionInfo): string {
+function sessionLabelOf(info: SessionInfo): string {
   const name = (info.name ?? info.firstMessage ?? "").trim();
   if (name.length === 0) return "session";
   return truncateToWidth(singleLine(name), SESSION_LABEL_MAX_CHARS);
@@ -93,7 +93,7 @@ export function mergeUserMessages(
     .slice(0, cap);
 }
 
-export function userMessagesFromTree(
+function userMessagesFromTree(
   tree: readonly SessionTreeNode[],
   session: string,
 ): UserMessage[] {
@@ -124,7 +124,7 @@ export function userMessagesFromTranscript(
     }));
 }
 
-export async function readFolderUserMessages(
+async function readFolderUserMessages(
   cwd: string,
   onProgress?: (messages: UserMessage[]) => void,
 ): Promise<UserMessage[]> {
@@ -153,11 +153,6 @@ export async function readFolderUserMessages(
 }
 
 const historyCache = new Map<string, UserMessage[]>();
-
-export function invalidateUserMessageHistory(cwd: string): void {
-  historyCache.delete(cwd);
-}
-
 export interface UserMessageHistory {
   messages: UserMessage[];
 
@@ -186,7 +181,7 @@ export function useUserMessageHistory(
   return { messages: data, loading, error, reload: invalidate };
 }
 
-export function filterUserMessages(
+function filterUserMessages(
   messages: readonly UserMessage[],
   query: string,
 ): UserMessage[] {

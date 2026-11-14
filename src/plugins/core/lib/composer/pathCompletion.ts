@@ -45,7 +45,7 @@ export interface CompletionResult {
 
 const isSpace = (char: string): boolean => /\s/.test(char);
 
-export function isPathToken(token: string): boolean {
+function isPathToken(token: string): boolean {
   if (token.length === 0) return false;
   if (URL_LIKE.test(token)) return false;
   const bare = token.startsWith("@") ? token.slice(1) : token;
@@ -65,8 +65,7 @@ export function pathTokenOf(text: string): PathToken | null {
   return isPathToken(token) ? { token, start } : null;
 }
 
-export const isDirectoryCompletion = (value: string): boolean =>
-  value.endsWith("/");
+const isDirectoryCompletion = (value: string): boolean => value.endsWith("/");
 
 /** The editor can take the same Tab press as an inserted tab; a draft never wants one. */
 export const stripTrailingTab = (text: string): string =>
@@ -176,7 +175,7 @@ export interface CompletionList {
   total: number;
 }
 
-export function pathCompletions(
+function pathCompletions(
   text: string,
   cwd: string,
   home = homedir(),

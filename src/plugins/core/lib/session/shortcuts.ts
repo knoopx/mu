@@ -1,12 +1,11 @@
 import {
-  PAGED_NAV,
   hints,
   matchShortcut,
   navShortcuts,
   type Shortcut,
 } from "adwaita-gpuix/shortcuts";
 
-export { hints, matchShortcut, navShortcuts };
+export { matchShortcut };
 export type { Shortcut } from "adwaita-gpuix/shortcuts";
 
 const FILTER_PREFIX: Array<[string, string]> = [

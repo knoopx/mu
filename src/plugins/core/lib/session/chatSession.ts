@@ -73,7 +73,7 @@ export interface ChatSession {
   dispose(): Promise<void>;
 }
 
-export function splitModelRef(ref: string): {
+function splitModelRef(ref: string): {
   provider: string;
   modelId: string;
 } {
@@ -93,7 +93,7 @@ function metaOf(bridge: AgentBridge): ChatSessionMeta {
   };
 }
 
-export function chatSessionFromBridge(
+function chatSessionFromBridge(
   bridge: AgentBridge,
   onDispose?: () => Promise<void>,
 ): ChatSession {

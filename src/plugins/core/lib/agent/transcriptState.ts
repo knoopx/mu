@@ -163,7 +163,7 @@ export function nextItemId(
   return `${kind}-${++seq}`;
 }
 
-export function createTranscriptState(
+function createTranscriptState(
   items: TranscriptItem[] = [],
   isStreaming = false,
 ): TranscriptState {
@@ -405,7 +405,7 @@ const settleRun = (
   items: state.items.map((item) => settleItem(item, action.aborted)),
 });
 
-export function transcriptReducer(
+function transcriptReducer(
   state: TranscriptState,
   action: TranscriptAction,
 ): TranscriptState {

@@ -11,7 +11,7 @@
  * applies at the next start.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { muPathUnder, muStateDir, displayPath } from "../utils/paths";
 
 /**
@@ -28,11 +28,11 @@ export interface PluginArmState {
   disabled: string[];
 }
 
-export const pluginArmPath = (env: NodeJS.ProcessEnv = process.env): string =>
+const pluginArmPath = (env: NodeJS.ProcessEnv = process.env): string =>
   muPathUnder(muStateDir(env), "plugins.json");
 
 /** The user's file, or nothing when it is absent or unreadable — an absent file means everything is on. */
-export function readPluginArmState(
+function readPluginArmState(
   env: NodeJS.ProcessEnv = process.env,
 ): PluginArmState {
   try {
@@ -51,21 +51,6 @@ export function readPluginArmState(
     return { disabled: [] };
   }
 }
-
-export function writePluginArmState(
-  state: PluginArmState,
-  env: NodeJS.ProcessEnv = process.env,
-): void {
-  try {
-    mkdirSync(muStateDir(env), { recursive: true });
-    writeFileSync(
-      pluginArmPath(env),
-      `${JSON.stringify({ disabled: state.disabled }, null, 2)}\n`,
-      "utf8",
-    );
-  } catch {}
-}
-
 type Listener = () => void;
 
 class PluginArmStore {

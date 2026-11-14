@@ -13,21 +13,6 @@ export function modsOf(event: EventPayload): KeyMods {
     cmd: event.modifiers?.cmd === true,
   };
 }
-
-export function keyArgsOf(event: EventPayload): {
-  key: string;
-  mods: KeyMods;
-} {
-  return { key: keyOf(event), mods: modsOf(event) };
-}
-
-export function bareKeyArgs(event: { key?: string }): {
-  key: string;
-  mods: KeyMods;
-} {
-  return { key: canonicalKey(event.key ?? ""), mods: {} };
-}
-
 function typedCharOf(event: EventPayload): string | undefined {
   const chars = event.keyChar;
   if (chars === undefined || chars.length !== 1) return undefined;

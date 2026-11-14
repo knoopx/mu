@@ -20,7 +20,7 @@ import {
   isThemeName,
 } from "./themeStore";
 
-export const DEFAULT_ACCENT_KEY = "default";
+const DEFAULT_ACCENT_KEY = "default";
 
 function baseOf(scheme: ColorScheme): {
   window: string;
@@ -52,7 +52,7 @@ function base(scheme: ColorScheme): {
   return built;
 }
 
-export function themeSwatch(scheme: ColorScheme): ComposerSwatchSpec {
+function themeSwatch(scheme: ColorScheme): ComposerSwatchSpec {
   return base(scheme);
 }
 

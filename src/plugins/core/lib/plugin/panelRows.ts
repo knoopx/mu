@@ -18,7 +18,7 @@ import { HOST, PLUGINS } from "../../../registry";
 import type { PluginRegistration } from "./manifest";
 import { PLUGIN_CATEGORY_LABEL } from "./manifest";
 import type { PluginContributions } from "./host";
-import { ALWAYS_ARMED, pluginArmFile, pluginArming } from "./store";
+import { pluginArmFile, pluginArming } from "./store";
 
 const plural = (count: number, one: string, many = `${one}s`): string =>
   `${count} ${count === 1 ? one : many}`;
@@ -54,7 +54,7 @@ const CONTRIBUTIONS: readonly {
  * the list reads as a table down its whole length, and the table is what decides
  * how wide each of those columns is.
  */
-export function contributionFigures(
+function contributionFigures(
   contributions: PluginContributions,
 ): ComposerRowFigure[] {
   return CONTRIBUTIONS.map((kind) => {
@@ -67,7 +67,7 @@ export function contributionFigures(
 }
 
 /** The tools one plugin gave the model, which is what a search for a tool name matches on. */
-export function pluginToolNames(name: string): string[] {
+function pluginToolNames(name: string): string[] {
   return HOST.contributionsFor(name).tools;
 }
 
@@ -131,5 +131,3 @@ export function pluginsEmptyText(query: string): string {
 export function togglePlugin(name: string): string {
   return pluginArming.toggle(name);
 }
-
-export { ALWAYS_ARMED };

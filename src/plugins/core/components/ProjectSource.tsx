@@ -17,7 +17,7 @@ export interface ProjectSource {
   readFile(path: string): string | null;
 }
 
-export const LIVE_PROJECT: ProjectSource = {
+const LIVE_PROJECT: ProjectSource = {
   workspace: (cwd) => readWorkspaceStatus(cwd),
   projectSummary: (cwd) => loadProjectSummary({ cwd }),
   readFile: (path) => readText(path),

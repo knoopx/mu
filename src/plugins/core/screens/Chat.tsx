@@ -250,8 +250,6 @@ function sessionRowUnderCursor(
   return rows.find((item) => item.path === row.key);
 }
 
-export { PAGE_INSET };
-
 export function transcriptRowGap(t: AdwaitaTheme): number {
   return t.space.xl;
 }
@@ -335,7 +333,7 @@ export const TranscriptRow = memo(function TranscriptRow({
   );
 });
 
-export function userCardStyle(t: AdwaitaTheme): StyleDesc {
+function userCardStyle(t: AdwaitaTheme): StyleDesc {
   return {
     display: "flex",
     flexDirection: "column",
@@ -354,7 +352,7 @@ export function userCardStyle(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-export function UserRow({
+function UserRow({
   text,
   images,
 }: {
@@ -396,7 +394,7 @@ const insetRow: StyleDesc = {
   paddingRight: PAGE_INSET,
 };
 
-export function SystemRow({ text }: { text: string }): JSX.Element {
+function SystemRow({ text }: { text: string }): JSX.Element {
   const t = useAdwaita();
   return (
     <div style={insetRow}>
@@ -405,7 +403,7 @@ export function SystemRow({ text }: { text: string }): JSX.Element {
   );
 }
 
-export function contextSpecOf(
+function contextSpecOf(
   snapshot: AgentSnapshot,
 ): { used: number; total: number } | null {
   if (snapshot.contextTotal <= 0) return null;
@@ -445,7 +443,7 @@ const chatLayer: StyleDesc = {
   minHeight: 0,
 };
 
-export function ToastLayer(props: {
+function ToastLayer(props: {
   toasts: ToastItem[];
   onDismiss: (id: string) => void;
 }): JSX.Element {

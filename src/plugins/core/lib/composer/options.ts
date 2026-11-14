@@ -12,7 +12,7 @@ export function matchesQuery(
   return fields.some((f) => (f ?? "").toLowerCase().includes(q));
 }
 
-export function modelValue(bridge: AgentBridge): string {
+function modelValue(bridge: AgentBridge): string {
   return bridge.model ? `${bridge.model.provider}/${bridge.model.id}` : "";
 }
 
@@ -54,7 +54,7 @@ export function composerPlaceholder(): string {
   return "Type a message";
 }
 
-export const PANEL_PLACEHOLDER: Record<
+const PANEL_PLACEHOLDER: Record<
   ComposerTarget | "commands",
   string | undefined
 > = {
@@ -144,7 +144,7 @@ export function cappedPanelStatusText(
   return total >= cap ? `${count} · newest first` : `${count} ${belowCapTail}`;
 }
 
-export const commandRow = (command: SlashCommand): ComposerPanelRow => ({
+const commandRow = (command: SlashCommand): ComposerPanelRow => ({
   kind: "command" as const,
   key: command.name,
   name: command.name,

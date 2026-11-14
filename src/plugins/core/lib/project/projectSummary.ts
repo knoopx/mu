@@ -6,7 +6,6 @@ import {
   detectAgentsFile,
   detectLanguage,
   detectLicense,
-  humanizeAgo,
   isProjectRoot,
   readScripts,
   weeklyBuckets,
@@ -27,7 +26,7 @@ export const SPARKLINE_WEEKS = 12;
 /** How many recent changes the project summary feed shows. */
 export const FEED_COUNT = 25;
 
-export const SUMMARY_REVSET = "::";
+const SUMMARY_REVSET = "::";
 
 export interface ProjectMeta {
   language: string | null;
@@ -85,7 +84,7 @@ export interface ProjectSummaryModel {
   weekly: number[];
 }
 
-export function readProjectMeta(repoPath: string): ProjectMeta {
+function readProjectMeta(repoPath: string): ProjectMeta {
   return {
     language: detectLanguage(repoPath),
     license: detectLicense(repoPath),
@@ -94,20 +93,6 @@ export function readProjectMeta(repoPath: string): ProjectMeta {
     trackedFiles: null,
   };
 }
-
-function projectMetaLine(
-  meta: ProjectMeta,
-  identity: ProjectIdentity,
-  now: number = Date.now(),
-): string {
-  const segments: string[] = [];
-  if (meta.language !== null) segments.push(meta.language);
-  if (meta.license !== null) segments.push(meta.license);
-  if (identity.bookmark !== null) segments.push(identity.bookmark);
-  segments.push(`Updated ${humanizeAgo(null, now)}`);
-  return segments.join(" · ");
-}
-
 export interface LoadSummaryOptions {
   cwd?: string;
   bookmark?: string | null;

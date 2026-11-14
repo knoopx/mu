@@ -4,8 +4,8 @@ import { SCHEMES, type AccentKey, type ColorScheme } from "adwaita-gpuix";
 import { useSyncExternalStore } from "react";
 import { muConfigDir, muDir } from "../utils/paths";
 
-export const DEFAULT_SCHEME: ColorScheme = "nightsky";
-export const DEFAULT_ACCENT: AccentKey | null = null;
+const DEFAULT_SCHEME: ColorScheme = "nightsky";
+const DEFAULT_ACCENT: AccentKey | null = null;
 
 export const THEME_LABELS: Record<ColorScheme, string> = {
   light: "Light",

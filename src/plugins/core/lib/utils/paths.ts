@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-export const APP_DIR_NAME = "mu";
+const APP_DIR_NAME = "mu";
 
 const fromEnv = (
   env: NodeJS.ProcessEnv,
@@ -22,10 +22,6 @@ export const muConfigDir = (env: NodeJS.ProcessEnv = process.env): string =>
 
 export const muStateDir = (env: NodeJS.ProcessEnv = process.env): string =>
   fromEnv(env, "XDG_STATE_HOME", join(home(env), ".local", "state"));
-
-export const muDataDir = (env: NodeJS.ProcessEnv = process.env): string =>
-  fromEnv(env, "XDG_DATA_HOME", join(home(env), ".local", "share"));
-
 /** What mu keeps only to avoid doing it again — a day's worth of API answers, not state the user would miss. */
 export const muCacheDir = (env: NodeJS.ProcessEnv = process.env): string =>
   fromEnv(env, "XDG_CACHE_HOME", join(home(env), ".cache"));

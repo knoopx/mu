@@ -1,4 +1,4 @@
-export function baseType(mimeType: string): string {
+function baseType(mimeType: string): string {
   return (mimeType.split(";")[0] ?? mimeType).trim().toLowerCase();
 }
 

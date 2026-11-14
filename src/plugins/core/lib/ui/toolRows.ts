@@ -41,14 +41,6 @@ export const toolMark: StyleDesc = {
   flexShrink: 0,
   marginLeft: -MARK_HANG,
 };
-
-/** A mark in a column that pads its own left edge: it clears that padding too,
- *  so the mark still reaches the header's column instead of a second one. */
-export const toolMarkIn = (columnPadding: number): StyleDesc => ({
-  ...toolMark,
-  marginLeft: -(MARK_HANG + columnPadding),
-});
-
 /**
  * The column a tool result is stacked down, its rows carrying their own gaps.
  *

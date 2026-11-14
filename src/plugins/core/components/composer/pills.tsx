@@ -21,13 +21,13 @@ const CONTEXT_RING_ANGLE = 90;
  * the whole fill dims the travelled length and leaves its end invisible, so the
  * ring reads as a fraction of the fraction and a full context still leaves the
  * finish line unpainted. */
-export const CONTEXT_RING_FADE = 0.1;
+const CONTEXT_RING_FADE = 0.1;
 
 /** Where the ring's ink is half green and half yellow: half the context spent. */
-export const CONTEXT_WARN_FRACTION = 0.5;
+const CONTEXT_WARN_FRACTION = 0.5;
 
 /** And half yellow and half red: a tenth short of the whole window. */
-export const CONTEXT_DANGER_FRACTION = 0.9;
+const CONTEXT_DANGER_FRACTION = 0.9;
 
 /** How much of the context one colour change costs, as a share of the window.
  *
@@ -35,7 +35,7 @@ export const CONTEXT_DANGER_FRACTION = 0.9;
  * fraction named above, so the ring never flips on one frame: it is already
  * warming at 45% and already reddening at 85%. A threshold that changes the ink
  * all at once reads as a switch that was thrown, not as a window filling up. */
-export const CONTEXT_BLEND_FRACTION = 0.2;
+const CONTEXT_BLEND_FRACTION = 0.2;
 
 function pillBox(t: AdwaitaTheme): StyleDesc {
   return {
@@ -93,7 +93,7 @@ export const contextFraction = (used: number, total: number): number =>
   total > 0 ? clamp(used / total, 1) : 0;
 
 /** Where the fill ends along the gradient line. */
-export const contextRingEdge = (fraction: number): number => clamp(fraction, 1);
+const contextRingEdge = (fraction: number): number => clamp(fraction, 1);
 
 /** How far the blend centred on `center` has travelled at `fraction`. */
 const contextBlend = (fraction: number, center: number): number =>
@@ -107,7 +107,7 @@ const contextBlend = (fraction: number, center: number): number =>
  * It blends between those three rather than picking one: the ink of a ring at 90%
  * is halfway from yellow to red, and the colour is a reading of the whole window
  * instead of which band the last token landed in. */
-export const contextRingColor = (t: AdwaitaTheme, fraction: number): string => {
+const contextRingColor = (t: AdwaitaTheme, fraction: number): string => {
   const spent = contextRingEdge(fraction);
   const warm = mixHex(
     t.color.functional.success,
@@ -123,10 +123,10 @@ export const contextRingColor = (t: AdwaitaTheme, fraction: number): string => {
 
 /** Where that fill's fade begins: one `CONTEXT_RING_FADE` behind the edge, and
  * never before the start of the line. */
-export const contextRingTail = (fraction: number): number =>
+const contextRingTail = (fraction: number): number =>
   Math.max(0, contextRingEdge(fraction) - CONTEXT_RING_FADE);
 
-export const contextRingStops = (
+const contextRingStops = (
   t: AdwaitaTheme,
   fraction: number,
 ): [LinearGradientStop, LinearGradientStop] => {

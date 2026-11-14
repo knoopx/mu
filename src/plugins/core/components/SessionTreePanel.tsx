@@ -21,11 +21,7 @@ import {
   emphasisWeight,
   plainWeight,
 } from "../lib/ui/tokens";
-import type {
-  TreeFilter,
-  TreeModel,
-  TreeRow,
-} from "../lib/session/sessionTree";
+import type { TreeModel, TreeRow } from "../lib/session/sessionTree";
 
 function TreeRowView({
   row,

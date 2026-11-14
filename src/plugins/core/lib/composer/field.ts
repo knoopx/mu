@@ -29,7 +29,7 @@ export function composerFieldRow(t: AdwaitaTheme): StyleDesc {
   };
 }
 
-export function composerFieldStyle(t: AdwaitaTheme): StyleDesc {
+function composerFieldStyle(t: AdwaitaTheme): StyleDesc {
   return {
     flexGrow: 1,
     flexShrink: 1,

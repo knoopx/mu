@@ -33,9 +33,9 @@
  */
 
 /** Where a napi-rs generated loader is told to find its native library. */
-export const NATIVE_LIBRARY_ENV = "NAPI_RS_NATIVE_LIBRARY_PATH";
+const NATIVE_LIBRARY_ENV = "NAPI_RS_NATIVE_LIBRARY_PATH";
 /** Where `require.resolve` looks inside a `bun build --compile` executable. */
-export const NODE_PATH_ENV = "NODE_PATH";
+const NODE_PATH_ENV = "NODE_PATH";
 
 /** What mu was launched with, so another mu window can be launched the same way. */
 let launched: NodeJS.ProcessEnv = {};

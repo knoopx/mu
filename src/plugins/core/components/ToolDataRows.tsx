@@ -22,7 +22,6 @@ import {
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 import { firstLine } from "../../../utils/truncate";
 import { StateSpinner } from "./StateSpinner";
-import { ToolCaptionLine } from "./ToolCaptionLine";
 import { ToolStateLine } from "./ToolStateLine";
 import { chipGlyphOf } from "../lib/ui/toolChipIcons";
 import { mutedText } from "../lib/ui/theme";
@@ -398,26 +397,6 @@ export function ToolUnknownResult({
    *  still has to sit in that column to land in the header's mark gutter. */
   return <div style={toolBodyStack(t)}>{note}</div>;
 }
-
-/** The count line above a table of rows — how much the call read. */
-export function ToolSummary({
-  text,
-  tone = "neutral",
-}: {
-  text: string;
-  tone?: ToolRowTone;
-}): JSX.Element | null {
-  const t = useAdwaita();
-  if (text === "") return null;
-  return (
-    <ToolCaptionLine
-      color={toolToneColor(t, tone)}
-      text={text}
-      weight={emphasisWeight(t)}
-    />
-  );
-}
-
 /** A state the log has to say in words — a failure, a scope with nothing in it. */
 export function ToolStateNote({
   icon,
@@ -541,19 +520,6 @@ export function ToolStatusNote({
     />
   );
 }
-
-/** How much a call left out, and what the reader does about it — one line, whatever tool it was. */
-export function ToolTruncated({
-  count,
-  text,
-}: {
-  count: number;
-  text: string;
-}): JSX.Element | null {
-  if (count <= 0) return null;
-  return <ToolStateNote icon="unfoldMore" tone="neutral" text={text} />;
-}
-
 /**
  * The bars a running call shows before its rows arrive, in characters of the
  * marker glyph: three chips of an identity line, then an id and a body per row.

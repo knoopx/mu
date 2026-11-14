@@ -1,6 +1,4 @@
-export function textParts(
-  content: unknown,
-): Array<{ type: string; text?: string }> {
+function textParts(content: unknown): Array<{ type: string; text?: string }> {
   if (!Array.isArray(content)) return [];
   return content.filter(
     (part): part is { type: string; text?: string } =>

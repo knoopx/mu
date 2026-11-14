@@ -1,6 +1,5 @@
 import type { JSX, ReactNode } from "react";
 import {
-  hexToRgba,
   Icon,
   rowHoverBg,
   selectionBg,
@@ -13,23 +12,14 @@ import { centerRow } from "../../lib/ui/layout";
 import { mutedText } from "../../lib/ui/theme";
 import { panelInset } from "../../lib/composer/chrome";
 import {
-  HAIRLINE,
   INLINE_GLYPH,
   ROW_HEIGHT,
-  SWATCH_HEIGHT,
-  SWATCH_WIDTH,
   figureGap,
   glyphForText,
   lineBox,
   lineBoxAt,
-  monoTextWidth,
-  textWidth,
 } from "../../lib/ui/tokens";
-import type {
-  ComposerPanelRow,
-  ComposerRowFigure,
-  ComposerSwatchSpec,
-} from "./Composer";
+import type { ComposerPanelRow, ComposerRowFigure } from "./Composer";
 
 function panelRowStyle(
   t: AdwaitaTheme,
@@ -49,11 +39,6 @@ function panelRowStyle(
     hover: active ? undefined : { backgroundColor: rowHoverBg(t) },
   };
 }
-
-function rowStyle(t: AdwaitaTheme, active: boolean, focused = true): StyleDesc {
-  return panelRowStyle(t, active, focused, ROW_HEIGHT);
-}
-
 /**
  * A row's own ink. `dimmed` is the ink of a row there to be read, not acted on:
  * it takes the row's meta ink, so the whole line reads at one quiet level.

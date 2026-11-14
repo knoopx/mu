@@ -1,6 +1,5 @@
 import { useAdwaita, type AdwaitaTheme } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
-import { PAGE_INSET } from "../ui/transcriptLayout";
 import { composerFill, type ComposerTone } from "../ui/theme";
 import { codeLineBox, HAIRLINE, ROW_HEIGHT } from "../ui/tokens";
 
@@ -47,7 +46,7 @@ export const panelGap = (t: AdwaitaTheme): number => t.space.xs;
 export const paneGap = (t: AdwaitaTheme): number => 2 * panelGap(t);
 
 /** The air around a rule that divides one panel's panes. */
-export const ruleGap = (t: AdwaitaTheme): number => paneGap(t);
+const ruleGap = (t: AdwaitaTheme): number => paneGap(t);
 
 /** The panel's own band: its box, its fill, its breathing. */
 export function panelBox(t: AdwaitaTheme, tone: ComposerTone): StyleDesc {

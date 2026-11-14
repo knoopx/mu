@@ -48,7 +48,7 @@ const NAMED_THING = /identifier|variable|name|expression$/;
  * app reads. They match a whole token type, so `for` never colours the letters
  * inside `format`.
  */
-export const KEYWORDS = new Set([
+const KEYWORDS = new Set([
   // the words most of them share
   "abstract",
   "as",

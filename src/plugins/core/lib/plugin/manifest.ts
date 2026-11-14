@@ -312,7 +312,7 @@ export const PLUGIN_CATEGORY_LABEL: Record<PluginCategory, string> = {
   session: "session",
 };
 
-export const PLUGIN_CATEGORIES = Object.keys(PLUGIN_CATEGORY_LABEL) as [
+const PLUGIN_CATEGORIES = Object.keys(PLUGIN_CATEGORY_LABEL) as [
   PluginCategory,
   ...PluginCategory[],
 ];

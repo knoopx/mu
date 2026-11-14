@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  loadProjectSummary,
-  type ProjectSummaryModel,
-} from "../lib/project/projectSummary";
+import { type ProjectSummaryModel } from "../lib/project/projectSummary";
 import { useProjectSource } from "../components/ProjectSource";
 
 export interface ProjectSummaryState {

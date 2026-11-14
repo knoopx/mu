@@ -50,7 +50,7 @@ export function agentExtensions(host: PluginHost): ExtensionFactory[] {
 }
 
 /** Every log surface every plugin claimed, in registration order. */
-export function rowSurfaces(host: PluginHost): ToolRowSurface[] {
+function rowSurfaces(host: PluginHost): ToolRowSurface[] {
   return host.slots.rows;
 }
 
@@ -164,19 +164,12 @@ export function panelSurfaces(host: PluginHost): PanelSurface[] {
 }
 
 /** The panel registered for a composer target, if a plugin owns it. */
-export function panelForTarget(
+function panelForTarget(
   host: PluginHost,
   target: ComposerTarget,
 ): PanelSurface | null {
   return host.slots.panels.find((panel) => panel.target === target) ?? null;
 }
-
-/** Whether a target is a panel that fills the band instead of the list chrome. */
-export const panelIsWide = (
-  host: PluginHost,
-  target: ComposerTarget,
-): boolean => panelForTarget(host, target)?.wide === true;
-
 /**
  * What the panel shows right now, in the panel's own words.
  *
