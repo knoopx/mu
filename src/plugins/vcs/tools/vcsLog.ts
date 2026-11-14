@@ -49,7 +49,7 @@ const Parameters = Type.Object({
 });
 
 /** No repo and no matching commits are different news, so `unsupported` is answered before the CLI is reached. */
-export async function executeVcsLog(
+async function executeVcsLog(
   params: VcsLogParams,
 ): Promise<AgentToolResult<VcsLogDetails>> {
   const blank: VcsBlank<VcsLogDetails> = {

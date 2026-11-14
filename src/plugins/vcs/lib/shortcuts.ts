@@ -1,16 +1,13 @@
 import {
-  NAV,
   PAGED_NAV,
-  bindingMatches,
   hints,
   matchShortcut,
-  navShortcuts,
   type KeyMods,
   type Shortcut,
 } from "adwaita-gpuix/shortcuts";
 
 export type { KeyMods, Shortcut };
-export { hints, matchShortcut, PAGED_NAV };
+export { hints, matchShortcut };
 
 const FOCUS_RIGHT: Shortcut = {
   id: "focus-right",

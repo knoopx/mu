@@ -70,7 +70,7 @@ export interface RepoSource {
   opPatch(op: string): Promise<OpPatchOutcome>;
 }
 
-export const LIVE_REPO: RepoSource = {
+const LIVE_REPO: RepoSource = {
   workspaceRoot: (cwd) => {
     try {
       return findWorkspaceRoot(cwd);

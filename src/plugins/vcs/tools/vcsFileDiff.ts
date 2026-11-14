@@ -39,7 +39,7 @@ const Parameters = Type.Object({
 });
 
 /** An omitted `to` is the parent of `from`, resolved first so the second end is an identity and not a guess. */
-export async function executeVcsFileDiff(
+async function executeVcsFileDiff(
   params: VcsFileDiffParams,
 ): Promise<AgentToolResult<VcsFileDiffDetails>> {
   const from = params.from.trim();

@@ -331,7 +331,12 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element | null {
     );
 
   if (tool === VCS_DESCRIBE_TOOL)
-    return <VcsViewBody view={view} before={<VcsMessageBody text={view.content} />} />;
+    return (
+      <VcsViewBody
+        view={view}
+        before={<VcsMessageBody text={view.content} />}
+      />
+    );
 
   return <VcsViewBody view={view} />;
 }

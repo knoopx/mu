@@ -32,7 +32,7 @@ const Parameters = Type.Object({
 });
 
 /** `empty` is an answer here, not a failure: the path may be new, or spelled differently than the repo has it. */
-export async function executeVcsFileHistory(
+async function executeVcsFileHistory(
   params: VcsFileHistoryParams,
 ): Promise<AgentToolResult<VcsFileHistoryDetails>> {
   const path = params.path.trim();

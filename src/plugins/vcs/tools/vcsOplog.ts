@@ -37,7 +37,7 @@ const Parameters = Type.Object({
 });
 
 /** `full` is for when an op id has to be whole; compact is the transcript's budget. */
-export async function executeVcsOplog(
+async function executeVcsOplog(
   params: VcsOplogParams,
 ): Promise<AgentToolResult<VcsOplogDetails>> {
   const blank: VcsBlank<VcsOplogDetails> = { vcs: "jj", op_count: 0, rows: [] };

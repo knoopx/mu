@@ -41,7 +41,7 @@ const Parameters = Type.Object({
 });
 
 /** The revision is resolved even when there are no hunks, so the chips still say what was read. */
-export async function executeVcsHunkList(
+async function executeVcsHunkList(
   params: VcsHunkListParams,
 ): Promise<AgentToolResult<VcsHunkListDetails>> {
   const rev = params.rev.trim();

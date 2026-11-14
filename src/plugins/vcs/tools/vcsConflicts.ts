@@ -31,7 +31,7 @@ const Parameters = Type.Object({
 });
 
 /** Every conflicted revision is listed on its own: a conflict is per file, per revision, never global. */
-export async function executeVcsConflicts(
+async function executeVcsConflicts(
   params: VcsConflictsParams,
 ): Promise<AgentToolResult<VcsConflictsDetails>> {
   const rev = (params.rev ?? "").trim();

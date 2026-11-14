@@ -39,17 +39,6 @@ export const VCS_TOOL_NAMES: readonly string[] = [
   VCS_HUNK_LIST_TOOL,
   VCS_HUNK_SPLIT_TOOL,
 ];
-
-/**
- * The tools that mutate the repo. A write runs only on an instruction the user
- * asked for — from the changes panel's keys, or from what they typed.
- */
-export const VCS_WRITE_TOOLS: readonly string[] = [
-  VCS_DESCRIBE_TOOL,
-  VCS_FILE_SPLIT_TOOL,
-  VCS_HUNK_SPLIT_TOOL,
-];
-
 export const VCS_TOOL_LABELS: Record<string, string> = {
   [VCS_LOG_TOOL]: "VCS log",
   [VCS_FILE_DIFF_TOOL]: "VCS diff",

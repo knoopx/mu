@@ -54,7 +54,7 @@ const baseOf = (
 });
 
 /** Entries are checked before the repo is touched — a malformed spec must not half-run. */
-export async function executeVcsHunkSplit(
+async function executeVcsHunkSplit(
   params: VcsHunkSplitParams,
 ): Promise<AgentToolResult<VcsSplitDetails>> {
   const rev = params.rev.trim();

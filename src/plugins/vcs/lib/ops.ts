@@ -424,7 +424,7 @@ export async function runFileHistory(
 ): Promise<HistoryOutcome> {
   const rel = relativeToRoot(path);
   const looksLikeId =
-    /^[0-9a-f]{7,64}$/.test(path) || /^[0-9a-z]{7,}$/.test(path);
+    /^[0-9a-f]{7,64}$/.test(path) || /^[0-9a-z]{7 }$/.test(path);
   const revset = looksLikeId ? path : `files(root:"${rel}")`;
 
   const res = await vcs([

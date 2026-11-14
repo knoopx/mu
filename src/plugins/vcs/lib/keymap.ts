@@ -17,7 +17,7 @@ import {
 } from "./shortcuts";
 import type { FilePanelFocus, NavDirection, VcsPanelKind } from "../types";
 
-export const STACK_ACTION_IDS = new Set([
+const STACK_ACTION_IDS = new Set([
   "pick",
   "new",
   "edit",
@@ -32,7 +32,7 @@ export const STACK_ACTION_IDS = new Set([
   "revset",
 ]);
 
-export const FILES_ACTION_IDS = new Set([
+const FILES_ACTION_IDS = new Set([
   "open",
   "edit",
   "split",
@@ -46,7 +46,7 @@ export const FILES_ACTION_IDS = new Set([
  * change's own writes are the changes panel's, and its describes and splits go
  * to the agent.
  */
-export const OPLOG_ACTION_IDS = new Set(["restore", "undo", "redo"]);
+const OPLOG_ACTION_IDS = new Set(["restore", "undo", "redo"]);
 
 export const STACK_MUTATIONS: Record<
   string,

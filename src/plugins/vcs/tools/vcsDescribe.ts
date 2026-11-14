@@ -37,7 +37,7 @@ const Parameters = Type.Object({
 });
 
 /** Resolved before and after: a write that cannot name what it changed has not proved it ran. */
-export async function executeVcsDescribe(
+async function executeVcsDescribe(
   params: VcsDescribeParams,
 ): Promise<AgentToolResult<VcsDescribeDetails>> {
   const hash = params.hash.trim();

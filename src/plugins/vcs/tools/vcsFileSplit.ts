@@ -56,7 +56,7 @@ const baseOf = (
 });
 
 /** Parameters, repo, revision, post-state, in that order: nothing runs against a revset that cannot be resolved. */
-export async function executeVcsFileSplit(
+async function executeVcsFileSplit(
   params: VcsFileSplitParams,
 ): Promise<AgentToolResult<VcsFileSplitDetails>> {
   const rev = params.rev.trim();

@@ -1,4 +1,4 @@
-import { execFile, execSync, execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
@@ -18,7 +18,7 @@ const pExecFile = promisify(execFile);
 const VCS = "jj";
 const HUNK = "jj-hunk";
 
-export const DEFAULT_CHANGE_REVSET = "ancestors(@, 50) ~ root()";
+const DEFAULT_CHANGE_REVSET = "ancestors(@, 50) ~ root()";
 
 export type { CliResult };
 
@@ -248,13 +248,6 @@ const blobCache = new Map<string, Uint8Array | null>();
 
 /** A picture the panel will paint: big files stay in the repo, not in memory. */
 const MAX_BLOB_BYTES = 8 * 1024 * 1024;
-
-function clearPatchCaches(): void {
-  filesCache.clear();
-  patchCache.clear();
-  blobCache.clear();
-}
-
 async function cacheKey(changeId: string): Promise<string> {
   const head =
     (await vcsQuiet([
@@ -339,16 +332,6 @@ export async function loadFileBytes(
   blobCache.set(key, bytes);
   return bytes;
 }
-
-function hunkToolAvailable(): boolean {
-  try {
-    execSync(`command -v ${HUNK}`, { stdio: "ignore" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export interface HunkRange {
   start: number;
   lines: number;
@@ -373,14 +356,6 @@ export interface FileHunks {
 export interface HunkListResult {
   files: FileHunks[];
 }
-
-async function loadHunks(changeId: string): Promise<HunkListResult> {
-  const res = await vcsHunk(["list", "--format", "json", "-r", changeId]);
-  if (res.code !== 0)
-    throw new Error(res.stderr.trim() || "jj-hunk list failed");
-  return JSON.parse(res.stdout) as HunkListResult;
-}
-
 async function runHunkSpec(
   changeId: string,
   selections: Array<{ file_path: string; hunk_id: string }>,
@@ -408,28 +383,6 @@ async function runHunkSpec(
     rmSync(specPath, { force: true });
   }
 }
-
-async function splitSelectedHunks(
-  changeId: string,
-  selections: Array<{ file_path: string; hunk_id: string }>,
-): Promise<string> {
-  await runHunkSpec(
-    changeId,
-    selections,
-    "keep",
-    `Split selected hunks from change ${changeId.slice(0, 8)}`,
-  );
-  return `Split ${selections.length} hunk(s) from ${changeId.slice(0, 8)}`;
-}
-
-async function discardSelectedHunks(
-  changeId: string,
-  selections: Array<{ file_path: string; hunk_id: string }>,
-): Promise<string> {
-  await runHunkSpec(changeId, selections, "reset", "Discard selected hunks");
-  return `Discarded ${selections.length} hunk(s)`;
-}
-
 export async function newChange(changeId: string): Promise<string> {
   await vcsOk(["new", changeId]);
   return `Created new change on ${changeId.slice(0, 8)}`;

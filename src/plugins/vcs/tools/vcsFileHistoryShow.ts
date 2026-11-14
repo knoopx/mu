@@ -32,7 +32,7 @@ const Parameters = Type.Object({
 });
 
 /** The revision is resolved before the read, so even a failure names the change that was read. */
-export async function executeVcsFileHistoryShow(
+async function executeVcsFileHistoryShow(
   params: VcsFileShowParams,
 ): Promise<AgentToolResult<VcsFileShowDetails>> {
   const path = params.path.trim();
