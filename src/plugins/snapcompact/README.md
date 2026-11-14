@@ -13,6 +13,20 @@ This is [`@oh-my-pi/snapcompact`](https://github.com/can1357/oh-my-pi)'s engine
 encoding, the reading guide), wired into pi's compaction lifecycle. mu writes no
 rasterizer of its own.
 
+## What you get
+
+- A compaction that keeps the discarded span instead of paraphrasing it: the turns that
+  were dropped are printed as dense pages, and a vision model reads them back.
+- Frames stored in the compaction entry's `details` — which pi never sends to the model,
+  and is therefore the right home for pages — and replayed into **every** request, since
+  pi rebuilds the request from the session file and a guide pointing at pages that are
+  not there would be a lie.
+- A pass that is local and deterministic: no model call, no usage, nothing billed.
+- A compaction row in the session tree and a note in the transcript that read the frames
+  back rather than the summary, whose first line is the reading guide.
+- One switch, in the user's file (`~/.config/mu/snapcompact.json`), read at session
+  start. The agent cannot flip it.
+
 ## The shape of a pass
 
 | Stage                                                                                                       | Who owns it                      |

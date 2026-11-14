@@ -14,6 +14,22 @@ a validator and an engine; it authors no rule.
 the registry at boot and `reloadGuardrails()` reads them again. One unreadable file
 loses only its own rules; the panel names the trouble.
 
+## What you get
+
+- A rule that stops a tool call before it runs, written as a tree-sitter query plus
+  JS regex filters, in a grammar named by the file the call points at — an `edit` of a
+  `.py` file is checked against python rules and a `write` of a `.json` file is
+  released unread.
+- Three agent tools: `guardrails-test` grades a domain's fixture suite against the live
+  engine, `guardrails-fixture-update` writes the suites, `guardrails-coverage` reports
+  which domains have actually blocked in real sessions and which never have.
+- A panel (`/guardrails`, `ctrl+shift+g`) that arms and disarms each domain. That is the
+  user's switch and the agent has no part in it: there is no manage tool.
+- The reason a call was refused, drawn under that call's row whether the call was one of
+  mu's tools or one of pi's.
+- Every grammar `@vscode/tree-sitter-wasm` ships, embedded in the compiled binary, and a
+  parse that is budgeted and always fails open.
+
 ## A rule
 
 An array of objects. `id`, `domain`, `message` and `query` must be non-empty, `id`

@@ -10,6 +10,23 @@ plan and the prompt generator are `@openuidev/lang-core`. What mu owns is the
 is drawn with `adwaita-gpuix`, with no DOM), and the **store** (what a program
 _is_ in a conversation).
 
+## What you get
+
+- A screen in the log: the model writes OpenUI Lang and it draws, in the app's own
+  widgets, on the band every other answer stands on.
+- A screen inside the reply: a ```ui fence in a message paints it, and it draws while
+  the reply arrives — no tool call, no extra turn.
+- Questions that answer themselves into your message: a form's fields and a run of
+  buttons land in the composer draft as `Label: answer` lines, and reach the agent only
+  when you send them. An input outside a form is a what-if the page holds.
+- Eleven tools — `openui-prompt`, `-library`, `-validate`, `-render`, `-stream`,
+  `-state`, `-events`, `-tools`, `-list`, `-switch`, `-clear` — and a component library
+  in seven groups that is the language's whole boundary: a component absent from it does
+  not exist.
+- Live data: `Query(name, args, default, refresh)` answers from the JSON
+  `openui-tools` serves, and the fourth argument keeps a watching screen current without
+  another call.
+
 ## A program, not a tool call
 
 A tool call is the shortest-lived thing in this plugin. The unit is the program:
