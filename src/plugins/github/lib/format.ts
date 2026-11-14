@@ -12,6 +12,8 @@
  * the human's reading of the same value.
  */
 
+import { MAX_OUTPUT_LINES } from "../../core/lib/ui/toolOutputMode";
+
 const MONTHS = [
   "Jan",
   "Feb",
@@ -133,3 +135,33 @@ export const humanPerson = (value: string): string => {
 /** A branch, shown without the owner prefix GitHub puts on a fork's head. */
 export const humanBranch = (value: string): string =>
   value.includes(":") ? value.slice(value.indexOf(":") + 1) : value;
+
+/**
+ * A file's text as the log paints it, and the count that says how far it got.
+ *
+ * The body and the header's count come out of the same two functions, so the line
+ * a file stops at is measured once: the body paints the head and says nothing about
+ * the rest, and the header's tail is the one place the cut is spoken.
+ */
+export const FILE_BODY_LINES = MAX_OUTPUT_LINES;
+
+/** The lines of a file's text the log paints — its head, trailing blanks dropped. */
+export const fileBodyLines = (content: string): string[] =>
+  content.replace(/\s+$/u, "").split("\n").slice(0, FILE_BODY_LINES);
+
+/**
+ * How much of a file is on screen: `104 lines` whole, `40 of 104 lines` once the
+ * body stops short. The file's own count is GitHub's; the body's line count only
+ * stands in when the record did not carry one.
+ */
+export const fileLengthWord = (content: string, total: string): string => {
+  if (content.trim() === "") return "";
+  const lines = content.replace(/\s+$/u, "").split("\n").length;
+  const wholeField = /^\d+$/u.test(total.trim()) ? Number(total.trim()) : 0;
+  const whole = Math.max(wholeField, lines);
+  if (whole === 0) return "";
+  const shown = Math.min(lines, FILE_BODY_LINES);
+  return shown >= whole
+    ? `${String(whole)} lines`
+    : `${String(shown)} of ${String(whole)} lines`;
+};

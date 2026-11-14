@@ -9,7 +9,7 @@
  * answer.
  */
 
-import { humanDate, humanDated, humanPerson } from "../format";
+import { humanDated, humanPerson } from "../format";
 import { cells, fact, factsShown, fieldNamed, stateOf } from "./contract";
 import type { GithubKindWords } from "./contract";
 
@@ -33,15 +33,6 @@ export const releaseWords: GithubKindWords = {
     isSingle(call.kind)
       ? fieldNamed(call, "name") || fieldNamed(call, "tag")
       : "",
-  identity: (call) =>
-    isSingle(call.kind)
-      ? {
-          title: fieldNamed(call, "name") || call.target,
-          secondary: `${call.target} in ${call.repo}`,
-          icon: "sell",
-          person: humanPerson(fieldNamed(call, "author")),
-        }
-      : { title: `Releases of ${call.repo}`, secondary: "", icon: "sell" },
   facts: (call) =>
     isSingle(call.kind)
       ? factsShown([
@@ -52,6 +43,7 @@ export const releaseWords: GithubKindWords = {
       : [],
   // A release that is simply released is not standing anywhere noteworthy; a
   // prerelease or a draft is, and that is said once, on the title's own line.
+  headerFacts: () => [],
   state: (call) => {
     if (!isSingle(call.kind)) return null;
     const standing = stateOf(call);

@@ -8,12 +8,7 @@
  */
 
 import { humanDated, humanPerson } from "../format";
-import {
-  changesetColumns,
-  fact,
-  factsShown,
-  fieldNamed,
-} from "./contract";
+import { changesetColumns, fact, factsShown, fieldNamed } from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const commitWords: GithubKindWords = {
@@ -24,21 +19,17 @@ export const commitWords: GithubKindWords = {
   emptyNote: () => "no files changed",
   columns: changesetColumns,
   title: (call) => fieldNamed(call, "description"),
-  identity: (call) => ({
-    title: fieldNamed(call, "description"),
-    secondary: `${call.target} in ${call.repo}`,
-    icon: "commit",
-    person: humanPerson(fieldNamed(call, "author")),
-  }),
-  // Who wrote it and when, and how many files it touched: the rows below say what
-  // happened to each of them, and the scale beside this band says how much moved in
-  // total, so neither is repeated here.
   facts: (call) =>
     factsShown([
       fact("authored by", humanPerson(fieldNamed(call, "author"))),
       fact("created", humanDated(fieldNamed(call, "date"))),
-      fact("files", fieldNamed(call, "files"), { figure: true }),
     ]),
+  // How many files the commit moved is a count of the change rows the card draws, so
+  // it rides the header rather than tallying the card from above.
+  headerFacts: (call) => {
+    const files = fieldNamed(call, "files");
+    return files === "" ? [] : [`${files} ${files === "1" ? "file" : "files"}`];
+  },
   state: () => null,
   body: "prose",
 };

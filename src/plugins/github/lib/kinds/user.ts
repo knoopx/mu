@@ -7,7 +7,7 @@
  * it stands in the prose panel like any other body rather than in a label.
  */
 
-import { humanCount, humanDate } from "../format";
+import { humanCount } from "../format";
 import { fact, factsShown, fieldNamed, recordColumns } from "./contract";
 import type { GithubKindWords } from "./contract";
 
@@ -20,15 +20,6 @@ export const userWords: GithubKindWords = {
   columns: recordColumns,
   title: (call) => fieldNamed(call, "name") || fieldNamed(call, "login"),
   // A profile is named by the name the person chose; the handle is the line under it.
-  identity: (call) => {
-    const named = fieldNamed(call, "name") || call.target;
-    return {
-      title: named,
-      secondary: call.target,
-      icon: "person",
-      person: named,
-    };
-  },
   facts: (call) =>
     factsShown([
       // A person is the ordinary case, so it is not said; an organisation is news.
@@ -50,6 +41,7 @@ export const userWords: GithubKindWords = {
         figure: true,
       }),
     ]),
+  headerFacts: () => [],
   state: () => null,
   body: "prose",
 };

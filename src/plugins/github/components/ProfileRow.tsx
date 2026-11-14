@@ -1,24 +1,20 @@
 /**
  * `github-user`: a profile, in the order a profile is read.
  *
- * The face and the name the person chose open the card, with the handle in mono
- * under them; what they publish and who reads it follow as counts; and the words
- * they wrote about themselves close it.
+ * The card is the person: the face and the name they chose, and the words they wrote
+ * about themselves. What they publish and who reads it are counts, and counts — along
+ * with the handle the call was pointed at — ride the header and its chips.
  */
 
 import type { JSX } from "react";
 
-import { Band, Facts, Identity, Prose } from "./chrome";
+import { Band, Prose } from "./chrome";
 import type { GithubToolView } from "../lib/toolView";
 
 export function ProfileRow({ view }: { view: GithubToolView }): JSX.Element {
   return (
     <>
       <Band first>
-        <Identity {...view.identity} state={view.state} />
-        <Facts facts={view.facts} />
-      </Band>
-      <Band>
         <Prose source={view.body} />
       </Band>
     </>

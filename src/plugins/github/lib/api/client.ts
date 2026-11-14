@@ -9,10 +9,7 @@
  * interpret twice. Nothing above this file builds a URL.
  */
 
-import {
-  readCache,
-  writeCache,
-} from "../../../core/lib/utils/datedCache";
+import { readCache, writeCache } from "../../../core/lib/utils/datedCache";
 import {
   API_ROOT,
   API_VERSION,

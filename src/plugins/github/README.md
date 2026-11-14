@@ -16,9 +16,10 @@ nothing in mu comments, merges, closes or pushes.
 - Signed reads when the environment holds `GITHUB_TOKEN`/`GH_TOKEN`; without one,
   code and commit search answer `unsupported` **before** the request is made, rather
   than as a 401 nobody can act on.
-- One card per kind in the log — a record band, a code panel, a file tree, a
-  changeset, a reply thread, a release track, a hit list, an avatar — because none
-  of the nine shapes is shaped like another.
+- One card per kind in the log — a record band, a file's text painted bare on the
+  plate, a file tree, a changeset, a reply thread, a release track, a hit list, an
+  avatar — because none of the nine shapes is shaped like another. Nothing sits in a
+  box inside the band: the band is the only surface a row has.
 
 ## How it works
 
@@ -33,9 +34,12 @@ only table that knows all nine, so nothing downstream branches on kind by hand a
 adding a kind is two files and one row in that map.
 
 A fact is stated once: the header's scope line owns the repository, path, number,
-sha and query, so no figure repeats them; the changeset rows own the file list, so no
-figure counts it; a description is GitHub's prose, so it is the call's body and not a
-field the answer prints twice.
+sha and query — and a file's length and the line its body stops at, which a file's
+card has nowhere else to say — so no figure repeats them; the changeset rows own the
+file list, so no figure counts it; a description is GitHub's prose, so it is the
+call's body and not a field the answer prints twice. `lib/format.ts` measures that
+cut and the header's count from the same two functions, so a header can never claim
+a file stopped somewhere its text did not.
 
 ## Bounds
 

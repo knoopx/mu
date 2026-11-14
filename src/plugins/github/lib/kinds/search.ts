@@ -11,7 +11,7 @@
  */
 
 import { humanCount } from "../format";
-import { cells, fact, factsShown, identityOf } from "./contract";
+import { cells, factsShown } from "./contract";
 import type { GithubKindWords } from "./contract";
 import type { GithubCall, GithubRow } from "../../types";
 
@@ -74,19 +74,9 @@ export const searchWords: GithubKindWords = {
   title: () => "",
   // A search is named by the words typed, and the kind of thing searched for is the
   // line under them.
-  identity: (call) => ({
-    title: call.query === "" ? call.target : call.query,
-    secondary: `${call.target} search${call.repo === "" ? " across GitHub" : ` in ${call.repo}`}`,
-    icon: "search",
-  }),
-  // Only the news GitHub knows and this page cannot show: how many matched, and how
-  // many of them were fetched. The hits themselves are drawn, so they are not counted.
-  facts: (call) =>
-    factsShown([
-      // Only the news the list below cannot show itself: how many matched. How many
-      // were fetched is visible by counting the hits.
-      fact(call.target, humanCount(String(call.total)), { figure: true }),
-    ]),
+  facts: () => factsShown([]),
+  headerFacts: (call) =>
+    call.total === 0 ? [] : [`${humanCount(String(call.total))} matched`],
   state: () => null,
   body: "none",
 };

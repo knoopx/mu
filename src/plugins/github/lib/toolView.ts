@@ -15,7 +15,9 @@
  */
 
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
+import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
@@ -24,7 +26,6 @@ import { listOf, numberOf, recordOf, stringOf } from "./api/record";
 import { wordsOf } from "./kinds/vocabulary";
 import type {
   GithubFact,
-  GithubIdentity,
   GithubKindWords,
   GithubState,
 } from "./kinds/contract";
@@ -42,9 +43,6 @@ export interface GithubToolView {
 
   /** the kind's own vocabulary: its figures, its empty words, how its body reads */
   words: GithubKindWords;
-
-  /** how the card opens: what the record is called, what identifies it, whose face stands at its head */
-  identity: GithubIdentity;
 
   /** the record's counts, formatted, in the order they are read */
   facts: GithubFact[];
@@ -167,7 +165,6 @@ export function githubToolViewOf(
     status,
     call: withStatus,
     words,
-    identity: words.identity(withStatus),
     facts: words.facts(withStatus),
     state: words.state(withStatus),
     rows: withStatus.rows,
@@ -180,10 +177,12 @@ export function githubToolViewOf(
 /**
  * The one line the tool header shows.
  *
- * The card below says what came back, so the header says only what the call was
- * pointed at — the file, number, sha, tag, login or the words typed, and the
- * repository they were named in. No counts: the card's figures and the rows own
- * those. The words while a read runs and the words of an empty one come from the
+ * The card below says what came back, so the header says what the call was pointed
+ * at — the file, number, sha, tag, login or the words typed, and the repository they
+ * were named in — and then only what the card has nowhere else to say it: a file's
+ * length and the line its body stops at, trailing along the header's width. A count
+ * the card prints under its own name is never on the header as well. The words while
+ * a read runs and the words of an empty one come from the
  * kind's own vocabulary, the same nine files the card reads, so a header and a
  * card cannot drift into saying two different things about one call.
  */
@@ -199,15 +198,16 @@ const headerTable = (
     ]),
   );
 
+// A GitHub row says what it was pointed at and what came back on one line, so the
+// vocabulary carries no `empty`/`stated` table here: those words ride the scope, and
+// the card below is left to the record's own content.
 const HEADER_WORDS: ToolPreviewVocabulary = {
   running: headerTable((words) => words.running),
   runningDefault: "reading GitHub",
-  clean: ["empty"],
-  empty: headerTable((words) => words.emptyShort),
+  clean: [],
+  empty: {},
   emptyDefault: "nothing found",
-  // A read that never got an answer, and a file whose bytes are not text: both
-  // are news the card cannot show by itself.
-  stated: { unsupported: "no answer from GitHub", binary: "binary file" },
+  stated: {},
 };
 
 /** What the call was pointed at, and the repository it named it in. */
@@ -228,10 +228,56 @@ function scopeOf(_tool: string, view: GithubToolView): string {
   return what === "" ? where : `${what} in ${where}`;
 }
 
+/** What the status adds to the scope, in the few words a header line carries. */
+function statusWord(view: GithubToolView): string {
+  if (view.status === "empty") return view.words.emptyShort;
+  if (view.status === "binary") return "binary file";
+  if (view.status === "unsupported") return "no answer from GitHub";
+  return "";
+}
+
+/**
+ * The record's figures ride the header as chips: what a repository is written in, how
+ * many people say so, who wrote a commit and when it landed. They are the call's own
+ * measurements rather than its answer, so the card below keeps the content — the
+ * description, the changes, the thread, the file's text.
+ */
+export function githubChipsOf(
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] {
+  const view = githubToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
+  if (view === null) return [];
+  return view.facts.map((fact) => ({ label: fact.label, value: fact.value }));
+}
+
+/**
+ * The header's line: what the call was pointed at, what came back when it was, and
+ * then the counts no card shows. The card holds content — text, rows, prose — never
+ * the identity or the standing of the call, because that is this line's job.
+ */
+function headerOf(tool: string, view: GithubToolView): string {
+  const scope = scopeOf(tool, view);
+  const named = view.words.title(view.call);
+  // The record's own name — a commit subject, an issue title, a release name — joins
+  // this line rather than opening a second heading in the card. When it is only what
+  // the scope already said, it is not said twice.
+  const head = named === "" || named === scope ? scope : `${scope} · ${named}`;
+  return headerLineOf(head, [
+    view.state === null ? "" : view.state.word,
+    statusWord(view),
+    ...view.words.headerFacts(view.call),
+  ]);
+}
+
 export const githubToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
     item,
     githubToolViewOf(item.name, item.args, item.details, item.status),
     HEADER_WORDS,
-    scopeOf,
+    headerOf,
   );

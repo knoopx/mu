@@ -14,7 +14,6 @@ import {
   fact,
   factsShown,
   fieldNamed,
-  identityOf,
   recordColumns,
   stateOf,
 } from "./contract";
@@ -32,14 +31,6 @@ export const repoWords: GithubKindWords = {
   // account and the project are the name.
   // The repository is the record, so it is named once: there is no second line under
   // a name that is the same name.
-  identity: (call) => ({ title: call.repo, secondary: "", icon: "code" }),
-  // What people say about it (stars, forks, what is open), what it is (the language,
-  // the licence), and when it last moved. A repository's `state` is a standing and
-  // shows up only when it is news — archived — because “public” on a public
-  // repository says nothing.
-  // What a reader decides with: what it is written in, how many people say so, what
-  // is still open, when it last moved. A licence and a default branch are the
-  // repository's plumbing — a card that prints them is filling a row, not answering.
   facts: (call) =>
     factsShown([
       fact("language", fieldNamed(call, "language")),
@@ -50,6 +41,15 @@ export const repoWords: GithubKindWords = {
       }),
       fact("last push", humanDated(fieldNamed(call, "pushed"))),
     ]),
+  // Where the repository stands used to sit at the far end of the identity line
+  // that repeated the header's own name; the word itself is news, so it rides the
+  // header instead. A repository standing normally is not standing news.
+  headerFacts: (call) => {
+    const standing = stateOf(call);
+    return standing === null || standing.tone === "plain"
+      ? []
+      : [standing.word];
+  },
   state: (call) => stateOf(call),
   body: "prose",
 };

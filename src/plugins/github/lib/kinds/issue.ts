@@ -8,7 +8,7 @@
  * this call fetched, and says so), and the labels someone stuck on it.
  */
 
-import { humanDate, humanDated, humanPerson, humanTally } from "../format";
+import { humanDate, humanDated, humanPerson } from "../format";
 import { cells, fact, factsShown, fieldNamed, stateOf } from "./contract";
 import type { GithubKindWords } from "./contract";
 
@@ -25,15 +25,6 @@ export const issueWords: GithubKindWords = {
       ["at", row.figure],
     ]),
   title: (call) => fieldNamed(call, "title"),
-  identity: (call) => ({
-    title: fieldNamed(call, "title"),
-    secondary: `${call.target} in ${call.repo}`,
-    icon: "forum",
-    person: humanPerson(fieldNamed(call, "author")),
-  }),
-  // When it was opened, what it is labelled with, and how many replies GitHub
-  // counts against it — which is usually more than this call fetched, and that gap
-  // is the news the thread below cannot show by itself.
   facts: (call) =>
     factsShown([
       fact("opened by", humanPerson(fieldNamed(call, "author"))),
@@ -42,6 +33,7 @@ export const issueWords: GithubKindWords = {
       fact("replies", fieldNamed(call, "comments"), { figure: true }),
       fact("closed", humanDate(fieldNamed(call, "closed"))),
     ]),
+  headerFacts: () => [],
   state: (call) => stateOf(call),
   body: "prose",
 };

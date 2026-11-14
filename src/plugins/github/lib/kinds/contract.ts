@@ -32,16 +32,6 @@ export interface GithubFact {
   tone?: "good" | "bad" | "warn";
 }
 
-/** How a record opens its card: the name GitHub gives it, and what it sits in. */
-export interface GithubIdentity {
-  title: string;
-  /** the path, sha or number the record is known by under its name */
-  secondary: string;
-  icon?: IconName;
-  /** whose face stands at the head of the card */
-  person?: string;
-}
-
 export interface GithubKindWords {
   /** what one row of this kind's list is called, in the model's count line */
   unit: string;
@@ -64,11 +54,16 @@ export interface GithubKindWords {
   /** the record's own words, on the line above everything it drew: a title, a subject, a bio, a description */
   title(call: GithubCall): string;
 
-  /** how the card opens: what the record is called, and what it is identified by */
-  identity(call: GithubCall): GithubIdentity;
-
   /** the counts this kind is worth, formatted, in the order they are read */
   facts(call: GithubCall): GithubFact[];
+
+  /**
+   * The counts that ride the tool header's tail, each already in the words a reader
+   * says — `40 of 104 lines`, `7 KB`. A kind whose card prints its figures under its
+   * name answers nothing here; a kind whose body has no figures of its own says them
+   * where the header has the horizontal room for them, so the count is said once.
+   */
+  headerFacts(call: GithubCall): string[];
 
   /** where the record stands, said once on the far side of its title; null when it has no standing */
   state(call: GithubCall): GithubState | null;
@@ -87,23 +82,6 @@ export const fact = (
   value: string,
   opts: { figure?: boolean; tone?: "good" | "bad" | "warn" } = {},
 ): GithubFact => ({ label, value, ...opts });
-
-/**
- * How a record opens when it has no name of its own: what the call was pointed at,
- * with the repository it lives in as the line under it.
- */
-export const identityOf = (
-  call: GithubCall,
-  title: string,
-  icon: IconName,
-  secondary = "",
-  person = "",
-): GithubIdentity => ({
-  title: title === "" ? call.repo : title,
-  secondary: secondary === "" ? (title === "" ? "" : call.repo) : secondary,
-  icon,
-  person,
-});
 
 /** Counts read in order, with the ones the record does not have dropped. */
 export const factsShown = (facts: readonly GithubFact[]): GithubFact[] =>

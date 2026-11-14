@@ -1,14 +1,17 @@
 /**
  * A file's text.
  *
- * A file answers with its text and nothing else: no figures and no title above the
- * panel, because a size printed over the thing whose size it is repeats what the
- * reader is already looking at, and an icon does not make it a fact. The cut belongs
- * to the panel that shows it. The size and the line count are the model's, in its
+ * A file answers with its text and nothing above it: the tool header already names
+ * the path and the repository it was read out of, so a card that opens with them
+ * again says them twice, and a size printed over the thing whose size it is repeats
+ * what the reader is about to look at. What the card cannot show — how long the file
+ * is and where the log stops painting it — rides the header's tail instead, in the
+ * horizontal room the text does not use. The model keeps the same two numbers in its
  * table.
  */
 
-import { fact, fieldNamed, identityOf, recordColumns } from "./contract";
+import { fieldNamed, recordColumns } from "./contract";
+import { fileLengthWord } from "../format";
 import type { GithubKindWords } from "./contract";
 
 export const fileWords: GithubKindWords = {
@@ -19,13 +22,12 @@ export const fileWords: GithubKindWords = {
   emptyNote: (call) => `${call.path} is an empty file`,
   columns: recordColumns,
   title: () => "",
-  // A file is named by its path, and the repository it came from is the line under
-  // it — there is no header above the card any more, so the card has to say where
-  // the file is.
-  identity: (call) => identityOf(call, call.path, "description"),
-  facts: (call) => [
-    fact("size", fieldNamed(call, "size"), { figure: true }),
-    fact("lines", fieldNamed(call, "lines"), { figure: true }),
+  // Only a read that came back with nothing prints this, and there the header has
+  // given up the path to say the file was empty — so the path is the card's to say.
+  facts: () => [],
+  headerFacts: (call) => [
+    fileLengthWord(call.body, fieldNamed(call, "lines")),
+    fieldNamed(call, "size"),
   ],
   state: () => null,
   body: "code",

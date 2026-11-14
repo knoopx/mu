@@ -20,9 +20,10 @@ import {
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import type { ToolRowTone } from "../../core/lib/ui/toolRowPaint";
 import { GITHUB_TOOL_KINDS, GITHUB_TOOL_NAMES } from "../constants";
+import { fileBodyLines } from "../lib/format";
 import { wordsOf } from "../lib/kinds/vocabulary";
 import { githubToolViewOf, type GithubToolView } from "../lib/toolView";
-import { Identity } from "./chrome";
+
 import { CommitRow } from "./CommitRow";
 import { FileRow } from "./FileRow";
 import { IssueRow } from "./IssueRow";
@@ -53,8 +54,8 @@ const STATUS_ICONS: Readonly<Record<string, IconName>> = {
   binary: "warning",
 };
 
-/** The UI this kind of thing has. */
-function card(view: GithubToolView): JSX.Element {
+/** The UI this kind of thing has; null when the kind has nothing left to draw. */
+function card(view: GithubToolView): JSX.Element | null {
   switch (view.call.kind) {
     case "file":
       return <FileRow view={view} />;
@@ -78,23 +79,43 @@ function card(view: GithubToolView): JSX.Element {
   }
 }
 
-/** A call that found nothing, or nothing it could read: the record it looked for,
- *  and why it is not there. */
-function emptyBody(
-  view: GithubToolView,
-  note: string,
-): JSX.Element {
+/** Why a read did not answer, in one line: the header already named what the call
+ *  was pointed at and what came back, so the body adds the reason and no identity. */
+function reasonBody(view: GithubToolView, note: string): JSX.Element | null {
+  if (note === "") return null;
   return (
-    <>
-      <Identity {...view.identity} />
-      <ToolStatusNote
-        status={view.status}
-        note={note}
-        tones={STATUS_TONES}
-        icons={STATUS_ICONS}
-      />
-    </>
+    <ToolStatusNote
+      status={view.status}
+      note={note}
+      tones={STATUS_TONES}
+      icons={STATUS_ICONS}
+    />
   );
+}
+
+/**
+ * Whether the answer has anything for the plate to hold.
+ *
+ * A file read with no text — blank, or a body the log cannot paint — is a header
+ * line and nothing else, because a plate around nothing is a box around nothing.
+ * The decision is made before the element is built: once the log is handed an
+ * element it cannot see that the element would draw nothing.
+ */
+export function githubHasBody(item: ToolTranscriptItem): boolean {
+  if (item.status === "running") return true;
+  const view = githubToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
+  if (view === null) return true;
+  // A header-only answer holds no plate: an empty read, or a refusal with no reason
+  // to add. The decision is made before any element exists.
+  if (view.status === "empty") return false;
+  if (view.status !== "ok")
+    return (view.status === "binary" ? view.note : view.note) !== "";
+  return view.call.kind === "file" ? fileBodyLines(view.body).length > 0 : true;
 }
 
 /**
@@ -105,24 +126,26 @@ export function GithubToolRows({
   item,
 }: {
   item: ToolTranscriptItem;
-}): JSX.Element {
+}): JSX.Element | null {
   const tool = item.name.toLowerCase();
 
   if (item.status === "running")
     return <ToolRunning text={runningWordsOf(tool)} />;
 
-  const view = githubToolViewOf(item.name, item.args, item.details, item.status);
+  const view = githubToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
 
   if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
 
-  if (view.status === "failed" || view.status === "unsupported")
-    return emptyBody(view, view.note);
+  // An empty read is the header and nothing else: `path in repo · empty file`,
+  // `“query” repositories · no matches`. A card under that would say the same twice.
+  if (view.status === "empty") return null;
 
-  if (view.status === "empty" || view.status === "binary")
-    return emptyBody(
-      view,
-      view.status === "binary" ? view.note : view.words.emptyNote(view.call),
-    );
+  if (view.status !== "ok") return reasonBody(view, view.note);
 
   return card(view);
 }

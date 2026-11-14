@@ -8,7 +8,7 @@
  * change histogram and the file rows, not here.
  */
 
-import { humanBranch, humanDated, humanPerson, humanTally } from "../format";
+import { humanBranch, humanDated, humanPerson } from "../format";
 import {
   changesetColumns,
   fact,
@@ -26,15 +26,6 @@ export const prWords: GithubKindWords = {
   emptyNote: () => "no pull request",
   columns: changesetColumns,
   title: (call) => fieldNamed(call, "title"),
-  identity: (call) => ({
-    title: fieldNamed(call, "title"),
-    secondary: `${call.target} in ${call.repo}`,
-    icon: "merge",
-    person: humanPerson(fieldNamed(call, "author")),
-  }),
-  // Who opened it and when, when it landed, and what it brought. The branches are
-  // one fact, not two, so they read as the join they are; the lines it moves belong
-  // to the changeset below, which shows them per file.
   facts: (call) => {
     const head = humanBranch(fieldNamed(call, "head"));
     const base = humanBranch(fieldNamed(call, "base"));
@@ -46,6 +37,7 @@ export const prWords: GithubKindWords = {
       fact("commits", fieldNamed(call, "commits"), { figure: true }),
     ]);
   },
+  headerFacts: () => [],
   state: (call) => stateOf(call),
   body: "prose",
 };

@@ -1,14 +1,15 @@
 /**
  * A folder listing.
  *
- * A folder is a tree, so it is drawn as one — `FileTree`, with its folders opening
- * under the cursor — and it carries no figures of its own: a name and a type are
+ * A folder is drawn as the one level the endpoint answered — `FileTree`, every
+ * entry at the depth GitHub named it, a folder wearing its mark but opened by
+ * nothing, because this answer carries no contents for it. A name and a type are
  * the whole of what an entry is, and a count above the list would only repeat what
  * the list is. Sizes live in the model's table; the human's question here is what
  * is in the folder and which of it is a folder too.
  */
 
-import { cells, identityOf } from "./contract";
+import { cells } from "./contract";
 import type { GithubKindWords } from "./contract";
 
 export const treeWords: GithubKindWords = {
@@ -26,15 +27,10 @@ export const treeWords: GithubKindWords = {
       ["path", row.detail],
     ]),
   title: () => "",
-  identity: (call) =>
-    identityOf(
-      call,
-      call.path === "" ? `${call.repo} root` : call.path,
-      "folder-open",
-    ),
-  // Nothing above the tree: a folder counted over the list of what is in it is that
-  // list counted again.
   facts: () => [],
+  // The tree's rows are the whole answer and the header names the folder; a folder
+  // counted twice would be the list counted again.
+  headerFacts: () => [],
   state: () => null,
   body: "none",
 };
