@@ -1,4 +1,4 @@
-import { execFile, execSync } from "node:child_process";
+import { execFile, execSync, execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { promisify } from "node:util";
@@ -8,7 +8,6 @@ import {
   parseBookmarkList,
   runCli,
   sanitizeDescription,
-  type CliMock,
   type CliResult,
 } from "adwaita-gpuix";
 import { type Bookmark, type Change, type FileChange } from "adwaita-gpuix";
@@ -21,7 +20,7 @@ const HUNK = "jj-hunk";
 
 export const DEFAULT_CHANGE_REVSET = "ancestors(@, 50) ~ root()";
 
-export type { CliResult, CliMock as VcsMock };
+export type { CliResult };
 
 let workspaceRoot: string | null = null;
 
@@ -43,23 +42,33 @@ export function findWorkspaceRoot(cwd?: string): string {
   }
 }
 
-let mock: CliMock | null = null;
-
-function setVcsMock(next: CliMock | null): void {
-  mock = next;
-  workspaceRoot = null;
-}
-
-function hasVcsMock(): boolean {
-  return mock !== null;
-}
-
-export async function run(
+/**
+ * The one call that speaks to the change-tracking CLI.
+ *
+ * It is private on purpose: a caller outside this file names a revision, a set of
+ * files and a message, never a binary and a flag, and gets one of the plugin's own
+ * status words back. What used to be exported here — `run(binary, …)` — let a
+ * caller in another plugin name `jj` and pick the command that answers its
+ * question, and the app ended up with two clients of the repo reading it two ways.
+ */
+async function run(
   binary: string,
   args: string[],
   cwd?: string,
 ): Promise<CliResult> {
-  return runCli(binary, args, cwd ?? findWorkspaceRoot(), mock ?? undefined);
+  return runCli(binary, args, cwd ?? findWorkspaceRoot());
+}
+
+function runSync(binary: string, args: string[], cwd?: string): string | null {
+  try {
+    return execFileSync(binary, args, {
+      cwd: cwd ?? findWorkspaceRoot(),
+      encoding: "utf8",
+      timeout: 3000,
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function vcs(args: string[], cwd?: string): Promise<CliResult> {
@@ -168,6 +177,60 @@ export async function listBookmarks(): Promise<Bookmark[]> {
   return parseBookmarkList(await vcsOk([...BOOKMARK_LIST_ARGS]));
 }
 
+/** One row of `bookmark list`, read for the header: the name, and whether it stands here. */
+interface BookmarkRow {
+  name: string;
+  present: boolean;
+}
+
+const BOOKMARK_ROW_TEMPLATE = 'name ++ "\\t" ++ present ++ "\\n"';
+
+function bookmarkRows(extraArgs: string[], cwd?: string): BookmarkRow[] {
+  const out = runSync(
+    VCS,
+    [...BOOKMARK_LIST_ARGS, ...extraArgs, "-T", BOOKMARK_ROW_TEMPLATE],
+    cwd,
+  );
+  if (out === null) return [];
+  return out
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [name, present] = line.split("\t");
+      return {
+        name: (name ?? "").trim(),
+        present: (present ?? "true").trim() !== "false",
+      };
+    })
+    .filter((row) => row.name.length > 0);
+}
+
+const pickBookmark = (rows: BookmarkRow[]): string | null => {
+  const row = rows.find((r) => r.present) ?? rows[0];
+  return row === undefined ? null : row.name;
+};
+
+/**
+ * The bookmark the working copy stands on, or null when it stands on none.
+ *
+ * The stack's head first, because that is the bookmark a reader means; the widest
+ * list only when the head carries none. Null, not a word: a header that has no
+ * bookmark has nothing to show, and the sentence for that is the window's, not the
+ * repo's.
+ */
+export function currentBookmark(cwd?: string): string | null {
+  const atHead = pickBookmark(bookmarkRows(["-r", "@"], cwd));
+  return atHead ?? pickBookmark(bookmarkRows([], cwd));
+}
+
+/** How many files the repo tracks, or null when it will not say. */
+export async function trackedFileCount(cwd?: string): Promise<number | null> {
+  const out = await vcsQuiet(["file", "list"], cwd);
+  if (out === null) return null;
+  return out.split("\n").filter((line) => line.trim().length > 0).length;
+}
+
 export function bookmarkNamesFor(
   bookmarks: Bookmark[],
   changeId: string,
@@ -251,8 +314,6 @@ export async function loadFileBytes(
   filePath: string,
   at: "change" | "parent",
 ): Promise<Uint8Array | null> {
-  if (hasVcsMock()) return null;
-
   const revision = at === "change" ? changeId : await parentChangeId(changeId);
   if (revision === null) return null;
 
@@ -280,7 +341,6 @@ export async function loadFileBytes(
 }
 
 function hunkToolAvailable(): boolean {
-  if (mock !== null) return true;
   try {
     execSync(`command -v ${HUNK}`, { stdio: "ignore" });
     return true;

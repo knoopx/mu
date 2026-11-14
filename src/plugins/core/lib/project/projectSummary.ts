@@ -13,15 +13,14 @@ import {
   type ActivityModel,
 } from "adwaita-gpuix";
 
-import type { VcsMock } from "../../../vcs/lib/repo";
 import {
   findWorkspaceRoot,
   listBookmarks,
   loadChanges,
-  run,
+  trackedFileCount,
 } from "../../../vcs/lib/repo";
 import { type Change } from "adwaita-gpuix";
-import { NO_BOOKMARK, shortenPath } from "../workspace/workspaceStatus";
+import { shortenPath } from "../workspace/workspaceStatus";
 
 export const SPARKLINE_WEEKS = 12;
 
@@ -47,7 +46,8 @@ export interface ProjectIdentity {
 
   group: string;
   isRepo: boolean;
-  bookmark: string;
+  /** the bookmark the working copy stands on; null when it stands on none */
+  bookmark: string | null;
 }
 
 /** A recent change together with the bookmarks that point at it. */
@@ -103,16 +103,14 @@ function projectMetaLine(
   const segments: string[] = [];
   if (meta.language !== null) segments.push(meta.language);
   if (meta.license !== null) segments.push(meta.license);
-  if (identity.bookmark.length > 0 && identity.bookmark !== NO_BOOKMARK)
-    segments.push(identity.bookmark);
+  if (identity.bookmark !== null) segments.push(identity.bookmark);
   segments.push(`Updated ${humanizeAgo(null, now)}`);
   return segments.join(" · ");
 }
 
 export interface LoadSummaryOptions {
   cwd?: string;
-  mock?: VcsMock;
-  bookmark?: string;
+  bookmark?: string | null;
   now?: Date;
 }
 
@@ -131,7 +129,7 @@ export async function loadProjectSummary(
     shortPath: shortenPath(root),
     group: relative(dirname(root), root) || basename(root),
     isRepo,
-    bookmark: options.bookmark ?? NO_BOOKMARK,
+    bookmark: options.bookmark ?? null,
   };
 
   if (!isRepo) {
@@ -146,10 +144,10 @@ export async function loadProjectSummary(
     };
   }
 
-  const [changes, bookmarks, files] = await Promise.all([
+  const [changes, bookmarks, trackedFiles] = await Promise.all([
     loadChanges(SUMMARY_REVSET),
     listBookmarks(),
-    run("jj", ["file", "list"], root),
+    trackedFileCount(root),
   ]);
 
   const byChange = bookmarksByChange(bookmarks);
@@ -157,10 +155,7 @@ export async function loadProjectSummary(
     identity,
     meta: {
       ...meta,
-      trackedFiles:
-        files.code === 0
-          ? files.stdout.split("\n").filter((l) => l.trim().length > 0).length
-          : null,
+      trackedFiles,
     },
     activity: projectActivity(
       buildActivityModel(changes, { now, feedCount: FEED_COUNT }),

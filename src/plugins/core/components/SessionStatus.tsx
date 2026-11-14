@@ -2,7 +2,6 @@ import { type JSX } from "react";
 import { useAdwaita } from "adwaita-gpuix";
 import type { StyleDesc } from "@gpuix/react";
 import { centerRow } from "../lib/ui/layout";
-import { NO_BOOKMARK } from "../lib/workspace/workspaceStatus";
 import { mutedText } from "../lib/ui/theme";
 import { ROW_HEIGHT } from "../lib/ui/tokens";
 import { ConversationStatsLine } from "./TurnStats";
@@ -11,7 +10,8 @@ import type { ConversationStats } from "../lib/agent/turnStats";
 export interface SessionStatusProps {
   projectPath: string;
 
-  bookmark: string;
+  /** the bookmark the working copy stands on; nothing is shown when it is null */
+  bookmark: string | null;
 
   stats?: ConversationStats | null;
 
@@ -63,14 +63,16 @@ export function SessionStatus(props: SessionStatusProps): JSX.Element {
     userSelect: "none",
   };
 
-  const showBookmark =
-    props.bookmark.length > 0 && props.bookmark !== NO_BOOKMARK;
+  const bookmark =
+    props.bookmark !== null && props.bookmark.length > 0
+      ? props.bookmark
+      : null;
 
   return (
     <div style={root}>
       <div style={centerRow(t.space.xs, { flexGrow: 1, flexShrink: 1 })}>
         <Segment text={props.projectPath} color={muted} shrink />
-        {showBookmark ? <Segment text={props.bookmark} color={muted} /> : null}
+        {bookmark !== null ? <Segment text={bookmark} color={muted} /> : null}
       </div>
       {props.progress != null ? (
         <AskProgress text={props.progress} />
