@@ -40,6 +40,42 @@ export interface NewWindowResult {
   cwd: string;
 }
 
+/**
+ * A window somewhere else: the same mu, started in another folder.
+ *
+ * The launch is mu's own — the entry this window was started with, and the loader
+ * answers a child of mu needs — but the working directory is another folder's, and
+ * that is the whole of it: the session the new window opens is that project's, and
+ * every path the agent is handed from then on is relative to it.
+ *
+ * The answer waits for the child's own `spawn` event, exactly as a desktop launch
+ * does, so a folder that went away since it was listed is reported rather than
+ * promised.
+ */
+export function spawnWindowIn(
+  cwd: string,
+): Promise<{ ok: true; cwd: string } | { ok: false; error: string }> {
+  const { cmd, args, env } = appLaunch();
+  return new Promise((settled) => {
+    const child = spawn(cmd, args, {
+      cwd,
+      env,
+      detached: true,
+      stdio: "ignore",
+    });
+    child.once("error", (err: Error) =>
+      settled({
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
+    child.once("spawn", () => {
+      child.unref();
+      settled({ ok: true, cwd });
+    });
+  });
+}
+
 export function spawnNewWindow(
   onError?: (message: string) => void,
 ): NewWindowResult {

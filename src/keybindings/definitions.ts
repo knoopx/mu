@@ -100,6 +100,11 @@ export const APP_KEYBINDINGS: KeybindingDefinitions = {
       "Open the plugins panel (what this build is made of)",
     ),
     def(
+      "composer.projects",
+      "ctrl+shift+j",
+      "Open the projects composer panel and start a window in another folder",
+    ),
+    def(
       "composer.terminal",
       "ctrl+shift+enter",
       "Open the terminal composer panel",

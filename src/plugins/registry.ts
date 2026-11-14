@@ -23,6 +23,7 @@ import { interactionPlugin } from "./interaction/plugin";
 import { mermaidPlugin } from "./mermaid/plugin";
 import { openUIPlugin } from "./openui/plugin";
 import { planningPlugin } from "./planning/plugin";
+import { projectsPlugin } from "./projects/plugin";
 import { snapcompactPlugin } from "./snapcompact/plugin";
 import { terminalPlugin } from "./terminal/plugin";
 import { vcsPlugin } from "./vcs/plugin";
@@ -43,6 +44,7 @@ export const PLUGINS: PluginRegistration[] = [
   mermaidPlugin,
   figuresPlugin,
   planningPlugin,
+  projectsPlugin,
   snapcompactPlugin,
   terminalPlugin,
 ];
