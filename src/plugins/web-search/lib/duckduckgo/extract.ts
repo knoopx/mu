@@ -1,3 +1,4 @@
+import { hostOf } from "../../../../utils/urlText";
 import {
   DDG_HTML_ENDPOINT,
   DDG_REDIRECT_HOST,
@@ -55,15 +56,6 @@ function oneLine(value: string): string {
     .map((part) => part.trim())
     .filter((part) => part !== "")
     .join(" ");
-}
-
-export function hostOf(url: string): string {
-  try {
-    const host = new URL(url).hostname.toLowerCase();
-    return host.startsWith("www.") ? host.slice(4) : host;
-  } catch {
-    return "";
-  }
 }
 
 export function parseResults(stdout: string): RawSearchResult[] {

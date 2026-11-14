@@ -9,11 +9,10 @@
  * interpret twice. Nothing above this file builds a URL.
  */
 
-import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-
-import { muCacheDir } from "../../../core/lib/utils/paths";
+import {
+  readCache,
+  writeCache,
+} from "../../../core/lib/utils/datedCache";
 import {
   API_ROOT,
   API_VERSION,
@@ -149,37 +148,19 @@ function failureNote(
     : `GitHub answered ${String(code)} for ${scope}: ${message}`;
 }
 
-interface CacheEntry {
-  at: number;
+/** What one GitHub read keeps: the code, the body, and the quota that came with it. */
+interface CachedRead {
   code: number;
   text: string;
   rate: GithubRate;
 }
 
-const cacheDir = (): string => join(muCacheDir(), "github");
+const CACHED_NAMESPACE = "github";
 
-const cacheFile = (url: string): string =>
-  join(cacheDir(), `${createHash("sha256").update(url).digest("hex")}.json`);
-
-async function cachedEntry(url: string): Promise<CacheEntry | null> {
-  try {
-    const raw = await readFile(cacheFile(url), "utf8");
-    const entry = JSON.parse(raw) as CacheEntry;
-    if (typeof entry?.at !== "number" || typeof entry?.text !== "string")
-      return null;
-    if (Date.now() - entry.at > CACHE_TTL_MS) return null;
-    return entry;
-  } catch {
-    return null;
-  }
-}
-
-/** A cache write is never the reason a call fails, so its failure is silent. */
-async function storeEntry(url: string, entry: CacheEntry): Promise<void> {
-  try {
-    await mkdir(cacheDir(), { recursive: true });
-    await writeFile(cacheFile(url), JSON.stringify(entry), "utf8");
-  } catch {}
+async function cachedEntry(url: string): Promise<CachedRead | null> {
+  const hit = await readCache<CachedRead>(CACHED_NAMESPACE, url, CACHE_TTL_MS);
+  if (hit === null || typeof hit.value?.text !== "string") return null;
+  return hit.value;
 }
 
 /** The abort signal of one request: the caller's cancellation, and a timeout. */
@@ -287,7 +268,11 @@ async function settledOf(
       ms,
     );
 
-  void storeEntry(url, { at: Date.now(), code: response.status, text, rate });
+  void writeCache(CACHED_NAMESPACE, url, {
+    code: response.status,
+    text,
+    rate,
+  } satisfies CachedRead);
   return ok(response.status, json, raw ? text : "", { rate, ms });
 }
 

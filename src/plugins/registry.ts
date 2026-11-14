@@ -26,6 +26,7 @@ import { planningPlugin } from "./planning/plugin";
 import { snapcompactPlugin } from "./snapcompact/plugin";
 import { terminalPlugin } from "./terminal/plugin";
 import { vcsPlugin } from "./vcs/plugin";
+import { webFetchPlugin } from "./web-fetch/plugin";
 import { webSearchPlugin } from "./web-search/plugin";
 
 /** Every plugin the build declares, in the order the model sees their tools. */
@@ -33,6 +34,7 @@ export const PLUGINS: PluginRegistration[] = [
   corePlugin,
   interactionPlugin,
   webSearchPlugin,
+  webFetchPlugin,
   githubPlugin,
   guardrailsPlugin,
   vcsPlugin,
