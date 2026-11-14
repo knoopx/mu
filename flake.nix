@@ -144,27 +144,14 @@
           url = "https://registry.npmjs.org/@oh-my-pi/snapcompact/-/snapcompact-18.18.1.tgz";
           hash = "sha256-N3frngmQ/ZHQq39Rm0XdQADbRC9jbkueIXSm5RpdTXg=";
         };
-        # OpenUI Lang: the parser (lang-core) and the React renderer
-        # (react-lang) the openui plugin is written against, plus react-lang's
-        # own deps — the devtools hook and the observability sink it imports
-        # statically, and ci-info behind lang-core. react-lang's `lucide-react`
-        # dependency stays out: nothing in the devtools entry it reaches
-        # imports it.
-        openuiDevtools = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/@openuidev/devtools/-/devtools-0.3.1.tgz";
-          hash = "sha256-mevxerXRFNQWuqundtsseeLC5QJcyYgK/sd0c/8Kp64=";
-        };
+        # OpenUI Lang: the parser the openui plugin is written against, and the
+        # one thing it pulls in — ci-info. The plugin defines its own component
+        # library and paints it with adwaita-gpuix, so the reference plugin's
+        # React renderer (react-lang, with its devtools hook and observability
+        # sink) is not part of this build.
         openuiLangCore = pkgs.fetchurl {
           url = "https://registry.npmjs.org/@openuidev/lang-core/-/lang-core-1.0.2.tgz";
           hash = "sha256-FlWXwxtVH1Mhvgm+NtUhD1R6lDzwu2xhMriXTWzV2+A=";
-        };
-        openuiObservability = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/@openuidev/observability/-/observability-0.0.4.tgz";
-          hash = "sha256-yULp0L2pjTl7Lcjhe85Ise+ABkzLBeyRT7Jjk6ThyXc=";
-        };
-        openuiReactLang = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/@openuidev/react-lang/-/react-lang-1.0.2.tgz";
-          hash = "sha256-FhlwWntOUO4jWSPZMRpj3NKX1kaHs+k2usenGzHcdfw=";
         };
         silviaOdwyerPhotonNode = pkgs.fetchurl {
           url = "https://registry.npmjs.org/@silvia-odwyer/photon-node/-/photon-node-0.3.4.tgz";
@@ -354,13 +341,6 @@
           url = "https://registry.npmjs.org/react/-/react-19.3.1.tgz";
           hash = "sha256-VpNpE5GNzx96b+WHhOed9UsYIAqIZVzoCc9enE74cao=";
         };
-        # @openuidev/react-lang reaches for react-dom (and react-dom for a
-        # newer scheduler than the one react-reconciler holds, so scheduler is
-        # nested under react-dom below).
-        reactDom = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz";
-          hash = "sha256-i0mXWCHuxjEeANKz9LgzeSMlPIdlFziKM/mDnGGrJi4=";
-        };
         reactReconciler = pkgs.fetchurl {
           url = "https://registry.npmjs.org/react-reconciler/-/react-reconciler-0.31.0.tgz";
           hash = "sha256-n0GsUyE/9s+ri+YM6iUTVyiToVsOl2xj9CVxqXtJQyM=";
@@ -380,10 +360,6 @@
         scheduler = pkgs.fetchurl {
           url = "https://registry.npmjs.org/scheduler/-/scheduler-0.25.0.tgz";
           hash = "sha256-iqwtpt7LCcHaz4wQb2LS+0RU+7H98vb+bU7xpXt8aRQ=";
-        };
-        scheduler0280 = pkgs.fetchurl {
-          url = "https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz";
-          hash = "sha256-MCmV1ZDjwKEe60DR0PKZwd8YABNdWZ2FzdX662FPMtY=";
         };
         semver = pkgs.fetchurl {
           url = "https://registry.npmjs.org/semver/-/semver-7.8.5.tgz";
@@ -503,10 +479,7 @@
             mkdir -p node_modules/@oh-my-pi/pi-utils && tar xzf ${npmDeps.ohMyPiPiUtils} -C node_modules/@oh-my-pi/pi-utils --strip-components=1
             mkdir -p node_modules/@oh-my-pi/pi-wire && tar xzf ${npmDeps.ohMyPiPiWire} -C node_modules/@oh-my-pi/pi-wire --strip-components=1
             mkdir -p node_modules/@oh-my-pi/snapcompact && tar xzf ${npmDeps.ohMyPiSnapcompact} -C node_modules/@oh-my-pi/snapcompact --strip-components=1
-            mkdir -p node_modules/@openuidev/devtools && tar xzf ${npmDeps.openuiDevtools} -C node_modules/@openuidev/devtools --strip-components=1
             mkdir -p node_modules/@openuidev/lang-core && tar xzf ${npmDeps.openuiLangCore} -C node_modules/@openuidev/lang-core --strip-components=1
-            mkdir -p node_modules/@openuidev/observability && tar xzf ${npmDeps.openuiObservability} -C node_modules/@openuidev/observability --strip-components=1
-            mkdir -p node_modules/@openuidev/react-lang && tar xzf ${npmDeps.openuiReactLang} -C node_modules/@openuidev/react-lang --strip-components=1
             mkdir -p node_modules/@silvia-odwyer/photon-node && tar xzf ${npmDeps.silviaOdwyerPhotonNode} -C node_modules/@silvia-odwyer/photon-node --strip-components=1
             mkdir -p node_modules/@stablelib/base64 && tar xzf ${npmDeps.stablelibBase64} -C node_modules/@stablelib/base64 --strip-components=1
             mkdir -p node_modules/@vscode/tree-sitter-wasm && tar xzf ${npmDeps.vscodeTreeSitterWasm} -C node_modules/@vscode/tree-sitter-wasm --strip-components=1
@@ -555,8 +528,6 @@
             mkdir -p node_modules/proper-lockfile && tar xzf ${npmDeps.properLockfile} -C node_modules/proper-lockfile --strip-components=1
             mkdir -p node_modules/quickjs-wasi && tar xzf ${npmDeps.quickjsWasi} -C node_modules/quickjs-wasi --strip-components=1
             mkdir -p node_modules/react && tar xzf ${npmDeps.react} -C node_modules/react --strip-components=1
-            mkdir -p node_modules/react-dom && tar xzf ${npmDeps.reactDom} -C node_modules/react-dom --strip-components=1
-            mkdir -p node_modules/react-dom/node_modules/scheduler && tar xzf ${npmDeps.scheduler0280} -C node_modules/react-dom/node_modules/scheduler --strip-components=1
             mkdir -p node_modules/react-reconciler && tar xzf ${npmDeps.reactReconciler} -C node_modules/react-reconciler --strip-components=1
             mkdir -p node_modules/proper-lockfile/node_modules/retry && tar xzf ${npmDeps.retry0120} -C node_modules/proper-lockfile/node_modules/retry --strip-components=1
             mkdir -p node_modules/retry && tar xzf ${npmDeps.retry0131} -C node_modules/retry --strip-components=1
