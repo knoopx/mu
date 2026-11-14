@@ -1,39 +1,31 @@
 /**
- * figures — two tools, two shapes, one plugin.
+ * figures — a plot, drawn from the data the call left behind.
  *
- * A plot and a tree are drawn from the data the call left in its details, never
- * from a bitmap, which is why a session resumed next week still shows them in the
- * theme it is wearing now. They are two row surfaces because the row of a plot and
- * the row of a tree are different widgets over different shapes.
+ * A plot is drawn from the figure in the call's `details`, never from a bitmap,
+ * which is why a session resumed next week still shows it in the theme it is
+ * wearing now. Its row surface is the plot's own widget over the plot's own shape.
  */
 
 import { definePlugin } from "../core/lib/plugin/manifest";
 import { chartRenderTool } from "./tools/chartRender";
-import { treeRenderTool } from "./tools/treeRender";
 import {
   ChartToolRows,
   chartChipsOf,
   chartToolPreviewOf,
   isChartTool,
 } from "./components/ChartToolRows";
-import {
-  isTreeTool,
-  TreeToolRows,
-  treeChipsOf,
-  treeToolPreviewOf,
-} from "./components/TreeToolRows";
 
 export const figuresPlugin = definePlugin(
   "figures",
   {
     title: "Figures",
     summary:
-      "Charts and trees plotted in the log, and the plot read back as figures rather than as a picture.",
+      "Charts plotted in the log, and the plot read back as figures rather than as a picture.",
     icon: "insights",
     category: "surface",
   },
   (app) => {
-    app.tools.register(chartRenderTool, treeRenderTool);
+    app.tools.register(chartRenderTool);
 
     app.log.rows({
       key: "chart",
@@ -41,13 +33,6 @@ export const figuresPlugin = definePlugin(
       body: (item) => <ChartToolRows item={item} />,
       preview: chartToolPreviewOf,
       chips: chartChipsOf,
-    });
-    app.log.rows({
-      key: "tree",
-      owns: isTreeTool,
-      body: (item) => <TreeToolRows item={item} />,
-      preview: treeToolPreviewOf,
-      chips: treeChipsOf,
     });
   },
 );

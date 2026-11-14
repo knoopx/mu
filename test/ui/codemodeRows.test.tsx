@@ -41,7 +41,7 @@ describe("a script instead of eleven commands", () => {
       "vcs-log",
       "guardrails-coverage",
       "guardrails-test",
-      "tree-render",
+      "chart-render",
     ].map(callLine);
     for (let i = 1; i < calls.length; i++)
       expect(calls[i]!).toBeGreaterThan(calls[i - 1]!);
@@ -55,7 +55,7 @@ describe("a script instead of eleven commands", () => {
     const screen = await logScene({ items: [SCRIPT] });
     const reason = screen.ink("blocked(guardrails/uv)");
     expect(reason.y).toBeGreaterThan(screen.ink("guardrails-test").y);
-    expect(reason.y).toBeLessThan(screen.ink("tree-render").y);
+    expect(reason.y).toBeLessThan(screen.ink("chart-render").y);
     expect(screen.says("suite run refused a raw python3 invocation")).toBe(
       true,
     );

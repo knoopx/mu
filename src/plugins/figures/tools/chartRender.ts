@@ -128,7 +128,7 @@ const RenderParametersSchema = Type.Object({
   ),
 });
 
-export function executeChartRender(
+function executeChartRender(
   params: ChartPlotParams,
 ): AgentToolResult<ChartFigure> {
   const figure = chartPlotOf(params);

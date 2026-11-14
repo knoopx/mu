@@ -3,9 +3,9 @@ import { answer, failed, ran, userTurn, usage } from "../turn";
 
 const TIDY_LIST = [
   "figures/",
-  "  components/   ChartToolRows.tsx  TreeToolRows.tsx",
-  "  lib/          plot.ts  structure.ts  answer.ts  toolView.ts  params.ts",
-  "  tools/        chartRender.ts  treeRender.ts",
+  "  components/   ChartToolRows.tsx",
+  "  lib/          plot.ts  answer.ts  toolView.ts  params.ts",
+  "  tools/        chartRender.ts",
   "  constants.ts  types.ts",
 ].join("\n");
 

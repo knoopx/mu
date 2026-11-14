@@ -19,7 +19,6 @@ import {
 } from "adwaita-gpuix";
 
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
-import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import {
   ToolRowList,
   ToolRunning,
@@ -38,7 +37,6 @@ import {
   type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
-import { mutedText } from "../../core/lib/ui/theme";
 import { CHART_RENDER_TOOL, MAX_READOUT_POINTS } from "../constants";
 import { legendOf, plotColor, plotDataOf, seriesColors } from "../lib/plot";
 import { axisCell, chartFailureLine, chartToolViewOf } from "../lib/toolView";

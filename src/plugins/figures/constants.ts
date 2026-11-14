@@ -1,14 +1,12 @@
 /**
- * What the figures plugin shares: the tool names a user's guardrail rule points
- * at, the bounds a plot and a tree live inside, and the geometry of the canvas
- * adwaita draws on.
+ * What the figures plugin shares: the tool name a user's guardrail rule points
+ * at, the bounds a plot lives inside, and the geometry of the canvas adwaita
+ * draws on.
  */
 
 export const CHART_RENDER_TOOL = "chart-render";
-export const TREE_RENDER_TOOL = "tree-render";
 
 export const CHART_TOOL_LABEL = "Chart";
-export const TREE_TOOL_LABEL = "Tree";
 
 /**
  * How many points a plot holds.
@@ -48,34 +46,8 @@ export const MAX_MARKED_POINTS = 12;
 export const MIN_PLOT_HEIGHT = 72;
 export const MAX_PLOT_HEIGHT = 360;
 
-/* Trees ------------------------------------------------------------------ */
-
-/**
- * How many nodes a tree holds.
- *
- * A tree is drawn to be read as a shape; past eighty rows what is painted is a
- * directory listing the log has to scroll through, so the cap is what makes the
- * answer say "draw the part that carries the point" instead of all of it.
- */
-export const MAX_NODES = 80;
-
-/** How deep a tree goes before the branches below are cut. */
-export const MAX_DEPTH = 10;
-
-/** How many of its nodes the answer walks back as indented text. */
-export const MAX_TREE_LINES = 40;
-
-/**
- * A name longer than this is clipped: it is a name, not a sentence.
- *
- * It is also the measure of a value a refusal quotes back — the text that sat
- * where a name belonged is quoted to be recognised, not read.
- */
-export const MAX_NAME_CHARS = 60;
-
 /* Plot geometry ------------------------------------------------------------ */
 
 /** A plot's geometry: the box adwaita draws in, and the width a line's canvas is laid out at. */
 export const CHART_HEIGHT = 168;
-export const CHART_SPARK_HEIGHT = 128;
 export const CHART_CANVAS_WIDTH = 560;

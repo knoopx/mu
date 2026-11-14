@@ -1,5 +1,5 @@
 /**
- * Turns a figure answer into what the transcript draws — a plot, or a tree.
+ * Turns a figure answer into what the transcript draws — the plot.
  *
  * A call answers two audiences: `content` text for the model, and the data of the
  * figure in `details` for the log. This file folds the details into one view — the
@@ -19,20 +19,14 @@ import {
   detailText,
   detailWord,
 } from "../../core/lib/agent/toolDetails";
-import { counted } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
-import { CHART_RENDER_TOOL, TREE_RENDER_TOOL } from "../constants";
+import { CHART_RENDER_TOOL } from "../constants";
 import type {
   ChartFigure,
   FigureStatus,
   PlotBadValue,
   PlotMeasure,
   PlotPoint,
-  PlotTone,
-  StructureNode,
-  StructureStatus,
-  TreeBadNode,
-  TreeFigure,
 } from "../types";
 import { plotFigure, plotKindOf, plotToneOf } from "./plot";
 
@@ -77,13 +71,6 @@ const FIGURE_STATUSES = [
   "empty",
   "invalid",
 ] as const satisfies readonly FigureStatus[];
-
-/** The statuses a structure answer can carry. */
-const STRUCTURE_STATUSES = [
-  "ok",
-  "empty",
-  "invalid",
-] as const satisfies readonly StructureStatus[];
 
 /** The axis a plot was measured across — the figures the answer reads back. */
 function measureOf(value: unknown): PlotMeasure | null {
@@ -229,146 +216,6 @@ export function chartToolViewOf(
         label: "unit",
         value: figure.status === "ok" ? figure.unit : "",
       },
-    ],
-  };
-}
-
-/* ---------------------------------------------------------- the tree view */
-
-export interface TreeToolView {
-  status: StructureStatus;
-
-  /** The tree, or the shape of the refusal. Never absent: the header reads it too. */
-  tree: TreeFigure;
-
-  cells: ToolRowCell[];
-}
-
-const EMPTY_TREE: TreeFigure = {
-  status: "empty",
-  nodes: [],
-  expanded: [],
-  caption: "",
-  counted: 0,
-  drawn: 0,
-  omitted: 0,
-  folders: 0,
-  leaves: 0,
-  depth: 0,
-  added: 0,
-  removed: 0,
-  bad: [],
-  error: "",
-};
-
-function nodeOf(value: unknown): StructureNode | null {
-  const node = detailsAs<StructureNode>(value);
-  if (node === null) return null;
-  const name = detailText(node.name);
-  if (name === "") return null;
-  const children = detailList<unknown>(node.children)
-    .map(nodeOf)
-    .filter((child): child is StructureNode => child !== null);
-  return {
-    name,
-    folder: detailFlag(node.folder, children.length > 0),
-    children,
-    added: detailNumber(node.added),
-    removed: detailNumber(node.removed),
-  };
-}
-
-function treeBadOf(value: unknown): TreeBadNode {
-  const bad = detailsAs<TreeBadNode>(value) ?? { under: "", value: "" };
-  return {
-    under: detailText(bad.under),
-    value: detailText(bad.value),
-  };
-}
-
-/** The tree a call left in its details, read as the JSON a resumed session keeps. */
-function treeFigureOf(details: unknown): TreeFigure | null {
-  const answer = detailsAs<TreeFigure>(details);
-  if (answer === null) return null;
-  const status = detailWord(answer.status, STRUCTURE_STATUSES);
-  if (status === null || !Array.isArray(answer.nodes)) return null;
-
-  return {
-    status,
-    nodes: answer.nodes
-      .map(nodeOf)
-      .filter((node): node is StructureNode => node !== null),
-    expanded: detailStrings(answer.expanded),
-    caption: detailText(answer.caption),
-    counted: detailNumber(answer.counted),
-    drawn: detailNumber(answer.drawn),
-    omitted: detailNumber(answer.omitted),
-    folders: detailNumber(answer.folders),
-    leaves: detailNumber(answer.leaves),
-    depth: detailNumber(answer.depth),
-    added: detailNumber(answer.added),
-    removed: detailNumber(answer.removed),
-    bad: detailList<unknown>(answer.bad).map(treeBadOf),
-    error: detailText(answer.error),
-  };
-}
-
-/** The line a refusal leaves behind: how many nodes, and where the first one sits. */
-export function treeFailureLine(tree: TreeFigure): string {
-  const first = tree.bad[0];
-  if (first === undefined) return tree.error;
-  const where = `the node under ${first.under === "" ? "(the root)" : `“${first.under}”`}`;
-  const shown = first.value === "" ? "(nothing)" : `“${first.value}”`;
-  return tree.bad.length === 1
-    ? `${tree.error}: ${where} holds ${shown}`
-    : `${tree.error}: ${where} holds ${shown}, and ${String(tree.bad.length - 1)} more`;
-}
-
-export function treeToolViewOf(
-  name: string,
-  _args: Record<string, unknown> | undefined,
-  details: unknown,
-  itemStatus: string,
-): TreeToolView | null {
-  if (name.toLowerCase() !== TREE_RENDER_TOOL) return null;
-
-  const tree = treeFigureOf(details) ?? EMPTY_TREE;
-  const status: StructureStatus =
-    itemStatus === "error" && tree.status === "ok" ? "empty" : tree.status;
-  const moved = tree.added + tree.removed;
-
-  return {
-    status,
-    tree,
-    cells: [
-      // A tree the call refused to draw has no counts to report: `0 nodes` beside a
-      // refusal is a figure about a picture that does not exist.
-      {
-        label: "tree",
-        value:
-          status === "empty" || status === "invalid"
-            ? ""
-            : counted(tree.drawn, "node"),
-      },
-      { label: "folders", value: status === "ok" ? String(tree.folders) : "" },
-      { label: "leaves", value: status === "ok" ? String(tree.leaves) : "" },
-      { label: "depth", value: status === "ok" ? String(tree.depth) : "" },
-      {
-        label: "moved",
-        value:
-          status === "ok" && moved > 0
-            ? `+${String(tree.added)} −${String(tree.removed)}`
-            : "",
-      },
-      {
-        label: "open",
-        value:
-          status === "ok" && tree.expanded.length > 0
-            ? String(tree.expanded.length)
-            : "",
-      },
-      // As with a plot: what the tree cut is said once, in the note under it, where
-      // the remedy stands with it — and never in a chip the header may clip away.
     ],
   };
 }

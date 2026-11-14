@@ -39,6 +39,7 @@ export const CODEMODE_ITEMS: TranscriptItem[] = [
         "  .filter((d) => d.blocks > 0);",
         'text([...byTool].sort((a, b) => b[1] - a[1]).map(([n, k]) => `${n}: ${k} calls`).join("\\n"));',
         'text(blocked.map((d) => `${d.domain}: ${d.blocks} blocked`).join("\\n"));',
+        'await tools.chart_render({ points: [...byTool].map(([n, k]) => [n, k]), unit: "calls" });',
       ].join("\n"),
     },
     SCRIPT_OUTPUT,
@@ -72,8 +73,8 @@ export const CODEMODE_ITEMS: TranscriptItem[] = [
               "blocked(guardrails/uv): suite run refused a raw python3 invocation",
           },
           {
-            name: "tree-render",
-            args: "{ items: 9 }",
+            name: "chart-render",
+            args: "{ points: 14, unit: 'calls' }",
             status: "ok",
             durationMs: 140,
             cost: null,

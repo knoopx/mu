@@ -116,10 +116,7 @@ export const markersFor = (
  * at least true, because an unlabelled series is a colour the reader has to
  * guess at.
  */
-export function seriesLabels(
-  names: readonly string[],
-  count: number,
-): string[] {
+function seriesLabels(names: readonly string[], count: number): string[] {
   return Array.from({ length: count }, (_unused, at) => {
     const name = (names[at] ?? "").trim();
     return name === "" ? `series ${String(at + 1)}` : name;
@@ -132,7 +129,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 /** A cell as the text the axis shows. */
-export function cellText(value: unknown): string {
+function cellText(value: unknown): string {
   if (typeof value === "string")
     return truncateToWidth(value.trim(), MAX_LABEL_CHARS);
   if (typeof value === "number" && Number.isFinite(value))
@@ -147,7 +144,7 @@ export function cellText(value: unknown): string {
  * `"12"` is a number a model meant; `"1,234"` and `"3 ms"` are not, and saying
  * so is what lets the call be fixed instead of drawn wrong.
  */
-export function numberOf(value: unknown): number | null {
+function numberOf(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
   if (typeof value !== "string") return null;
   const text = value.trim();
@@ -264,7 +261,7 @@ export function coercePlot(entries: readonly unknown[]): PlotCoercion {
 /* -------------------------------------------------------------- the plot */
 
 /** What a set of plotted points adds up to. */
-export function measureOf(points: readonly PlotPoint[]): PlotMeasure | null {
+function measureOf(points: readonly PlotPoint[]): PlotMeasure | null {
   if (points.length === 0) return null;
 
   const totals = points.map((point) =>
