@@ -50,12 +50,10 @@ export const checked = chromeStory(
         },
       ],
       // A GitHub scene is a run of cards, not a row of one-line log entries, so the
-      // window is the tall one a reader drags a transcript in at, and the log stands
-      // at its first row: a log pinned to its tail leaves the card the run opened
-      // with — the one that says what was asked — off the top of the picture.
+      // log stands at its first row: a log pinned to its tail leaves the card the run
+      // opened with — the one that says what was asked — off the top of the picture.
       followTail: false,
     }),
-  { height: 1900 },
 );
 
 /**
@@ -83,5 +81,4 @@ export const threads = chromeStory(
       ],
       followTail: false,
     }),
-  { height: 1900 },
 );
