@@ -19,10 +19,6 @@ export interface RevisionIds {
   change: string;
 }
 
-export interface RevisionIdentity extends RevisionIds {
-  description: string;
-}
-
 export interface HunkRow {
   file: string;
   hunk: string;

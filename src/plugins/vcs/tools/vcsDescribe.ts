@@ -17,7 +17,13 @@ import {
   noRepoResult,
   type VcsBlank,
 } from "../lib/answer";
-import { jjRoot, resolveIdentity, runDescribe } from "../lib/ops";
+import { firstLine } from "../../../utils/truncate";
+import {
+  jjRoot,
+  resolveDescription,
+  resolveIds,
+  runDescribe,
+} from "../lib/ops";
 import { blocks, tableOf, toolResult } from "../../core/lib/agent/toolText";
 import type { VcsDescribeDetails, VcsDescribeParams } from "../types";
 
@@ -51,7 +57,7 @@ export async function executeVcsDescribe(
   const root = jjRoot();
   if (root === null) return noRepoResult(blank);
 
-  const previous = await resolveIdentity(hash);
+  const previous = await resolveIds(hash);
   if (previous.change.length === 0)
     return failedResult(blank, `cannot resolve revision ${hash} in ${root}`);
 
@@ -66,9 +72,14 @@ export async function executeVcsDescribe(
       write.error,
     );
 
-  const post = await resolveIdentity(hash);
+  const post = await resolveIds(hash);
   const identities =
-    post.git.length > 0 ? post : await resolveIdentity(previous.change);
+    post.git.length > 0 ? post : await resolveIds(previous.change);
+  // The description is read back off the revision the write landed on, whole: a
+  // commit message is a subject and a body, and the log shows both.
+  const landedMessage = await resolveDescription(
+    identities.change.length > 0 ? identities.change : hash,
+  );
 
   const details: VcsDescribeDetails = {
     ...blank,
@@ -76,7 +87,7 @@ export async function executeVcsDescribe(
     change: identities.change,
     previous_commit: previous.git,
     previous_change: previous.change,
-    message: identities.description,
+    message: landedMessage,
     status: "ok",
     error: "",
   };
@@ -86,7 +97,7 @@ export async function executeVcsDescribe(
       {
         commit: details.commit,
         change: details.change,
-        message: identities.description,
+        message: firstLine(landedMessage),
         status: "ok",
       },
     ]),
@@ -109,8 +120,8 @@ export const vcsDescribeTool: PluginTool<
   description:
     "Sets the description message of a revision in a jujutsu repo — a jj change ID, jj commit " +
     "ID, or revset — and reports the post-state: the resolved commit hash, change id and the " +
-    "new first line, with the PREVIOUS identities alongside, so a working-copy rewrite (which " +
-    "mints a new change id) stays visible. jj-only: a location without a `.jj/` marker is " +
+    "description that landed (its whole message, not just the subject), with the PREVIOUS " +
+    "identities alongside, so a working-copy rewrite (which mints a new change id) stays visible. jj-only: a location without a `.jj/` marker is " +
     "`unsupported`, and no git command runs. WRITE operation — it mutates the repo, so it runs " +
     "only when the user explicitly asked for this description, never speculatively and never " +
     "as a rollback.",

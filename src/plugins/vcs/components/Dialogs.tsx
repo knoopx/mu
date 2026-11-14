@@ -63,7 +63,7 @@ export function RevsetDialog({
       <DialogHeading icon="list" title="Revset" />
       <OverlayInput
         value={picker.value}
-        placeholder="filter revsets"
+        placeholder="Filter revsets"
         onChange={picker.onQuery}
         onSubmit={() => applyActive()}
         onKeyDown={picker.onKeyDown}
@@ -160,7 +160,7 @@ export function BookmarkDialog({
       />
       <OverlayInput
         value={picker.value}
-        placeholder="bookmark name"
+        placeholder="Bookmark name"
         onChange={picker.onQuery}
         onSubmit={() => applyActive()}
         onKeyDown={picker.onKeyDown}

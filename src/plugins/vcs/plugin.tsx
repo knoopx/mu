@@ -8,10 +8,7 @@
  * `changes` opens with its own event because it keeps the query it was left with.
  */
 
-import {
-  definePlugin,
-  type PanelSurface,
-} from "../core/lib/plugin/manifest";
+import { definePlugin, type PanelSurface } from "../core/lib/plugin/manifest";
 import { ChangesOverlayHost } from "./components/ChangesOverlayHost";
 import { ChangesPanel } from "./components/ChangesPanel";
 import { OplogPanel } from "./components/OplogPanel";
@@ -33,6 +30,7 @@ import { vcsLogTool } from "./tools/vcsLog";
 import { vcsOplogTool } from "./tools/vcsOplog";
 import {
   isVcsTool,
+  vcsChipsOf,
   vcsToolPreviewOf,
   VcsToolRows,
 } from "./components/VcsToolRows";
@@ -65,6 +63,7 @@ export const vcsPlugin = definePlugin(
       owns: isVcsTool,
       body: (item) => <VcsToolRows item={item} />,
       preview: vcsToolPreviewOf,
+      chips: vcsChipsOf,
     });
 
     // Both repo panels fill the band: the list on the left, the preview on the

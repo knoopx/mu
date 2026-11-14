@@ -215,7 +215,8 @@ const VIEW_OF_TOOL: ReadonlyMap<string, ErasedViewShape> = new Map([
 /**
  * Folds one vcs tool call's details into the shared view: `headline` the
  * summary sentence, `cells` the resolved identities, `rows` the data, `note`
- * the failure or explanation, `patch` the diff body, `content` the file body.
+ * the failure or explanation, `patch` the diff body, `content` the body of text
+ * the call read or wrote (a file at a revision, the description a describe left).
  * Null when the details are absent or unshaped — a running call, a non-vcs
  * tool, details of a shape this file does not know.
  */
@@ -316,7 +317,17 @@ function rowOf(
   trailing = "",
   quiet = false,
 ): VcsRowView {
-  return { key, primary, secondary, badge, trailing, primaryMuted: quiet };
+  return {
+    key,
+    // A vcs row is its revision: the short id stands in the key column and the
+    // change id rides the secondary line, where the full one is readable.
+    id: key,
+    primary,
+    secondary,
+    badge,
+    trailing,
+    primaryMuted: quiet,
+  };
 }
 
 /** "12 commits" / "1 commit" — the count a headline opens with. */
@@ -379,7 +390,10 @@ function logView(
 }
 
 /** The patch: both ends resolved into chips, the diff body for ToolDiff. */
-function diffView(details: VcsFileDiffDetails, itemStatus: string): VcsToolView {
+function diffView(
+  details: VcsFileDiffDetails,
+  itemStatus: string,
+): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_DIFF_TOOL, status);
   const path = textOf(details.path);
@@ -408,7 +422,10 @@ function diffView(details: VcsFileDiffDetails, itemStatus: string): VcsToolView 
 }
 
 /** File history: one row per revision that touched the path. */
-function historyView(details: VcsFileHistoryDetails, itemStatus: string): VcsToolView {
+function historyView(
+  details: VcsFileHistoryDetails,
+  itemStatus: string,
+): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_HISTORY_TOOL, status);
   const path = textOf(details.path);
@@ -437,7 +454,10 @@ function historyView(details: VcsFileHistoryDetails, itemStatus: string): VcsToo
 }
 
 /** A file at a revision: the body to paint, a binary read says so. */
-function showView(details: VcsFileShowDetails, itemStatus: string): VcsToolView {
+function showView(
+  details: VcsFileShowDetails,
+  itemStatus: string,
+): VcsToolView {
   const status = statusOf(details, itemStatus);
   const v = view(VCS_FILE_HISTORY_SHOW_TOOL, status);
   const path = textOf(details.path);
@@ -462,7 +482,10 @@ function showView(details: VcsFileShowDetails, itemStatus: string): VcsToolView 
 }
 
 /** Conflicts: a clean repo is a `none` state, not an empty table. */
-function conflictsView(details: VcsConflictsDetails, itemStatus: string): VcsToolView {
+function conflictsView(
+  details: VcsConflictsDetails,
+  itemStatus: string,
+): VcsToolView {
   const status = statusOf(details, itemStatus);
   const files = detailList<ConflictRow>(details.rows);
   const revisions = detailNumber(details.conflict_count);
@@ -508,8 +531,11 @@ function oplogView(details: VcsOplogDetails, itemStatus: string): VcsToolView {
 }
 
 /**
- * Describe: the message is the headline. The chips already carry the change id and
- * commit it ends on, so only a change id that actually moved is worth a row.
+ * Describe: the message is the answer, so it is the card's `content` and not the
+ * header's one clipped line — a description is a subject and a body, and a header
+ * that carries the subject throws the rest of the message away. The header's line
+ * says which revision the write landed on, the chips the commit it ends on, and
+ * only a change id that actually moved is worth a row.
  */
 function describeView(
   args: VcsDescribeParams,
@@ -523,7 +549,7 @@ function describeView(
   const asked = textOf(args.hash);
   const previousChange = textOf(details.previous_change);
   const previousCommit = textOf(details.previous_commit);
-  const message = firstLineOf(details.message);
+  const message = textOf(details.message);
   const rewritten = previousChange !== "" && previousChange !== change;
 
   // The header already prints the rev as the model asked for it, so the chip
@@ -533,15 +559,18 @@ function describeView(
   v.cells = askedIsThisChange
     ? cellsOf(["change", change], ["commit", commit])
     : cellsOf(["rev", asked], ["change", change], ["commit", commit]);
-  v.headline =
-    status === "ok" ? (message === "" ? NO_DESCRIPTION : message) : "";
+  v.headline = "";
   // The key column says the row is the state before, so no badge repeats it.
   v.rows = rewritten ? [rowOf("was", previousChange, previousCommit, "")] : [];
-  v.note = noteFor(
-    status,
-    details,
-    rewritten ? "" : "the description is unchanged",
-  );
+  v.content = status === "ok" ? message : "";
+  // A description that landed empty is the one ok state the card has to say in
+  // words, because it has nothing else to show.
+  v.note =
+    status === "ok"
+      ? message === ""
+        ? NO_DESCRIPTION
+        : ""
+      : noteFor(status, details, "");
   return v;
 }
 

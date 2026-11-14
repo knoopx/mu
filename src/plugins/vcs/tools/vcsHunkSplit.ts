@@ -83,38 +83,36 @@ export async function executeVcsHunkSplit(
 }
 
 /** A write — the hunks came from the user's own split-hunk key on one file row. */
-export const vcsHunkSplitTool: PluginTool<
-  typeof Parameters,
-  VcsSplitDetails
-> = {
-  name: VCS_HUNK_SPLIT_TOOL,
-  icon: "callSplit",
-  label: VCS_TOOL_LABELS[VCS_HUNK_SPLIT_TOOL],
-  description:
-    "Splits one revision of a jujutsu repo at HUNK granularity: the target is rewritten IN " +
-    "PLACE — same change id, same position — keeping only the selected hunks and taking the " +
-    "given `message`, while the unselected hunks move to a NEW child commit (new change id, " +
-    "stacked on top) that keeps the original description. `hunks` are `file=hunk-id` entries " +
-    "exactly as vcs-hunk-list returns them (`file` repo-relative, `hunk-id` the full " +
-    "`hunk-` + 64 hex id), grouped per file into the spec. `insertAfter` rebases that new " +
-    "child after another revision. The result reports the RESOLVED pre-state of `rev` and both " +
-    "halves. jj-only: no `.jj/` marker is `unsupported`, and no git command runs. An empty " +
-    "`hunks` array fails before the repo is touched. WRITE operation — it mutates the repo, so " +
-    "it runs only when the user explicitly asked for this split, never speculatively and never " +
-    "as a rollback.",
-  promptSnippet:
-    "Split a jj revision, keeping the selected hunks in place and moving the rest to a child",
-  promptGuidelines: [
-    "Hunk split is a write: run it only on an explicit request — an instruction from the changes panel, or the user's own words — never speculatively and never as a rollback.",
-    "List first with vcs-hunk-list: the ids are content-addressed, so a stale or renamed hunk id matches nothing and the split comes back `empty-selected`.",
-    "A wrong split is fixed by editing the files back, not by rewriting commits with more VCS writes.",
-    "To move whole files, use vcs-file-split instead of naming every hunk of a file.",
-  ],
+export const vcsHunkSplitTool: PluginTool<typeof Parameters, VcsSplitDetails> =
+  {
+    name: VCS_HUNK_SPLIT_TOOL,
+    icon: "callSplit",
+    label: VCS_TOOL_LABELS[VCS_HUNK_SPLIT_TOOL],
+    description:
+      "Splits one revision of a jujutsu repo at HUNK granularity: the target is rewritten IN " +
+      "PLACE — same change id, same position — keeping only the selected hunks and taking the " +
+      "given `message`, while the unselected hunks move to a NEW child commit (new change id, " +
+      "stacked on top) that keeps the original description. `hunks` are `file=hunk-id` entries " +
+      "exactly as vcs-hunk-list returns them (`file` repo-relative, `hunk-id` the full " +
+      "`hunk-` + 64 hex id), grouped per file into the spec. `insertAfter` rebases that new " +
+      "child after another revision. The result reports the RESOLVED pre-state of `rev` and both " +
+      "halves. jj-only: no `.jj/` marker is `unsupported`, and no git command runs. An empty " +
+      "`hunks` array fails before the repo is touched. WRITE operation — it mutates the repo, so " +
+      "it runs only when the user explicitly asked for this split, never speculatively and never " +
+      "as a rollback.",
+    promptSnippet:
+      "Split a jj revision, keeping the selected hunks in place and moving the rest to a child",
+    promptGuidelines: [
+      "Hunk split is a write: run it only on an explicit request — an instruction from the changes panel, or the user's own words — never speculatively and never as a rollback.",
+      "List first with vcs-hunk-list: the ids are content-addressed, so a stale or renamed hunk id matches nothing and the split comes back `empty-selected`.",
+      "A wrong split is fixed by editing the files back, not by rewriting commits with more VCS writes.",
+      "To move whole files, use vcs-file-split instead of naming every hunk of a file.",
+    ],
 
-  executionMode: "sequential",
-  parameters: Parameters,
+    executionMode: "sequential",
+    parameters: Parameters,
 
-  async execute(_toolCallId, params) {
-    return executeVcsHunkSplit(params);
-  },
-};
+    async execute(_toolCallId, params) {
+      return executeVcsHunkSplit(params);
+    },
+  };

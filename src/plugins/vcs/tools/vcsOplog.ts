@@ -77,27 +77,26 @@ export async function executeVcsOplog(
 }
 
 /** Read-only: it says what happened, and never undoes it. */
-export const vcsOplogTool: PluginTool<typeof Parameters, VcsOplogDetails> =
-  {
-    name: VCS_OPLOG_TOOL,
-    icon: "changeHistory",
-    label: "VCS operation log",
-    description:
-      "Lists the jujutsu operation log — one row per operation, with its id, its start/end " +
-      "timestamps and its description, newest first. The operation log is a jj concept: a " +
-      "location without a `.jj/` marker is `unsupported`. Read-only — only `jj op log` runs, " +
-      "nothing is restored or abandoned. Use it when jj state needs debugging.",
-    promptSnippet:
-      "List the jj operation log, newest-first, with ids and descriptions",
-    promptGuidelines: [
-      "Read the op log with vcs-oplog, not `jj op log` in bash.",
-      "Restoring an operation is a write the user must ask for; the op log only shows what happened.",
-    ],
+export const vcsOplogTool: PluginTool<typeof Parameters, VcsOplogDetails> = {
+  name: VCS_OPLOG_TOOL,
+  icon: "changeHistory",
+  label: "VCS operation log",
+  description:
+    "Lists the jujutsu operation log — one row per operation, with its id, its start/end " +
+    "timestamps and its description, newest first. The operation log is a jj concept: a " +
+    "location without a `.jj/` marker is `unsupported`. Read-only — only `jj op log` runs, " +
+    "nothing is restored or abandoned. Use it when jj state needs debugging.",
+  promptSnippet:
+    "List the jj operation log, newest-first, with ids and descriptions",
+  promptGuidelines: [
+    "Read the op log with vcs-oplog, not `jj op log` in bash.",
+    "Restoring an operation is a write the user must ask for; the op log only shows what happened.",
+  ],
 
-    executionMode: "parallel",
-    parameters: Parameters,
+  executionMode: "parallel",
+  parameters: Parameters,
 
-    async execute(_toolCallId, params) {
-      return executeVcsOplog(params);
-    },
-  };
+  async execute(_toolCallId, params) {
+    return executeVcsOplog(params);
+  },
+};

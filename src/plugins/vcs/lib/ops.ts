@@ -19,7 +19,6 @@ import type {
   LogRow,
   OplogRow,
   RevisionIds,
-  RevisionIdentity,
   SplitOutcome,
 } from "../types";
 
@@ -28,8 +27,6 @@ export const NOT_A_JJ_REPO =
   "not a jj repo — run `jj git init` to initialize the jj repo (jj is git-compatible)";
 
 const IDS_TEMPLATE = 'commit_id.short() ++ "\\t" ++ change_id.short()';
-const IDENTITY_TEMPLATE =
-  'commit_id.short() ++ "\\t" ++ change_id.short() ++ "\\t" ++ description.first_line()';
 
 /** A repo is a directory with a `.jj` above the working copy; null here is what makes every tool answer `unsupported`. */
 export function jjRoot(): string | null {
@@ -42,16 +39,8 @@ const pair = (line: string): RevisionIds => {
   return { git: parts[0] ?? "", change: parts[1] ?? "" };
 };
 
-const identity = (line: string): RevisionIdentity => {
-  const parts = line.trim().split("\t");
-  return {
-    git: parts[0] ?? "",
-    change: parts[1] ?? "",
-    description: (parts[2] ?? "").trim(),
-  };
-};
-
-async function template(rev: string, template: string): Promise<string> {
+/** One revision rendered by a jj template — the whole answer, its lines kept. */
+async function render(rev: string, template: string): Promise<string> {
   if (rev.trim().length === 0) return "";
   const res = await vcs([
     "log",
@@ -64,7 +53,12 @@ async function template(rev: string, template: string): Promise<string> {
     template,
   ]);
   if (res.code !== 0) return "";
-  return res.stdout.split("\n")[0] ?? "";
+  return res.stdout;
+}
+
+/** The same read collapsed to one line, which is all an id line ever is. */
+async function template(rev: string, template: string): Promise<string> {
+  return (await render(rev, template)).split("\n")[0] ?? "";
 }
 
 /** A revset read back as the pair of ids the log shows — a caller reports what the repo resolved. */
@@ -72,9 +66,15 @@ export async function resolveIds(rev: string): Promise<RevisionIds> {
   return pair(await template(rev, IDS_TEMPLATE));
 }
 
-/** The same pair with the first line of the description, which is how a write proves the message that landed. */
-export async function resolveIdentity(rev: string): Promise<RevisionIdentity> {
-  return identity(await template(rev, IDENTITY_TEMPLATE));
+/**
+ * The description a revision carries, its line breaks kept.
+ *
+ * A subject is not the whole of a commit message: a write that reports what it
+ * landed asks jj for the description itself, so the body reaches the log too.
+ * A revision with no description answers empty, which is what it has.
+ */
+export async function resolveDescription(rev: string): Promise<string> {
+  return (await render(rev, "description")).trim();
 }
 
 export interface WriteOutcome {

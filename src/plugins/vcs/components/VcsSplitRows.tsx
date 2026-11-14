@@ -9,17 +9,11 @@ import type { JSX } from "react";
 import { useAdwaita, type IconName } from "adwaita-gpuix";
 
 import {
-  ToolChips,
   ToolRowList,
   ToolStateNote,
   ToolStatusNote,
-  ToolSummary,
 } from "../../core/components/ToolDataRows";
-import {
-  toolCellOf,
-  toolStatusTone,
-  type ToolRowTone,
-} from "../../core/lib/ui/toolRowPaint";
+import { toolCellOf, type ToolRowTone } from "../../core/lib/ui/toolRowPaint";
 import { toolGapColumn } from "../../core/lib/ui/toolRows";
 import { VCS_BADGE_VARIANTS } from "../constants";
 import type { VcsToolView } from "../types";
@@ -33,29 +27,27 @@ const SPLIT_STATUS_ICONS: Readonly<Record<string, IconName>> = {
   "empty-selected": "warning",
 };
 
-const toneOf = (status: VcsToolView["status"]): ToolRowTone =>
-  toolStatusTone(status, SPLIT_STATUS_TONES);
-
-/** The folded split view: pre-state chips, the two roles, placement, note. */
+/** The folded split view: the two roles, where the remainder was placed, the note. */
 export interface VcsSplitRowsProps {
   view: VcsToolView;
 }
 
 /**
- * The split views (`vcs-file-split`, `vcs-hunk-split`): the pre-state the
- * call started from, then one row per role — `selected` and `remaining` —
- * each with its change id, its commit hash and its badge, the placement
- * line when `insert_after` moved the remainder, and the note on a failure.
+ * The split views (`vcs-file-split`, `vcs-hunk-split`): one row per role —
+ * `selected` and `remaining` — each with its change id, its commit hash and its
+ * badge, the placement line when `insert_after` moved the remainder, and the note
+ * on a failure.
+ *
+ * There is no summary line here. The header already says `split into 2 changes`,
+ * and that sentence exists only for a run that succeeded, so a copy of it under the
+ * rows was the same words twice on one row with nothing between them.
  */
 export function VcsSplitRows({ view }: VcsSplitRowsProps): JSX.Element {
   const t = useAdwaita();
-  const tone = toneOf(view.status);
   const placement = toolCellOf(view.cells, "insert_after");
 
   return (
     <div style={toolGapColumn(t)}>
-      <ToolChips cells={view.cells} />
-      <ToolSummary text={view.headline} tone={tone} />
       <ToolRowList rows={view.rows} variants={VCS_BADGE_VARIANTS} />
       {placement === "" ? null : (
         <ToolStateNote

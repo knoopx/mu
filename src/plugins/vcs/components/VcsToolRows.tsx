@@ -10,26 +10,27 @@ import type { JSX, ReactNode } from "react";
 import { useAdwaita, type IconName } from "adwaita-gpuix";
 
 import {
-  ToolChips,
   ToolRowList,
   ToolRunning,
   ToolStatusNote,
-  ToolSummary,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
+import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import { PatchDiff } from "../../core/components/PatchDiff";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
 import { buildNativeTheme } from "../../core/lib/ui/theme";
 import {
   toolCellOf,
-  toolStatusTone,
+  type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { toolGapColumn } from "../../core/lib/ui/toolRows";
+import { emphasisWeight } from "../../core/lib/ui/tokens";
 import { previewLineHeight } from "../../core/lib/ui/transcriptLayout";
 import {
   MAX_OUTPUT_LINES,
@@ -50,7 +51,7 @@ import {
   VCS_TOOL_NAMES,
 } from "../constants";
 import { vcsToolViewOf } from "../lib/toolView";
-import type { VcsToolStatus, VcsToolView } from "../types";
+import type { VcsToolView } from "../types";
 import { VcsSplitRows } from "./VcsSplitRows";
 
 const RUNNING_TEXT: Record<string, string> = {
@@ -79,12 +80,6 @@ const EMPTY_TEXT: Record<string, string> = {
   [VCS_HUNK_SPLIT_TOOL]: "nothing selected",
 };
 
-/** A status that answers in its own words whatever tool it belongs to. */
-const STATED_STATUS: Readonly<Record<string, string>> = {
-  unsupported: "no jj repo",
-  binary: "binary file",
-};
-
 /** The states a vcs vocabulary adds to the shared status tones and icons. */
 const VCS_STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
   "empty-selected": "warn",
@@ -106,10 +101,12 @@ const PATH_TOOLS: readonly string[] = [
 const VCS_WORDS: ToolPreviewVocabulary = {
   running: RUNNING_TEXT,
   runningDefault: "reading the repo",
-  clean: ["empty-selected", "empty", "none"],
-  empty: EMPTY_TEXT,
+  // The status words ride the scope (see `statusWord`), so the vocabulary hands
+  // them over rather than replacing the scope with them.
+  clean: [],
+  empty: {},
   emptyDefault: "nothing found",
-  stated: STATED_STATUS,
+  stated: {},
 };
 
 /** True for the ten vcs tools — matched by their names, never retyped. */
@@ -118,18 +115,46 @@ export function isVcsTool(name: string): boolean {
 }
 
 /**
- * The one line in the tool header: what is running, why it failed, and when
- * the call answered — the scope it read (path, revset, rev, op log). The
- * counts, ids and patch belong to the rows below, so the header never says
- * what the rows paint, and the rows never repeat the header.
+ * The one line in the tool header: the scope it read (path, revset, rev, op log),
+ * what came back against that scope — `no commits`, `no jj repo`, `binary file`, the
+ * counts of the change it read — and nothing else. The card below is the answer: its
+ * rows, its diff, its file body, plus the one reason line a call that did not answer
+ * leaves behind. The card never states the scope, the status or the count again.
  */
 export const vcsToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
     item,
     vcsToolViewOf(item.name, item.args, item.details, item.status),
     VCS_WORDS,
-    scopeOf,
+    headerOf,
   );
+
+/** What a status that is not `ok` says beside the scope. */
+function statusWord(tool: string, view: VcsToolView): string {
+  if (view.status === "ok") return "";
+  if (view.status === "unsupported") return "no jj repo";
+  if (view.status === "binary") return "binary file";
+  return EMPTY_TEXT[tool] ?? "nothing found";
+}
+
+function headerOf(tool: string, view: VcsToolView): string {
+  return headerLineOf(scopeOf(tool, view), [
+    view.status === "ok" ? view.headline : "",
+    statusWord(tool, view),
+  ]);
+}
+
+/**
+ * The identities the header's line has no room to say: the commit behind a rev, the
+ * change id, the engine that answered. The cells the header already printed are
+ * dropped here by construction, so one row never says `rev @` twice.
+ */
+export function vcsChipsOf(item: ToolTranscriptItem): readonly ToolRowCell[] {
+  const view = vcsToolViewOf(item.name, item.args, item.details, item.status);
+  if (view === null) return [];
+  const said = vcsToolPreviewOf(item);
+  return view.cells.filter((cell) => !said.includes(cell.value));
+}
 
 /** The request a tool was pointed at, read back from its chips. */
 function scopeOf(tool: string, view: VcsToolView): string {
@@ -152,33 +177,24 @@ function join(parts: readonly string[]): string {
   return parts.filter((part) => part !== "").join(" · ");
 }
 
-const toneOf = (status: VcsToolStatus | ""): ToolRowTone =>
-  toolStatusTone(status, VCS_STATUS_TONES);
-
-/** Chips, summary, rows and note — the shape every table-shaped vcs tool shares. */
+/** The rows, and the one reason line — the shape every table-shaped vcs tool shares.
+ *  The count and the status word are the header's line, so the body adds no summary:
+ *  a headline above the rows repeated what the row already said. A view whose answer
+ *  is a body of text (the message a describe wrote) hands it in as `before`, so the
+ *  answer is read first and the ids it moved are read after. */
 function VcsViewBody({
   view,
-  tone,
+  before,
   after,
-  summaryFirst = false,
 }: {
   view: VcsToolView;
-  tone?: ToolRowTone;
+  before?: ReactNode;
   after?: ReactNode;
-  summaryFirst?: boolean;
 }): JSX.Element {
   const t = useAdwaita();
-  const chips = <ToolChips cells={view.cells} />;
-  const summary = (
-    <ToolSummary
-      text={view.headline}
-      tone={tone ?? (view.status === "ok" ? "neutral" : toneOf(view.status))}
-    />
-  );
   return (
     <div style={toolGapColumn(t)}>
-      {summaryFirst ? summary : chips}
-      {summaryFirst ? chips : summary}
+      {before ?? null}
       <ToolRowList rows={view.rows} variants={VCS_BADGE_VARIANTS} />
       <ToolStatusNote
         status={view.status}
@@ -188,6 +204,49 @@ function VcsViewBody({
       />
       {after ?? null}
     </div>
+  );
+}
+
+/**
+ * The description a describe wrote, in the card rather than in the header.
+ *
+ * A message is the answer of that call, so it gets the width the card has and not
+ * the header's one clipped line. Its lines stay its own — a subject, the blank
+ * that parts it from the body, the body — and each wraps to the band instead of
+ * running past it. The subject is the line a reader scans first, so it carries the
+ * log's emphasis and the lines under it do not.
+ */
+function VcsMessageBody({ text }: { text: string }): JSX.Element | null {
+  const t = useAdwaita();
+  if (text.trim() === "") return null;
+  const lines = text.replace(/\s+$/, "").split("\n");
+
+  return (
+    <>
+      {lines.map((line, index) => (
+        <ToolCaptionLine
+          key={`message-${String(index)}`}
+          text={line.trim()}
+          color={t.color.text.primary}
+          weight={index === 0 ? emphasisWeight(t) : undefined}
+          flush
+        />
+      ))}
+    </>
+  );
+}
+
+/**
+ * Whether the call leaves anything for the card to hold: rows, a reason, a patch,
+ * a body of text. Core skips a body that answers null, and a plate around nothing
+ * is a box under a header that already said the whole answer.
+ */
+function cardHasInk(view: VcsToolView): boolean {
+  return (
+    view.rows.length > 0 ||
+    view.note !== "" ||
+    view.patch !== "" ||
+    view.content !== ""
   );
 }
 
@@ -234,10 +293,10 @@ export interface VcsToolRowsProps {
 /**
  * The result of a vcs call: a running block while it works; a state line when
  * it failed, found no repo, selected nothing or found nothing; the patch read
- * as code; a file body in mono; a split's two roles; and for the table-shaped
- * tools a row each.
+ * as code; a file body in mono; the message a describe wrote; a split's two
+ * roles; and for the table-shaped tools a row each.
  */
-export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
+export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element | null {
   const tool = item.name.toLowerCase();
 
   if (item.status === "running")
@@ -249,6 +308,8 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
 
   if (tool === VCS_FILE_SPLIT_TOOL || tool === VCS_HUNK_SPLIT_TOOL)
     return <VcsSplitRows view={view} />;
+
+  if (!cardHasInk(view)) return null;
 
   if (tool === VCS_FILE_DIFF_TOOL)
     return (
@@ -270,13 +331,7 @@ export function VcsToolRows({ item }: VcsToolRowsProps): JSX.Element {
     );
 
   if (tool === VCS_DESCRIBE_TOOL)
-    return (
-      <VcsViewBody
-        view={view}
-        summaryFirst
-        tone={view.status === "ok" ? "accent" : toneOf(view.status)}
-      />
-    );
+    return <VcsViewBody view={view} before={<VcsMessageBody text={view.content} />} />;
 
   return <VcsViewBody view={view} />;
 }
