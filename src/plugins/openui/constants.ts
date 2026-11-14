@@ -88,12 +88,6 @@ export const PROGRAM_GAP_TIER = {
   group: 3,
   section: 6,
 } as const;
-
-/** A program's default gaps: what a Stack and a Pane leave when left unset. */
-export const DEFAULT_PROGRAM_GAP = PROGRAM_GAP_TIER.group;
-export const SCREEN_GAP = PROGRAM_GAP_TIER.section;
-export const PANE_GAP = PROGRAM_GAP_TIER.group;
-
 /** How a program's rows are badged: what is a hard error, what is only a note. */
 export const OPENUI_BADGE_VARIANTS: Readonly<Record<string, BadgeVariant>> = {
   error: "destructive",

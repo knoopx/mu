@@ -45,7 +45,7 @@ export interface TreePlace {
  * library declares a list draws it as one child, and it is found here the same
  * way.
  */
-export function nodesNamed(root: unknown, typeName: string): TreePlace[] {
+function nodesNamed(root: unknown, typeName: string): TreePlace[] {
   const found: TreePlace[] = [];
   const walk = (value: unknown, path: string): void => {
     if (Array.isArray(value)) {

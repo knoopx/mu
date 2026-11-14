@@ -21,7 +21,7 @@ import { writeBlock } from "../lib/answer/sheet";
 import { answerSheet } from "../lib/answer/store";
 
 /** The sheet's version: every staged answer bumps it. */
-export function useAnswerSheetVersion(): number {
+function useAnswerSheetVersion(): number {
   return useSyncExternalStore(
     answerSheet.subscribe,
     answerSheet.getSnapshot,

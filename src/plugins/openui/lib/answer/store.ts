@@ -29,7 +29,7 @@ export interface StagedAnswer extends StagedEntry {
 
 export type SheetListener = () => void;
 
-export class AnswerSheet {
+class AnswerSheet {
   private readonly entries = new Map<string, StagedAnswer>();
   /** What a question's answer was when it went out in a message. */
   private readonly sent = new Map<string, string>();

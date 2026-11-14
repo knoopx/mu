@@ -39,9 +39,7 @@ export const entryKey = (block: string, position: string): string =>
  * Blocks in the order their answers read: the order their first answer was
  * staged, and within a block the order the questions stand in it.
  */
-export function orderEntries<E extends StagedEntry>(
-  entries: readonly E[],
-): E[] {
+function orderEntries<E extends StagedEntry>(entries: readonly E[]): E[] {
   const first = new Map<string, number>();
   for (const entry of entries)
     first.set(
@@ -83,7 +81,7 @@ export type Tracked =
  * run of line breaks may have grown (an editor that keeps its lines apart) but
  * none may vanish, so a multi-line answer's own blank line stays.
  */
-export function sameBlock(region: string, block: string): boolean {
+function sameBlock(region: string, block: string): boolean {
   const ours = block.split(/(\n+)/);
   const theirs = region.split(/(\n+)/);
   return (

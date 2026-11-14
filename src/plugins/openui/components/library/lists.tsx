@@ -59,10 +59,7 @@ export const Sections = defineComponent({
  * the line that says what it holds. A rule between sections, none after the last —
  * the same rule the screen's other lists wear.
  */
-export function drawSections(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSections(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
 
   return (
@@ -203,7 +200,7 @@ export const Todos = defineComponent({
  *  without pretending the line is absent. */
 const SETTLED: ProgramStatus[] = ["done", "skipped", "error"];
 
-export function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const items = listProp(node.props, "items");
 
   return (
@@ -295,7 +292,7 @@ export const Steps = defineComponent({
   component: drawSteps,
 });
 
-export function drawSteps(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawSteps(node: ElementNode, ctx: ProgramContext): JSX.Element {
   // The reference calls the list `items`; mu's programs wrote `steps`.
   const rows = listProp(node.props, "items", listProp(node.props, "steps"));
   const tone = prop<ProgramTone | null>(node.props, "tone", null);

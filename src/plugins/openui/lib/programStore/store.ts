@@ -111,7 +111,7 @@ function samePublication(
   );
 }
 
-export class ProgramStore {
+class ProgramStore {
   private readonly programs = new Map<string, ProgramRecord>();
   private readonly listeners = new Set<ProgramStoreListener>();
   private fixtures: Record<string, unknown> = {};

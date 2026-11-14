@@ -12,7 +12,7 @@ import { useSyncExternalStore } from "react";
 import { programStore, type ProgramRecord } from "../lib/programStore/store";
 
 /** The store's version: every write to it bumps it. */
-export function useProgramStoreVersion(): number {
+function useProgramStoreVersion(): number {
   return useSyncExternalStore(
     programStore.subscribe,
     programStore.getSnapshot,
@@ -24,10 +24,4 @@ export function useProgramStoreVersion(): number {
 export function useProgram(name: string): ProgramRecord | undefined {
   useProgramStoreVersion();
   return programStore.get(name);
-}
-
-/** Every program in the log, in the order the log holds them. */
-export function usePrograms(): ProgramRecord[] {
-  useProgramStoreVersion();
-  return programStore.list();
 }

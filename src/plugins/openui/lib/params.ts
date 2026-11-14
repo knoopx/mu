@@ -11,21 +11,10 @@ import {
   DEFAULT_LIBRARY_LIMIT,
   DEFAULT_PROGRAM_NAME,
   MAX_CHUNK_CHARS,
-  MAX_EVENT_LIMIT,
   MAX_LIBRARY_LIMIT,
   MAX_PROGRAM_CHARS,
   MAX_PROGRAM_NAME,
 } from "../constants";
-
-/** Which program a call means; left out, it means the one the log paints. */
-export const nameParam = Type.Optional(
-  Type.String({
-    maxLength: MAX_PROGRAM_NAME,
-    description:
-      "Program to act on — an existing program name; openui-list answers the names.",
-  }),
-);
-
 /** The program a call creates or replaces, which must be named. */
 export const namedParam = Type.String({
   minLength: 1,

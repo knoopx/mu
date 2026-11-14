@@ -22,7 +22,6 @@ import type {
 import {
   clipText,
   counted,
-  moreLine,
   statusTable,
   tableOf,
 } from "../../core/lib/agent/toolText";

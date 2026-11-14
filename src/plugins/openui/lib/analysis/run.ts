@@ -167,8 +167,9 @@ const functionTable = (): FunctionTable =>
         {
           ...(entry as object),
           fn:
-            (defined?.fn as ((args: Record<string, unknown>) => unknown) | undefined) ??
-            (() => null),
+            (defined?.fn as
+              | ((args: Record<string, unknown>) => unknown)
+              | undefined) ?? (() => null),
         },
       ];
     }),

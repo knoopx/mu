@@ -137,13 +137,6 @@ const TONE_ALIASES: Record<string, ProgramTone | null> = {
   primary: "ink",
   secondary: "muted",
 };
-
-/** Every tone word the library accepts, the aliases included. */
-export const TONE_VOCABULARY: readonly string[] = [
-  ...TONE_WORDS,
-  ...Object.keys(TONE_ALIASES),
-];
-
 /** A row's tone cell, read as a tone word — or nothing when it named none. */
 export function toneOfValue(value: unknown): ProgramTone | null {
   if (typeof value !== "string") return null;

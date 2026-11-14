@@ -81,7 +81,7 @@ function queriesOf(result: ParseResult): OpenUIQueryInfo[] {
 }
 
 /** What a parse answers, in the shape the log and the tools read. */
-export function describeParse(result: ParseResult): OpenUIProgramParse {
+function describeParse(result: ParseResult): OpenUIProgramParse {
   const diagnostics: OpenUIDiagnostic[] = result.meta.errors.map((error) => ({
     code: error.code,
     component: error.component,

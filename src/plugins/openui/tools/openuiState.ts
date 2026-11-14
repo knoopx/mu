@@ -16,7 +16,6 @@ import {
   statusTable,
   toolResult,
 } from "../../core/lib/agent/toolText";
-import { nameParam } from "../lib/params";
 import {
   diagnosticTable,
   queryLines,

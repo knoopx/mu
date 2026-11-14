@@ -33,10 +33,6 @@ const PREFIX = "ui#";
 /** A block's state key: which reply, which block of it. */
 export const fenceKey = (message: number, fence: number): string =>
   `${PREFIX}${String(message)}#${String(fence)}`;
-
-/** Whether a program name is a reply block's rather than a tool program's. */
-export const isFenceKey = (name: string): boolean => name.startsWith(PREFIX);
-
 /** A parse kept because it is the last one that drew anything. */
 interface HeldParse {
   parse: OpenUIProgramParse;
@@ -90,7 +86,7 @@ export function holdFence(message: number, block: ReplyFence): string {
 }
 
 /** A block left the conversation (a rewind, a branch): its frame and its program go. */
-export function dropFence(name: string): void {
+function dropFence(name: string): void {
   lastGood.delete(name);
   dropRuntime(name);
   programStore.remove(name);
@@ -112,9 +108,4 @@ export function pruneFences(replies: number): void {
     if (!Number.isFinite(message) || message < replies) continue;
     dropFence(record.name);
   }
-}
-
-/** How many programs the log holds that are reply blocks. */
-export function fenceCount(): number {
-  return programStore.list().filter((record) => record.fence).length;
 }

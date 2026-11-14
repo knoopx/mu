@@ -104,7 +104,10 @@ export const Form = defineComponent({
     // title first, like every other container here. Both orders are accepted —
     // whichever slot holds the list is the fields — and the drawer says which.
     children: z.union([z.array(z.any()), z.string()]),
-    title: z.union([z.array(z.any()), z.string()]).nullable().optional(),
+    title: z
+      .union([z.array(z.any()), z.string()])
+      .nullable()
+      .optional(),
   }),
   component: drawForm,
 });
@@ -309,10 +312,7 @@ export const FollowUps = defineComponent({
 
 /* ------------------------------------------------------------------ draws */
 
-export function drawButton(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawButton(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const label = textProp(node.props, "label");
   const tone = toneOfValue(node.props.tone);
   const disabled = prop<boolean>(node.props, "disabled", false);
@@ -371,7 +371,7 @@ function StagedNote(props: { ctx: ProgramContext; text: string }): JSX.Element {
   );
 }
 
-export function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
   // A mu program wrote the title first: `Form("Which export?", [...])`. The
   // reference puts the fields in the first slot, and a string in that slot that
   // is not a title means the older order.
@@ -435,10 +435,7 @@ export function drawForm(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawToggle(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawToggle(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, false);
 
@@ -529,10 +526,7 @@ function choiceOf(
   };
 }
 
-export function drawChoice(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawChoice(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const { options, label, binding } = choiceOf(node, ctx);
 
   return (
@@ -549,9 +543,7 @@ export function drawChoice(
         {options.map((option, index) => (
           <AdwaitaButton
             key={`o-${String(index)}`}
-            variant={
-              option.value === binding.value ? "suggested" : "default"
-            }
+            variant={option.value === binding.value ? "suggested" : "default"}
             size="sm"
             label={option.value}
             onClick={() => binding.set(option.value)}
@@ -562,7 +554,7 @@ export function drawChoice(
   );
 }
 
-export function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
+function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const { options, label, binding } = choiceOf(node, ctx);
 
   return (
@@ -591,10 +583,7 @@ export function drawRadio(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawSelect(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSelect(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const { options, label, binding } = choiceOf(node, ctx);
 
   return (
@@ -611,10 +600,7 @@ export function drawSelect(
   );
 }
 
-export function drawChecklist(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawChecklist(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const options = optionsOf(node);
   // The reference names the state `value`; mu's programs wrote `values`.
   const binding = ctx.binding(
@@ -654,10 +640,7 @@ export function drawChecklist(
   );
 }
 
-export function drawRating(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawRating(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const max = Math.max(1, Math.round(prop<number>(node.props, "max", 5)));
   const label = textProp(node.props, "label");
   const binding = ctx.binding(node.props.value, 0);
@@ -690,10 +673,7 @@ export function drawRating(
   );
 }
 
-export function drawSliderInput(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSliderInput(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const min = prop(node.props, "min", 0);
   const max = prop(node.props, "max", 100);
   const label = textProp(node.props, "label");
@@ -742,10 +722,7 @@ export function drawInput(node: ElementNode, ctx: ProgramContext): JSX.Element {
 const linesOf = (value: unknown): string[] =>
   coerce<string[]>(value, []).map((line) => String(line ?? ""));
 
-export function drawListEditor(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawListEditor(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const binding = ctx.binding(node.props.value, [] as string[]);
   const lines = linesOf(binding.value);
   const placeholder = textProp(node.props, "placeholder");
@@ -785,10 +762,7 @@ export function drawListEditor(
   );
 }
 
-export function drawDateInput(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawDateInput(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const binding = ctx.binding(node.props.value, "");
   const held = String(binding.value ?? "");
   const shaped = /^\d{4}-\d{2}-\d{2}$/.test(held);
@@ -815,12 +789,15 @@ export function drawDateInput(
   );
 }
 
-const OPTION_CARD_NAMES = ["value", "title", "detail", "image", "icon"] as const;
+const OPTION_CARD_NAMES = [
+  "value",
+  "title",
+  "detail",
+  "image",
+  "icon",
+] as const;
 
-export function drawOptionCards(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawOptionCards(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const options = listProp(node.props, "options");
   // One option, or several: the state says which, because the reference lets a
   // list `$variable` pick more than one card.
@@ -856,15 +833,22 @@ export function drawOptionCards(
         }}
       >
         {options.map((option, index) => {
-          const named = typeof option === "object" && option !== null && !Array.isArray(option);
+          const named =
+            typeof option === "object" &&
+            option !== null &&
+            !Array.isArray(option);
           const value = named
             ? cellText(cellOf(option, OPTION_CARD_NAMES, 0))
             : cellText(option);
           const title = named
-            ? (cellText(cellOf(option, OPTION_CARD_NAMES, 1)) || value)
+            ? cellText(cellOf(option, OPTION_CARD_NAMES, 1)) || value
             : value;
-          const detail = named ? cellText(cellOf(option, OPTION_CARD_NAMES, 2)) : "";
-          const mark = named ? resolveIcon(cellText(cellOf(option, OPTION_CARD_NAMES, 4))) : "";
+          const detail = named
+            ? cellText(cellOf(option, OPTION_CARD_NAMES, 2))
+            : "";
+          const mark = named
+            ? resolveIcon(cellText(cellOf(option, OPTION_CARD_NAMES, 4)))
+            : "";
           const on = picked(value);
 
           return (
@@ -879,7 +863,9 @@ export function drawOptionCards(
                 padding: innerGap(ctx.t),
                 borderRadius: ctx.t.radius.sm,
                 borderWidth: HAIRLINE,
-                borderColor: on ? ctx.t.color.accent.base : ctx.t.color.border.default,
+                borderColor: on
+                  ? ctx.t.color.accent.base
+                  : ctx.t.color.border.default,
                 backgroundColor: on
                   ? ctx.t.color.surface.sunken
                   : "transparent",
@@ -948,10 +934,7 @@ const colorFill = (value: string): string | null =>
       ? value.trim()
       : null;
 
-export function drawSwatches(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawSwatches(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const colors = listProp(node.props, "colors").map(swatchOf);
   const bound = node.props.value;
   const binding =
@@ -993,7 +976,9 @@ export function drawSwatches(
                   borderRadius: ctx.t.radius.sm,
                   backgroundColor: fill,
                   borderWidth: HAIRLINE,
-                  borderColor: on ? ctx.t.color.accent.base : ctx.t.color.border.default,
+                  borderColor: on
+                    ? ctx.t.color.accent.base
+                    : ctx.t.color.border.default,
                 }}
               />
               {color.name === "" ? null : (
@@ -1025,7 +1010,11 @@ const EDIT_COLUMN_NAMES = ["key", "label", "type"] as const;
 
 const editColumnsOf = (columns: readonly unknown[]): EditColumn[] =>
   columns.map((column) => {
-    if (typeof column !== "object" || column === null || Array.isArray(column)) {
+    if (
+      typeof column !== "object" ||
+      column === null ||
+      Array.isArray(column)
+    ) {
       const key = cellText(column);
       return { key, label: key, type: "text" };
     }
@@ -1035,15 +1024,19 @@ const editColumnsOf = (columns: readonly unknown[]): EditColumn[] =>
     return {
       key,
       label,
-      type: word === "number" ? "number" : word === "boolean" ? "boolean" : "text",
+      type:
+        word === "number" ? "number" : word === "boolean" ? "boolean" : "text",
     };
   });
 
-export function drawEditableTable(
+function drawEditableTable(
   node: ElementNode,
   ctx: ProgramContext,
 ): JSX.Element {
-  const binding = ctx.binding(node.props.value, [] as Record<string, unknown>[]);
+  const binding = ctx.binding(
+    node.props.value,
+    [] as Record<string, unknown>[],
+  );
   const rows = coerce<Record<string, unknown>[]>(binding.value, []);
   const columns = editColumnsOf(listProp(node.props, "columns"));
   const label = textProp(node.props, "label");
@@ -1091,7 +1084,8 @@ export function drawEditableTable(
                         index,
                         column.key,
                         column.type === "number"
-                          ? Number.parseFloat(next.replace(/[^0-9.\-]/g, "")) || 0
+                          ? Number.parseFloat(next.replace(/[^0-9.\-]/g, "")) ||
+                              0
                           : next,
                       )
                     }
@@ -1116,7 +1110,14 @@ export function drawEditableTable(
           binding.set([
             ...rows,
             Object.fromEntries(
-              columns.map((column) => [column.key, column.type === "number" ? 0 : column.type === "boolean" ? false : ""]),
+              columns.map((column) => [
+                column.key,
+                column.type === "number"
+                  ? 0
+                  : column.type === "boolean"
+                    ? false
+                    : "",
+              ]),
             ),
           ])
         }
@@ -1125,10 +1126,7 @@ export function drawEditableTable(
   );
 }
 
-export function drawFollowUps(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawFollowUps(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const prompts = listProp(node.props, "prompts").map(cellText);
   const position = choiceRunPosition(ctx.path);
   const sent = ctx.sentAnswer(position);
@@ -1173,10 +1171,7 @@ export function drawFollowUps(
   );
 }
 
-export function drawTextArea(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawTextArea(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const binding = ctx.binding(node.props.value, "");
 
   return (
@@ -1191,10 +1186,7 @@ export function drawTextArea(
   );
 }
 
-export function drawStepper(
-  node: ElementNode,
-  ctx: ProgramContext,
-): JSX.Element {
+function drawStepper(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const min = prop<number | null>(node.props, "min", null) ?? 0;
   const max = prop<number | null>(node.props, "max", null) ?? 99;
   const written = node.props.step;

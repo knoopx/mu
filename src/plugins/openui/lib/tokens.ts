@@ -19,7 +19,7 @@ import {
 import { PROGRAM_GAP_TIER } from "../constants";
 
 /** One step of a program's `gap` argument, in pixels: the language's unit. */
-export const GAP_STEP = 4;
+const GAP_STEP = 4;
 
 /** How far a gap may grow however a program writes it: two sections. */
 const GAP_MAX_STEPS = 12;

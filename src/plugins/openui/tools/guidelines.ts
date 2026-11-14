@@ -10,7 +10,7 @@
  */
 
 /** The contract every tool's guidance stands on: where a screen comes from, and where an answer goes. */
-export const REPLY_BLOCK_GUIDELINES: readonly string[] = [
+const REPLY_BLOCK_GUIDELINES: readonly string[] = [
   "Answer with a screen by writing a ```ui block inline in your reply: it is OpenUI Lang, it draws while the reply streams, and it costs no extra model call.",
   "Only the message that ends a turn carries a block — progress notes and tool input stay plain text — and the reply opens with a plain sentence that answers, which is what a preview shows.",
   "Anything better used than read is a block, not a markdown table: a comparison, a plan, a run of options, a figure to move, a diff, a tree of what changed. In doubt, add the block.",
@@ -21,7 +21,7 @@ export const PROMPT_GUIDELINES: readonly string[] = [
   ...REPLY_BLOCK_GUIDELINES,
   "Call openui-prompt once before authoring an OpenUI Lang program, then follow it — the component list it prints is the whole truth about what will draw.",
   "A component absent from the library cannot be drawn, however obvious its name looks.",
-  "Data belongs in the screen, not in your output: `Load(path)` reads a workspace file (or a URL) at paint time, so a Table of a test report, a changelog or a csv is `Table(Load(\"out/report.csv\"))` rather than two hundred rows you typed.",
+  'Data belongs in the screen, not in your output: `Load(path)` reads a workspace file (or a URL) at paint time, so a Table of a test report, a changelog or a csv is `Table(Load("out/report.csv"))` rather than two hundred rows you typed.',
   "`Sources([...])` names where the screen's figures came from — a file, a command, a URL — and stands as a caption, so a reader can check the numbers without asking.",
 ];
 

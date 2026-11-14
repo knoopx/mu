@@ -1,25 +1,5 @@
-/**
- * Reading a reply's `ui` blocks.
- *
- * The reference implementation of this plugin (bb-plugin-genui) has the agent
- * write the screen **inline in its reply**, as a fenced block: a UI costs no
- * extra model call, it is part of the answer, and it draws while the reply
- * streams. mu has no code-fence slot in the native markdown element, so mu does
- * what that plugin's fallback path does — find the blocks in the reply text,
- * hide them from the prose, and paint the same program in their place.
- *
- * The rules that follow are that plugin's: a block is `streaming` while the
- * reply is still arriving, `closed` when its closing delimiter arrived, and
- * `unclosed` when the reply ended without one. A block keeps its place among the
- * message's blocks, which is what its state key is made of, and a block of any
- * other language is left alone — it is a code block, not a screen.
- */
-
-/** How far a fenced block may be indented and still be a fence (markdown's rule). */
-const MAX_FENCE_INDENT = 3;
-
 /** The info string that makes a block a screen. */
-export const UI_LANGUAGE = "ui";
+const UI_LANGUAGE = "ui";
 
 /** One of a reply's `ui` blocks, and what became of its delimiter. */
 export interface ReplyFence {
@@ -51,7 +31,7 @@ export interface ReplyBlocks {
 const openerOf = (
   line: string,
 ): { marker: string; language: string } | null => {
-  const match = /^ {0,3}(`{3,})[ \t]*(.*)$/.exec(line);
+  const match = /^ {0,3}(`{3 })[ \t]*(.*)$/.exec(line);
   if (match === null) return null;
   return {
     marker: match[1] ?? "",
@@ -61,7 +41,7 @@ const openerOf = (
 
 /** Whether `line` closes a fence opened with `marker` (a run of backticks at least as long, with no info string). */
 const closesOf = (line: string, marker: string): boolean => {
-  const match = /^ {0,3}(`{3,})[ \t]*$/.exec(line);
+  const match = /^ {0,3}(`{3 })[ \t]*$/.exec(line);
   return match !== null && (match[1] ?? "").length >= marker.length;
 };
 
@@ -153,7 +133,3 @@ function dedent(lines: readonly string[], indent: number): string {
     .join("\n")
     .trim();
 }
-
-/** A block that is still arriving must not be treated as final. */
-export const isStreamingFence = (fence: ReplyFence): boolean =>
-  fence.status === "streaming";

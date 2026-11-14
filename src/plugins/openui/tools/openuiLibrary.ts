@@ -9,11 +9,7 @@
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import {
-  DEFAULT_LIBRARY_LIMIT,
-  MAX_LIBRARY_LIMIT,
-  OPENUI_LIBRARY_TOOL,
-} from "../constants";
+import { DEFAULT_LIBRARY_LIMIT, OPENUI_LIBRARY_TOOL } from "../constants";
 import type { PluginTool } from "../../core/lib/plugin/manifest";
 import type { OpenUILibraryDetails } from "../types";
 import {

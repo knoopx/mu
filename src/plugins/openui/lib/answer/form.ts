@@ -56,7 +56,7 @@ const boundName = (value: unknown): string =>
   isReactiveAssign(value) ? (value.target ?? "") : "";
 
 /** A field value as message text; "" when empty. */
-export function answer(value: unknown): string {
+function answer(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number")
@@ -91,7 +91,7 @@ const optionValues = (options: unknown): unknown[] => {
  * so the agent learns both — `CSV, JSON (not: XLSX, PDF)`. Nothing picked says
  * so with the options; everything picked says `(all)`.
  */
-export function picks(
+function picks(
   picked: readonly unknown[],
   options: readonly unknown[],
 ): string {
@@ -142,7 +142,11 @@ function fieldOf(
   const label = typeof props.label === "string" ? props.label.trim() : "";
   // An unrated Rating holds 0: no answer, not a zero.
   const value = node.typeName === "Rating" && given === 0 ? null : given;
-  const held = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+  const held = Array.isArray(value)
+    ? value
+    : value === null || value === undefined
+      ? []
+      : [value];
   const text =
     node.typeName === "Checklist" ||
     (node.typeName === "OptionCards" && Array.isArray(value))
