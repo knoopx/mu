@@ -29,7 +29,7 @@ import {
   idColumn,
   monoTextWidth,
 } from "./tokens";
-import { toolGapColumn, toolLine } from "./toolRows";
+import { toolEllipsis, toolGapColumn, toolLine } from "./toolRows";
 
 /** The colour roles a tool row can paint. */
 export type ToolRowTone = "neutral" | "accent" | "ok" | "warn" | "bad";
@@ -57,6 +57,10 @@ export interface ToolPaintRow {
   primary: string;
   secondary: string;
   badge: string;
+  /** The primary line stands in for nothing — a placeholder, not a thing. It is
+   *  drawn quiet, the way the same change is drawn in the panel that lists it,
+   *  so the rows that do say something are the ones that stand out. */
+  primaryMuted?: boolean;
   tone?: ToolRowTone;
   meter?: ToolRowMeter | null;
   members?: readonly string[];
@@ -259,12 +263,18 @@ export function toolDataRow(
 
 /** The id column: the width the list measured for its own ids, so every body
  *  line of that list starts at the same x and no more than the widest id in it
- *  is ever reserved. */
+ *  is ever reserved.
+ *
+ *  An id box is a fixed column, so it clips rather than wraps: an id longer than
+ *  the column prints its ellipsis and the row stays one line tall. Wrapping put
+ *  the last letter of a change id on a second line beside the row below it.
+ */
 export const toolKeyColumn = (t: AdwaitaTheme, width: number): StyleDesc => ({
   width,
   flexShrink: 0,
   fontFamily: t.type.fontFamilyMono,
   pointerEvents: "none",
+  ...toolEllipsis,
 });
 
 /** A tool's own body column: gapped, and sized by its rows rather than by the space left in the log. */

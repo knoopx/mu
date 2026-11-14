@@ -129,10 +129,19 @@ export function toolCell(t: AdwaitaTheme, first: boolean): StyleDesc {
  * wrapped line stops at whatever width an earlier pass settled on, which is how a
  * title was seen to break a couple of hundred pixels short of the space it had.
  */
-export const toolOneLine: StyleDesc = {
-  ...toolGrow,
+/** The half of `toolOneLine` that is not about growing: text stays on one line
+ *  and the ellipsis marks where the box cut it. A column the list already
+ *  measured takes this and keeps its own width — a box narrower than its ink
+ *  would otherwise break its text onto a second line and make that row taller
+ *  than its neighbours. */
+export const toolEllipsis: StyleDesc = {
   whiteSpace: "nowrap",
   textOverflow: "ellipsis",
+};
+
+export const toolOneLine: StyleDesc = {
+  ...toolGrow,
+  ...toolEllipsis,
 };
 
 /** The same line in mono — a path, a hash, a set of figures. */

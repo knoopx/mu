@@ -7,6 +7,7 @@
  */
 
 import {
+  hasNoDescription,
   NO_DESCRIPTION,
   VCS_CONFLICTS_TOOL,
   VCS_DESCRIBE_TOOL,
@@ -262,14 +263,20 @@ function cellsOf(...pairs: readonly (readonly [string, string])[]): VcsCell[] {
     .map(([label, value]) => ({ label, value }));
 }
 
+/** One table row. `quiet` says the primary line is a placeholder — a change with
+ *  nothing written on it is quiet in the change stack, and is quiet here too, or
+ *  the log is a column of the same bright words and the descriptions a reader
+ *  came for are the ones that do not stand out.
+ */
 function rowOf(
   key: string,
   primary: string,
   secondary: string,
   badge: string,
   trailing = "",
+  quiet = false,
 ): VcsRowView {
-  return { key, primary, secondary, badge, trailing };
+  return { key, primary, secondary, badge, trailing, primaryMuted: quiet };
 }
 
 /** "12 commits" / "1 commit" — the count a headline opens with. */
@@ -310,19 +317,20 @@ function logView(
     ["format", args.format === "full" ? "full" : ""],
   );
   v.headline = commits.length === 0 ? "" : counted(commits.length, "commit");
-  v.rows = commits.map((row) =>
-    rowOf(
+  v.rows = commits.map((row) => {
+    const quiet = hasNoDescription(row.description);
+    return rowOf(
       row.change,
-      firstLineOf(row.description) === ""
-        ? NO_DESCRIPTION
-        : firstLineOf(row.description),
+      quiet ? NO_DESCRIPTION : firstLineOf(row.description),
       tail(row.author, row.date, row.commit),
       [row.bookmarks, row.tags]
         .map((part) => part.trim())
         .filter((part) => part !== "")
         .join(" "),
-    ),
-  );
+      "",
+      quiet,
+    );
+  });
   v.note =
     status === "ok" && commits.length === 0
       ? `no commits match ${SCOPE_OF(scope)}`
@@ -371,19 +379,19 @@ function historyView(details: Details, itemStatus: string): VcsToolView {
   // headline that repeats it spends the line on nothing new.
   v.headline =
     revisions.length === 0 ? "" : counted(revisions.length, "revision");
-  v.rows = revisions.map((row, index) =>
-    rowOf(
+  v.rows = revisions.map((row, index) => {
+    const quiet = hasNoDescription(row.subject);
+    return rowOf(
       row.change === "" ? row.hash : row.change,
-      firstLineOf(row.subject) === ""
-        ? NO_DESCRIPTION
-        : firstLineOf(row.subject),
+      quiet ? NO_DESCRIPTION : firstLineOf(row.subject),
       tail(row.hash, row.author, row.date),
       // A position, not a state: it stands in the mono figure column, not in a
       // status pill, or an ordinal wears the face of a word like `conflicted`.
       "",
       `#${String(index + 1)}`,
-    ),
-  );
+      quiet,
+    );
+  });
   v.note = noteFor(status, details, `no revisions touch ${path}`);
   return v;
 }

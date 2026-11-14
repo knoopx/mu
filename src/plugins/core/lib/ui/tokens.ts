@@ -39,12 +39,23 @@ export const monoColumn = (t: AdwaitaTheme, chars: number): number =>
 /** How far one monospace character advances, as a fraction of the size it is set at. */
 const MONO_ADVANCE = 0.6;
 
-/** What `chars` monospace characters print at `size`. */
+/**
+ * What `chars` monospace characters print at `size`.
+ *
+ * **Rounded up, never to nearest.** The engine keeps a line in a box only when
+ * the box covers the ink, and the advance is not a whole number of pixels: at
+ * the 12px caption eleven characters print 79.2px, and they hold one line in a
+ * box of 80 and break in one of 79 (measured through the test renderer, at
+ * caption, micro, list and body sizes, one character to forty). A column budgeted
+ * to the nearest pixel is therefore a column that sometimes cuts its own text in
+ * half — which is how a twelve-character change id lost its last letter to a
+ * second line of the row below it.
+ */
 export const monoTextWidth = (
   t: AdwaitaTheme,
   chars: number,
   size: number = t.type.caption,
-): number => Math.round(chars * size * MONO_ADVANCE);
+): number => Math.ceil(chars * size * MONO_ADVANCE);
 
 /**
  * The id column a list of rows opens with, measured off the widest id that list

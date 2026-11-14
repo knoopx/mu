@@ -36,6 +36,7 @@ import {
 } from "../lib/ui/tokens";
 import {
   toolBodyColumn,
+  toolEllipsis,
   toolGapColumn,
   toolLine,
   toolMark,
@@ -150,6 +151,9 @@ function ToolMeterBar({
 const toolFigureText = (t: AdwaitaTheme): StyleDesc => ({
   fontFamily: t.type.fontFamilyMono,
   flexShrink: 0,
+  // The figure stands in a column the list measured, so it is clipped there
+  // rather than broken over two lines and lifting the row out of the pitch.
+  ...toolEllipsis,
 });
 
 /** The body of a row: what it is about, where it is, and the lines under it.
@@ -160,11 +164,14 @@ function ToolRowBody({
   secondary,
   members,
   keyWidth,
+  muted = false,
 }: {
   primary: string;
   secondary: string;
   members: readonly string[];
   keyWidth: number;
+  /** The primary line is a placeholder, and reads at the weight of the line under it. */
+  muted?: boolean;
 }): JSX.Element {
   const t = useAdwaita();
   // Two lines of text per row and never more: each line is one line of text with
@@ -174,7 +181,9 @@ function ToolRowBody({
     <>
       <T
         size="list"
-        color={primary === "" ? mutedText(t) : t.color.text.primary}
+        color={
+          primary === "" || muted ? mutedText(t) : t.color.text.primary
+        }
         style={toolOneLine}
       >
         {primary === "" ? "—" : primary}
@@ -320,6 +329,7 @@ function ToolDataRow({
         secondary={row.secondary}
         members={members}
         keyWidth={columns.id}
+        muted={row.primaryMuted === true}
       />
       <ToolRowFigures row={row} columns={columns} variants={variants} />
     </div>
