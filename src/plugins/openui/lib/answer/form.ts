@@ -21,15 +21,26 @@ const FIELDS: Readonly<Record<string, true>> = {
   Radio: true,
   Select: true,
   Checklist: true,
-  Field: true,
+  Input: true,
   TextArea: true,
   Rating: true,
+  ListEditor: true,
+  DateInput: true,
+  OptionCards: true,
+  Swatches: true,
+  EditableTable: true,
+  // Retired names, still answered by the forms that wrote them.
+  Field: true,
 };
 
 /** Fields the person types into: their answer waits for a pause in the typing. */
 const TYPED: Readonly<Record<string, true>> = {
-  Field: true,
+  Input: true,
   TextArea: true,
+  ListEditor: true,
+  DateInput: true,
+  EditableTable: true,
+  Field: true,
 };
 
 const NUMBER = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
@@ -59,11 +70,21 @@ export function answer(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** The values a multi-select offers. */
-const optionValues = (options: unknown): unknown[] =>
-  Array.isArray(options)
-    ? options.filter((option) => option === null || typeof option !== "object")
-    : [];
+/**
+ * The values a multi-select offers.
+ *
+ * An option may be a bare word or an object with its own line — `{value:
+ * "Current view", detail: "What the filters show"}` — and either way the answer
+ * is what the option is *worth*, which is what the state holds.
+ */
+const optionValues = (options: unknown): unknown[] => {
+  if (!Array.isArray(options)) return [];
+  return options.map((option) =>
+    typeof option === "object" && option !== null && !Array.isArray(option)
+      ? ((option as { value?: unknown }).value ?? "")
+      : option,
+  );
+};
 
 /**
  * A multi-select's answer: what was picked, in option order, and what was not,
@@ -113,16 +134,19 @@ function fieldOf(
   props: Record<string, unknown>,
   read: (variable: string) => unknown,
 ): FormField | null {
-  const name = boundName(props.value);
+  // A retired `Checklist` program bound its list as `values`.
+  const name = boundName(props.value ?? props.values);
   if (FIELDS[node.typeName] !== true || name === "") return null;
 
   const given = read(name);
   const label = typeof props.label === "string" ? props.label.trim() : "";
   // An unrated Rating holds 0: no answer, not a zero.
   const value = node.typeName === "Rating" && given === 0 ? null : given;
+  const held = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
   const text =
-    node.typeName === "Checklist" && Array.isArray(value)
-      ? picks(value, optionValues(props.options))
+    node.typeName === "Checklist" ||
+    (node.typeName === "OptionCards" && Array.isArray(value))
+      ? picks(held, optionValues(props.options))
       : answer(value);
 
   return {

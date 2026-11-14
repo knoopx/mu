@@ -21,6 +21,7 @@ import { openUIToolsTool } from "./tools/openuiTools";
 import { openUIValidateTool } from "./tools/openuiValidate";
 import {
   isOpenUITool,
+  openUIChipsOf,
   openUIToolPreviewOf,
   OpenUIToolRows,
 } from "./components/OpenUIToolRows";
@@ -55,6 +56,7 @@ export const openUIPlugin = definePlugin(
       frame: "page",
       body: (item) => <OpenUIToolRows item={item} />,
       preview: openUIToolPreviewOf,
+      chips: openUIChipsOf,
     });
   },
 );

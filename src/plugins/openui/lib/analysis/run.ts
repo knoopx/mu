@@ -21,8 +21,9 @@ import {
 } from "@openuidev/lang-core";
 
 import type { OpenUIDiagnostic, OpenUIQueryInfo } from "../../types";
+import { beginLoadReport, takeLoadReports } from "../data/source";
 import { programStore } from "../programStore/store";
-import { openUILibrary } from "../schema/library";
+import { librarySchema, openUILibrary } from "../schema/library";
 
 type Ast = Parameters<typeof evaluate>[0];
 
@@ -143,6 +144,36 @@ function answered(snapshot: QuerySnapshot, statementId: string): boolean {
   );
 }
 
+/**
+ * The language's functions, as the evaluator runs them.
+ *
+ * A library function is declared once and run at paint time; the evaluator only
+ * calls it when the runtime hands it the entry, so the schema entry and the
+ * definition's own `fn` are paired here. mu's programs get one function today —
+ * `Load(path)` — and it is what keeps a table of 200 rows out of the model's
+ * output.
+ */
+/** The evaluator's own shape for a function entry — schema plus its `fn`. */
+type FunctionTable = NonNullable<
+  Parameters<typeof evaluateRoot>[1]["ctx"]["functions"]
+>;
+
+const functionTable = (): FunctionTable =>
+  Object.fromEntries(
+    Object.entries(librarySchema.functions ?? {}).map(([name, entry]) => {
+      const defined = openUILibrary.functions?.[name];
+      return [
+        name,
+        {
+          ...(entry as object),
+          fn:
+            (defined?.fn as ((args: Record<string, unknown>) => unknown) | undefined) ??
+            (() => null),
+        },
+      ];
+    }),
+  ) as FunctionTable;
+
 const evalNode = (node: unknown, read: StateRead): unknown => {
   if (node === null || node === undefined) return undefined;
   return evaluate(node as Ast, {
@@ -220,12 +251,17 @@ export function evaluateProgram(
   }
 
   const snapshot = runtime.qm.getSnapshot();
+  // A `Load` that found nothing has no value to put on the screen, and a
+  // function of this engine cannot report: the recorder opened here is what the
+  // read drains afterwards, so a missing file becomes a line in the program's
+  // notes rather than an empty table that looks intentional.
+  beginLoadReport();
   const root = evaluateRoot(parsed, {
     ctx: {
       getState: stateReader(values, snapshot),
       resolveRef: (statementId: string) =>
         runtime.qm.getResult(statementId) ?? null,
-      functions: {},
+      functions: functionTable(),
       actions: {},
       reportError: (message: string) =>
         renderErrors.push({
@@ -248,11 +284,14 @@ export function evaluateProgram(
       tool: node.toolName,
       served: answered(snapshot, node.statementId),
     })),
-    failures: snapshot.__openui_errors.map((error) =>
-      error.message === undefined || error.message === ""
-        ? `${String(error.code)}: ${String(error.statementId ?? "")}`
-        : error.message,
-    ),
+    failures: [
+      ...snapshot.__openui_errors.map((error) =>
+        error.message === undefined || error.message === ""
+          ? `${String(error.code)}: ${String(error.statementId ?? "")}`
+          : error.message,
+      ),
+      ...takeLoadReports(),
+    ],
     loading: snapshot.__openui_loading,
     renderErrors,
   };

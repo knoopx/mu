@@ -221,11 +221,14 @@ export function drawTrace(node: ElementNode, ctx: ProgramContext): JSX.Element {
 
 const DAY_LABELS = ["", "Tue", "", "Thu", "", "Sat", ""];
 
-export const Heatmap = defineComponent({
-  name: "Heatmap",
-  description: "one value per day in columns of weeks, shaded by how much",
+export const CalendarHeatmap = defineComponent({
+  name: "CalendarHeatmap",
+  description:
+    "one value per day in columns of weeks, shaded by how much: a {yyyy-mm-dd: count} map, a list of {date, value}, or a bare run of counts",
   props: z.object({
-    values: z.array(z.any()),
+    days: z.any(),
+    label: z.union([z.string(), z.number()]).nullable().optional(),
+    tone: z.string().nullable().optional(),
 
     /** Which of the seven day rows is named. Leave it out for Tue, Thu, Sat. */
     dayLabels: z
@@ -291,6 +294,31 @@ function heatWeeks(
   return weeks;
 }
 
+/** One value per day, from a map, a list of pairs, or a run of counts. */
+function heatDaysOf(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "object" && value !== null)
+    return Object.entries(value as Record<string, unknown>).map(
+      ([date, count]) => [date, count],
+    );
+  return [];
+}
+
+/**
+ * The heat of a run of days.
+ *
+ * `CalendarHeatmap` is the reference's name for this figure and `Heatmap` mu's
+ * own older one; the reference names its days (`{yyyy-mm-dd: count}`) where mu's
+ * programs wrote a bare run. One drawing, both spellings of the days.
+ */
+export function drawCalendarHeatmap(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
+  const days = heatDaysOf(node.props.days ?? node.props.values);
+  return drawHeatmap({ ...node, props: { ...node.props, values: days } }, ctx);
+}
+
 export function drawHeatmap(
   node: ElementNode,
   ctx: ProgramContext,
@@ -315,19 +343,55 @@ export function drawHeatmap(
 const SEGMENT_NAMES = ["label", "value", "tone"] as const;
 const FIGURE_ROW_NAMES = ["label", "detail", "amount", "tone"] as const;
 
-export const Breakdown = defineComponent({
-  name: "Breakdown",
+export const SegmentedBar = defineComponent({
+  name: "SegmentedBar",
   description:
-    "a total, the parts it is made of drawn as one bar, and each part's own figures",
+    "shares of one whole drawn as one bar: the parts ({label, value, tone?}), and the whole they fall short of",
   props: z.object({
-    total: z.union([z.string(), z.number()]),
-    segments: z.array(z.any()),
-    rows: z.array(z.any()),
+    parts: z.array(z.any()),
+    unit: z.string().nullable().optional(),
+    total: z.union([z.string(), z.number()]).nullable().optional(),
     caption: z.union([z.string(), z.number()]).nullable().optional(),
     trailing: z.union([z.string(), z.number()]).nullable().optional(),
+    rows: z.array(z.any()).nullable().optional(),
   }),
-  component: drawBreakdown,
+  component: drawSegmentedBar,
 });
+
+/** The same bar under the reference's names: `parts` are its segments, and a
+ *  bare bar with no total is what a program usually means. */
+export function drawSegmentedBar(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
+  const parts = listProp(node.props, "parts", listProp(node.props, "segments"));
+  // A bar of parts names each one, so the parts are also its legend: a program
+  // writes `SegmentedBar([{label, value}], "findings")` and the names appear
+  // under the bar without a second list. `rows` remains for a program that
+  // wants a legend of its own.
+  const written = listProp(node.props, "rows");
+  const spent = parts.reduce(
+    (sum: number, part) => sum + numberCell(part, SEGMENT_NAMES, 1),
+    0,
+  );
+  const legend = parts.map((part) => ({
+    label: textCell(part, SEGMENT_NAMES, 0) ?? "",
+    amount: numberCell(part, SEGMENT_NAMES, 1),
+    tone: cellOf(part, SEGMENT_NAMES, 2),
+  }));
+  return drawBreakdown(
+    {
+      ...node,
+      props: {
+        ...node.props,
+        segments: parts,
+        rows: written.length === 0 ? legend : written,
+        total: node.props.total ?? spent,
+      },
+    },
+    ctx,
+  );
+}
 
 export function drawBreakdown(
   node: ElementNode,
@@ -337,6 +401,7 @@ export function drawBreakdown(
   const figureRows = listProp(node.props, "rows");
   const caption = textOf(node.props.caption);
   const trailing = textOf(node.props.trailing);
+  const unit = textOf(node.props.unit);
   const total = node.props.total;
 
   const segments: Segment[] = segmentRows.map((row) => {
@@ -382,6 +447,17 @@ export function drawBreakdown(
         >
           {textOf(total) ?? ""}
         </T>
+        {unit === null ? null : (
+          // The word the figures are counted in, standing beside the whole.
+          <T
+            size="body"
+            color={mutedText(ctx.t)}
+            clamp={1}
+            style={{ minWidth: 0 }}
+          >
+            {unit}
+          </T>
+        )}
         {caption === null ? null : (
           <T
             size="body"

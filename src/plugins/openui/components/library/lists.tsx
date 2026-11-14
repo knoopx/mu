@@ -275,14 +275,14 @@ export function drawTodos(node: ElementNode, ctx: ProgramContext): JSX.Element {
 
 /* ---------------------------------------------------------------- steps */
 
-const STEP_NAMES = ["name", "status"] as const;
+const STEP_NAMES = ["title", "status", "detail"] as const;
 
 export const Steps = defineComponent({
   name: "Steps",
   description:
-    "the stages a job runs through: how far it got as one bar, the stage names, and what stopped it",
+    "the stages a job runs through: each one {title, status?: done|current|blocked}, how far it got as one bar, and the line about what stopped it",
   props: z.object({
-    steps: z.array(z.any()),
+    items: z.array(z.any()),
 
     /** How many are finished. Leave it out and the steps that say they are count. */
     done: z.number().nullable().optional(),
@@ -296,7 +296,8 @@ export const Steps = defineComponent({
 });
 
 export function drawSteps(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const rows = listProp(node.props, "steps");
+  // The reference calls the list `items`; mu's programs wrote `steps`.
+  const rows = listProp(node.props, "items", listProp(node.props, "steps"));
   const tone = prop<ProgramTone | null>(node.props, "tone", null);
   const note = textOf(node.props.note);
 

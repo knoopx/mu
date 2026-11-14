@@ -34,7 +34,8 @@ export interface ReplyFence {
 
 /** One part of a reply: prose the markdown block draws, or a screen mu paints. */
 export type ReplySegment =
-  { kind: "prose"; text: string } | { kind: "ui"; fence: ReplyFence };
+  | { kind: "prose"; text: string }
+  | { kind: "ui"; fence: ReplyFence };
 
 /** A reply, cut in document order into the prose the markdown block draws and the screens mu paints. */
 export interface ReplyBlocks {

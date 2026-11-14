@@ -117,8 +117,8 @@ into that question's **sent** answer, which is what folds an answered choice.
 ## The library
 
 `components/library/` is the language's vocabulary, one file per area —
-`screen.tsx`, `layout.tsx`, `text.tsx`, `data.tsx`, `figures.tsx`, `lists.tsx`,
-`inputs.tsx`. A definition file carries both halves of a component: the
+`screen.tsx`, `layout.tsx`, `content.tsx`, `data.tsx`, `figures.tsx`,
+`lists.tsx`, `inputs.tsx`, `widgets.tsx`, `manage.tsx`. A definition file carries both halves of a component: the
 `defineComponent({ name, props, description, component })` the parser and the
 prompt read, and the drawer that paints it. `registry.ts` is the list;
 `lib/schema/library.ts` turns it into the JSON Schema the parser is built from,
@@ -126,19 +126,56 @@ the spec the prompt is built from, and the index `openui-library` prints. **A
 component that is not in `registry.ts` does not exist**: the parser drops it as
 `unknown-component`.
 
-Seven groups teach it, and a group's notes are part of the prompt: **Screen**,
-**Layout** (Stack, Row, Grid, Pane, Divider, Spacer, Tabs), **Text**, **Data**
-(Table, Stat, Bar, Progress, Sparkline, Chart), **Figures** (Tree, Timeline,
-Trace, Heatmap, Breakdown), **Status** (Sections, Todos, Steps) and **Inputs**
-(Button, Form, Toggle, Choice, Radio, Select, Checklist, Rating, Slider, Field,
-TextArea, Stepper). The last three areas are the ones that draw a _shape_ rather than
-cells: the files a change moved, the spans of a run, the days of a period, the
-parts of a total, the standing of a list of work. Each is an `adwaita-gpuix`
-widget — `FileTree` (`variant: "list"`, with the `+N -M` columns aligned across
-rows), `Timeline`, `Trace`, `ContributionHeatmap`, `SegmentBar`, `ProgressBar` —
-so a program's figure wears the colours, ramps and mono columns the app's own
-panels wear, and a status mark is drawn from the one vocabulary in
-`lib/theme.ts` (`done`, `running`, `current`, `pending`, `skipped`, `error`).
+Seven groups teach it, and the groups and the names are the reference
+implementation's, so a program written against that plugin is a program this one
+draws: **Screen** (Screen, Header, StatusLine), **Layout** (Stack, Row, Grid,
+Card, Divider, Spacer, Tabs, Details, Carousel), **Content** (Title, Text,
+Caption, Badge, Callout, KeyValue, Code, Icon, Image, File, Sources, List,
+Entity, Metric), **Data** (Table, Chart, Sparkline, Progress, Gauge, Bar, Tree,
+Timeline, CalendarHeatmap, SegmentedBar, Trace, Snippet, Diff, Steps, Sections,
+Todos), **Inputs** (Button, Form, Toggle, Choice, Radio, Select, Checklist,
+Rating, Slider, Input, TextArea, Stepper, ListEditor, DateInput, OptionCards,
+Swatches, EditableTable, FollowUps), **Widgets** (Timer, Quiz, Flashcards,
+Walkthrough) and **Manage** (Board, Roadmap, Status, Plan, Decision, Estimate).
+A group's `notes` list is empty and stays empty: what a group _is made of_ is the
+fact, and a paragraph of style doctrine that no drawer enforces is a claim the
+library cannot keep. The areas that draw a _shape_ rather than cells — the files
+a change moved, the spans of a run, the days of a period, the parts of a total,
+the standing of a list of work — are each an `adwaita-gpuix` widget (`FileTree`
+with its `+N -M` columns aligned, `Timeline`, `Trace`, `Heatmap`, `SegmentBar`,
+`ProgressBar`, `DiffPanel`), so a program's figure wears the colours, ramps and
+mono columns the app's own panels wear, and a status mark comes from the one
+vocabulary in `lib/theme.ts` (`done`, `running`, `current`, `pending`, `skipped`,
+`error`).
+
+**Retired names still draw, and are never taught.** Matching the reference
+renamed six components — `Pane`→`Card`, `Stat`→`Metric`, `Note`→`Callout`,
+`Field`→`Input`, `Heatmap`→`CalendarHeatmap`, `Breakdown`→`SegmentedBar` — and a
+name cannot hold two argument orders under one spelling. `aliases.ts` keeps each
+retired name as one definition over the drawer it always had, with the order it
+always had; it is in the library the parser is built from, so a month-old block
+still paints, and out of `programGroups`, so the prompt and `openui-library`
+never offer it. The same courtesy covers a slot that moved: a word in
+`Stepper`'s stride slot is read as its caption, and a `Form` whose first slot
+holds a list is read as mu's older title-first order.
+
+**Three components read a file instead of asking the model to retype it.**
+`Snippet("src/a.ts", 40, 62)` prints the lines it names, `Image("shot.png")`
+draws the picture this folder holds (and opens it full-screen when clicked, the
+same viewer the log uses), and `Load(path)` — the one function of the language
+that reaches the disk — answers a file's own value, so `Table(["file", "lines"],
+Load("out/report.csv"))` costs the model nothing. `lib/data/load.ts` is the read:
+through the same `projectFile` gate every file-panel row runs through, so a name
+that walks out of the window's folder is refused in a screen exactly as in a
+panel; bounded by `MAX_LOAD_BYTES`, and clipped to `MAX_LOAD_TEXT_CHARS` when it
+arrives as text; parsed by kind (JSON, JSONL, CSV, TSV become lists and objects,
+anything else stays text); and cached against the file's mtime, so a program
+repainted on every slider move does not touch the disk again. A read that found
+nothing cannot report from inside a function of this engine, so
+`lib/data/source.ts` records the complaint and the paint drains it into the
+program's notes — a missing file says so on the page rather than drawing an empty
+block. `Sources([...])` is the other half of the same honesty: the page names
+where its figures came from.
 
 `Chart` draws through another plugin's `figures/lib/plot.ts` rather than a
 coercion of its own: the same reader that takes `chart-render`'s points reads a
@@ -175,8 +212,8 @@ reads out — and `lib/theme.ts` says what its colour words (`muted`, `danger`,
 (`programStatusGlyph`, `programToneGlyph`) mean.
 
 A block states the figure it is read by in its title row, not in a caption of its
-own: `Pane(title, children, surface, tone, trailing)` puts the count, the elapsed
-time or the `+78 -9` on the title's right, and a tone of `warning`/`danger`/`success`
+own: `Card(title, children, trailing, tone)` puts the count, the elapsed time or
+the `+78 -9` on the title's right, and a tone of `warning`/`danger`/`success`
 puts the mark before the title, the way a tool header does.
 
 ## Data and interactions

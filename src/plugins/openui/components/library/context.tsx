@@ -17,6 +17,7 @@ import { markReactive, type ElementNode } from "@openuidev/lang-core";
 import { z } from "zod/v4";
 
 import type { OpenUIEventRecord } from "../../types";
+import { mutedText } from "../../../core/lib/ui/theme";
 import { innerGap, programEmphasisWeight } from "../../lib/tokens";
 
 /** Mark a prop reactive: the parser then lets a `$variable` bind to it. */
@@ -274,4 +275,39 @@ export function listProp(
   fallback: unknown[] = [],
 ): unknown[] {
   return listOf(props[key], fallback);
+}
+
+/**
+ * Where a figure's numbers came from, as the program said it.
+ *
+ * The reference plugin makes a `Table`, a `Chart` and a `Metric` name their
+ * source, and the reason is the same one that makes `Load` worth having: a
+ * screen full of confident numbers is only honest if the reader can tell where
+ * they came from — a file, the human's own words, or the model's head. It is one
+ * quiet caption under the figure, never a card of its own, and the program may
+ * leave it out.
+ */
+export function sourceProp(props: Record<string, unknown>): string {
+  return textProp(props, "source");
+}
+
+/** The caption a figure wears when it was given a source. */
+export function ProgramSourceNote(props: {
+  ctx: ProgramContext;
+  source: string;
+}): JSX.Element | null {
+  if (props.source === "") return null;
+  return (
+    <T
+      size="caption"
+      color={mutedText(props.ctx.t)}
+      clamp={2}
+      style={{
+        minWidth: 0,
+        fontFamily: props.ctx.t.type.fontFamilyMono,
+      }}
+    >
+      {props.source}
+    </T>
+  );
 }

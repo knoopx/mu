@@ -22,7 +22,12 @@ export type OpenUIToolStatus = "ok" | "failed" | "empty" | "unknown" | "open";
  * `lib/theme.ts`.
  */
 export type ProgramStatus =
-  "done" | "running" | "current" | "pending" | "skipped" | "error";
+  | "done"
+  | "running"
+  | "current"
+  | "pending"
+  | "skipped"
+  | "error";
 
 /** One rejection of a program: a component the library has no name for, a
  * required argument that never arrived, a reference that stayed a name. */

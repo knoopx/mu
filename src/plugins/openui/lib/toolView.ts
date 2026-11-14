@@ -323,7 +323,7 @@ const clearFold = (
 
 /** Whether this call is the row its program is painted from. */
 const drawnFrom = (item: ToolTranscriptItem, name: string): boolean =>
-  name !== "" && (programStore.get(name)?.anchor === item.toolCallId);
+  name !== "" && programStore.get(name)?.anchor === item.toolCallId;
 
 /** `openui-render` and `openui-stream` answer the same way, one program each. */
 const writeFold = (
@@ -404,7 +404,9 @@ export function openUIToolViewOf(
   if (fold === undefined) return null;
   const view = fold(item.details, item);
   // The sentence a row trails is bounded here, once, whatever tool wrote it.
-  return view === null ? null : { ...view, headline: clipText(view.headline, 96) };
+  return view === null
+    ? null
+    : { ...view, headline: clipText(view.headline, 96) };
 }
 
 /** The words a tool's empty answer reads as. */

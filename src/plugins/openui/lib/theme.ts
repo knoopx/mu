@@ -116,10 +116,39 @@ const TONE_WORDS: readonly string[] = [
   "card",
 ];
 
+/**
+ * The same colours in the reference implementation's words.
+ *
+ * The plugin this plugin matches says `tone: "good" | "warn" | "bad" | "neutral"
+ * | "info"`, and a program copied from that reference — or written by a model
+ * that learned the words there — should draw the colour it means rather than
+ * fall back to ink. One table, so a word means one tone wherever it is read.
+ * `neutral` is no tone at all: the reference uses it for "the default, nothing
+ * is being said", which is what drawing without a tone is.
+ */
+const TONE_ALIASES: Record<string, ProgramTone | null> = {
+  good: "success",
+  warn: "warning",
+  bad: "danger",
+  destructive: "danger",
+  error: "danger",
+  neutral: null,
+  default: null,
+  primary: "ink",
+  secondary: "muted",
+};
+
+/** Every tone word the library accepts, the aliases included. */
+export const TONE_VOCABULARY: readonly string[] = [
+  ...TONE_WORDS,
+  ...Object.keys(TONE_ALIASES),
+];
+
 /** A row's tone cell, read as a tone word — or nothing when it named none. */
 export function toneOfValue(value: unknown): ProgramTone | null {
   if (typeof value !== "string") return null;
   const word = value.trim().toLowerCase();
+  if (Object.hasOwn(TONE_ALIASES, word)) return TONE_ALIASES[word];
   return TONE_WORDS.includes(word) ? (word as ProgramTone) : null;
 }
 

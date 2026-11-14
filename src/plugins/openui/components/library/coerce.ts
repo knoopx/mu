@@ -35,10 +35,7 @@ const asBoolean = (value: unknown, fallback: boolean): boolean => {
 };
 
 /** A list: one value named where the prop declares a list is a list of one. */
-const asList = (
-  value: unknown,
-  fallback: readonly unknown[],
-): unknown[] => {
+const asList = (value: unknown, fallback: readonly unknown[]): unknown[] => {
   if (Array.isArray(value)) return value;
   if (value === null || value === undefined || value === "")
     return fallback as unknown[];
@@ -58,13 +55,10 @@ const asGiven = (value: unknown, fallback: unknown): unknown =>
   value === undefined || value === null ? fallback : value;
 
 export function coerce<Value>(value: unknown, fallback: Value): Value {
-  if (typeof fallback === "number")
-    return asNumber(value, fallback) as Value;
-  if (typeof fallback === "boolean")
-    return asBoolean(value, fallback) as Value;
+  if (typeof fallback === "number") return asNumber(value, fallback) as Value;
+  if (typeof fallback === "boolean") return asBoolean(value, fallback) as Value;
   if (Array.isArray(fallback))
     return asList(value, fallback as readonly unknown[]) as Value;
-  if (typeof fallback === "string")
-    return asString(value, fallback) as Value;
+  if (typeof fallback === "string") return asString(value, fallback) as Value;
   return asGiven(value, fallback) as Value;
 }

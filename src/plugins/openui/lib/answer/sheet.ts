@@ -153,7 +153,8 @@ function movedAside(
   const before = change.end <= block.from;
   const from = before ? block.from + shift : block.from;
   const to = before ? block.to + shift : block.to;
-  return ownLines(after, from, to) && sameBlock(after.slice(from, to), block.text)
+  return ownLines(after, from, to) &&
+    sameBlock(after.slice(from, to), block.text)
     ? { kind: "present", from, to }
     : { kind: "edited" };
 }
@@ -161,10 +162,13 @@ function movedAside(
 /** A change that took the whole block out: it is gone, unless the person typed
  *  those same lines themselves — then the words are theirs, not a deletion. */
 function swallowed(block: WrittenBlock, change: Diff): Tracked {
-  if (change.from > block.from || change.end < block.to) return { kind: "edited" };
+  if (change.from > block.from || change.end < block.to)
+    return { kind: "edited" };
   const kept = block.text
     .split("\n")
-    .some((line) => line.trim() !== "" && change.inserted.includes(line.trim()));
+    .some(
+      (line) => line.trim() !== "" && change.inserted.includes(line.trim()),
+    );
   return kept ? { kind: "edited" } : { kind: "deleted" };
 }
 
@@ -179,7 +183,10 @@ function movedThrough(
   let end = Math.max(block.to, change.end) + shift;
   while (start < end && after[start] === "\n") start += 1;
   while (end > start && after[end - 1] === "\n") end -= 1;
-  if (sameBlock(after.slice(start, end), block.text) && ownLines(after, start, end))
+  if (
+    sameBlock(after.slice(start, end), block.text) &&
+    ownLines(after, start, end)
+  )
     return { kind: "present", from: start, to: end };
   return swallowed(block, change);
 }
@@ -251,14 +258,18 @@ interface Region {
 /** A draft's first answers block: appended as its own paragraph — and a draft
  *  of only whitespace holds nothing of the person's, so it starts the draft. */
 function appendBlock(draft: string, next: string): Written {
-  if (draft.trim() === "") return { text: next, at: { from: 0, to: next.length } };
+  if (draft.trim() === "")
+    return { text: next, at: { from: 0, to: next.length } };
   const gap = draft.endsWith("\n\n")
     ? ""
     : draft.endsWith("\n")
       ? "\n"
       : "\n\n";
   const from = draft.length + gap.length;
-  return { text: `${draft}${gap}${next}`, at: { from, to: from + next.length } };
+  return {
+    text: `${draft}${gap}${next}`,
+    at: { from, to: from + next.length },
+  };
 }
 
 /** The region a deletion takes out: the block plus the paragraph break that set
@@ -266,7 +277,8 @@ function appendBlock(draft: string, next: string): Written {
 function retiredRegion(draft: string, at: Region): Region {
   let { from, to } = at;
   if (from > 0) {
-    while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n") from -= 1;
+    while (from > 0 && at.from - from < 2 && draft[from - 1] === "\n")
+      from -= 1;
   } else {
     while (to < draft.length && to - at.to < 2 && draft[to] === "\n") to += 1;
   }

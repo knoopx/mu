@@ -21,6 +21,8 @@ export const PROMPT_GUIDELINES: readonly string[] = [
   ...REPLY_BLOCK_GUIDELINES,
   "Call openui-prompt once before authoring an OpenUI Lang program, then follow it — the component list it prints is the whole truth about what will draw.",
   "A component absent from the library cannot be drawn, however obvious its name looks.",
+  "Data belongs in the screen, not in your output: `Load(path)` reads a workspace file (or a URL) at paint time, so a Table of a test report, a changelog or a csv is `Table(Load(\"out/report.csv\"))` rather than two hundred rows you typed.",
+  "`Sources([...])` names where the screen's figures came from — a file, a command, a URL — and stands as a caption, so a reader can check the numbers without asking.",
 ];
 
 export const LIBRARY_GUIDELINES: readonly string[] = [
@@ -66,6 +68,7 @@ export const FIXTURES_GUIDELINES: readonly string[] = [
   "A Query() whose name was never served fails as a missing tool — the screen shows the failure, so name the fixtures and the queries together.",
   "The fourth argument of Query(name, args, default, refresh) is seconds between asks: give it to a screen that watches something, and it stays current without another call.",
   "An empty fixtures object clears them; a program that then re-draws answers with its own defaults.",
+  "A file the program can read itself does not need a fixture: `Load(path)` is the screen's own read, and it says in the program's notes when the path is not there.",
 ];
 
 export const LIST_GUIDELINES: readonly string[] = [

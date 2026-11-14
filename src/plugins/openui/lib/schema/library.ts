@@ -10,20 +10,27 @@
 import { createLibrary } from "@openuidev/lang-core";
 
 import { ROOT_COMPONENT } from "../../constants";
+import { LOAD_FUNCTION } from "../data/source";
 import type {
   OpenUIComponentInfo,
   OpenUIGroupInfo,
   OpenUIPropInfo,
 } from "../../types";
 import {
+  allProgramDefinitions,
   programDefinitions,
   programGroups,
 } from "../../components/library/registry";
 
 export const openUILibrary = createLibrary({
   root: ROOT_COMPONENT,
-  components: programDefinitions,
+  components: allProgramDefinitions,
   componentGroups: programGroups,
+  // The language's one function. It is declared here rather than only run in a
+  // drawer so the prompt, the parser and the renderer give the same answer about
+  // it — `openui-library` prints its signature and a wrong argument is a parse
+  // error, not a silent null.
+  functions: [LOAD_FUNCTION],
 });
 
 /** What the parser and the validator are built from. */

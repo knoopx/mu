@@ -26,10 +26,10 @@ export function cellText(value: unknown): string {
 }
 
 /** A cell as a number: a program that writes `"12"` means 12, and one that writes
- *  nothing means 0 rather than `NaN` on the canvas. */
-export function numberOf(value: unknown): number {
+ *  nothing means `fallback` rather than `NaN` on the canvas. */
+export function numberOf(value: unknown, fallback = 0): number {
   const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) ? number : 0;
+  return Number.isFinite(number) ? number : fallback;
 }
 
 /** The `at`th cell of a row: positional in a list, named in an object. */

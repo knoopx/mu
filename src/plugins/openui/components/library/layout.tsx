@@ -9,7 +9,17 @@
 
 import type { JSX } from "react";
 import { defineComponent } from "@openuidev/lang-core";
-import { Icon, Tabs as AdwaitaTabs, TabsContent, T } from "adwaita-gpuix";
+import {
+  Carousel as AdwaitaCarousel,
+  CarouselItem,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Icon as AdwaitaIcon,
+  Tabs as AdwaitaTabs,
+  TabsContent,
+  T,
+} from "adwaita-gpuix";
 import { z } from "zod/v4";
 
 import type { ElementNode } from "@openuidev/lang-core";
@@ -32,7 +42,13 @@ import {
   type ProgramTone,
 } from "../../lib/theme";
 import type { ProgramContext } from "./context";
-import { listProp, prop, reactive, textProp } from "./context";
+import {
+  listProp,
+  programColumnStyle,
+  prop,
+  reactive,
+  textProp,
+} from "./context";
 
 export const Screen = defineComponent({
   name: "Screen",
@@ -76,18 +92,18 @@ export const Grid = defineComponent({
   description: "the children laid out in equal columns",
   props: z.object({
     children: z.array(z.any()),
-    columns: z.number(),
+    columns: z.number().nullable().optional(),
     gap: z.number().optional(),
   }),
   component: drawGrid,
 });
 
-export const Pane = defineComponent({
-  name: "Pane",
+export const Card = defineComponent({
+  name: "Card",
   description:
-    "a titled group of blocks: one block of the screen, framed by the app, with the one fact that counts it on the title's right",
+    "one block of the screen, framed by the app: its title, the blocks inside it, and the one fact that counts it on the title's right. Every block of a reply is wrapped in one",
   props: z.object({
-    title: z.string(),
+    title: z.string().nullable(),
     children: z.array(z.any()),
     surface: z.enum(["card", "sunken", "plain"]).nullable().optional(),
     tone: z.string().nullable().optional(),
@@ -95,7 +111,40 @@ export const Pane = defineComponent({
     /** The count, the elapsed time, the state — the figure a block is read by. */
     trailing: z.array(z.any()).nullable().optional(),
   }),
-  component: drawPane,
+  component: drawCard,
+});
+
+/**
+ * A block the reader opens.
+ *
+ * The reference's `Details` is a collapsible, and its own detail list is
+ * `KeyValue` — so mu's old `Details(rows)` block lives on as an alias and this
+ * name means what the reference says it means. Which one is open is a
+ * `$variable` when the program bound one; with none bound the widget holds it,
+ * because a block a reader cannot open is a block that hides its contents for no
+ * reason.
+ */
+export const Details = defineComponent({
+  name: "Details",
+  description:
+    "a block the reader opens: its title, what is inside it, and whether it starts open",
+  props: z.object({
+    title: z.string(),
+    children: z.array(z.any()),
+    open: reactive(z.boolean()).nullable().optional(),
+  }),
+  component: drawDetails,
+});
+
+/** A row of blocks the reader walks one at a time. */
+export const Carousel = defineComponent({
+  name: "Carousel",
+  description: "a row of blocks the reader walks sideways, one or two at a time",
+  props: z.object({
+    children: z.array(z.any()),
+    visible: z.number().nullable().optional(),
+  }),
+  component: drawCarousel,
 });
 
 export const Divider = defineComponent({
@@ -228,7 +277,7 @@ export function drawGrid(node: ElementNode, ctx: ProgramContext): JSX.Element {
   );
 }
 
-export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
+export function drawCard(node: ElementNode, ctx: ProgramContext): JSX.Element {
   const title = textProp(node.props, "title");
   const surface = prop<"card" | "sunken" | "plain" | null>(
     node.props,
@@ -266,7 +315,7 @@ export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
           }}
         >
           {glyph === null ? null : (
-            <Icon
+            <AdwaitaIcon
               name={glyph}
               size={INLINE_GLYPH}
               color={programTextColor(ctx.t, tone)}
@@ -302,6 +351,59 @@ export function drawPane(node: ElementNode, ctx: ProgramContext): JSX.Element {
       )}
       {ctx.nodes(listProp(node.props, "children"))}
     </div>
+  );
+}
+
+export function drawDetails(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
+  const bound = ctx.binding(node.props.open, false);
+  const controlled = bound.name !== "";
+
+  return (
+    <Collapsible
+      {...(controlled ? { open: bound.value === true } : { defaultOpen: true })}
+      {...(controlled
+        ? { onOpenChange: (next: boolean) => bound.set(next) }
+        : {})}
+      style={{ width: "100%", minWidth: 0 }}
+    >
+      <CollapsibleTrigger>
+        <T
+          size="list"
+          weight={programTitleWeight(ctx.t)}
+          color={ctx.t.color.text.primary}
+          clamp={2}
+          style={{ minWidth: 0 }}
+        >
+          {textProp(node.props, "title")}
+        </T>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div style={programColumnStyle(ctx.t)}>
+          {ctx.nodes(listProp(node.props, "children"))}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+export function drawCarousel(
+  node: ElementNode,
+  ctx: ProgramContext,
+): JSX.Element {
+  const items = listProp(node.props, "children");
+  const visible = Math.max(1, Math.floor(prop(node.props, "visible", 1)));
+
+  return (
+    <AdwaitaCarousel visible={visible} style={{ width: "100%", minWidth: 0 }}>
+      {items.map((item, index) => (
+        <CarouselItem key={`c-${String(index)}`}>
+          <div style={programColumnStyle(ctx.t)}>{ctx.node(item)}</div>
+        </CarouselItem>
+      ))}
+    </AdwaitaCarousel>
   );
 }
 
@@ -343,8 +445,8 @@ export const Tabs = defineComponent({
   description:
     "several blocks in one place: the titles of the tabs, the blocks under them, and the $variable that says which one is open",
   props: z.object({
-    titles: z.array(z.union([z.string(), z.number()])),
-    blocks: z.array(z.any()),
+    labels: z.array(z.union([z.string(), z.number()])),
+    children: z.array(z.any()),
     value: reactive(z.string()).nullable().optional(),
   }),
   component: drawTabs,
@@ -354,10 +456,12 @@ export const Tabs = defineComponent({
 const tabId = (index: number): string => `t${String(index)}`;
 
 export function drawTabs(node: ElementNode, ctx: ProgramContext): JSX.Element {
-  const titles = listProp(node.props, "titles").map((title) =>
-    String(title ?? ""),
+  // The reference names these `labels` and `children`; mu's programs wrote
+  // `titles` and `blocks`, and both spellings still arrive.
+  const titles = listProp(node.props, "labels", listProp(node.props, "titles")).map(
+    (title) => String(title ?? ""),
   );
-  const blocks = listProp(node.props, "blocks");
+  const blocks = listProp(node.props, "children", listProp(node.props, "blocks"));
   const items = titles.map((label, index) => ({ id: tabId(index), label }));
   const binding = ctx.binding(node.props.value, items[0]?.id ?? "");
   const current = binding.value === "" ? (items[0]?.id ?? "") : binding.value;

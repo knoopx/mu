@@ -13,24 +13,22 @@ import { useAdwaita, type BadgeVariant, type IconName } from "adwaita-gpuix";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 
 import {
-  ToolChips,
   ToolRunning,
   ToolStateNote,
   ToolStatusNote,
   ToolRowList,
-  ToolSummary,
-  ToolTruncated,
 } from "../../core/components/ToolDataRows";
 import { counted, partsLine } from "../../core/lib/agent/toolText";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
   toolStatusIcon,
-  toolStatusTone,
   type ToolPaintRow,
+  type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import {
@@ -78,8 +76,16 @@ export function isOpenUITool(name: string): boolean {
   return OPENUI_TOOL_NAMES.includes(name.toLowerCase());
 }
 
-const toneOf = (status: string): ToolRowTone =>
-  toolStatusTone(status, STATUS_TONES);
+/**
+ * What the program is measured in: statements, components, queries, what waits.
+ * They are the call's own figures, so they ride its header; the body is the screen.
+ */
+export function openUIChipsOf(
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] {
+  const view = openUIToolViewOf(item);
+  return view === null ? [] : view.cells;
+}
 
 /** The header line: which program, what the parse said, what waits. */
 export const openUIToolPreviewOf = (item: ToolTranscriptItem): string =>
@@ -87,13 +93,29 @@ export const openUIToolPreviewOf = (item: ToolTranscriptItem): string =>
 
 function headOf(tool: string, view: OpenUIToolView): string {
   const program = view.name === "" ? "" : view.name;
-  if (tool === OPENUI_RENDER_TOOL || tool === OPENUI_STREAM_TOOL)
-    return [program, view.headline].filter((part) => part !== "").join(" · ");
-  if (view.headline === "") return program;
-  return program === "" ? view.headline : `${program} · ${view.headline}`;
+  const named =
+    tool === OPENUI_RENDER_TOOL || tool === OPENUI_STREAM_TOOL
+      ? [program, view.headline].filter((part) => part !== "").join(" · ")
+      : view.headline === ""
+        ? program
+        : program === ""
+          ? view.headline
+          : `${program} · ${view.headline}`;
+  // What the answer left out, and what waits on the human, are the call's own
+  // counts: they ride this line, so the card below is the screen and its rows.
+  // Only what the view's own headline does not already say is added here: it names
+  // the programs, their figures and what waits on the human.
+  return headerLineOf(named, [
+    view.omitted === 0 ? "" : `… ${counted(view.omitted, "name")} not shown`,
+  ]);
 }
 
-/** A program, as a row: what it holds and whether it is the showing one. */
+/**
+ * A program, as a row: what it holds, and the badge that says whether it is the
+ * showing one. The name is not written a second time in the id column — the row is
+ * already named by it — and the badge is the only place that says `showing`: the
+ * secondary line is for the figures the badge cannot carry.
+ */
 const programRow = (
   program: OpenUIToolView["programs"][number],
 ): ToolPaintRow => ({
@@ -102,7 +124,6 @@ const programRow = (
   secondary: partsLine(
     `${String(program.statements)} statements`,
     `${String(program.components)} drawn`,
-    program.streaming ? "streaming" : program.live ? "showing" : "idle",
     program.errors === 0 ? "" : `${String(program.errors)} errors`,
     program.waiting === 0 ? "" : `${String(program.waiting)} waiting`,
   ),
@@ -129,6 +150,7 @@ const diagnosticRow = (
   index: number,
 ): ToolPaintRow => ({
   key: `${diagnostic.code}-${String(index)}`,
+  id: diagnostic.code,
   primary: diagnostic.component === "" ? diagnostic.path : diagnostic.component,
   secondary: diagnostic.message,
   badge: diagnostic.severity === "error" ? "error" : "warning",
@@ -166,10 +188,14 @@ const fixtureRow = (name: string): ToolPaintRow => ({
 });
 
 /** A component the screen drew that the library list did not already name. */
+/** A component the screen drew that the library list above did not name: its name,
+ *  and the badge that says it was drawn — said once, not once in the id column, once
+ *  under the name and once in the badge.
+ */
 const drawnRow = (component: string): ToolPaintRow => ({
   key: `drawn-${component}`,
   primary: component,
-  secondary: "drawn",
+  secondary: "",
   badge: "drawn",
   tone: "neutral",
 });
@@ -232,8 +258,9 @@ export function OpenUIToolRows(props: {
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={view.cells} />
       {view.status === "ok" ? null : (
+        // The reason, once: the header named the program and its count, this line
+        // says what went wrong — a parse error, a program that is not in the log.
         <ToolStatusNote
           status={view.status}
           note={view.headline}
@@ -241,9 +268,8 @@ export function OpenUIToolRows(props: {
           icons={STATUS_ICONS}
         />
       )}
-      {view.headline === "" || view.status !== "ok" ? null : (
-        <ToolSummary text={view.headline} tone={toneOf(view.status)} />
-      )}
+      {/* What the parse said is the header's line; the body is the screen it drew
+          or the programs it lists, and says none of that twice. */}
       {paints ? <ProgramScreen name={view.name} /> : null}
       {gone ? (
         <ToolStateNote
@@ -255,11 +281,11 @@ export function OpenUIToolRows(props: {
       {rows.length === 0 ? null : (
         <ToolRowList rows={rows} variants={BADGE_VARIANTS} pressable={false} />
       )}
-      <ToolTruncated count={view.omitted} text="not shown — raise the limit" />
       {view.waiting === 0 || paints ? null : (
+        // Not the count again — the header says it — but where to take it.
         <ToolStateNote
           icon={toolStatusIcon("open", STATUS_ICONS)}
-          text={`${counted(view.waiting, "interaction")} waiting — read them with openui-events`}
+          text="read them with openui-events"
           tone="warn"
         />
       )}
