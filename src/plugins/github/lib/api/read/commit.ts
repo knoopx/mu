@@ -33,12 +33,16 @@ export async function readCommit(input: GithubReadInput): Promise<GithubCall> {
   const sha = (input.sha ?? "").trim();
   if (sha === "")
     return refused(guard.blank, "missing required parameter: sha");
+  // The sha is the thing this call names, so it belongs in the scope: the model's
+  // table reads it as `commit`, and the log's header and card name the commit they
+  // read rather than printing a bare `in owner/repo`.
+  const blank = { ...guard.blank, target: sha };
 
   const reply = await apiGet(
     `${repoPath(input.owner, input.repo)}/commits/${encodeURIComponent(sha)}`,
     optionsOf(input),
   );
-  const stop = refusedBy(reply, guard.blank);
+  const stop = refusedBy(reply, blank);
   if (stop !== null) return stop;
 
   const record = recordOf(reply.json);
@@ -55,7 +59,7 @@ export async function readCommit(input: GithubReadInput): Promise<GithubCall> {
   const listed = listOf(record["files"]).map(fileRow);
   const { rows, omitted } = rankedRows(listed, MAX_COMMIT_FILES);
 
-  return answered(guard.blank, "ok", "", {
+  return answered(blank, "ok", "", {
     ...costsOf(reply),
     fields: fieldList([
       ["commit", shortSha(stringOf(record["sha"], sha))],

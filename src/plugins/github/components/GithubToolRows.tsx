@@ -1,27 +1,28 @@
 /**
- * A GitHub call owns its whole row.
+ * The body of a GitHub call: the card its kind has.
  *
- * There is no shared tool box around a GitHub read: the card is the row. What the
- * call was pointed at, what came back and where it stands are said by the card
- * itself — an identity band, the record's counts, the widget that thing has (a tree,
- * a changeset, a thread, a timeline, a hit list, a file of code), and the prose
- * GitHub wrote. This file dispatches to the nine cards and carries the states a card
- * cannot speak for: a read still going, an answer this plugin does not recognise, and
- * a refusal or an empty read in GitHub's own words.
+ * The header and the band are core's, so this file only chooses what stands on
+ * the plate — the nine cards and the states a card cannot speak for: a read still
+ * going, an answer this plugin does not recognise, and a refusal or an empty read
+ * in GitHub's own words. A read that came back with nothing still opens with the
+ * record it looked for, because the reader needs to know which file, folder or
+ * number came up empty.
  */
 
 import type { JSX } from "react";
+import type { IconName } from "adwaita-gpuix";
 
-import { StateSpinner } from "../../core/components/StateSpinner";
-import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
-  GITHUB_TOOL_KINDS,
-  GITHUB_TOOL_LABELS,
-  GITHUB_TOOL_NAMES,
-} from "../constants";
+  ToolRunning,
+  ToolStatusNote,
+  ToolUnknownResult,
+} from "../../core/components/ToolDataRows";
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
+import type { ToolRowTone } from "../../core/lib/ui/toolRowPaint";
+import { GITHUB_TOOL_KINDS, GITHUB_TOOL_NAMES } from "../constants";
 import { wordsOf } from "../lib/kinds/vocabulary";
 import { githubToolViewOf, type GithubToolView } from "../lib/toolView";
-import { Band, Card, Identity, rowPage, Standing } from "./chrome";
+import { Identity } from "./chrome";
 import { CommitRow } from "./CommitRow";
 import { FileRow } from "./FileRow";
 import { IssueRow } from "./IssueRow";
@@ -40,6 +41,17 @@ export function isGithubTool(name: string): boolean {
 /** What a read of this kind says while it is going. */
 const runningWordsOf = (name: string): string =>
   wordsOf(GITHUB_TOOL_KINDS[name.toLowerCase()] ?? "repo").running;
+
+/** The marks a GitHub answer's own states wear, added to the log's vocabulary. */
+const STATUS_TONES: Readonly<Record<string, ToolRowTone>> = {
+  empty: "warn",
+  binary: "warn",
+};
+
+const STATUS_ICONS: Readonly<Record<string, IconName>> = {
+  empty: "search-off",
+  binary: "warning",
+};
 
 /** The UI this kind of thing has. */
 function card(view: GithubToolView): JSX.Element {
@@ -66,11 +78,28 @@ function card(view: GithubToolView): JSX.Element {
   }
 }
 
+/** A call that found nothing, or nothing it could read: the record it looked for,
+ *  and why it is not there. */
+function emptyBody(
+  view: GithubToolView,
+  note: string,
+): JSX.Element {
+  return (
+    <>
+      <Identity {...view.identity} />
+      <ToolStatusNote
+        status={view.status}
+        note={note}
+        tones={STATUS_TONES}
+        icons={STATUS_ICONS}
+      />
+    </>
+  );
+}
+
 /**
  * A GitHub call: what it says while it runs, what GitHub's refusal says in its own
- * words, or the card this kind of thing has. A read that came back with nothing
- * still opens with the record it looked for, because the reader needs to know which
- * file, folder or number came up empty.
+ * words, or the card this kind of thing has.
  */
 export function GithubToolRows({
   item,
@@ -80,76 +109,20 @@ export function GithubToolRows({
   const tool = item.name.toLowerCase();
 
   if (item.status === "running")
-    return (
-      <div style={rowPage()}>
-        <Card>
-          <Band first>
-            <Standing
-              icon="cloud-download"
-              text={runningWordsOf(tool)}
-              trailing={<StateSpinner />}
-            />
-          </Band>
-        </Card>
-      </div>
-    );
+    return <ToolRunning text={runningWordsOf(tool)} />;
 
-  const view = githubToolViewOf(
-    item.name,
-    item.args,
-    item.details,
-    item.status,
-  );
+  const view = githubToolViewOf(item.name, item.args, item.details, item.status);
 
-  if (view === null)
-    return (
-      <div style={rowPage()}>
-        <Card>
-          <Band first>
-            <Standing
-              icon="help"
-              text={`${GITHUB_TOOL_LABELS[tool] ?? tool} answered in a shape this app does not know`}
-            />
-          </Band>
-        </Card>
-      </div>
-    );
+  if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
 
   if (view.status === "failed" || view.status === "unsupported")
-    return (
-      <div style={rowPage()}>
-        <Card>
-          <Band first>
-            <Identity {...view.identity} />
-            <Standing icon="error" text={view.note} tone="bad" />
-          </Band>
-        </Card>
-      </div>
-    );
+    return emptyBody(view, view.note);
 
   if (view.status === "empty" || view.status === "binary")
-    return (
-      <div style={rowPage()}>
-        <Card>
-          <Band first>
-            <Identity {...view.identity} />
-            <Standing
-              icon={view.status === "binary" ? "warning" : "search-off"}
-              text={
-                view.status === "binary"
-                  ? view.note
-                  : view.words.emptyNote(view.call)
-              }
-              tone="warn"
-            />
-          </Band>
-        </Card>
-      </div>
+    return emptyBody(
+      view,
+      view.status === "binary" ? view.note : view.words.emptyNote(view.call),
     );
 
-  return (
-    <div style={rowPage()}>
-      <Card>{card(view)}</Card>
-    </div>
-  );
+  return card(view);
 }

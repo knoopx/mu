@@ -9,12 +9,17 @@
  * row.
  *
  * What is here is the frame every read shares: which kind's vocabulary answers,
- * what the read found, what the caps left out, and what it cost. What a folder, a
- * changeset, a thread or a profile is *drawn as* is each widget's own business —
- * one component per tool in `components/`.
+ * what the read found, what the caps left out, what it cost, and the one line the
+ * tool header shows. What a folder, a changeset, a thread or a profile is *drawn
+ * as* is each widget's own business — one component per tool in `components/`.
  */
 
-import { GITHUB_TOOL_NAMES } from "../constants";
+import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
+import {
+  toolPreviewLine,
+  type ToolPreviewVocabulary,
+} from "../../core/lib/agent/toolPreview";
+import { GITHUB_TOOL_KINDS, GITHUB_TOOL_NAMES } from "../constants";
 import { listOf, numberOf, recordOf, stringOf } from "./api/record";
 import { wordsOf } from "./kinds/vocabulary";
 import type {
@@ -173,7 +178,60 @@ export function githubToolViewOf(
 }
 
 /**
- * What a GitHub call's row looks like is the nine cards' business, not a header
- * line's: each card opens with the record it read, so there is no scope string to
- * build and no counts to repeat beside it.
+ * The one line the tool header shows.
+ *
+ * The card below says what came back, so the header says only what the call was
+ * pointed at — the file, number, sha, tag, login or the words typed, and the
+ * repository they were named in. No counts: the card's figures and the rows own
+ * those. The words while a read runs and the words of an empty one come from the
+ * kind's own vocabulary, the same nine files the card reads, so a header and a
+ * card cannot drift into saying two different things about one call.
  */
+
+/** The nine tools, each speaking in the words of the kind it reads. */
+const headerTable = (
+  pick: (words: GithubKindWords) => string,
+): Record<string, string> =>
+  Object.fromEntries(
+    GITHUB_TOOL_NAMES.map((tool) => [
+      tool,
+      pick(wordsOf(GITHUB_TOOL_KINDS[tool] ?? "repo")),
+    ]),
+  );
+
+const HEADER_WORDS: ToolPreviewVocabulary = {
+  running: headerTable((words) => words.running),
+  runningDefault: "reading GitHub",
+  clean: ["empty"],
+  empty: headerTable((words) => words.emptyShort),
+  emptyDefault: "nothing found",
+  // A read that never got an answer, and a file whose bytes are not text: both
+  // are news the card cannot show by itself.
+  stated: { unsupported: "no answer from GitHub", binary: "binary file" },
+};
+
+/** What the call was pointed at, and the repository it named it in. */
+function scopeOf(_tool: string, view: GithubToolView): string {
+  const call = view.call;
+  // A search names words rather than a record, and names the kind of record it
+  // wants alongside them; every other read names one thing inside a repository.
+  const named =
+    call.query === ""
+      ? call.path === ""
+        ? call.target
+        : call.path
+      : `“${call.query}”`;
+  const kind = call.query === "" ? "" : call.target;
+  const where = call.ref === "" ? call.repo : `${call.repo}@${call.ref}`;
+  const what = [named, kind].filter((part) => part !== "").join(" ");
+  if (where === "") return what;
+  return what === "" ? where : `${what} in ${where}`;
+}
+
+export const githubToolPreviewOf = (item: ToolTranscriptItem): string =>
+  toolPreviewLine(
+    item,
+    githubToolViewOf(item.name, item.args, item.details, item.status),
+    HEADER_WORDS,
+    scopeOf,
+  );

@@ -1,14 +1,13 @@
 /**
  * github — nine kinds of thing, none shaped like another.
  *
- * It registers the whole log row rather than a body inside the shared tool row: a
- * repository record, a file, a changeset, a thread of replies and a hit list are
- * not columns of one table, and a generic header over them would repeat what the
- * call's own header already says. A guardrails block sits under it like under any
- * other call, read from guardrails here because this row is github's to draw.
+ * What it registers is a body and the header's one line, like every other plugin:
+ * the log draws the band and the header over it, and the nine cards fill the body
+ * with what their kind actually is — a record's figures, a folder's tree, a file's
+ * text, a change's rows, a thread, a hit list — which is why there is no shared
+ * table for them and no widget they share.
  */
 
-import { ToolContent } from "adwaita-gpuix";
 import { definePlugin } from "../core/lib/plugin/manifest";
 import { githubCommitTool } from "./tools/githubCommit";
 import { githubFileTool } from "./tools/githubFile";
@@ -19,11 +18,11 @@ import { githubRepoTool } from "./tools/githubRepo";
 import { githubSearchTool } from "./tools/githubSearch";
 import { githubTreeTool } from "./tools/githubTree";
 import { githubUserTool } from "./tools/githubUser";
-import { GithubToolRows, isGithubTool } from "./components/GithubToolRows";
 import {
-  GuardrailBlockRows,
-  guardrailBlockOf,
-} from "../guardrails/components/GuardrailBlockRows";
+  GithubToolRows,
+  isGithubTool,
+} from "./components/GithubToolRows";
+import { githubToolPreviewOf } from "./lib/toolView";
 
 export const githubPlugin = definePlugin("github", (app) => {
   app.tools.register(
@@ -41,18 +40,7 @@ export const githubPlugin = definePlugin("github", (app) => {
   app.log.rows({
     key: "github",
     owns: isGithubTool,
-    row: (item) => {
-      const block = guardrailBlockOf(item);
-      return (
-        <>
-          <GithubToolRows item={item} />
-          {block === null ? null : (
-            <ToolContent open>
-              <GuardrailBlockRows hit={block} />
-            </ToolContent>
-          )}
-        </>
-      );
-    },
+    body: (item) => <GithubToolRows item={item} />,
+    preview: githubToolPreviewOf,
   });
 });

@@ -1,8 +1,16 @@
 
 
+/**
+ * What the nine GitHub cards share.
+ *
+ * A band of the card, the line that opens it (the record's name, what identifies
+ * it, whose face stands at its head, where it stands), its figures, its prose and
+ * its code. The plate they stand on and the header above them are core's — a card
+ * is a body, not a row — so nothing here paints a box.
+ */
+
 import type { JSX } from "react";
 import { Avatar, Icon, T, useAdwaita, type IconName } from "adwaita-gpuix";
-import type { StyleDesc } from "@gpuix/react";
 
 import { Markdown } from "../../core/components/Markdown";
 import {
@@ -10,13 +18,7 @@ import {
   plainOutputOf,
 } from "../../core/lib/ui/toolOutputMode";
 import { mutedText } from "../../core/lib/ui/theme";
-import {
-  HAIRLINE,
-  MARKER_GLYPH,
-  monoColumn,
-  titleWeight,
-} from "../../core/lib/ui/tokens";
-import { PAGE_INSET, toolBand } from "../../core/lib/ui/transcriptLayout";
+import { HAIRLINE, MARKER_GLYPH, titleWeight } from "../../core/lib/ui/tokens";
 import type { GithubState } from "../lib/kinds/contract";
 
 
@@ -30,43 +32,6 @@ export interface GithubFact {
   figure?: boolean;
   
   tone?: "good" | "bad" | "warn";
-}
-
-
-export const rowPage = (): StyleDesc => ({
-  paddingLeft: PAGE_INSET,
-  paddingRight: PAGE_INSET,
-  display: "flex",
-  flexDirection: "column",
-  flexShrink: 0,
-  minWidth: 0,
-});
-
-
-export function Card({
-  children,
-}: {
-  children: (JSX.Element | null)[] | JSX.Element | null;
-}): JSX.Element | null {
-  const t = useAdwaita();
-  const parts = (Array.isArray(children) ? children : [children]).filter(
-    (part) => part !== null && part !== undefined,
-  );
-  if (parts.length === 0) return null;
-
-  return (
-    <div
-      style={{
-        ...toolBand(t),
-        padding: t.space.md,
-        gap: 0,
-        flexShrink: 0,
-        minWidth: 0,
-      }}
-    >
-      {parts}
-    </div>
-  );
 }
 
 
@@ -274,69 +239,6 @@ export function Facts({ facts }: { facts: GithubFact[] }): JSX.Element | null {
 }
 
 
-export function Standing({
-  icon,
-  text,
-  tone = "plain",
-  trailing,
-}: {
-  icon: IconName;
-  text: string;
-  tone?: "good" | "bad" | "warn" | "plain";
-  trailing?: JSX.Element;
-}): JSX.Element | null {
-  const t = useAdwaita();
-  if (text === "") return null;
-
-  return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: t.space.sm,
-        minWidth: 0,
-        flexShrink: 0,
-      }}
-    >
-      <div
-        style={{
-          width: MARK_BOX,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        <Icon name={icon} size={MARKER_GLYPH} color={stateColor(t, tone)} />
-      </div>
-      <T
-        size="body"
-        color={tone === "plain" ? t.color.text.secondary : stateColor(t, tone)}
-        style={{ minWidth: 0, whiteSpace: "normal" }}
-      >
-        {text}
-      </T>
-      {trailing === undefined ? null : trailing}
-    </div>
-  );
-}
-
-
-export function Rule(): JSX.Element {
-  const t = useAdwaita();
-  return (
-    <div
-      style={{
-        height: HAIRLINE,
-        backgroundColor: t.color.divider.default,
-        flexShrink: 0,
-      }}
-    />
-  );
-}
-
-
 export function Prose({ source }: { source: string }): JSX.Element | null {
   const t = useAdwaita();
   const text = source.trim();
@@ -404,6 +306,13 @@ export function Code({
 }
 
 
+/**
+ * The file's text, quoted bare.
+ *
+ * The whole answer already stands on the log's band, and a plate inside a band is
+ * a card inside a card, so the code carries no fill of its own — only the fence,
+ * which is what lets the same highlighter read it that paints a diff row.
+ */
 function CodeLines({
   path,
   content,
@@ -411,12 +320,11 @@ function CodeLines({
   path: string;
   content: string;
 }): JSX.Element {
-  const t = useAdwaita();
   const fence = /([A-Za-z0-9]+)$/.exec(path.split("/").pop() ?? "")?.[1] ?? "";
   return (
     <Markdown
       source={["```" + fence.toLowerCase(), content, "```"].join("\n")}
-      style={{ ...toolBand(t), flexShrink: 0 }}
+      style={{ padding: 0, flexShrink: 0, minWidth: 0 }}
     />
   );
 }
