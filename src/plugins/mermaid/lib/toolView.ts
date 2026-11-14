@@ -37,23 +37,6 @@ export interface MermaidToolView {
   /** Where the markup was written, when the call asked for a file. */
   written: string;
 }
-
-const EMPTY: MermaidPicture = {
-  status: "empty",
-  kind: "",
-  direction: "",
-  width: 0,
-  height: 0,
-  ms: 0,
-  svg: "",
-  svgBytes: 0,
-  labels: [],
-  labelsOmitted: 0,
-  written: "",
-  error: "",
-  failure: null,
-};
-
 /** The statuses a diagram answer can carry; anything else is not a diagram. */
 const STATUSES = [
   "ok",

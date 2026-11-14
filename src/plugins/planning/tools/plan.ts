@@ -64,7 +64,7 @@ const PlanParametersSchema = Type.Object({
   }),
 });
 
-export function executePlan(params: PlanParams): AgentToolResult<PlanFigure> {
+function executePlan(params: PlanParams): AgentToolResult<PlanFigure> {
   const plan = planOf(params);
 
   if (plan.status === "failed") {

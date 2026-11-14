@@ -31,7 +31,7 @@ const DIRECTION_TOKENS = ["TD", "TB", "BT", "LR", "RL"] as const;
  * Only a line that *names* the diagram can state it — `flowchart LR`,
  * `direction TB`, `gitGraph TB:` — because a label is allowed to spell "LR".
  */
-export function diagramDirection(source: string): string {
+function diagramDirection(source: string): string {
   for (const line of source.split("\n")) {
     const trimmed = line.trim();
     if (trimmed === "" || trimmed.startsWith("%%")) continue;

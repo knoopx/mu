@@ -31,7 +31,7 @@ export function isSearchTool(name: string): boolean {
   return name.toLowerCase() === SEARCH_TOOL_NAME;
 }
 
-export function searchDetailsOf(
+function searchDetailsOf(
   item: ToolTranscriptItem,
 ): WebSearchDetails | undefined {
   const details = item.details as WebSearchDetails | undefined;

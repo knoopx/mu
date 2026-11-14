@@ -56,7 +56,7 @@ export function assertUniqueOptionLabels(questions: AskQuestion[]): void {
   }
 }
 
-export function formatOptionsForMessage(options: AskOption[]): string {
+function formatOptionsForMessage(options: AskOption[]): string {
   return options
     .map(
       (option, index) =>

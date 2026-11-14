@@ -13,7 +13,7 @@ import {
 } from "../../../../utils/pageRead";
 import { SEARCH_TIMEOUT_MS } from "./constants";
 
-export class BrowserMissingError extends Error {
+class BrowserMissingError extends Error {
   constructor(bin: string) {
     super(
       `The DuckDuckGo engine needs the \`${bin}\` headless browser on PATH — install it to enable search.`,
@@ -22,7 +22,7 @@ export class BrowserMissingError extends Error {
   }
 }
 
-export class SearchCancelledError extends Error {
+class SearchCancelledError extends Error {
   constructor() {
     super("The search was cancelled.");
     this.name = "SearchCancelledError";

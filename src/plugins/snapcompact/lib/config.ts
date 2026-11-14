@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { displayPath, muConfigDir } from "../../core/lib/utils/paths";
+import { muConfigDir } from "../../core/lib/utils/paths";
 import {
   AUTO_SHAPE,
   CONFIG_FILE_ENV,
@@ -12,18 +12,11 @@ import {
 import type { SnapcompactConfig } from "../types";
 
 /** mu's switch file: `~/.config/mu/snapcompact.json`, or wherever the env says. */
-export function snapcompactConfigPath(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
+function snapcompactConfigPath(env: NodeJS.ProcessEnv = process.env): string {
   const override = env[CONFIG_FILE_ENV];
   if (override !== undefined && override.trim() !== "") return override.trim();
   return `${muConfigDir(env)}/${CONFIG_FILE_NAME}`;
 }
-
-export const snapcompactConfigDisplay = (
-  env: NodeJS.ProcessEnv = process.env,
-): string => displayPath(snapcompactConfigPath(env), env);
-
 const clampFrames = (value: unknown): number => {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return DEFAULT_MAX_FRAMES;

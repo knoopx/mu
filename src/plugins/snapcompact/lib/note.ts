@@ -5,7 +5,7 @@ import type { SnapcompactDetails, SnapcompactPass } from "../types";
 const thousands = (value: number): string => value.toLocaleString();
 
 /** The pages an archive is made of, in the one line a row prints. */
-export function passNote(pass: SnapcompactPass): string {
+function passNote(pass: SnapcompactPass): string {
   const dropped =
     pass.dropped > 0 ? `, ${thousands(pass.dropped)} chars dropped` : "";
   // A short history needs no pages at all: the layout keeps the whole thing as

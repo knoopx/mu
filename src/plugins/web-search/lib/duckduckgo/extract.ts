@@ -40,8 +40,7 @@ export const EXTRACT_SCRIPT = `(() => {
       return {
         title: a?.textContent?.trim() ?? "",
         url: clean(a?.href ?? ""),
-        snippet: item.querySelector("${SNIPPET_SELECTOR}")?.textContent?.trim() ?? "",
-      };
+        snippet: item.querySelector("${SNIPPET_SELECTOR}")?.textContent?.trim() ?? "" };
     }),
   );
 })()`;

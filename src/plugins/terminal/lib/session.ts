@@ -15,7 +15,7 @@
 import type { TerminalGrid, TerminalState, TerminalView } from "../types";
 import { REPAINT_GAP_MS } from "../constants";
 import { viewOf } from "./paint";
-import { terminalPalette, type TerminalPalette } from "./palette";
+import { type TerminalPalette } from "./palette";
 import { openPty, type Pty } from "./pty";
 import { loadScreen, type Screen, type ScreenModes } from "./screen";
 

@@ -46,9 +46,7 @@ export function isFetchTool(name: string): boolean {
   return name.toLowerCase() === FETCH_TOOL_NAME;
 }
 
-export function fetchDetailsOf(
-  item: ToolTranscriptItem,
-): WebFetchDetails | undefined {
+function fetchDetailsOf(item: ToolTranscriptItem): WebFetchDetails | undefined {
   const details = item.details as WebFetchDetails | undefined;
   if (details === undefined || details === null || typeof details !== "object")
     return undefined;

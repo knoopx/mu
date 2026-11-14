@@ -79,7 +79,7 @@ function buildToolResult(
   };
 }
 
-export async function executeAskUser(
+async function executeAskUser(
   ctx: ExtensionToolContext,
   signal: AbortSignal | undefined,
   params: AskUserParams,

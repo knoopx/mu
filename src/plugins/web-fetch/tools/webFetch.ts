@@ -26,7 +26,7 @@ const Parameters = Type.Object({
   }),
 });
 
-export async function executeWebFetch(
+async function executeWebFetch(
   params: WebFetchParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<WebFetchDetails>> {

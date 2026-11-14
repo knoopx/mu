@@ -23,7 +23,7 @@ const SearchParametersSchema = Type.Object({
   ),
 });
 
-export async function executeWebSearch(
+async function executeWebSearch(
   params: WebSearchParams,
   signal?: AbortSignal,
 ): Promise<AgentToolResult<WebSearchDetails>> {

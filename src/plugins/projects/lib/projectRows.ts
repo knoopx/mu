@@ -45,7 +45,7 @@ const PROJECT_FIGURES: readonly {
   },
 ];
 
-export function filterProjects(
+function filterProjects(
   projects: readonly ProjectFolder[],
   query: string,
 ): ProjectFolder[] {

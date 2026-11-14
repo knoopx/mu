@@ -5,13 +5,13 @@ import type { AskMode } from "../types";
 
 const CONFIRM: string[][] = [["ctrl", "enter"]];
 
-export const ASK_NAV_SHORTCUTS: Shortcut[] = [
+const ASK_NAV_SHORTCUTS: Shortcut[] = [
   { id: "up", kbds: ["up"], desc: "move", hidden: true },
   { id: "down", kbds: ["down"], desc: "move", hidden: true },
   ...NAV.filter((s) => s.id === "home" || s.id === "end"),
 ];
 
-export const ASK_SINGLE_SHORTCUTS: Shortcut[] = [
+const ASK_SINGLE_SHORTCUTS: Shortcut[] = [
   ...ASK_NAV_SHORTCUTS,
   { id: "accept", kbds: ["enter"], desc: "select" },
   { id: "freeform", kbds: ["tab"], desc: "answer" },
@@ -20,7 +20,7 @@ export const ASK_SINGLE_SHORTCUTS: Shortcut[] = [
   { id: "cancel", kbds: ["escape"], desc: "cancel" },
 ];
 
-export const ASK_MULTI_SHORTCUTS: Shortcut[] = [
+const ASK_MULTI_SHORTCUTS: Shortcut[] = [
   ...ASK_NAV_SHORTCUTS,
   { id: "toggle", kbds: ["space"], desc: "check" },
   { id: "accept", kbds: ["enter"], desc: "submit" },
@@ -30,7 +30,7 @@ export const ASK_MULTI_SHORTCUTS: Shortcut[] = [
   { id: "cancel", kbds: ["escape"], desc: "cancel" },
 ];
 
-export const ASK_TEXT_SHORTCUTS: Shortcut[] = [
+const ASK_TEXT_SHORTCUTS: Shortcut[] = [
   { id: "submit", kbds: ["enter"], desc: "submit" },
   { id: "newline", kbds: [["shift", "enter"]], desc: "newline" },
   { id: "back", kbds: ["escape"], desc: "back" },

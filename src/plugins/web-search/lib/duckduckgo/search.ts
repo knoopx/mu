@@ -9,7 +9,7 @@ import {
 import { resultsText } from "./text";
 import type { DuckDuckGoOutcome, DuckDuckGoSearchInput } from "./types";
 
-export function clampLimit(limit: number | undefined): number {
+function clampLimit(limit: number | undefined): number {
   if (limit === undefined || !Number.isFinite(limit))
     return DEFAULT_RESULT_LIMIT;
   return Math.min(MAX_RESULT_LIMIT, Math.max(1, Math.floor(limit)));

@@ -26,7 +26,7 @@ const EMPTY_SNAPSHOT: AskSnapshot = { request: null };
 
 let runSeq = 0;
 
-export class AskStore {
+class AskStore {
   private runs: AskRun[] = [];
   private listeners = new Set<AskListener>();
   private snapshot: AskSnapshot = EMPTY_SNAPSHOT;

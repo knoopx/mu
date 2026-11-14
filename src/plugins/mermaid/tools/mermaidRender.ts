@@ -45,7 +45,7 @@ const RenderParametersSchema = Type.Object({
   ),
 });
 
-export async function executeMermaidRender(
+async function executeMermaidRender(
   params: MermaidRenderParams,
 ): Promise<AgentToolResult<MermaidPicture>> {
   const picture = renderDiagram(params.source);
