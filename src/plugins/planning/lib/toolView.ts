@@ -177,6 +177,7 @@ export function planRowsOf(
 ): ToolPaintRow[] {
   return plan.steps.slice(0, limit).map((step) => ({
     key: String(step.at),
+    id: String(step.at),
     primary: step.content,
     secondary: "",
     badge: PLAN_STATUS_WORDS[step.status] ?? step.status,
@@ -191,6 +192,7 @@ export function planBadRowsOf(
 ): ToolPaintRow[] {
   return plan.bad.slice(0, limit).map((bad) => ({
     key: String(bad.at + 1),
+    id: String(bad.at + 1),
     primary: bad.content === "" ? "(nothing to do)" : bad.content,
     secondary:
       bad.reason === "no content"

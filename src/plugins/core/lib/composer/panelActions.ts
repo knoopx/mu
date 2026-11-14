@@ -119,7 +119,10 @@ function pickPanelRow(
       // routing stays out of it.
       const pick = panelPickFor(HOST, a.mode.target);
       if (pick === undefined) return;
-      pick(row, a.panelState.get(a.mode.target), { toast: a.toast });
+      pick(row, a.panelState.get(a.mode.target), {
+        toast: a.toast,
+        close: () => a.setMode(draftMode()),
+      });
       break;
     }
   }

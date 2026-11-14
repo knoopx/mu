@@ -65,10 +65,7 @@ import {
   contextRingGradient,
 } from "./pills";
 import { ComposerStatus } from "./rows";
-import {
-  ComposerPanelTable,
-  composerPanelShapeOf,
-} from "./panelTable";
+import { ComposerPanelTable, composerPanelShapeOf } from "./panelTable";
 import { type Shortcut } from "../../lib/composer/shortcuts";
 import { useComposerKeys } from "../../hooks/useComposerKeys";
 import { resolve } from "node:path";
@@ -87,6 +84,10 @@ export type ComposerPanelRow =
       key: string;
       label: string;
       caption?: string;
+      /** Where the name sits — beside it, on the same line, so a list of rows
+       *  that need to say where stays one line tall. The folder a project lives
+       *  in, the parent of a name: the words that tell two same-named rows apart. */
+      place?: string;
       description?: string;
       figures?: ComposerRowFigure[];
       tabular?: boolean;
@@ -477,19 +478,18 @@ function ComposerPanel({
     >
       <div style={split ? styles.panel.listPane() : styles.panel.column}>
         <PanelStatus panel={panel} />
-        {panel.error === undefined &&
-          panel.busy !== true && (
-            <ComposerPanelTable
-              rows={win.visible}
-              shape={shape}
-              start={win.start}
-              active={active}
-              // A click completes the way Tab does, so a folder stays open for
-              // the next segment; Enter is the key that commits.
-              onPick={(row) => panel.onPick(row, "complete")}
-              onHover={(index) => panel.onHover(index)}
-            />
-          )}
+        {panel.error === undefined && panel.busy !== true && (
+          <ComposerPanelTable
+            rows={win.visible}
+            shape={shape}
+            start={win.start}
+            active={active}
+            // A click completes the way Tab does, so a folder stays open for
+            // the next segment; Enter is the key that commits.
+            onPick={(row) => panel.onPick(row, "complete")}
+            onHover={(index) => panel.onHover(index)}
+          />
+        )}
       </div>
       {split && <div style={styles.panel.paneRule} />}
       {split && panel.preview !== undefined && (

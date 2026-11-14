@@ -17,6 +17,7 @@ import type { ToastFn } from "adwaita-gpuix";
 import type { IconName } from "adwaita-gpuix";
 import type { TSchema } from "typebox";
 import type { SlashCommand } from "../../../../autocomplete";
+import type { ToolRowCell } from "../ui/toolRowPaint";
 import type { ComposerEvent, ComposerTarget } from "../composer/mode";
 import type { ComposerPanelData } from "../composer/panelData";
 import type {
@@ -51,7 +52,7 @@ export interface PluginTool<
 > extends ToolDefinition<TParams, TDetails, TState> {
   /** the mark this tool's row wears in the log */
   icon: IconName;
-};
+}
 
 /** One plugin's claim on how its tool calls are drawn in the log. */
 export interface ToolRowSurface {
@@ -63,15 +64,22 @@ export interface ToolRowSurface {
 
   /**
    * the call's own answer: the lines it quoted, the rows it ranked, the figure it
-   * painted. Framed by `frame`, which is core's, not the plugin's.
+   * painted. Framed by `frame`, which is core's, not the plugin's. An answer with
+   * nothing left to show says so with null and draws no plate at all — the header's
+   * own line is then the whole row, which is the honest shape for a read that came
+   * back empty.
    */
-  body?(item: ToolTranscriptItem): JSX.Element;
+  body?(item: ToolTranscriptItem): JSX.Element | null;
 
   /**
    * how the body is framed. `band` is the log's one plate and is the default;
-   * `page` says the body brings its own page, which is true of exactly one kind
-   * of answer — a program screen, whose `Pane` is already the band's colour, so a
-   * band under it is a card inside a card.
+   * `page` says the body frames itself, and each of the three that ask for it has
+   * its own reason: a program screen whose `Pane` is already the band's colour, so
+   * a band under it is a card inside a card; a script row, which puts its input,
+   * its calls and its output on three plates and keeps the time the run took off
+   * them — a figure about the call is not another line of what the call printed;
+   * and a record card, whose sections (the files a change moved, then what someone
+   * said about them) each take a plate so the boundary between them is drawn.
    */
   frame?: "band" | "page";
 
@@ -83,6 +91,14 @@ export interface ToolRowSurface {
 
   /** the tool header's one line, in the plugin's own words */
   preview?(item: ToolTranscriptItem): string;
+
+  /**
+   * What the call ran with, as the chips that ride its header: the analyzer and its
+   * thresholds, the canvas a diagram was laid out on, the rev a repo read stood at.
+   * They belong to the header because they are the call, not its answer — and the
+   * header's text gives way to them when the row runs out of room.
+   */
+  chips?(item: ToolTranscriptItem): readonly ToolRowCell[];
 }
 
 /**
@@ -120,6 +136,15 @@ export interface PanelContext {
 /** What a panel may do when one of its own rows is picked. */
 export interface PanelPickActions {
   toast(message: string): void;
+
+  /**
+   * put the panel away.
+   *
+   * A panel whose pick is a switch keeps its band and its cursor — arming a
+   * guardrail has to be readable back — but a panel whose pick sends the work
+   * somewhere else has nothing left to show, and says so by closing itself.
+   */
+  close(): void;
 }
 
 /**
@@ -345,14 +370,22 @@ export function definePlugin(
   setup: (api: PluginApi) => void,
 ): PluginRegistration {
   if (name.trim() === "")
-    throw new Error("a plugin must name itself — the name is the owner in every refusal");
+    throw new Error(
+      "a plugin must name itself — the name is the owner in every refusal",
+    );
   const at = `plugin ${JSON.stringify(name)}`;
   if (typeof identity?.title !== "string" || identity.title.trim() === "")
-    throw new Error(`${at} declares no title — the panel has to say what it is listing`);
+    throw new Error(
+      `${at} declares no title — the panel has to say what it is listing`,
+    );
   if (typeof identity.summary !== "string" || identity.summary.trim() === "")
-    throw new Error(`${at} declares no summary — one line saying what the app gains from it`);
+    throw new Error(
+      `${at} declares no summary — one line saying what the app gains from it`,
+    );
   if (identity.summary.includes("\n"))
-    throw new Error(`${at}'s summary is more than one line — the panel draws it beside one row`);
+    throw new Error(
+      `${at}'s summary is more than one line — the panel draws it beside one row`,
+    );
   if (typeof identity.icon !== "string" || identity.icon.trim() === "")
     throw new Error(`${at} declares no mark for itself`);
   if (!PLUGIN_CATEGORIES.includes(identity.category))

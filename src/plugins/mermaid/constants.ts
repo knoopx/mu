@@ -32,6 +32,11 @@ export const DIAGRAM_FONT_SIZE = 16;
 /** A title is drawn bigger than a label by Pele's stylesheet; this is that step. */
 export const DIAGRAM_TITLE_RATIO = 1.25;
 
-/** The box a picture is scaled into in the transcript, in px. */
+/** The narrowest page a picture is ever given, in px — the floor for a frame with no window measured yet. */
 export const DIAGRAM_BOX_WIDTH = 640;
+
+/** How tall a picture may stand in the log before it is scaled down instead. */
 export const DIAGRAM_BOX_HEIGHT = 420;
+
+/** How far a picture smaller than its row may be blown up before the ink stops reading. */
+export const DIAGRAM_UPSCALE = 1.5;

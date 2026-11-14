@@ -11,7 +11,12 @@
  * file, and no target is switched on: a plugin that takes a panel takes it whole.
  */
 
-import type { ComposerPanelRow, ComposerPanelSpec } from "./Composer";
+import type { AdwaitaTheme } from "adwaita-gpuix";
+import type {
+  ComposerPanelRow,
+  ComposerPanelSpec,
+  ComposerPanelStatusSpec,
+} from "./Composer";
 import { composerFieldExtraHeight } from "../../lib/composer/fieldRows";
 import {
   composerPanelFitHeight,
@@ -90,6 +95,75 @@ const commandsView = (data: ComposerPanelData): PanelView => ({
   total: data.commands.length,
 });
 
+/**
+ * How a list of rows sits in the band.
+ *
+ * The rows are measured once for the list as a whole and once for the window of
+ * rows the cursor is standing in — a tall panel lays out only that window — and
+ * both measurements carry the same extra line, so the band does not jump when the
+ * cursor moves.
+ */
+interface ListFit {
+  listHeight: number;
+  windowedHeight: number;
+  maxVisible: number;
+}
+
+function listFit(
+  t: AdwaitaTheme,
+  view: PanelView,
+  rows: readonly ComposerPanelRow[],
+  mode: ComposerMode,
+  panelBand: number,
+  slots: PanelSlots,
+): ListFit {
+  const rowsHeightOf = (list: readonly ComposerPanelRow[]): number =>
+    list.reduce((sum, row) => sum + composerPanelRowHeight(t, row), 0);
+  // One line under the rows, charged only when something stands there: what the
+  // panel says while it reads, what it says when it failed, or its empty words.
+  const extraLine =
+    view.busy === true || view.error !== undefined || rows.length === 0
+      ? ROW_HEIGHT
+      : 0;
+  const maxVisible = composerPanelFitRows(
+    t,
+    rows,
+    panelBand - panelChromeHeight(t, slots),
+  );
+  return {
+    listHeight: rowsHeightOf(rows) + extraLine,
+    windowedHeight:
+      rowsHeightOf(
+        windowRows(rows, panelIndex(mode, rows.length), maxVisible).visible,
+      ) + extraLine,
+    maxVisible,
+  };
+}
+
+/** The line a list shows under its rows when its panel does not bring its own:
+ *  what the list holds, and the keys its target actually takes. */
+const listStatus = (
+  source: ListSource,
+  view: PanelView,
+  rowCount: number,
+  query: string,
+): ComposerPanelStatusSpec =>
+  view.status ?? {
+    message:
+      rowCount === 0
+        ? undefined
+        : panelStatusText(source, rowCount, view.total, query),
+    hints: panelHints(source),
+  };
+
+/** A row handler only lands on the spec when the panel's target takes that key, so
+ *  the hint line and the keys a pick can land on cannot drift apart. */
+const listHandlers = (source: ListSource, data: ComposerPanelData) => ({
+  ...(panelCanDelete(source) ? { onDelete: data.onDelete } : {}),
+  ...(panelCanOpen(source) ? { onOpen: data.onOpen } : {}),
+  ...(panelCanEdit(source) ? { onEdit: data.onEdit } : {}),
+});
+
 /** A panel of rows, measured and framed by core. */
 function listPanelSpec(
   data: ComposerPanelData,
@@ -98,56 +172,35 @@ function listPanelSpec(
 ): ComposerPanelSpec {
   const { theme: t, mode, query, windowHeight } = data;
   const source = listSourceOf(mode);
-  const panelBand = composerPanelHeight(windowHeight);
-  const busy = view.busy === true;
-  const error = view.error;
-  const total = view.total;
-
-  const rowsHeightOf = (list: readonly ComposerPanelRow[]): number =>
-    list.reduce((sum, row) => sum + composerPanelRowHeight(t, row), 0);
-
   const slots: PanelSlots = {
     statusBar: true,
     fieldExtra: view.tall === true ? composerFieldExtraHeight(t, query) : 0,
   };
-  const statusLine =
-    busy || error !== undefined || rows.length === 0 ? ROW_HEIGHT : 0;
-  const listHeight = rowsHeightOf(rows) + statusLine;
-  const maxVisible = composerPanelFitRows(
+  const fit = listFit(
     t,
+    view,
     rows,
-    panelBand - panelChromeHeight(t, slots),
+    mode,
+    composerPanelHeight(windowHeight),
+    slots,
   );
-  const windowedHeight =
-    rowsHeightOf(
-      windowRows(rows, panelIndex(mode, rows.length), maxVisible).visible,
-    ) + statusLine;
 
   return {
     placeholder: view.placeholder ?? panelPlaceholder(source),
     rows,
-    ...(view.preview === undefined ? {} : { preview: view.preview }),
+    preview: view.preview,
     height: composerPanelFitHeight(
       t,
       windowHeight,
-      view.tall === true ? windowedHeight : listHeight,
+      view.tall === true ? fit.windowedHeight : fit.listHeight,
       slots,
     ),
-    maxVisible,
-    busy,
-    ...(view.busyText === undefined ? {} : { busyText: view.busyText }),
-    error,
-    status:
-      view.status ?? {
-        message:
-          rows.length === 0
-            ? undefined
-            : panelStatusText(source, rows.length, total, query),
-        hints: panelHints(source),
-      },
-    ...(panelCanDelete(source) ? { onDelete: data.onDelete } : {}),
-    ...(panelCanOpen(source) ? { onOpen: data.onOpen } : {}),
-    ...(panelCanEdit(source) ? { onEdit: data.onEdit } : {}),
+    maxVisible: fit.maxVisible,
+    busy: view.busy === true,
+    busyText: view.busyText,
+    error: view.error,
+    status: listStatus(source, view, rows.length, query),
+    ...listHandlers(source, data),
     emptyText: view.emptyText ?? "No matches",
     onPick: data.onPick,
     onHover: (index: number) => data.onHover(mode, index, rows.length),

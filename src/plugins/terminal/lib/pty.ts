@@ -160,7 +160,8 @@ export interface Pty {
 }
 
 export type PtyOutcome =
-  { pty: Pty; failure?: undefined } | { pty?: undefined; failure: string };
+  | { pty: Pty; failure?: undefined }
+  | { pty?: undefined; failure: string };
 
 /** Open a pty and put a shell in it. Every failure answers as a reason: the
  *  panel says what it could not do rather than drawing an empty screen. */

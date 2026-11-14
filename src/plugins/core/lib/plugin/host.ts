@@ -17,9 +17,7 @@
  * them is a feature the user quietly stops having.
  */
 
-import type {
-  ExtensionFactory,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionFactory } from "@earendil-works/pi-coding-agent";
 import type { ComposerTarget } from "../composer/mode";
 import type {
   CommandSurface,
@@ -206,7 +204,9 @@ export function createPluginHost(
       register(...factories: ExtensionFactory[]): void {
         for (const factory of factories) {
           if (typeof factory !== "function")
-            throw new Error(`plugin ${plugin} registered an extension that is not a factory`);
+            throw new Error(
+              `plugin ${plugin} registered an extension that is not a factory`,
+            );
           slots.extensions.push(factory);
           contributionOf(plugin).extensions += 1;
         }
@@ -234,7 +234,9 @@ export function createPluginHost(
       },
       block(draw: (item: ToolTranscriptItem) => JSX.Element): void {
         if (typeof draw !== "function")
-          throw new Error(`plugin ${plugin} registered a block panel that cannot draw`);
+          throw new Error(
+            `plugin ${plugin} registered a block panel that cannot draw`,
+          );
         slots.blocks.push({ plugin, draw });
         contributionOf(plugin).blocks += 1;
       },
@@ -242,7 +244,9 @@ export function createPluginHost(
     composer: {
       panel(surface: PanelSurface): void {
         if (surface === null || typeof surface.target !== "string")
-          throw new Error(`plugin ${plugin} took a composer panel with no target`);
+          throw new Error(
+            `plugin ${plugin} took a composer panel with no target`,
+          );
         claim(panelTargets, surface.target, "composer panel", plugin);
         // A band-filling panel has to say what fills it: `wide` is a layout fact
         // the keymap reads before anything is drawn, so a panel that claims the
@@ -253,14 +257,19 @@ export function createPluginHost(
           );
         // A panel opened by something other than a chord — path completion opens
         // on Tab, from the draft — registers no keybinding and so no hotkey.
-        if (surface.keybinding !== undefined && surface.keybinding.trim() !== "")
+        if (
+          surface.keybinding !== undefined &&
+          surface.keybinding.trim() !== ""
+        )
           claim(panelKeys, surface.keybinding, "keybinding", plugin);
         slots.panels.push(surface);
         contributionOf(plugin).panels.push(surface.target);
       },
       command(surface: CommandSurface): void {
         if (surface === null || surface.name.trim() === "")
-          throw new Error(`plugin ${plugin} contributed a command with no name`);
+          throw new Error(
+            `plugin ${plugin} contributed a command with no name`,
+          );
         claim(commandNames, surface.name, "command", plugin);
         slots.commands.push(surface);
         contributionOf(plugin).commands.push(surface.name);

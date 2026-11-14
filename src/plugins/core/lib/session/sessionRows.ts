@@ -8,16 +8,21 @@
  */
 
 import type { IconName } from "adwaita-gpuix";
-import type { ComposerPanelRow, ComposerRowFigure } from "../../components/composer/Composer";
+import type {
+  ComposerPanelRow,
+  ComposerRowFigure,
+} from "../../components/composer/Composer";
 import { matchesQuery } from "../composer/options";
 import { cappedPanelStatusText } from "../composer/options";
 import { SESSION_ROWS_CAP, type SessionListRow } from "./sessionList";
 
-const SESSION_FIGURES: readonly { icon: IconName; pick: (row: SessionListRow) => string }[] =
-  [
-    { icon: "schedule", pick: (row) => row.duration },
-    { icon: "history", pick: (row) => row.age },
-  ];
+const SESSION_FIGURES: readonly {
+  icon: IconName;
+  pick: (row: SessionListRow) => string;
+}[] = [
+  { icon: "schedule", pick: (row) => row.duration },
+  { icon: "history", pick: (row) => row.age },
+];
 
 const figuresOf = (row: SessionListRow): ComposerRowFigure[] =>
   SESSION_FIGURES.map((figure) => ({

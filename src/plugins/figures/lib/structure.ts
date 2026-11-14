@@ -20,11 +20,7 @@ import type { FileTreeNode } from "adwaita-gpuix/ai";
 
 import { truncateToWidth } from "../../../utils/truncate";
 import { MAX_DEPTH, MAX_NAME_CHARS, MAX_NODES } from "../constants";
-import type {
-  StructureNode,
-  TreeFigure,
-  TreeRenderParams,
-} from "../types";
+import type { StructureNode, TreeFigure, TreeRenderParams } from "../types";
 import { cellText, numberOf } from "./plot";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

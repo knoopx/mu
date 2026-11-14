@@ -24,8 +24,10 @@ import { firstLine } from "../../../utils/truncate";
 import { StateSpinner } from "./StateSpinner";
 import { ToolCaptionLine } from "./ToolCaptionLine";
 import { ToolStateLine } from "./ToolStateLine";
+import { chipGlyphOf } from "../lib/ui/toolChipIcons";
 import { mutedText } from "../lib/ui/theme";
 import {
+  INLINE_GLYPH,
   METER_RULE_HEIGHT,
   METER_RULE_RADIUS,
   METER_TRACK_WIDTH,
@@ -67,8 +69,22 @@ import {
   type ToolRowTone,
 } from "../lib/ui/toolRowPaint";
 
-/** The chips a call resolved: what it was pointed at and what it resolved there. */
-export function ToolChips({
+/**
+ * The chips a call resolved, riding the right end of its header's single line:
+ * what it was pointed at and what it resolved there.
+ *
+ * They belong to the header because they are the call rather than its answer, and a
+ * header is one row tall — so the line never wraps and gives way at its end instead
+ * of pushing the tool's own name onto a second row. They stand at the end of the
+ * line, against the status mark, because the figures of successive rows are read
+ * down a column: a chip line that starts after a title of varying length is a row
+ * of numbers that never line up.
+ *
+ * A chip says its figure with a mark where the vocabulary in `toolChipIcons` has
+ * one, and with its word where it does not. The value keeps its text — a mark is a
+ * noun, never a number.
+ */
+export function ToolHeaderChips({
   cells,
 }: {
   cells: readonly ToolRowCell[];
@@ -78,21 +94,41 @@ export function ToolChips({
   if (shown.length === 0) return null;
 
   return (
-    <div style={toolChipLine(t)}>
-      {shown.map((cell) => (
-        <div key={`${cell.label}/${cell.value}`} style={toolChip(t)}>
-          <T size="micro" color={mutedText(t)} style={{ flexShrink: 0 }}>
-            {cell.label}
-          </T>
-          <T
-            size="caption"
-            color={t.color.text.primary}
-            style={{ flexShrink: 0, fontFamily: t.type.fontFamilyMono }}
-          >
-            {cell.value}
-          </T>
-        </div>
-      ))}
+    <div
+      style={{
+        ...toolChipLine(t),
+        flexWrap: "nowrap",
+        flexShrink: 1,
+        minWidth: 0,
+        overflow: "hidden",
+      }}
+    >
+      {shown.map((cell) => {
+        const glyph = chipGlyphOf(cell.label);
+        return (
+          <div key={`${cell.label}/${cell.value}`} style={toolChip(t)}>
+            {glyph === null ? (
+              <T size="caption" color={mutedText(t)} style={{ flexShrink: 0 }}>
+                {cell.label}
+              </T>
+            ) : (
+              <Icon
+                name={glyph}
+                size={INLINE_GLYPH}
+                color={mutedText(t)}
+                style={{ flexShrink: 0 }}
+              />
+            )}
+            <T
+              size="body"
+              color={t.color.text.primary}
+              style={{ flexShrink: 0, fontFamily: t.type.fontFamilyMono }}
+            >
+              {cell.value}
+            </T>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -181,9 +217,7 @@ function ToolRowBody({
     <>
       <T
         size="list"
-        color={
-          primary === "" || muted ? mutedText(t) : t.color.text.primary
-        }
+        color={primary === "" || muted ? mutedText(t) : t.color.text.primary}
         style={toolOneLine}
       >
         {primary === "" ? "—" : primary}
@@ -321,7 +355,7 @@ function ToolDataRow({
           color={mutedText(t)}
           style={toolKeyColumn(t, columns.id)}
         >
-          {toolIdText(row.key)}
+          {toolIdText(row.id ?? "")}
         </T>
       )}
       <ToolRowBody

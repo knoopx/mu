@@ -130,31 +130,29 @@ async function executeCodeReview(
   );
 }
 
-export const codeReviewTool: PluginTool<
-  typeof Parameters,
-  CodeReviewDetails
-> = {
-  name: CODE_REVIEW_TOOL,
-  icon: "rateReview",
-  label: "Change review",
-  description:
-    "Runs entity-level change analysis on a commit or range and answers with one row per " +
-    "changed entity — risk level, entity type and name, file, line range, risk score, blast " +
-    "radius, whether it is public API, and how it changed (added, modified, deleted) — riskiest " +
-    "first. `min_risk` drops the quiet rows; the risk mix of the whole change is stated even " +
-    "when the rows are bounded. Read-only.",
-  promptSnippet:
-    "Score a commit's entity-level impact — risk, blast radius, what changed",
-  promptGuidelines: [
-    "Read a change's blast radius with code-review before merging or refactoring on top of it — never reach for a shell command instead of it.",
-    "Name the ref you mean (`HEAD~1`, `main..feature`); a range is one call, not two.",
-    "A critical row is where to look first, not what to revert: check its dependents before touching it.",
-  ],
+export const codeReviewTool: PluginTool<typeof Parameters, CodeReviewDetails> =
+  {
+    name: CODE_REVIEW_TOOL,
+    icon: "rateReview",
+    label: "Change review",
+    description:
+      "Runs entity-level change analysis on a commit or range and answers with one row per " +
+      "changed entity — risk level, entity type and name, file, line range, risk score, blast " +
+      "radius, whether it is public API, and how it changed (added, modified, deleted) — riskiest " +
+      "first. `min_risk` drops the quiet rows; the risk mix of the whole change is stated even " +
+      "when the rows are bounded. Read-only.",
+    promptSnippet:
+      "Score a commit's entity-level impact — risk, blast radius, what changed",
+    promptGuidelines: [
+      "Read a change's blast radius with code-review before merging or refactoring on top of it — never reach for a shell command instead of it.",
+      "Name the ref you mean (`HEAD~1`, `main..feature`); a range is one call, not two.",
+      "A critical row is where to look first, not what to revert: check its dependents before touching it.",
+    ],
 
-  executionMode: "parallel",
-  parameters: Parameters,
+    executionMode: "parallel",
+    parameters: Parameters,
 
-  async execute(_toolCallId, params) {
-    return executeCodeReview(params);
-  },
-};
+    async execute(_toolCallId, params) {
+      return executeCodeReview(params);
+    },
+  };

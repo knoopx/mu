@@ -21,18 +21,16 @@ import {
   ToolRowList,
   ToolRunning,
   ToolStatusNote,
-  ToolSummary,
-  ToolTruncated,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import { counted } from "../../core/lib/agent/toolText";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusTone,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { PLAN_TOOL } from "../constants";
@@ -95,12 +93,26 @@ export const planToolPreviewOf = (item: ToolTranscriptItem): string =>
 
 function headOf(_tool: string, view: PlanToolView): string {
   const { plan } = view;
+  // A plan the call refused to write is named once, here: the row has no steps to
+  // show, so the header is the only line that can say why. The body names the steps
+  // that caused it.
   if (plan.status === "failed") return planFailureLine(plan);
-  if (planIsDone(plan)) return `${counted(plan.counts.total, "step")} done`;
+  // The steps the row would not draw are a count, and counts ride this line: the
+  // card below is the plan's steps and nothing else.
+  const omitted =
+    plan.notShown === 0 ? "" : `… ${counted(plan.notShown, "step")} not shown`;
+  if (planIsDone(plan))
+    return headerLineOf(`${counted(plan.counts.total, "step")} done`, [
+      omitted,
+    ]);
 
   const active = activeStepOf(plan);
-  if (active === null) return counted(plan.counts.total, "step");
-  return `${String(plan.counts.completed)}/${String(plan.counts.total)} · ${active.content}`;
+  return headerLineOf(
+    active === null
+      ? counted(plan.counts.total, "step")
+      : `${String(plan.counts.completed)}/${String(plan.counts.total)} · ${active.content}`,
+    [omitted],
+  );
 }
 
 /**
@@ -109,6 +121,9 @@ function headOf(_tool: string, view: PlanToolView): string {
  * above its rows already names the steps it could not read.
  */
 function noteOf(item: ToolTranscriptItem, view: PlanToolView): string {
+  // A refused plan is stated once, in the header; the row ends at the steps that
+  // caused it rather than saying the same sentence again under them.
+  if (view.plan.status === "failed") return "";
   if (item.status === "error") {
     const line = firstLine(item.output);
     return line === "" ? `${PLAN_TOOL} failed` : line;
@@ -135,31 +150,26 @@ export function PlanToolRows({ item }: PlanToolRowsProps): JSX.Element {
   if (view === null) return <ToolUnknownResult item={item} tool={item.name} />;
 
   const { plan } = view;
-  const tone = toolStatusTone(view.status, PLAN_STATUS_TONES);
 
   return (
     <div style={toolBodyStack(t)}>
-      {plan.status === "failed" ? (
-        <>
-          <ToolSummary text={planFailureLine(plan)} tone={tone} />
+      {
+        // Not the refusal again — the header carries it — but the steps that caused
+        // it, each with what was wrong about it.
+        plan.status === "failed" ? (
           <ToolRowList
             rows={planBadRowsOf(plan)}
             variants={PLAN_BADGE_VARIANTS}
             pressable={false}
           />
-        </>
-      ) : (
-        <ToolRowList
-          rows={planRowsOf(plan)}
-          variants={PLAN_BADGE_VARIANTS}
-          pressable={false}
-        />
-      )}
-
-      <ToolTruncated
-        count={plan.notShown}
-        text={`… ${counted(plan.notShown, "step")} more not drawn — the plan outgrew the row: consolidate its steps`}
-      />
+        ) : (
+          <ToolRowList
+            rows={planRowsOf(plan)}
+            variants={PLAN_BADGE_VARIANTS}
+            pressable={false}
+          />
+        )
+      }
 
       <ToolStatusNote
         status={view.status}

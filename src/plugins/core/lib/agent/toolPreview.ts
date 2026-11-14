@@ -29,6 +29,28 @@ export function headerSnippet(
   return clipText(value.split(/\s+/).filter(Boolean).join(" "), max);
 }
 
+/**
+ * One header line, with the counts that must outlive the clip.
+ *
+ * A header is one line, and the scope part is the part a reader can recover — the
+ * path, number or words are in the answer below — while how much of the answer is on
+ * screen is the part they cannot. So when the line runs past the budget the scope
+ * gives way and the tail never does. Every plugin builds its header through here, so
+ * the figures that used to sit under an answer sit beside its name instead.
+ */
+export function headerLineOf(
+  scope: string,
+  tail: readonly string[],
+  max: number = TOOL_PREVIEW_MAX,
+): string {
+  const counts = tail.filter((word) => word !== "").join(" · ");
+  if (counts === "") return clipText(scope, max);
+  if (scope === "") return clipText(counts, max);
+  // 3 for the separator, 1 for the ellipsis `clipText` adds when the scope gives way.
+  const room = Math.max(8, max - counts.length - 4);
+  return `${clipText(scope, room)} · ${counts}`;
+}
+
 /** What a plugin's tools say, in the tool's own words. */
 export interface ToolPreviewVocabulary {
   /** what each tool is doing while it runs, by tool name */
@@ -56,14 +78,17 @@ export function toolPreviewFallback(
   const line = firstLine(item.output);
   // The header's title already IS the tool's name, so a preview that begins with
   // it prints the word twice — `codemode codemode`, `plan plan · failed`.
-  if (item.status === "error") return line === "" ? FAILED_TEXT : clipText(line, max);
+  if (item.status === "error")
+    return line === "" ? FAILED_TEXT : clipText(line, max);
   return line === "" ? "" : clipText(line, max);
 }
 
 /**
  * The header line: what is running, why it failed, and when the call answered
  * with what — the counts, ids and bodies belong to the rows, so the header
- * never repeats them, and it never repeats its own title either.
+ * never repeats them, and it never repeats its own title either. A count the
+ * rows print nowhere is the header's to say, and `scopeOf` is where a plugin
+ * trails one along the line's width.
  */
 export function toolPreviewLine<T extends { status: string }>(
   item: ToolTranscriptItem,
@@ -77,7 +102,14 @@ export function toolPreviewLine<T extends { status: string }>(
     return words.running[tool] ?? words.runningDefault;
 
   if (view === null) return toolPreviewFallback(item, max);
-  if (view.status === "failed") return FAILED_TEXT;
+
+  // A call that failed still names what it was pointed at: `scopeOf` is where the
+  // plugin says, and a refusal belongs on this line rather than in the card below,
+  // which holds content. Only a plugin with nothing to say falls back to the word.
+  if (view.status === "failed") {
+    const said = scopeOf(tool, view);
+    return said === "" ? FAILED_TEXT : clipText(said, max);
+  }
 
   const stated = words.stated[view.status];
   if (stated !== undefined) return stated;

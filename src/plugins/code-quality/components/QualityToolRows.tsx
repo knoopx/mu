@@ -11,21 +11,19 @@ import { useAdwaita, type IconName } from "adwaita-gpuix";
 
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import {
-  ToolChips,
   ToolRunning,
   ToolSections,
   ToolStatusNote,
-  ToolSummary,
-  ToolTruncated,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusTone,
+  type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import {
@@ -39,7 +37,7 @@ import {
   QUALITY_BADGE_VARIANTS,
 } from "../constants";
 import { qualityCellOf, qualityToolViewOf } from "../lib/toolView";
-import type { QualityCell, QualityToolStatus, QualityToolView } from "../types";
+import type { QualityCell, QualityToolView } from "../types";
 
 const RUNNING_TEXT: Record<string, string> = {
   [CODE_COMPLEXITY_TOOL]: "measuring complexity",
@@ -96,9 +94,6 @@ export function isCodeQualityTool(name: string): boolean {
   return CODE_QUALITY_TOOL_NAMES.includes(name.toLowerCase());
 }
 
-const toneOf = (status: QualityToolStatus | ""): ToolRowTone =>
-  toolStatusTone(status, QUALITY_STATUS_TONES);
-
 /** The tool header: what ran, what it counted, and the scope it was pointed at. */
 export const qualityToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
@@ -112,7 +107,13 @@ export const qualityToolPreviewOf = (item: ToolTranscriptItem): string =>
  *  the rows' to say, and saying them twice put one copy where it would be cut
  *  mid-word by the header's own budget. */
 function headOf(tool: string, view: QualityToolView): string {
-  return qualityCellOf(view, SCOPE_LABELS[tool] ?? "scope");
+  // One line: the scope the survey ran over, and along it what the survey found and
+  // how much of it fell off the limit. The rows below are the findings themselves;
+  // none of them counts the set again.
+  return headerLineOf(qualityCellOf(view, SCOPE_LABELS[tool] ?? "scope"), [
+    view.headline,
+    view.omitted > 0 ? `${String(view.omitted)} more not shown` : "",
+  ]);
 }
 
 /**
@@ -120,6 +121,23 @@ function headOf(tool: string, view: QualityToolView): string {
  * over a chip reading `scope (cwd)` was one fact printed twice on one row. The
  * cell stays in the view, because the header reads it out of there.
  */
+/**
+ * What the survey ran with — the analyzer and its version, the thresholds it judged
+ * against, how much of the project it read. They are the call rather than its
+ * answer, so they ride the header.
+ */
+export function qualityChipsOf(
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] {
+  const view = qualityToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
+  return view === null ? [] : chipCellsOf(item.name.toLowerCase(), view);
+}
+
 function chipCellsOf(tool: string, view: QualityToolView): QualityCell[] {
   const scope = SCOPE_LABELS[tool] ?? "scope";
   return view.cells.filter((cell) => cell.label !== scope);
@@ -146,24 +164,12 @@ export function QualityToolRows({ item }: QualityToolRowsProps): JSX.Element {
   if (view === null) return <ToolUnknownResult item={item} tool={tool} />;
 
   const status = view.status;
-  const clean = status === "none" || status === "empty";
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={chipCellsOf(tool, view)} />
-      {clean ? null : (
-        <ToolSummary
-          text={view.headline}
-          tone={status === "ok" ? "neutral" : toneOf(status)}
-        />
-      )}
       <ToolSections
         sections={view.sections}
         variants={QUALITY_BADGE_VARIANTS}
-      />
-      <ToolTruncated
-        count={view.omitted}
-        text={`${String(view.omitted)} more not shown — widen limit to read them`}
       />
       <ToolStatusNote
         status={status}

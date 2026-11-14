@@ -85,7 +85,8 @@ const searchable = (plugin: PluginRegistration, name: string): string =>
 export function pluginPanelRows(query = ""): ComposerPanelRow[] {
   const needle = query.trim().toLowerCase();
   const shown = PLUGINS.filter(
-    (plugin) => needle === "" || searchable(plugin, plugin.name).includes(needle),
+    (plugin) =>
+      needle === "" || searchable(plugin, plugin.name).includes(needle),
   );
   return shown.map((plugin) => {
     const on = pluginArming.isOn(plugin.name);
@@ -110,7 +111,9 @@ export function pluginPanelRows(query = ""): ComposerPanelRow[] {
 }
 
 export function pluginStatusText(query: string, shown: number): string {
-  const armed = PLUGINS.filter((plugin) => pluginArming.isOn(plugin.name)).length;
+  const armed = PLUGINS.filter((plugin) =>
+    pluginArming.isOn(plugin.name),
+  ).length;
   const head =
     query.trim() === ""
       ? `${plural(PLUGINS.length, "plugin")} · ${armed} armed`

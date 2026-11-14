@@ -25,8 +25,6 @@ import { chartPlotOf } from "../lib/plot";
 import { PLOT_KINDS, PLOT_TONES } from "../types";
 import type { ChartFigure, ChartPlotParams } from "../types";
 
-
-
 /** One cell of a point: an axis label, or a value. */
 const CellSchema = Type.Union([
   Type.Number({ description: "a value" }),
@@ -56,10 +54,13 @@ const RenderParametersSchema = Type.Object({
     }),
   ),
   kind: Type.Optional(
-    Type.Union(PLOT_KINDS.map((kind) => Type.Literal(kind)), {
-      description:
-        "`bar` across a category axis (the default); `line` for a series that runs across an interval.",
-    }),
+    Type.Union(
+      PLOT_KINDS.map((kind) => Type.Literal(kind)),
+      {
+        description:
+          "`bar` across a category axis (the default); `line` for a series that runs across an interval.",
+      },
+    ),
   ),
   unit: Type.Optional(
     Type.String({

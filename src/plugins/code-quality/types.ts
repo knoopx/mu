@@ -5,7 +5,11 @@ import type {
 } from "../core/lib/ui/toolRowPaint";
 
 export type QualityToolStatus =
-  "ok" | "failed" | "unsupported" | "empty" | "none";
+  | "ok"
+  | "failed"
+  | "unsupported"
+  | "empty"
+  | "none";
 
 /** A chip of what the call read — the shared row shape, under this plugin's name. */
 export type QualityCell = ToolRowCell;

@@ -26,6 +26,7 @@ import {
   METER_TRACK_WIDTH,
   badgeWidth,
   figureGap,
+  lineBox,
   idColumn,
   monoTextWidth,
 } from "./tokens";
@@ -53,7 +54,13 @@ export interface ToolRowCell {
  * brings nothing but its two lines — so every extra here is optional.
  */
 export interface ToolPaintRow {
+  /** The React key, and nothing the reader sees: two rows may share a name and a
+   *  key must not, so this is never the column's text. */
   key: string;
+  /** The id drawn in the mono key column — a change id, a step number, a finding's
+   *  fingerprint. A row already named by its own primary line draws no id: the
+   *  column would print the same word twice. */
+  id?: string;
   primary: string;
   secondary: string;
   badge: string;
@@ -187,7 +194,7 @@ export function figureColumnsOf(
   let trailingChars = 0;
   let meter = 0;
   for (const row of rows) {
-    idChars = Math.max(idChars, toolIdText(row.key).trim().length);
+    idChars = Math.max(idChars, toolIdText(row.id ?? "").trim().length);
     badgeChars = Math.max(badgeChars, row.badge.trim().length);
     trailingChars = Math.max(trailingChars, (row.trailing ?? "").trim().length);
     if (row.meter !== null && row.meter !== undefined)
@@ -281,6 +288,21 @@ export const toolKeyColumn = (t: AdwaitaTheme, width: number): StyleDesc => ({
 export const toolBodyStack = (t: AdwaitaTheme): StyleDesc => ({
   ...toolGapColumn(t),
   flexShrink: 0,
+});
+
+/**
+ * A blank line between the blocks of one answer.
+ *
+ * A terminal divides a script from the calls it made, and those from what they
+ * printed, by leaving a line empty — pi's renderer calls it a `Spacer` and puts one
+ * between every block. A codemode row is the one row in the log made of three such
+ * blocks of text, and nothing else in the log needs a blank line painted as a
+ * thing: a rule divides a table, a blank line divides prose.
+ */
+export const toolBlockSpacer = (t: AdwaitaTheme): StyleDesc => ({
+  height: lineBox(t, "caption"),
+  flexShrink: 0,
+  pointerEvents: "none",
 });
 
 /** Growing mono text — a path, a line range, a token count. */

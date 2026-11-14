@@ -127,9 +127,7 @@ interface Mods {
 /** xterm folds the modifiers into a cursor key as `CSI 1 ; n C`: shift is 2, and
  *  each of alt, ctrl and super adds its own weight to that number. */
 function modifierCode(mods: Mods): number {
-  return (
-    1 + (mods.shift ? 1 : 0) + (mods.alt ? 2 : 0) + (mods.ctrl ? 4 : 0)
-  );
+  return 1 + (mods.shift ? 1 : 0) + (mods.alt ? 2 : 0) + (mods.ctrl ? 4 : 0);
 }
 
 /**
@@ -167,11 +165,7 @@ const cursorOf = (raw: string): string => {
 };
 
 /** A key with a plain spelling of its own: `Ctrl` plus it is a control code where one has always meant that, and Alt is a prefix. */
-function namedSequence(
-  raw: string,
-  named: string,
-  keys: Mods,
-): string {
+function namedSequence(raw: string, named: string, keys: Mods): string {
   const control = keys.ctrl ? controlOf(raw) : undefined;
   if (control !== undefined) return control;
   return keys.alt ? `\x1b${named}` : named;

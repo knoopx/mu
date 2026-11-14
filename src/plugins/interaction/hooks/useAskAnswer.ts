@@ -125,11 +125,13 @@ export function useAskAnswer(options: AskAnswerOptions): AskAnswer {
           (option) => `${option.label} ${option.description ?? ""}`,
         );
 
-  const rows: AskRow[] = filtered.map((option): AskRow => ({
-    kind: "option",
-    option,
-    optionIndex: question.options.indexOf(option),
-  }));
+  const rows: AskRow[] = filtered.map(
+    (option): AskRow => ({
+      kind: "option",
+      option,
+      optionIndex: question.options.indexOf(option),
+    }),
+  );
 
   const activeIndex = rows.length === 0 ? 0 : Math.min(cursor, rows.length - 1);
   const activeRow = rows[activeIndex];

@@ -545,7 +545,7 @@ export function AskComposer(props: AskComposerProps): JSX.Element {
           <input
             autoFocus
             value={query}
-            placeholder="Type to filter the options"
+            placeholder="Filter options"
             theme={fieldTheme}
             onChange={(event) => setQuery(event.value ?? "")}
             onSubmit={() => activate()}

@@ -6,7 +6,6 @@
 export const PLAN_TOOL = "plan";
 export const PLAN_TOOL_LABEL = "Plan";
 
-
 /**
  * The three standings a step has, in the order a plan reads down them.
  *

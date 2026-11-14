@@ -1,8 +1,4 @@
-import {
-  isDarkScheme,
-  type AdwaitaTheme,
-  type KbdColors,
-} from "adwaita-gpuix";
+import { isDarkScheme, type AdwaitaTheme, type KbdColors } from "adwaita-gpuix";
 import type { GpuixTheme, StyleDesc } from "@gpuix/react";
 
 import { ELEVATION, codeLineBox, headingLineBox, lineBox } from "./tokens";
@@ -158,7 +154,7 @@ function hslTriplet(hex: string): [number, number, number] {
     else if (max === g) hue = (b - r) / span + 2;
     else hue = (r - g) / span + 4;
   }
-  return [(hue + 6) % 6 * 60, saturation, lightness];
+  return [((hue + 6) % 6) * 60, saturation, lightness];
 }
 
 /**
@@ -176,7 +172,11 @@ const HUE_SLOTS: readonly [number, number][] = [
 ];
 
 /** Hue, saturation and lightness as a hex. */
-function hexFromHsl(hue: number, saturation: number, lightness: number): string {
+function hexFromHsl(
+  hue: number,
+  saturation: number,
+  lightness: number,
+): string {
   const l = Math.max(0, Math.min(1, lightness));
   const s = Math.max(0, Math.min(1, saturation));
   const chroma = (1 - Math.abs(2 * l - 1)) * s;
@@ -191,7 +191,11 @@ function hexFromHsl(hue: number, saturation: number, lightness: number): string 
   channels[legChannel] = leg;
   const match = l - chroma / 2;
   const hex = channels
-    .map((v) => Math.round((v + match) * 255).toString(16).padStart(2, "0"))
+    .map((v) =>
+      Math.round((v + match) * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    )
     .join("");
   return `#${hex}`;
 }
@@ -267,9 +271,8 @@ export function seriesRamp(t: AdwaitaTheme, count: number): string[] {
   // crosses it is a series drawn in the paper's own colour.
   const away = isDarkScheme(t.scheme) ? SERIES_STEP : -SERIES_STEP;
   const leadInk = liftFrom(t.color.accent.base, page, SERIES_MIN_LEAD, away);
-  const loud = Array.from(
-    { length: SERIES_HUE_RUN },
-    (_unused, at) => (at === 0 ? leadInk : shiftLightness(leadInk, away * at)),
+  const loud = Array.from({ length: SERIES_HUE_RUN }, (_unused, at) =>
+    at === 0 ? leadInk : shiftLightness(leadInk, away * at),
   );
   // The tail starts at the ink a caption is drawn in and steps toward the page.
   // Grey against hue is already the separation: a context series does not have

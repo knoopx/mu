@@ -42,11 +42,14 @@ import { HOST } from "../../registry";
 import {
   answerBodiesOf,
   blockBodiesOf,
+  headerChipsOf,
   ownsItsRows,
   toolIconFor,
   toolPreviewOf,
 } from "../lib/plugin/surfaces";
-import { headerSnippet } from "../lib/agent/toolPreview";
+import { headerLineOf, headerSnippet } from "../lib/agent/toolPreview";
+import { ToolHeaderChips } from "./ToolDataRows";
+import type { ToolRowCell } from "../lib/ui/toolRowPaint";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -93,6 +96,8 @@ function toToolState(item: ToolTranscriptItem): ToolState {
 interface ToolRowLook {
   state: ToolState;
   args: string;
+  /** what the call ran with, as the chips that ride its header */
+  chips: readonly ToolRowCell[];
   outputMode: OutputMode;
   readPreview?: ReadPreviewData;
   writePreview?: WritePreviewData;
@@ -102,17 +107,22 @@ interface ToolRowLook {
 
 /**
  * The header's line: the owning plugin's own words if it has any, then what the
- * call was pointed at. The chain of tool names that used to live here is now the
- * registry's — a plugin that declares a preview gets it, and one that does not
- * falls to the shape of its arguments.
+ * call was pointed at — and beside it the counts a read or a write earns, which no
+ * longer stand under the plate as a caption. The chain of tool names that used to
+ * live here is now the registry's — a plugin that declares a preview gets it, and
+ * one that does not falls to the shape of its arguments.
  */
 function argsLineOf(
   item: ToolTranscriptItem,
   readPreview: ReadPreviewData | undefined,
+  writePreview: WritePreviewData | undefined,
 ): string {
   const owned = toolPreviewOf(HOST, item);
   if (owned !== null) return owned;
-  if (readPreview !== undefined) return readPreview.caption;
+  if (readPreview !== undefined)
+    return headerLineOf(readPreview.path, [readPreview.counts]);
+  if (writePreview !== undefined)
+    return headerLineOf(writePreview.path, [writePreview.counts]);
   return previewFor(item);
 }
 
@@ -131,7 +141,8 @@ function toolRowLookOf(
   const isWrite = isWriteTool(item.name);
   return {
     state,
-    args: argsLineOf(item, readPreview),
+    args: argsLineOf(item, readPreview, writePreview),
+    chips: headerChipsOf(HOST, item),
     outputMode: outputModeFor(item),
     ...(readPreview === undefined ? {} : { readPreview }),
     ...(writePreview === undefined ? {} : { writePreview }),
@@ -239,6 +250,11 @@ export function ToolExecution(props: ToolExecutionProps): JSX.Element {
         args={look.args}
         icon={toolIconFor(HOST, item.name)}
         spinnerSlot={<StateSpinner />}
+        chipsSlot={
+          look.chips.length === 0 ? undefined : (
+            <ToolHeaderChips cells={look.chips} />
+          )
+        }
       />
       {answerPanelsOf(item)}
       {look.readPreview !== undefined ? (

@@ -41,7 +41,10 @@ export function readPluginArmState(
     if (!Array.isArray(list)) return { disabled: [] };
     return {
       disabled: list
-        .filter((name): name is string => typeof name === "string" && name.trim() !== "")
+        .filter(
+          (name): name is string =>
+            typeof name === "string" && name.trim() !== "",
+        )
         .filter((name) => name !== ALWAYS_ARMED),
     };
   } catch {

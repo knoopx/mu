@@ -52,7 +52,10 @@ const PELE_VARS = [
  * quieter than the first.
  */
 function diagramVars(t: AdwaitaTheme): Record<string, string> {
-  const series = seriesRamp(t, PELE_VARS.filter((name) => name.startsWith("--pele-series-")).length);
+  const series = seriesRamp(
+    t,
+    PELE_VARS.filter((name) => name.startsWith("--pele-series-")).length,
+  );
   const page = bandFill(t);
   const vars: Record<string, string> = {
     "--pele-bg": page,

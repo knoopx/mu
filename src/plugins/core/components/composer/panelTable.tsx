@@ -15,9 +15,10 @@
  * What is decided here is only structural: which facts of a row are columns, how
  * many figure columns a list has (the widest figure run it holds, so a row with
  * fewer pads its cells rather than shoving its neighbours left), and which
- * column takes the room that is left over — the trailing sentence when the list
- * has one, the name when it does not. A column that is not the fluid one asks for
- * none of the leftover: it stands at its measured width.
+ * column takes the room that is left over — where the rows live when the list
+ * says that, the trailing sentence when it only says that, and the name when it
+ * says neither. A column that is not the fluid one asks for none of the
+ * leftover: it stands at its measured width.
  */
 import type { JSX, ReactNode } from "react";
 import {
@@ -45,6 +46,9 @@ import { HAIRLINE } from "../../lib/ui/tokens";
 
 /** What the list holds, column-wise — measured over every row it holds. */
 export interface ComposerPanelShape {
+  /** Whether any row says where its name sits, so every row holds the column. */
+  place: boolean;
+
   /** How many figure columns the list has: its widest run of figures. */
   figures: number;
 
@@ -65,6 +69,7 @@ export interface ComposerPanelShape {
  *  column, whatever this row puts in it. A row's trailing words are a figure or
  *  a sentence, never both, and words that only repeat the name are no column. */
 interface RowColumns {
+  place: boolean;
   figures: number;
   age: boolean;
   prose: boolean;
@@ -74,12 +79,17 @@ interface RowColumns {
 
 /** A row that asks for nothing — a theme row names itself and paints its ink. */
 const NO_COLUMNS: RowColumns = {
+  place: false,
   figures: 0,
   age: false,
   prose: false,
   args: false,
   check: false,
 };
+
+/** A row's own place, and "" when it names no place or only repeats its name. */
+const placeOf = (row: OptionRow): string =>
+  row.place !== undefined && row.place !== row.label ? row.place : "";
 
 function columnsOf(row: ComposerPanelRow): RowColumns {
   if (row.kind === "command")
@@ -91,6 +101,7 @@ function columnsOf(row: ComposerPanelRow): RowColumns {
   if (row.kind === "theme") return NO_COLUMNS;
   const trails = row.description !== undefined && row.description !== row.label;
   return {
+    place: placeOf(row) !== "",
     figures: (row.figures ?? []).length,
     age: trails && row.tabular === true,
     prose: trails && row.tabular !== true,
@@ -106,6 +117,7 @@ export function composerPanelShapeOf(
   const shape: ComposerPanelShape = { ...NO_COLUMNS };
   for (const row of rows) {
     const columns = columnsOf(row);
+    shape.place ||= columns.place;
     shape.figures = Math.max(shape.figures, columns.figures);
     shape.age ||= columns.age;
     shape.prose ||= columns.prose;
@@ -202,6 +214,37 @@ function LeadCell({
   );
 }
 
+/** Where the row's name sits: the words that tell two same-named rows apart,
+ *  printed beside the name rather than under it, so a list that has to say where
+ *  its rows live stays one line tall. It is the fluid column when the list has
+ *  one, because a path is the longest thing a row holds and the one worth the
+ *  leftover room; a path longer than its column is cut, as any path is. */
+function PlaceCell({
+  t,
+  text,
+  fluid,
+}: {
+  t: AdwaitaTheme;
+  text: string;
+  fluid: boolean;
+}): JSX.Element {
+  if (text === "") return <TableNodeCell grow={0}>{null}</TableNodeCell>;
+  return (
+    <TableNodeCell grow={growOf(fluid)}>
+      <text
+        style={{
+          ...ELLIPSIS,
+          fontSize: t.type.caption,
+          color: mutedText(t),
+          userSelect: "none",
+        }}
+      >
+        {text}
+      </text>
+    </TableNodeCell>
+  );
+}
+
 /** One figure: its mark, and the number that mark counts, right-aligned. */
 function FigureCell({
   t,
@@ -211,7 +254,8 @@ function FigureCell({
   figure?: ComposerRowFigure;
 }): JSX.Element {
   const measure = useCellMeasure();
-  if (figure === undefined) return <TableNodeCell grow={0}>{null}</TableNodeCell>;
+  if (figure === undefined)
+    return <TableNodeCell grow={0}>{null}</TableNodeCell>;
   return (
     <TableNodeCell grow={0} align="right">
       <div
@@ -402,19 +446,25 @@ function commandCells(
     ),
     ...column(
       shape.prose,
-      <TrailCell key="prose" t={t} text={row.description ?? ""} mono={false} fluid />,
+      <TrailCell
+        key="prose"
+        t={t}
+        text={row.description ?? ""}
+        mono={false}
+        fluid
+      />,
     ),
   ];
 }
 
-/** An option row is its name, its figures, one trailing fact, and the mark. */
+/** An option row is its name, where it sits, its figures, one trailing fact, and the mark. */
 function optionCells(
   t: AdwaitaTheme,
   row: OptionRow,
   shape: ComposerPanelShape,
 ): ReactNode[] {
-  // The fluid column is the one worth the leftover room: a sentence the list
-  // trails, and where there is none, the name itself.
+  // The fluid column is the one worth the leftover room: where the rows live,
+  // then a sentence the list trails, and where there is neither, the name itself.
   const described = row.description ?? "";
   const trails = row.description !== undefined && described !== row.label;
   const figures = row.figures ?? [];
@@ -423,10 +473,18 @@ function optionCells(
       key="lead"
       t={t}
       label={row.label}
-      caption={row.caption !== undefined && row.caption !== row.label ? row.caption : undefined}
+      caption={
+        row.caption !== undefined && row.caption !== row.label
+          ? row.caption
+          : undefined
+      }
       icon={row.icon}
-      fluid={!shape.prose && !shape.age}
+      fluid={!shape.place && !shape.prose && !shape.age}
     />,
+    ...column(
+      shape.place,
+      <PlaceCell key="place" t={t} text={placeOf(row)} fluid />,
+    ),
     // Every row holds as many figure columns as the widest row of the list: a
     // row with fewer leaves the rest of them empty rather than sliding the
     // columns after it out from under the rows beside it.
@@ -440,7 +498,7 @@ function optionCells(
         t={t}
         text={row.tabular === true ? described : ""}
         mono
-        fluid={!shape.prose}
+        fluid={!shape.prose && !shape.place}
       />,
     ),
     ...column(

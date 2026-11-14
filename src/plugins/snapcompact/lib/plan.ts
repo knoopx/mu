@@ -104,7 +104,8 @@ export async function planSnapcompact(
   );
 
   const archive = result.preserveData?.[ARCHIVE_KEY] as
-    SnapcompactArchive | undefined;
+    | SnapcompactArchive
+    | undefined;
   if (archive === undefined) return undefined;
 
   const frames = archive.frames;

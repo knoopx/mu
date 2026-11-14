@@ -7,10 +7,7 @@
  * is the chord that opened it.
  */
 
-import {
-  definePlugin,
-  type PanelSurface,
-} from "../core/lib/plugin/manifest";
+import { definePlugin, type PanelSurface } from "../core/lib/plugin/manifest";
 import { TerminalPanel } from "./components/TerminalPanel";
 import { terminalHints } from "./lib/shortcuts";
 import { useTerminalPanel } from "./hooks/useTerminalPanel";
@@ -20,8 +17,7 @@ export const terminalPlugin = definePlugin(
   "terminal",
   {
     title: "Terminal",
-    summary:
-      "A real pty in a wide panel, with the shell keeping every key.",
+    summary: "A real pty in a wide panel, with the shell keeping every key.",
     icon: "terminal",
     category: "session",
   },
@@ -48,7 +44,11 @@ export const terminalPlugin = definePlugin(
         }),
       panel: (state) => ({
         node: (
-          <TerminalPanel view={state.view} grid={state.grid} note={state.note} />
+          <TerminalPanel
+            view={state.view}
+            grid={state.grid}
+            note={state.note}
+          />
         ),
         status: { message: state.status, hints: terminalHints() },
         onKey: (event) => state.onKey(event),

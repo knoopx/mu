@@ -3,7 +3,6 @@ import type { AssistantUsage, TranscriptItem } from "./transcriptState";
 export const UP = "↑";
 export const DOWN = "↓";
 export const DOT = "·";
-export const BAR = "|";
 
 const CHARS_PER_TOKEN = 4;
 
@@ -132,32 +131,45 @@ interface Scan {
   runningTools: number;
 }
 
-function scan(items: readonly TranscriptItem[]): Scan {
-  const used: UsageItem[] = [];
-  let decode: LiveDecode | null = null;
-  let endTs = 0;
-  let runningTools = 0;
-  for (const item of items) {
-    const usage = usageOf(item);
-    if (usage !== undefined) {
-      used.push({ id: item.id, usage });
-      if (usage.endTs > endTs) endTs = usage.endTs;
-    }
-    if (item.kind === "assistant") {
-      if (item.streaming)
-        decode = { startTs: item.startTs, chars: streamedCharsOf(item) };
-      continue;
-    }
-    if (item.kind !== "tool") continue;
-    if (item.status === "running") {
-      runningTools += 1;
-      if (decode !== null)
-        decode = { ...decode, chars: decode.chars + callCharsOf(item) };
-    } else if (item.endTs !== undefined && item.endTs > endTs) {
-      endTs = item.endTs;
-    }
+/**
+ * What one row of the log adds to the figures.
+ *
+ * A row can say three things: what the provider reported for it, whether a decode
+ * is still streaming under it, and when it last answered. A call still running has
+ * no usage to read yet, so its arguments are counted as characters instead — the
+ * same estimate the streaming assistant's prose gets — and only while a decode is
+ * in flight to own them.
+ */
+function noteRow(figures: Scan, item: TranscriptItem): void {
+  const usage = usageOf(item);
+  if (usage !== undefined) {
+    figures.used.push({ id: item.id, usage });
+    figures.endTs = Math.max(figures.endTs, usage.endTs);
   }
-  return { used, decode, endTs, runningTools };
+
+  if (item.kind === "assistant") {
+    if (item.streaming)
+      figures.decode = { startTs: item.startTs, chars: streamedCharsOf(item) };
+    return;
+  }
+
+  if (item.kind !== "tool") return;
+  if (item.status !== "running") {
+    figures.endTs = Math.max(figures.endTs, item.endTs ?? 0);
+    return;
+  }
+  figures.runningTools += 1;
+  if (figures.decode !== null)
+    figures.decode = {
+      ...figures.decode,
+      chars: figures.decode.chars + callCharsOf(item),
+    };
+}
+
+function scan(items: readonly TranscriptItem[]): Scan {
+  const figures: Scan = { used: [], decode: null, endTs: 0, runningTools: 0 };
+  for (const item of items) noteRow(figures, item);
+  return figures;
 }
 
 function earliestStartOf(items: readonly TranscriptItem[]): number | undefined {

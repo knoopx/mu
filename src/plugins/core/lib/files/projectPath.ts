@@ -2,7 +2,8 @@ import { lstatSync } from "node:fs";
 import { resolve, sep } from "node:path";
 
 export type ProjectFileRead =
-  { ok: true; name: string; target: string } | { ok: false; error: string };
+  | { ok: true; name: string; target: string }
+  | { ok: false; error: string };
 
 /**
  * One panel row, read as the file it claims to be.

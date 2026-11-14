@@ -34,9 +34,7 @@ export const AUTOCOMPLETE_KEY = "editor.autocomplete";
 const COMMANDS_CHOICE = "run";
 
 const chooseWord = (panel: ComposerTarget | "commands"): string | undefined =>
-  panel === "commands"
-    ? COMMANDS_CHOICE
-    : panelChooseWord(HOST, panel);
+  panel === "commands" ? COMMANDS_CHOICE : panelChooseWord(HOST, panel);
 
 export const panelCanDelete = (panel: ComposerTarget | "commands"): boolean =>
   panelDeleteWord(HOST, panel) !== undefined;
@@ -53,7 +51,8 @@ export function panelShortcuts(panel: ComposerTarget | "commands"): Shortcut[] {
   // A panel that names no word for a key does not take it, and prints no chip for
   // it — the hint line is how a panel says what its keys do.
   const choose = chooseWord(panel);
-  if (choose !== undefined) rows.push({ id: "choose", kbds: ["enter"], desc: choose });
+  if (choose !== undefined)
+    rows.push({ id: "choose", kbds: ["enter"], desc: choose });
   if (panelCanOpen(panel))
     rows.push({
       id: "open",

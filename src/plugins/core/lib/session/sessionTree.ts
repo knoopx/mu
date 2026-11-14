@@ -17,7 +17,11 @@ import { toolIconFor } from "../plugin/surfaces";
 import { HOST } from "../../../registry";
 
 export type TreeFilter =
-  "no-tools" | "default" | "user-only" | "labeled-only" | "all";
+  | "no-tools"
+  | "default"
+  | "user-only"
+  | "labeled-only"
+  | "all";
 
 export const TREE_FILTERS: TreeFilter[] = [
   "no-tools",
@@ -197,7 +201,8 @@ export function describeEntry(entry: SessionEntry): EntryDescription {
   if (entry.type === "message")
     return describeMessage(entry.message as unknown as MessageLike, age);
   const row = ENTRY_ROWS[entry.type as EntryKind] as
-    ((entry: SessionEntry) => EntryRow) | undefined;
+    | ((entry: SessionEntry) => EntryRow)
+    | undefined;
   return {
     ...(row?.(entry) ?? { role: "system", text: entry.type }),
     meta: age,
@@ -250,7 +255,8 @@ function messagePasses(
   isLeaf: boolean,
 ): boolean {
   const role = messageOf(entry).role;
-  if (role === "assistant" && !isLeaf && hasToolCallOnlyText(entry)) return false;
+  if (role === "assistant" && !isLeaf && hasToolCallOnlyText(entry))
+    return false;
   if (role === "toolResult" && filter === "no-tools") return false;
   if (filter === "user-only") return role === "user";
   return true;
@@ -453,6 +459,49 @@ export function indexRows(rows: readonly TreeRow[]): TreeIndex {
     childrenOf.set(row.parentId, children);
   });
   return { at, childrenOf };
+}
+
+/**
+ * Down the branch the cursor stands on: to its first child, straight through any
+ * parent that has only the one, until the cursor reaches a fork or a leaf. A run
+ * of one-child rows is one jump, not ten.
+ */
+export function descendRow(
+  rows: readonly TreeRow[],
+  index: TreeIndex,
+  sel: number,
+): number | undefined {
+  const current = rows[sel];
+  if (current === undefined) return undefined;
+  let id = current.id;
+  for (;;) {
+    const children = index.childrenOf.get(id) ?? [];
+    if (children.length !== 1) return index.at.get(children[0] ?? id);
+    id = children[0] as string;
+  }
+}
+
+/**
+ * Up the branch: to the nearest parent with a sibling still to read below the
+ * cursor, so a cursor walking back up its own branch stops at the next thing it
+ * has not read rather than at every parent on the way.
+ */
+export function ascendRow(
+  rows: readonly TreeRow[],
+  index: TreeIndex,
+  sel: number,
+): number | undefined {
+  const current = rows[sel];
+  if (current === undefined) return undefined;
+  let id = current.id;
+  for (;;) {
+    const parent = rows[index.at.get(id) ?? 0]?.parentId ?? null;
+    if (parent === null) return index.at.get(id);
+    const siblings = index.childrenOf.get(parent) ?? [];
+    const at = index.at.get(id);
+    if (siblings.length > 1 && at !== undefined && at < sel) return at;
+    id = parent;
+  }
 }
 
 export function buildTreeModel(

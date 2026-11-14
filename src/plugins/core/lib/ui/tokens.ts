@@ -97,6 +97,28 @@ export const textWidth = (
 export const badgeWidth = (t: AdwaitaTheme, chars: number): number =>
   textWidth(t, chars) + BADGE_INLINE_PAD;
 
+/* The measure of running prose -----------------------------------------
+ *
+ * The log's prose is capped, not stretched. A line that runs the whole width of
+ * a wide window — at 1280 the answer column prints near 150 characters — is the
+ * one tell a reading surface cannot have: the eye loses the line it is on and
+ * the next one starts nowhere near where the last ended. Every style guide worth
+ * the name puts running prose between 45 and 75 characters, and hallmark calls
+ * the breach a gate (25). Figures, patches, code and tables keep the whole
+ * column: they are not prose and they are read by alignment, not by sweep.
+ */
+
+/** The widest a line of running prose is allowed to be, in characters. */
+const PROSE_MAX_CHARS = 74;
+
+/** The measure of running prose at the body measure: the answer, a reasoning
+ *  block, a message the human typed. Set as a width so a column caps its text
+ *  without a second measure appearing anywhere in the layout. */
+export const proseMeasure = (
+  t: AdwaitaTheme,
+  chars: number = PROSE_MAX_CHARS,
+): number => textWidth(t, chars, t.type.body);
+
 /* Leading -------------------------------------------------------------- */
 
 /**
@@ -237,10 +259,12 @@ export const PREVIEW_IMAGE_HEIGHT = CONTROL.mediaTileHeight * 2;
 
 /* Chips and pills ------------------------------------------------------ */
 
-/** The air inside a chip: the flat sliver above and below its label, and the same
- *  sliver added to the gap the chip already sits in on its sides. A chip is a
- *  tight box, not a padded row, and it pads itself with one measure. */
-export const CHIP_PAD = 2;
+/** The air inside a chip: the flat sliver above and below its figure, and the same
+ *  sliver added to the gap the chip already sits in on its sides. A chip is a box
+ *  of its own and pads itself with one measure — big enough that the mark and the
+ *  number inside it read at a glance across a log, small enough that a row of five
+ *  still fits the header line. */
+export const CHIP_PAD = 4;
 
 /** A composer pill's height — and the line box of its label, which is how the
  *  label sits centred in the box without any padding arithmetic. */

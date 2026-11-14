@@ -6,6 +6,7 @@ import { Markdown } from "./Markdown";
 import { ProgramFence } from "../../openui/components/ProgramFence";
 import { replyBlocks } from "../../openui/lib/fences/read";
 import { PAGE_INSET } from "../lib/ui/transcriptLayout";
+import { proseMeasure } from "../lib/ui/tokens";
 import { TurnStatsLine } from "./TurnStats";
 import { buildNativeTheme, mutedText } from "../lib/ui/theme";
 
@@ -39,11 +40,16 @@ export interface AssistantMessageProps {
 function bodyOf(
   item: AssistantTranscriptItem,
   props: AssistantMessageProps,
+  /** The prose of a reply is capped to a reading measure; the `ui` blocks beside
+   *  it are not, because a screen the human operates takes the whole column. */
+  measure: number,
 ): JSX.Element | null {
   if (!item.text) return null;
   const blocks = replyBlocks(item.text, item.streaming);
   if (!blocks.hasFence)
-    return <Markdown source={item.text} style={{ padding: 0 }} />;
+    return (
+      <Markdown source={item.text} style={{ padding: 0, maxWidth: measure }} />
+    );
 
   const message = props.uiMessage ?? 0;
   return (
@@ -53,7 +59,7 @@ function bodyOf(
           <Markdown
             key={`prose-${String(index)}`}
             source={segment.text}
-            style={{ padding: 0 }}
+            style={{ padding: 0, maxWidth: measure }}
           />
         ) : (
           <ProgramFence
@@ -77,7 +83,12 @@ function ReasoningBlock({ body }: { body: string }): JSX.Element {
     <Markdown
       source={body}
       theme={theme}
-      style={{ padding: 0, flexShrink: 1, minWidth: 0 }}
+      style={{
+        padding: 0,
+        flexShrink: 1,
+        minWidth: 0,
+        maxWidth: proseMeasure(t),
+      }}
     />
   );
 }
@@ -97,7 +108,7 @@ export function AssistantMessage(props: AssistantMessageProps): JSX.Element {
     >
       <MessageContent style={{ gap: t.space.md }}>
         {item.reasoning ? <ReasoningBlock body={item.reasoning} /> : null}
-        {bodyOf(item, props)}
+        {bodyOf(item, props, proseMeasure(t))}
         {showStats && stats !== undefined ? (
           <TurnStatsLine stats={stats} />
         ) : null}

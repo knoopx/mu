@@ -91,7 +91,8 @@ export function plotColor(t: AdwaitaTheme, tone: PlotTone | null): string {
  * hue and walks its lightness, then goes quiet, so the first series is the one
  * the reader looks at and the rest read as context.
  */
-export const seriesColors = (t: AdwaitaTheme): string[] => seriesRamp(t, MAX_SERIES);
+export const seriesColors = (t: AdwaitaTheme): string[] =>
+  seriesRamp(t, MAX_SERIES);
 
 /**
  * Whether a line draws a marker at every point.

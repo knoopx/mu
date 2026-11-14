@@ -18,22 +18,20 @@ import { counted } from "../../core/lib/agent/toolText";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
 import {
-  ToolChips,
   ToolRowList,
   ToolRunning,
   ToolStatusNote,
-  ToolSummary,
-  ToolTruncated,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import {
+  headerLineOf,
   toolPreviewLine,
   type ToolPreviewVocabulary,
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusTone,
   type ToolPaintRow,
+  type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { mutedText } from "../../core/lib/ui/theme";
@@ -85,6 +83,16 @@ export function isTreeTool(name: string): boolean {
 }
 
 /** The tool header: what stands at the top of the tree — the counts are the chips' job. */
+/**
+ * What the tree was built from: how many nodes, folders and leaves it holds, how
+ * deep it goes and how many branches were cut. They are the call's own figures, so
+ * they ride its header; the body is the tree.
+ */
+export function treeChipsOf(item: ToolTranscriptItem): readonly ToolRowCell[] {
+  const view = treeToolViewOf(item.name, item.args, item.details, item.status);
+  return view === null ? [] : view.cells;
+}
+
 export const treeToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
     item,
@@ -95,18 +103,38 @@ export const treeToolPreviewOf = (item: ToolTranscriptItem): string =>
 
 function headOf(_tool: string, view: TreeToolView): string {
   const { tree } = view;
+  // The refusal is said once, in the header: a tree that was never drawn leaves the
+  // row nothing else that could carry the sentence, and the body's work is to name
+  // the nodes that carry no name.
   if (tree.status === "invalid") return treeFailureLine(tree);
 
   const roots = tree.nodes.map((node) => node.name);
   const named = roots.slice(0, HEAD_ROOTS).join(", ");
   const rest = roots.length - HEAD_ROOTS;
-  return roots.length === 0 || rest <= 0 ? named : `${named} +${String(rest)}`;
+  // What the tree cut is one of the call's counts, so it rides the header with the
+  // roots: the card is the tree, and nothing under it tallies it.
+  return headerLineOf(
+    [
+      roots.length === 0 || rest <= 0 ? named : `${named} +${String(rest)}`,
+      // The line the call gives the tree is a line about the call: it belongs on the
+      // header, not under the tree it describes.
+      tree.caption,
+    ]
+      .filter((part) => part !== "")
+      .join(" · "),
+    [
+      tree.omitted === 0
+        ? ""
+        : `… ${counted(tree.omitted, "subtree")} not drawn`,
+    ],
+  );
 }
 
 /** The nodes a refusal could not name: where each hangs, and what was written there. */
 function badRows(view: TreeToolView): ToolPaintRow[] {
   return view.tree.bad.map((bad, index) => ({
     key: `n-${String(index)}`,
+    id: `n-${String(index)}`,
     primary: bad.under === "" ? "(the root)" : bad.under,
     secondary: `${bad.value === "" ? "(nothing)" : bad.value} where a name belongs`,
     badge: "unnamed",
@@ -136,12 +164,9 @@ export function TreeToolRows({ item }: TreeToolRowsProps): JSX.Element {
   if (view === null) return <ToolUnknownResult item={item} tool={item.name} />;
 
   const { tree } = view;
-  const tone = toolStatusTone(view.status, TREE_STATUS_TONES);
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={view.cells} />
-
       {tree.status === "ok" ? (
         <FileTree
           items={fileTreeOf(tree.nodes)}
@@ -151,29 +176,23 @@ export function TreeToolRows({ item }: TreeToolRowsProps): JSX.Element {
         />
       ) : null}
 
-      {tree.caption === "" ? null : (
-        <ToolCaptionLine color={mutedText(t)} text={tree.caption} />
-      )}
-
-      <ToolTruncated
-        count={tree.omitted}
-        text={`… ${counted(tree.omitted, "subtree")} not drawn — name the folders that carry the point`}
-      />
-
-      {tree.status === "invalid" ? (
-        <>
-          <ToolSummary text={treeFailureLine(tree)} tone={tone} />
+      {
+        // Not the refusal again — the header says it — but the nodes that caused it,
+        // each one shown where it hangs and with what was written in its place.
+        tree.status === "invalid" ? (
           <ToolRowList
             rows={badRows(view)}
             variants={TREE_BADGE_VARIANTS}
             pressable={false}
           />
-        </>
-      ) : null}
+        ) : null
+      }
 
       <ToolStatusNote
         status={view.status}
-        note={tree.status === "ok" ? "" : tree.error}
+        note={
+          tree.status === "ok" || tree.status === "invalid" ? "" : tree.error
+        }
         tones={TREE_STATUS_TONES}
         icons={TREE_STATUS_ICONS}
       />

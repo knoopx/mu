@@ -155,9 +155,10 @@ function cellsOf(
 }
 
 /** The two cells every analyser view states: what ran, and the scope it ran on. */
-const analyserPairs = (
-  details: { version: string; path: string },
-): (readonly [string, string])[] => [
+const analyserPairs = (details: {
+  version: string;
+  path: string;
+}): (readonly [string, string])[] => [
   ["analyzer", analyzerCell("fallow", detailText(details.version))],
   ["scope", scopeLabel(detailText(details.path))],
 ];
@@ -210,7 +211,7 @@ function findingRow(
   meter: ToolRowMeter | null,
   trailing = "",
 ): ToolPaintRow {
-  return { key, primary, secondary, badge, tone, meter, trailing };
+  return { key, id: key, primary, secondary, badge, tone, meter, trailing };
 }
 
 /** Where a complexity finding is. */
@@ -235,16 +236,14 @@ function complexityView(
   const thresholds = detailRecord(details.thresholds);
   const rows = detailList<ComplexityRow>(details.rows);
 
+  // One chip per figure: the three thresholds are three numbers a reader scans
+  // across the row, not one sentence, and a cell that joined them with ` · ` made
+  // a single wide chip that lost its last two figures to the header's clip.
   v.cells = cellsOf(
     ...analyserPairs(details),
-    [
-      "thresholds",
-      partsLine(
-        `CC ${String(detailNumber(thresholds?.cyclomatic))}`,
-        `cognitive ${String(detailNumber(thresholds?.cognitive))}`,
-        `CRAP ${String(detailNumber(thresholds?.crap))}`,
-      ),
-    ],
+    ["cc", detailNumber(thresholds?.cyclomatic)],
+    ["cognitive", detailNumber(thresholds?.cognitive)],
+    ["crap", detailNumber(thresholds?.crap)],
     ["functions", detailNumber(details.functions_analyzed)],
     ["sort", argOf(args.sort)],
   );
@@ -341,6 +340,7 @@ function duplicatesView(
     "",
     rows.map((row) => ({
       key: row.fingerprint.replace(/^dup:/, "").slice(0, 8),
+      id: row.fingerprint.replace(/^dup:/, "").slice(0, 8),
       primary: `${counted(row.lines, "line")} × ${counted(
         row.instances.length,
         "instance",
@@ -442,6 +442,7 @@ function surfaceView(
 
   const surface: ToolPaintRow[] = rows.map((row) => ({
     key: `×${String(row.consumers)}`,
+    id: `×${String(row.consumers)}`,
     primary: row.name,
     secondary: row.type_only ? "type only" : "",
     badge: row.consumers === 0 ? "unused" : "",
@@ -467,7 +468,9 @@ function surfaceView(
   v.note = noteFor(
     v.status,
     details,
-    detailText(details.reason) === "" ? `${path} has no exports` : detailText(details.reason),
+    detailText(details.reason) === ""
+      ? `${path} has no exports`
+      : detailText(details.reason),
   );
   return v;
 }
@@ -507,6 +510,7 @@ function referencesView(
   const paint = (edges: readonly ReferenceRow[]): ToolPaintRow[] =>
     edges.map((row) => ({
       key: String(row.depth),
+      id: String(row.depth),
       primary: row.name === "" ? row.file : row.name,
       secondary: row.file === "" ? "(project edge)" : row.file,
       badge: row.type_only ? "type" : "",

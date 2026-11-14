@@ -15,6 +15,7 @@ import { codeSymbolReferencesTool } from "./tools/codeSymbolReferences";
 import {
   isCodeQualityTool,
   QualityToolRows,
+  qualityChipsOf,
   qualityToolPreviewOf,
 } from "./components/QualityToolRows";
 
@@ -42,6 +43,7 @@ export const codeQualityPlugin = definePlugin(
       owns: isCodeQualityTool,
       body: (item) => <QualityToolRows item={item} />,
       preview: qualityToolPreviewOf,
+      chips: qualityChipsOf,
     });
   },
 );

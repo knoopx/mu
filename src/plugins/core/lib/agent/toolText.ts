@@ -9,6 +9,7 @@
  * finding belong to the plugin that owns them.
  */
 
+import { homedir } from "node:os";
 import { isAbsolute, relative } from "node:path";
 
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
@@ -81,6 +82,23 @@ export const scopeLabel = (
   const rel = relative(cwd, clean);
   if (rel === "") return "(cwd)";
   return rel.startsWith("..") || isAbsolute(rel) ? clean : rel;
+};
+
+/**
+ * A path that is not in the project, written from the home folder.
+ *
+ * The session store, mu's own config and a suite file all sit under one root a
+ * person names with `~`. `scopeLabel` is the answer for a path inside the
+ * project; this is the answer for the paths that never are, and both exist
+ * because a tool header is one line and an absolute path spends it on
+ * directories the reader already stands in.
+ */
+export const homeLabel = (path: string, home: string = homedir()): string => {
+  const clean = path.trim();
+  if (clean === home) return "~";
+  return clean.startsWith(`${home}/`)
+    ? `~/${clean.slice(home.length + 1)}`
+    : clean;
 };
 
 /** A tool header's preview is one line, so it is clipped inside its budget. */

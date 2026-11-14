@@ -150,7 +150,10 @@ export function mermaidToolViewOf(
       label: "svg",
       value: picture.svgBytes === 0 ? "" : formatSize(picture.svgBytes),
     },
-    { label: "drew in", value: picture.ms === 0 ? "" : `${String(picture.ms)} ms` },
+    {
+      label: "drew in",
+      value: picture.ms === 0 ? "" : `${String(picture.ms)} ms`,
+    },
   ];
 
   return {

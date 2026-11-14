@@ -6,7 +6,7 @@ import {
   readSync,
   unlinkSync,
 } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawnSync, type SpawnSyncReturns } from "node:child_process";
 import { join } from "node:path";
 import {
   AgentSessionRuntime,
@@ -63,7 +63,10 @@ export interface AgentOptions {
 // pi's own tools are named once, in `builtInTools.ts`; every other name in the
 // session is a plugin's, read off its manifest, so a tool can never be declared
 // to the model in one file and implemented in another.
-const appToolNames = (): string[] => [...PI_TOOL_NAMES, ...agentToolNames(HOST)];
+const appToolNames = (): string[] => [
+  ...PI_TOOL_NAMES,
+  ...agentToolNames(HOST),
+];
 
 /**
  * How a session's resources are loaded: pi's built-ins trimmed to the five tools
@@ -180,20 +183,51 @@ export async function createAgentSessionHandle(
   };
 }
 
+/**
+ * What a snapshot was read from.
+ *
+ * The status bar asks for the figures on every render, and the session answers
+ * them by walking its own entries, so they are kept until one of these moves:
+ * a different session, a move in its history, a different model or thinking level.
+ */
+interface SnapshotKey {
+  session: AgentSession;
+  sessionId: string;
+  leafId: string | null;
+  entryCount: number;
+  modelRef: string;
+  thinking: ThinkingLevel;
+}
+
+/** A session path that opens with a dash is an option to `trash`, not a file. */
+const trashArgs = (sessionPath: string): string[] =>
+  sessionPath.startsWith("-") ? ["--", sessionPath] : [sessionPath];
+
+/** What `trash` said when it did not take the file: its own failure, then the
+ *  first line of what it wrote to stderr — a reader has to be able to tell a
+ *  missing `trash` from a filesystem that refused the unlink. */
+function trashComplaint(trashed: SpawnSyncReturns<string>): string {
+  const said: string[] = [];
+  if (trashed.error) said.push(trashed.error.message);
+  const stderr = trashed.stderr?.trim();
+  if (stderr !== undefined && stderr !== "")
+    said.push(stderr.split("\n")[0] ?? stderr);
+  const hint = said.join(" \u00b7 ");
+  return hint === "" ? "" : `(trash: ${hint})`;
+}
+
+const sameSnapshotKey = (a: SnapshotKey, b: SnapshotKey): boolean =>
+  a.session === b.session &&
+  a.sessionId === b.sessionId &&
+  a.leafId === b.leafId &&
+  a.entryCount === b.entryCount &&
+  a.modelRef === b.modelRef &&
+  a.thinking === b.thinking;
+
 export class AgentBridge {
   private _listener: AgentSessionEventListener | undefined;
   private _unsubscribe: (() => void) | undefined;
-  private _snapshot:
-    | {
-        session: AgentSession;
-        sessionId: string;
-        leafId: string | null;
-        entryCount: number;
-        modelRef: string;
-        thinking: ThinkingLevel;
-        value: AgentSnapshot;
-      }
-    | undefined;
+  private _snapshot: { key: SnapshotKey; value: AgentSnapshot } | undefined;
 
   constructor(private readonly runtime: AgentSessionRuntime) {}
 
@@ -207,31 +241,17 @@ export class AgentBridge {
   }
 
   snapshot(): AgentSnapshot {
-    const session = this.session;
-    const manager = session.sessionManager;
-    const sessionId = manager.getSessionId();
-    const leafId = manager.getLeafId();
-    const entryCount = manager.getEntryCount();
-    const model = this.model;
-    const modelRef = model ? `${model.provider}/${model.id}` : "no-model";
-    const thinking = this.thinkingLevel;
+    const key = this.snapshotKey();
     const cached = this._snapshot;
-    if (
-      cached !== undefined &&
-      cached.session === session &&
-      cached.sessionId === sessionId &&
-      cached.leafId === leafId &&
-      cached.entryCount === entryCount &&
-      cached.modelRef === modelRef &&
-      cached.thinking === thinking
-    )
+    if (cached !== undefined && sameSnapshotKey(cached.key, key))
       return cached.value;
 
+    const session = this.session;
     const stats = session.getSessionStats();
     const usage = this.contextUsage();
     const value: AgentSnapshot = {
-      model: modelRef,
-      thinking,
+      model: key.modelRef,
+      thinking: key.thinking,
       tokensIn: stats.tokens.input + stats.tokens.cacheRead,
       tokensOut: stats.tokens.output,
       cost: stats.cost,
@@ -239,16 +259,23 @@ export class AgentBridge {
       contextTotal: usage?.contextWindow ?? this.contextWindow ?? 0,
       contextPercent: usage?.percent ?? null,
     };
-    this._snapshot = {
-      session,
-      sessionId,
-      leafId,
-      entryCount,
-      modelRef,
-      thinking,
-      value,
-    };
+    this._snapshot = { key, value };
     return value;
+  }
+
+  /** Where the session stands, and what it stands with: the six figures a
+   *  snapshot would go stale on, read once so the comparison has one answer. */
+  private snapshotKey(): SnapshotKey {
+    const manager = this.session.sessionManager;
+    const model = this.model;
+    return {
+      session: this.session,
+      sessionId: manager.getSessionId(),
+      leafId: manager.getLeafId(),
+      entryCount: manager.getEntryCount(),
+      modelRef: model ? `${model.provider}/${model.id}` : "no-model",
+      thinking: this.thinkingLevel,
+    };
   }
 
   get session(): AgentSession {
@@ -384,10 +411,9 @@ export class AgentBridge {
         method: "trash",
         error: "Session file is already gone",
       };
-    const args = sessionPath.startsWith("-")
-      ? ["--", sessionPath]
-      : [sessionPath];
-    const trashed = spawnSync("trash", args, { encoding: "utf8" });
+    const trashed = spawnSync("trash", trashArgs(sessionPath), {
+      encoding: "utf8",
+    });
     if (trashed.status === 0 || !existsSync(sessionPath))
       return { ok: true, method: "trash" };
     try {
@@ -395,16 +421,11 @@ export class AgentBridge {
       return { ok: true, method: "unlink" };
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      const hints: string[] = [];
-      if (trashed.error) hints.push(trashed.error.message);
-      const stderr = trashed.stderr?.trim();
-      if (stderr !== undefined && stderr !== "")
-        hints.push(stderr.split("\n")[0] ?? stderr);
-      const hint = hints.join(" \u00b7 ");
+      const complaint = trashComplaint(trashed);
       return {
         ok: false,
         method: "unlink",
-        error: hint === "" ? reason : `${reason} (trash: ${hint})`,
+        error: complaint === "" ? reason : `${reason} ${complaint}`,
       };
     }
   }

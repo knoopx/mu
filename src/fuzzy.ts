@@ -8,45 +8,73 @@ const WORD_BOUNDARY = /[\s\-_./:]/;
 const LETTERS_THEN_DIGITS = /^(?<letters>[a-z]+)(?<digits>[0-9]+)$/;
 const DIGITS_THEN_LETTERS = /^(?<digits>[0-9]+)(?<letters>[a-z]+)$/;
 
+/** What one find is worth, in the order the finds are asked about. */
+const RUN_BONUS = 5;
+const GAP_COST = 2;
+const WORD_START_BONUS = 10;
+const OFFSET_COST = 0.1;
+const EXACT_MATCH_BONUS = 100;
+
+/**
+ * Where a query's characters land in the text, or nothing at all.
+ *
+ * Each character takes the earliest find after the one before it, so the find is
+ * the subsequence the query reads as, and a character with nowhere to stand means
+ * the text does not hold the query.
+ */
+function findPositions(text: string, query: string): number[] | null {
+  const positions: number[] = [];
+  for (const char of query) {
+    const at = text.indexOf(char, (positions.at(-1) ?? -1) + 1);
+    if (at === -1) return null;
+    positions.push(at);
+  }
+  return positions;
+}
+
+/** Whether a character opens a word: the text's first, or one after a divider. */
+const opensWord = (text: string, at: number): boolean =>
+  at === 0 || WORD_BOUNDARY.test(text[at - 1] ?? "");
+
+/**
+ * What one run of finds costs, the lower the better.
+ *
+ * A run of consecutive characters is worth more with every character it takes, a
+ * gap costs what it skips, a character standing at the start of a word costs ten,
+ * and a find further into the text costs a little more.
+ */
+function scorePositions(text: string, positions: readonly number[]): number {
+  let score = 0;
+  let run = 0;
+  positions.forEach((at, order) => {
+    const before = positions[order - 1] ?? -1;
+    if (at === before + 1) {
+      run += 1;
+      score -= run * RUN_BONUS;
+    } else {
+      run = 0;
+      if (before >= 0) score += (at - before - 1) * GAP_COST;
+    }
+    if (opensWord(text, at)) score -= WORD_START_BONUS;
+    score += at * OFFSET_COST;
+  });
+  return score;
+}
+
 /**
  * One query scored against the text as the subsequence it finds.
  *
- * The lower the score the better: a run of consecutive characters is worth more
- * with every character it takes, a gap costs what it skips, a character standing
- * at the start of a word costs ten, and the earliest find of all costs the least.
  * A query that is the whole text costs a hundred more, so an exact name wins.
  */
 function scoreQuery(text: string, query: string): FuzzyMatchResult {
   if (query.length === 0) return { matches: true, score: 0 };
   if (query.length > text.length) return { matches: false, score: 0 };
 
-  let queryIndex = 0;
-  let score = 0;
-  let lastMatchIndex = -1;
-  let consecutiveMatches = 0;
+  const positions = findPositions(text, query);
+  if (positions === null) return { matches: false, score: 0 };
 
-  while (queryIndex < query.length) {
-    const i = text.indexOf(query[queryIndex], lastMatchIndex + 1);
-    if (i === -1) break;
-
-    const isWordBoundary = i === 0 || WORD_BOUNDARY.test(text[i - 1] ?? "");
-    if (lastMatchIndex === i - 1) {
-      consecutiveMatches++;
-      score -= consecutiveMatches * 5;
-    } else {
-      consecutiveMatches = 0;
-      if (lastMatchIndex >= 0) score += (i - lastMatchIndex - 1) * 2;
-    }
-    if (isWordBoundary) score -= 10;
-    score += i * 0.1;
-
-    lastMatchIndex = i;
-    queryIndex++;
-  }
-
-  if (queryIndex < query.length) return { matches: false, score: 0 };
-  if (query === text) score -= 100;
-  return { matches: true, score };
+  const exact = query === text ? -EXACT_MATCH_BONUS : 0;
+  return { matches: true, score: scorePositions(text, positions) + exact };
 }
 
 /** The same query with its letters and its digits the other way round: `usb3`

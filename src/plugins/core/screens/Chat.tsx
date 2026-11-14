@@ -1,11 +1,4 @@
-import {
-  Fragment,
-  memo,
-  useEffect,
-  useMemo,
-  useRef,
-  type JSX,
-} from "react";
+import { Fragment, memo, useEffect, useMemo, useRef, type JSX } from "react";
 import {
   Message,
   MessageContent,
@@ -28,6 +21,7 @@ import {
   paneFill,
   userBandFill,
 } from "../lib/ui/theme";
+import { proseMeasure } from "../lib/ui/tokens";
 import { ToolStateLine } from "../components/ToolStateLine";
 import type { TranscriptItem } from "../lib/agent/transcriptState";
 import type { AgentSnapshot } from "../lib/agent/agentService";
@@ -350,7 +344,9 @@ export function userCardStyle(t: AdwaitaTheme): StyleDesc {
     flexShrink: 1,
     alignSelf: "flex-start",
     minWidth: 0,
-    maxWidth: "100%",
+    // A long message is prose too, so it stops at the same measure the replies
+    // do rather than running the width of a wide window.
+    maxWidth: proseMeasure(t),
     padding: t.space.md,
     borderRadius: t.radius.sm,
     borderWidth: 0,

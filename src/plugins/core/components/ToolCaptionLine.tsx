@@ -7,22 +7,27 @@
 import { T, useAdwaita } from "adwaita-gpuix";
 import type { JSX } from "react";
 
-import { toolLine, toolText } from "../lib/ui/toolRows";
+import { toolLine, toolLineFlush, toolText } from "../lib/ui/toolRows";
 
 export interface ToolCaptionLineProps {
   text: string;
   color: string;
   weight?: string | number;
+
+  /** A run of these lines in a column that already gaps them takes `flush`, so
+   *  the block is spaced by its column once and not by the column and the line. */
+  flush?: boolean;
 }
 
 export function ToolCaptionLine({
   text,
   color,
   weight,
+  flush = false,
 }: ToolCaptionLineProps): JSX.Element {
   const t = useAdwaita();
   return (
-    <div style={toolLine(t)}>
+    <div style={flush ? toolLineFlush(t) : toolLine(t)}>
       <T size="caption" weight={weight} color={color} style={toolText(t)}>
         {text}
       </T>

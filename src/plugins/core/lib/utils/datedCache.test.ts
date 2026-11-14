@@ -62,11 +62,15 @@ describe("readCache / writeCache", () => {
       "utf8",
     );
 
-    expect(await readCache<{ text: string }>("stale", "scope", DAY_MS)).toBeNull();
+    expect(
+      await readCache<{ text: string }>("stale", "scope", DAY_MS),
+    ).toBeNull();
   });
 
   test("a scope nobody wrote is a miss", async () => {
-    expect(await readCache("probe", "https://example.com/never", DAY_MS)).toBeNull();
+    expect(
+      await readCache("probe", "https://example.com/never", DAY_MS),
+    ).toBeNull();
   });
 
   test("a file that is not a cache entry is a miss, not a crash", async () => {

@@ -14,11 +14,9 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import type { JSX, ReactNode } from "react";
 import type { IconName } from "adwaita-gpuix";
-import {
-  BUILT_IN_TOOL_ICONS,
-  DEFAULT_TOOL_ICON,
-} from "../agent/builtInTools";
+import { BUILT_IN_TOOL_ICONS, DEFAULT_TOOL_ICON } from "../agent/builtInTools";
 import type { ToolTranscriptItem } from "../agent/transcriptState";
+import type { ToolRowCell } from "../ui/toolRowPaint";
 import type { ComposerEvent, ComposerTarget } from "../composer/mode";
 import type { ComposerPanelData } from "../composer/panelData";
 import type {
@@ -94,14 +92,18 @@ export function answerBodiesOf(
   host: PluginHost,
   item: ToolTranscriptItem,
 ): { key: string; frame: "band" | "page"; body: JSX.Element }[] {
-  return claimedBy(host, item)
-    .filter((surface) => surface.body !== undefined)
-    .map((surface) => ({
-      key: surface.key,
-      frame: surface.frame ?? "band",
-      // The host refused a surface with no body before it got here.
-      body: surface.body?.(item) as JSX.Element,
-    }));
+  const panels: { key: string; frame: "band" | "page"; body: JSX.Element }[] =
+    [];
+  for (const surface of claimedBy(host, item)) {
+    if (surface.body === undefined) continue;
+    // The host refused a surface with no body before it got here. A body that
+    // finds nothing to show draws no plate: an empty band beside a header that
+    // already said "nothing found" is a box around nothing.
+    const body = surface.body(item);
+    if (body !== null && body !== undefined)
+      panels.push({ key: surface.key, frame: surface.frame ?? "band", body });
+  }
+  return panels;
 }
 
 /** A panel this call carries although its tool belongs to no plugin. */
@@ -116,6 +118,20 @@ export function blockBodiesOf(
       bodies.push({ key: `${block.plugin}-block`, body });
   }
   return bodies;
+}
+
+/**
+ * The chips a call's header wears: what it ran with, in the owning plugin's cells.
+ * The first surface that claims the call and names chips answers; a call with none
+ * gets a header with nothing beside its text.
+ */
+export function headerChipsOf(
+  host: PluginHost,
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] {
+  for (const surface of claimedBy(host, item))
+    if (surface.chips !== undefined) return surface.chips(item);
+  return [];
 }
 
 /** The header's one line, in the owning plugin's words, or nothing to say. */

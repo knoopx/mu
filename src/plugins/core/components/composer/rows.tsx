@@ -153,16 +153,26 @@ function ComposerRow({
   );
 }
 
-const textColumn = (t: AdwaitaTheme): StyleDesc => ({
+/** The name's column, and where it sits when the row says that. The table's own
+ *  rule, kept here so the two renderers of one row agree: the place is the fluid
+ *  column when it is there, and the name stands at its own width beside it. */
+const textColumn = (t: AdwaitaTheme, fluid = true): StyleDesc => ({
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
   // The row carries no width of its own: it takes what the row leaves it, and is
   // the first to give room back when the row runs out.
-  flexGrow: 1,
+  flexGrow: fluid ? 1 : 0,
   flexShrink: 1,
   minWidth: 0,
   gap: t.space.xs,
+});
+
+const placeLine = (t: AdwaitaTheme): StyleDesc => ({
+  ...meta(t),
+  ...truncate(t),
+  flexGrow: 1,
+  lineHeight: lineBox(t, "caption"),
 });
 
 const rowLine = (t: AdwaitaTheme, size: number, lines: number): StyleDesc => ({
@@ -253,6 +263,10 @@ export interface ComposerOptionRowProps {
   label: string;
 
   caption?: string;
+
+  /** Where the name sits — see `panelTable`'s place column. */
+  place?: string;
+
   description?: string;
 
   figures?: ComposerRowFigure[];
@@ -297,7 +311,9 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
       onClick={props.onClick}
       onHover={props.onHover}
     >
-      <div style={textColumn(t)}>
+      <div
+        style={textColumn(t, props.place === undefined || props.place === "")}
+      >
         <text
           style={{
             ...label(t, props.dimmed === true),
@@ -319,6 +335,9 @@ export function ComposerOptionRow(props: ComposerOptionRowProps): JSX.Element {
           </text>
         )}
       </div>
+      {props.place === undefined || props.place === "" ? null : (
+        <text style={placeLine(t)}>{props.place}</text>
+      )}
       {props.figures !== undefined && props.figures.length > 0 ? (
         <RowFigures t={t} figures={props.figures} />
       ) : null}

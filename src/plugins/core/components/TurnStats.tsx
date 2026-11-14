@@ -5,7 +5,6 @@ import { type StyleDesc } from "@gpuix/react";
 import { mutedText } from "../lib/ui/theme";
 import { glyphForText } from "../lib/ui/tokens";
 import {
-  BAR,
   DOT,
   formatCost,
   formatDuration,
@@ -124,7 +123,11 @@ export interface TurnStatsProps {
 
 export function TurnStatsLine({ stats, style }: TurnStatsProps): JSX.Element {
   return (
-    <StatsLine segments={turnSegments(stats)} separator={BAR} style={style} />
+    // One separator for the figures of a run, wherever they are read: a turn's own
+    // footer and the bar at the foot of the window print the same numbers thirty
+    // pixels apart, and a `|` up top against a `·` below reads as two kinds of
+    // figure where there is one.
+    <StatsLine segments={turnSegments(stats)} separator={DOT} style={style} />
   );
 }
 

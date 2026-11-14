@@ -41,10 +41,7 @@ const fill: StyleDesc = {
   borderWidth: 0,
 };
 
-const badgeStyle = (
-  t: AdwaitaTheme,
-  size: number,
-): StyleDesc => ({
+const badgeStyle = (t: AdwaitaTheme, size: number): StyleDesc => ({
   position: "absolute",
   top: t.space.xs,
   right: t.space.xs,

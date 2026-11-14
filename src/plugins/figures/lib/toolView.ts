@@ -21,10 +21,7 @@ import {
 } from "../../core/lib/agent/toolDetails";
 import { counted } from "../../core/lib/agent/toolText";
 import type { ToolRowCell } from "../../core/lib/ui/toolRowPaint";
-import {
-  CHART_RENDER_TOOL,
-  TREE_RENDER_TOOL,
-} from "../constants";
+import { CHART_RENDER_TOOL, TREE_RENDER_TOOL } from "../constants";
 import type {
   ChartFigure,
   FigureStatus,
@@ -209,8 +206,7 @@ export function chartToolViewOf(
     cells: [
       {
         label: "points",
-        value:
-          figure.status === "ok" ? String(figure.plotted) : "",
+        value: figure.status === "ok" ? String(figure.plotted) : "",
       },
       {
         label: "series",
@@ -224,10 +220,9 @@ export function chartToolViewOf(
             ? ""
             : `${figure.measure.peak} ${plotFigure(figure.measure.peakValue)}`,
       },
-      {
-        label: "not plotted",
-        value: figure.omitted === 0 ? "" : String(figure.omitted),
-      },
+      // What the plot left out is not a chip: a chip line clips at its end, and the
+      // one figure that must not be lost is the one saying the plot is not the whole
+      // story. It is named once, in the note under the plot, beside the remedy.
       {
         // The plot draws no unit of its own, so the row has to say what a figure
         // is a count of.
@@ -346,9 +341,14 @@ export function treeToolViewOf(
     status,
     tree,
     cells: [
+      // A tree the call refused to draw has no counts to report: `0 nodes` beside a
+      // refusal is a figure about a picture that does not exist.
       {
         label: "tree",
-        value: status === "empty" ? "" : counted(tree.drawn, "node"),
+        value:
+          status === "empty" || status === "invalid"
+            ? ""
+            : counted(tree.drawn, "node"),
       },
       { label: "folders", value: status === "ok" ? String(tree.folders) : "" },
       { label: "leaves", value: status === "ok" ? String(tree.leaves) : "" },
@@ -367,10 +367,8 @@ export function treeToolViewOf(
             ? String(tree.expanded.length)
             : "",
       },
-      {
-        label: "cut",
-        value: tree.omitted === 0 ? "" : counted(tree.omitted, "subtree"),
-      },
+      // As with a plot: what the tree cut is said once, in the note under it, where
+      // the remedy stands with it — and never in a chip the header may clip away.
     ],
   };
 }

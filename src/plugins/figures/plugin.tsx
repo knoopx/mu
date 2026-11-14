@@ -12,12 +12,14 @@ import { chartRenderTool } from "./tools/chartRender";
 import { treeRenderTool } from "./tools/treeRender";
 import {
   ChartToolRows,
+  chartChipsOf,
   chartToolPreviewOf,
   isChartTool,
 } from "./components/ChartToolRows";
 import {
   isTreeTool,
   TreeToolRows,
+  treeChipsOf,
   treeToolPreviewOf,
 } from "./components/TreeToolRows";
 
@@ -38,12 +40,14 @@ export const figuresPlugin = definePlugin(
       owns: isChartTool,
       body: (item) => <ChartToolRows item={item} />,
       preview: chartToolPreviewOf,
+      chips: chartChipsOf,
     });
     app.log.rows({
       key: "tree",
       owns: isTreeTool,
       body: (item) => <TreeToolRows item={item} />,
       preview: treeToolPreviewOf,
+      chips: treeChipsOf,
     });
   },
 );

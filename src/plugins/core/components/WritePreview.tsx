@@ -1,16 +1,15 @@
-import { T, useAdwaita } from "adwaita-gpuix";
+import { useAdwaita } from "adwaita-gpuix";
 import { isWriteTool } from "../lib/agent/builtInTools";
 import { pathTextOf } from "../lib/agent/toolInput";
 import type { JSX } from "react";
 import type { StyleDesc } from "@gpuix/react";
 
-import { buildNativeTheme, mutedText } from "../lib/ui/theme";
+import { buildNativeTheme } from "../lib/ui/theme";
 import {
   toolBand,
   previewLineHeight,
   toolPreviewWrap,
 } from "../lib/ui/transcriptLayout";
-import { toolText } from "../lib/ui/toolRows";
 
 import type { ToolTranscriptItem } from "../lib/agent/transcriptState";
 
@@ -33,7 +32,8 @@ export interface WritePreviewData {
   total: number;
   truncated: boolean;
   streaming: boolean;
-  caption: string;
+  /** the tail the header carries beside the path: how long the file is and what the plate does not show */
+  counts: string;
 }
 
 /**
@@ -63,13 +63,14 @@ export function writePreviewOf(
   const hidden = total - kept.length;
 
   // While the call streams the count is the point: the file is that long and
-  // growing. Only once it is written does the panel say what it cannot show.
-  const caption = streaming
+  // growing. The count rides the header beside the path — the plate below already
+  // shows the lines, so a tally under them is a caption doing a header's job.
+  const counts = streaming
     ? truncated
       ? `writing · ${lineCount(total)} so far · last ${kept.length} shown`
       : `writing · ${lineCount(total)} so far`
     : truncated
-      ? `${lineCount(total)} · ${hidden} not shown`
+      ? `${lineCount(total)} · ${String(hidden)} not shown`
       : lineCount(total);
 
   return {
@@ -78,7 +79,7 @@ export function writePreviewOf(
     total,
     truncated,
     streaming,
-    caption,
+    counts,
   };
 }
 
@@ -94,6 +95,8 @@ export function WritePreview({
   const t = useAdwaita();
   const lineHeight = previewLineHeight(t);
   const wrap = toolPreviewWrap(t, style);
+  // The plate is the band, and it is painted once: the text inside it carries no
+  // fill, border or header of its own.
   const card: StyleDesc = { ...toolBand(t), flexShrink: 0 };
 
   return (
@@ -114,13 +117,6 @@ export function WritePreview({
           }}
         />
       </div>
-      <T
-        size="caption"
-        color={mutedText(t)}
-        style={{ ...toolText(t), pointerEvents: "none" }}
-      >
-        {preview.caption}
-      </T>
     </div>
   );
 }

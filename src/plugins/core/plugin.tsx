@@ -38,7 +38,10 @@ import {
   pluginsEmptyText,
 } from "./lib/plugin/panelRows";
 import { TREE_HINTS } from "./lib/session/shortcuts";
-import { CodemodeToolRows, isCodemodeTool } from "./components/CodemodeToolRows";
+import {
+  CodemodeToolRows,
+  isCodemodeTool,
+} from "./components/CodemodeToolRows";
 import { codemodePreviewOf } from "./lib/codemode/script";
 import { accentNameList, themeNameList } from "./lib/theme/themeStore";
 
@@ -55,6 +58,10 @@ export const corePlugin = definePlugin(
     app.log.rows({
       key: "codemode",
       owns: isCodemodeTool,
+      // The script row draws its own band and leaves the wall time off it: the
+      // time a script took is not part of what it printed, and a line of it inside
+      // the plate reads as another line of output.
+      frame: "page",
       body: (item) => <CodemodeToolRows item={item} />,
       preview: codemodePreviewOf,
     });
@@ -140,9 +147,7 @@ export const corePlugin = definePlugin(
         const active = rows[panelIndex(data.mode, rows.length)];
         let preview = {};
         if (active !== undefined && active.kind === "option") {
-          const spec = data.previewFor(
-            completionPathOf(active.key, data.cwd),
-          );
+          const spec = data.previewFor(completionPathOf(active.key, data.cwd));
           const note = directorySummary(active.key, data.cwd);
           preview = { preview: note === undefined ? spec : { ...spec, note } };
         }
@@ -282,7 +287,11 @@ export const corePlugin = definePlugin(
       description: "Compact the session context",
       icon: "inbox",
     });
-    app.composer.command({ name: "new", description: "Start a new chat", icon: "add" });
+    app.composer.command({
+      name: "new",
+      description: "Start a new chat",
+      icon: "add",
+    });
     app.composer.command({
       name: "resume",
       description: "Resume an existing session",

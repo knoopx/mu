@@ -11,6 +11,7 @@ import { mermaidRenderTool } from "./tools/mermaidRender";
 import {
   isMermaidTool,
   MermaidToolRows,
+  mermaidChipsOf,
   mermaidToolPreviewOf,
 } from "./components/MermaidToolRows";
 
@@ -31,6 +32,7 @@ export const mermaidPlugin = definePlugin(
       owns: isMermaidTool,
       body: (item) => <MermaidToolRows item={item} />,
       preview: mermaidToolPreviewOf,
+      chips: mermaidChipsOf,
     });
   },
 );

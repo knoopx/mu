@@ -24,11 +24,7 @@ import {
   MAX_READOUT_POINTS,
   MAX_TREE_LINES,
 } from "../constants";
-import type {
-  ChartFigure,
-  PlotPoint,
-  TreeFigure,
-} from "../types";
+import type { ChartFigure, PlotPoint, TreeFigure } from "../types";
 import { plotFigure } from "./plot";
 import { treeLinesOf } from "./structure";
 

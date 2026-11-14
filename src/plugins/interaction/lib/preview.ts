@@ -7,9 +7,7 @@
 
 import type { AskQuestion } from "../types";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
-import {
-  headerSnippet,
-} from "../../core/lib/agent/toolPreview";
+import { headerSnippet } from "../../core/lib/agent/toolPreview";
 import { askDetailsOf } from "../components/AskResultRows";
 
 function questionsOf(item: ToolTranscriptItem): Partial<AskQuestion>[] {

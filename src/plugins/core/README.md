@@ -38,4 +38,4 @@ different apps.
 
 A plugin imports core and its own folder. core is allowed to read a plugin — that
 is the app reading what it hosts, not a plugin reaching into the app — and
-`bun run check:plugins` counts those reads so the number can only shrink.
+Those reads are the app's own coupling, so the count (33 at the time of writing) should only shrink.

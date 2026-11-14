@@ -13,17 +13,17 @@
  */
 
 import type { JSX } from "react";
-import { useAdwaita, type IconName } from "adwaita-gpuix";
+import { useWindowSize } from "@gpuix/react";
+import { useAdwaita, type AdwaitaTheme, type IconName } from "adwaita-gpuix";
 
 import { partsLine } from "../../core/lib/agent/toolText";
 import type { ToolTranscriptItem } from "../../core/lib/agent/transcriptState";
 import { ToolCaptionLine } from "../../core/components/ToolCaptionLine";
+import { PAGE_INSET } from "../../core/lib/ui/transcriptLayout";
 import { ZoomImage } from "../../core/components/ZoomImage";
 import {
-  ToolChips,
   ToolRunning,
   ToolStatusNote,
-  ToolSummary,
   ToolUnknownResult,
 } from "../../core/components/ToolDataRows";
 import {
@@ -32,7 +32,7 @@ import {
 } from "../../core/lib/agent/toolPreview";
 import {
   toolBodyStack,
-  toolStatusTone,
+  type ToolRowCell,
   type ToolRowTone,
 } from "../../core/lib/ui/toolRowPaint";
 import { buildNativeTheme, mutedText } from "../../core/lib/ui/theme";
@@ -40,6 +40,7 @@ import { codeLineBox } from "../../core/lib/ui/tokens";
 import {
   DIAGRAM_BOX_HEIGHT,
   DIAGRAM_BOX_WIDTH,
+  DIAGRAM_UPSCALE,
   DIAGRAM_FONT_SIZE,
   MERMAID_RENDER_TOOL,
   MERMAID_TOOL_NAMES,
@@ -85,6 +86,23 @@ export function isMermaidTool(name: string): boolean {
 }
 
 /** The tool header: what was drawn, how big it came out, what it was pointed at. */
+/**
+ * What the picture was drawn with: the canvas it was laid out on, how many labels
+ * it says, how big the markup came back, how long the draw took. They are the
+ * call's own figures, so they ride its header; the body is the picture.
+ */
+export function mermaidChipsOf(
+  item: ToolTranscriptItem,
+): readonly ToolRowCell[] {
+  const view = mermaidToolViewOf(
+    item.name,
+    item.args,
+    item.details,
+    item.status,
+  );
+  return view === null ? [] : view.cells;
+}
+
 export const mermaidToolPreviewOf = (item: ToolTranscriptItem): string =>
   toolPreviewLine(
     item,
@@ -104,23 +122,46 @@ function headOf(_tool: string, view: MermaidToolView): string {
   return partsLine(diagramName(picture), view.written);
 }
 
-/** How big the picture is drawn: never bigger than the log, never smaller than
- *  it was laid out to be by more than it has to be. */
+/**
+ * The page a diagram is given: the window the log stands in, less the tool row's own
+ * inset and the band's padding.
+ *
+ * A diagram used to be fitted into a fixed 640, so a wide window showed a diagram as
+ * a small picture in the middle of the room it was drawn for. The row's width is the
+ * measure instead, and the fixed number stays as the floor for the frame that has no
+ * window to measure yet.
+ */
+function diagramPageOf(
+  windowWidth: number | undefined,
+  t: AdwaitaTheme,
+): number {
+  if (windowWidth === undefined) return DIAGRAM_BOX_WIDTH;
+  return Math.max(
+    DIAGRAM_BOX_WIDTH,
+    windowWidth - PAGE_INSET * 2 - t.space.sm * 2,
+  );
+}
+
+/**
+ * How big the picture is drawn: as wide as the row it stands in, never enlarged
+ * past a legible blow-up, and never taller than the band's own budget — a tall
+ * sequence diagram is scrolled past, not drawn down the whole window.
+ */
 function boxOf(
   width: number,
   height: number,
+  page: number,
 ): { w: number; h: number; scale: number } {
   if (width <= 0 || height <= 0) return { w: 0, h: 0, scale: 1 };
   const scale = Math.min(
-    DIAGRAM_BOX_WIDTH / width,
+    page / width,
     DIAGRAM_BOX_HEIGHT / height,
-    1.5,
+    DIAGRAM_UPSCALE,
   );
-  const fitted = scale < 1 ? scale : Math.max(scale, 1);
   return {
-    w: Math.round(width * fitted),
-    h: Math.round(height * fitted),
-    scale: fitted,
+    w: Math.round(width * scale),
+    h: Math.round(height * scale),
+    scale,
   };
 }
 
@@ -155,6 +196,7 @@ export interface MermaidToolRowsProps {
 
 export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
   const t = useAdwaita();
+  const win = useWindowSize();
 
   if (item.status === "running") {
     return (
@@ -176,14 +218,15 @@ export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
   if (view === null) return <ToolUnknownResult item={item} tool={item.name} />;
 
   const { picture } = view;
-  const tone = toolStatusTone(view.status, MERMAID_STATUS_TONES);
-  const box = boxOf(picture.width, picture.height);
+  const box = boxOf(
+    picture.width,
+    picture.height,
+    diagramPageOf(win?.width, t),
+  );
   const markup = picture.svg === "" ? "" : paintDiagram(picture.svg, t);
 
   return (
     <div style={toolBodyStack(t)}>
-      <ToolChips cells={view.cells} />
-
       {markup === "" ? null : (
         <ZoomImage
           src={`data:image/svg+xml;utf8,${encodeURIComponent(markup)}`}
@@ -206,24 +249,26 @@ export function MermaidToolRows({ item }: MermaidToolRowsProps): JSX.Element {
       {markup !== "" && box.scale < 1 ? (
         <ToolCaptionLine
           color={mutedText(t)}
-          text={`shown at ${String(Math.round(box.scale * 100))}% of its ${String(picture.width)}×${String(picture.height)} canvas — \`path\` saves the picture at full size`}
+          text={`shown at ${String(Math.round(box.scale * 100))}% — \`path\` saves the picture at full size`}
         />
       ) : null}
 
-      {view.written === "" ? null : (
-        <ToolSummary text={`wrote ${view.written}`} tone="ok" />
-      )}
-
-      {picture.status === "failed" ? (
-        <>
-          <ToolSummary text={diagramFailureLine(picture)} tone={tone} />
+      {
+        // The header already says which line the parser stopped on; the snippet is
+        // what the header has no room for — the offending line itself, and the caret
+        // under the column it stopped at. Not the sentence again.
+        picture.status === "failed" ? (
           <FailureSnippet snippet={picture.failure?.snippet ?? ""} />
-        </>
-      ) : null}
+        ) : null
+      }
 
       <ToolStatusNote
         status={view.status}
-        note={picture.status === "ok" ? "" : picture.error}
+        note={
+          picture.status === "ok" || picture.status === "failed"
+            ? ""
+            : picture.error
+        }
         tones={MERMAID_STATUS_TONES}
         icons={MERMAID_STATUS_ICONS}
       />

@@ -58,27 +58,32 @@ export const PANEL_PLACEHOLDER: Record<
   ComposerTarget | "commands",
   string | undefined
 > = {
-  commands: "Type a command name",
-  model: "Type a model name",
-  thinking: "Type a thinking level",
-  session: "Type to filter the project session history",
-  file: "Type to filter files in this folder",
-  path: "Type a path, Tab completes it",
+  // A placeholder names what the field holds; it is never the sentence that
+  // teaches the panel. Every one of these panels already prints its keys in the
+  // hint bar under the list and its own figures in the status line, so the field
+  // only has to say what to type — the way `Search` beats `Search anything...`.
+  commands: "Command",
+  model: "Model",
+  thinking: "Thinking level",
+  session: "Filter sessions",
+  file: "Filter files",
+  path: "Path",
   changes: undefined,
   oplog: undefined,
-  tree: "Type to filter this session history",
-  theme: "Type a theme name",
-  accent: "Type an accent colour name",
-  userMessageHistory:
-    "Type to search the user messages of every session in this folder",
-  guardrails: "Type to filter the guardrail domains",
+  tree: "Filter points",
+  theme: "Theme",
+  accent: "Accent",
+  userMessageHistory: "Search your messages",
+  guardrails: "Filter domains",
   // The figures on a plugin row are a glyph and a count, so the placeholder says
   // what the six columns are, in order — the one place in the panel with room for
   // the words.
-  plugins: "Filter plugins — figures: tools · panels · commands · surfaces · extensions · blocks",
+  plugins:
+    "Filter plugins — figures: tools · panels · commands · surfaces · extensions · blocks",
   // A terminal draws a screen, not a list to narrow, so it has nothing to ask the
   // draft for.
   terminal: undefined,
+  projects: "Filter projects",
 };
 
 export const panelPlaceholder = (
@@ -99,6 +104,7 @@ const PANEL_NOUNS: Record<string, [string, string]> = {
   accent: ["accent colour", "accent colours"],
   userMessageHistory: ["user message", "user messages"],
   guardrails: ["guardrail row", "guardrail rows"],
+  projects: ["project", "projects"],
 };
 
 const panelNoun = (

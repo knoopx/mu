@@ -12,8 +12,10 @@ import type { EventPayload } from "@gpuix/native";
 import type { SessionTreeNode } from "@earendil-works/pi-coding-agent";
 import type { TreeSnapshot } from "../lib/session/chatSession";
 import {
+  ascendRow,
   buildTreeModel,
   DEFAULT_TREE_FILTER,
+  descendRow,
   EMPTY_MODEL,
   indexRows,
   TREE_FILTER_LABEL,
@@ -144,37 +146,19 @@ export function useSessionTree(options: SessionTreeOptions): SessionTreeApi {
 
   // The branch keys walk the model's parent links; the model is built once, so
   // the walk reads an index built once with it rather than rebuilding a map of
-  // every row on each keypress.
+  // every row on each keypress. The walks themselves are the model's own and live
+  // with the index they read, where a test can put a cursor on a row and ask.
   const index = useMemo(() => indexRows(rows), [rows]);
 
-  /** Down the branch the cursor stands on: to its first child, straight through
-   *  any parent that has only the one, until the cursor reaches a fork or a leaf. */
-  const descend = useCallback((): boolean => {
-    const current = rows[sel];
-    if (current === undefined) return false;
-    let id = current.id;
-    for (;;) {
-      const children = index.childrenOf.get(id) ?? [];
-      if (children.length !== 1) return jump(index.at.get(children[0] ?? id));
-      id = children[0] as string;
-    }
-  }, [index, jump, rows, sel]);
+  const descend = useCallback(
+    (): boolean => jump(descendRow(rows, index, sel)),
+    [index, jump, rows, sel],
+  );
 
-  /** Up the branch: to the nearest parent with a sibling still to read below the
-   *  cursor, so a run of one-child rows is a single jump rather than ten. */
-  const ascend = useCallback((): boolean => {
-    const current = rows[sel];
-    if (current === undefined) return false;
-    let id = current.id;
-    for (;;) {
-      const parent = rows[index.at.get(id) ?? 0]?.parentId ?? null;
-      if (parent === null) return jump(index.at.get(id));
-      const siblings = index.childrenOf.get(parent) ?? [];
-      const at = index.at.get(id);
-      if (siblings.length > 1 && at !== undefined && at < sel) return jump(at);
-      id = parent;
-    }
-  }, [index, jump, rows, sel]);
+  const ascend = useCallback(
+    (): boolean => jump(ascendRow(rows, index, sel)),
+    [index, jump, rows, sel],
+  );
 
   /** Enter hands the row under the cursor to whoever opened the tree. */
   const jumpHere = useCallback((): boolean => {
@@ -215,16 +199,7 @@ export function useSessionTree(options: SessionTreeOptions): SessionTreeApi {
       // Escape is the window's to answer, not the tree's.
       close: () => false,
     }),
-    [
-      ascend,
-      cycleFilter,
-      descend,
-      jump,
-      jumpHere,
-      move,
-      page,
-      rows.length,
-    ],
+    [ascend, cycleFilter, descend, jump, jumpHere, move, page, rows.length],
   );
 
   const onKey = useCallback(

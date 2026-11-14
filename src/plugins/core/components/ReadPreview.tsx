@@ -93,7 +93,8 @@ export interface ReadPreviewData {
   path: string;
   from: number;
   to: number;
-  caption: string;
+  /** the tail the header carries beside the path: the lines quoted, the bytes, the reason it could not be read */
+  counts: string;
   kind: "text" | "image";
   lines: string[];
   truncated: boolean;
@@ -123,10 +124,7 @@ export function readPreviewOf(
       path: args.path,
       from,
       to: from,
-      caption:
-        detail === ""
-          ? `${args.path} · unreadable`
-          : `${args.path} · ${detail}`,
+      counts: detail === "" ? "unreadable" : detail,
       kind: "text",
       lines: [],
       truncated: false,
@@ -138,7 +136,7 @@ export function readPreviewOf(
       path: args.path,
       from,
       to: from,
-      caption: `${args.path} · ${item.image.mimeType} · ${formatSize(item.image.bytes)}`,
+      counts: `${item.image.mimeType} · ${formatSize(item.image.bytes)}`,
       kind: "image",
       lines: [],
       truncated: false,
@@ -158,7 +156,7 @@ export function readPreviewOf(
     path: args.path,
     from,
     to: from + lines.length - 1,
-    caption: `${args.path} · lines ${from}\u2013${from + lines.length - 1}`,
+    counts: `lines ${String(from)}\u2013${String(from + lines.length - 1)}`,
     kind: "text",
     lines: kept.lines,
     truncated: kept.truncated,
